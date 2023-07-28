@@ -2,9 +2,9 @@
   "profiles": {
     "AIML Bot": {
       "commandName": "Executable",
-      "executablePath": "D:\\Users\\Andrea\\Nextcloud\\Projects\\Aiml\\AimlVoice\\bin\\Debug\\net7.0-windows\\AimlVoice.exe",
-      "commandLineArgs": "-S BombDefuser\\BombDefuserConnector\\bin\\Debug\\net7.0-windows\\BombDefuserConnector.dll -S ..\\Aiml\\AimlVoiceTimers\\bin\\Debug\\net7.0-windows\\AimlVoiceTimers.dll -V \"Microsoft Zira Desktop\" -r 1 --no-sr Bot2\r\n",
-      "workingDirectory": "D:\\Users\\Andrea\\Nextcloud\\Projects\\BombDefuser"
+      "executablePath": "..\\Aiml\\AimlVoice\\bin\\Debug\\net7.0-windows\\AimlVoice.exe",
+      "commandLineArgs": "-S BombDefuser\\BombDefuserConnector\\bin\\Debug\\net7.0-windows\\BombDefuserConnector.dll -S ..\\Aiml\\AimlVoiceTimers\\bin\\Debug\\net7.0-windows\\AimlVoiceTimers.dll -V \"Microsoft Zira Desktop\" -r 1 --no-sr Bot\r\n",
+      "workingDirectory": "..\\.."
     }
   }
 }
