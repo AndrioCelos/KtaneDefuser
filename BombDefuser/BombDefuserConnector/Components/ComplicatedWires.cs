@@ -17,30 +17,25 @@ internal class ComplicatedWires : ComponentProcessor<object> {
 		var numWires = 0;
 		var numWirePixels = 0;
 		var wirePixelTotal = 0f;
-		for (var x = 32; x < 224; x++) {
+		for (var x = 16; x < 224; x++) {
 			var color = image[x, 128];
-			var isBacking = Math.Abs(color.R - 128) <= 32 && Math.Abs(color.G - 128) <= 32 && Math.Abs(color.B - 128) <= 32;
-			if (isBacking) {
-				if (inWire > 0)
-					inWire--;
-			} else {
+			var hsv = HsvColor.FromColor(color);
+			var colour = GetColour(hsv);
+			if (colour != Colour.None) {
 				if (inWire == 0)
 					numWires++;
 				inWire = 4;
 				numWirePixels++;
-				var hsv = HsvColor.FromColor(color);
-				if (hsv.S < 0.15f)                  // White
-					wirePixelTotal += hsv.V;
-				else if (hsv.H is >= 120 and < 300) {
-					// Blue
-					wirePixelTotal += Math.Min(1, hsv.S * 1.25f) * (1 - Math.Abs(225 - hsv.H) * 0.05f);
-				} else {
-					// Red
-					wirePixelTotal += hsv.S * Math.Max(0, 1 - Math.Abs(hsv.H >= 180 ? hsv.H - 360 : hsv.H) * 0.05f);
-				}
-			}
+				wirePixelTotal += colour switch {
+					Colour.White => hsv.V,
+					Colour.Red or Colour.Highlight => hsv.S * Math.Max(0, 1 - Math.Abs(hsv.H >= 180 ? hsv.H - 360 : hsv.H) * 0.05f),
+					Colour.Blue => Math.Min(1, hsv.S * 1.25f) * (1 - Math.Abs(225 - hsv.H) * 0.05f),
+					_ => 0
+				};
+			} else if (inWire > 0)
+				inWire--;
 		}
-		return numWires is >= 3 and <= 6 ? wirePixelTotal / numWirePixels : 0;
+		return numWires is >= 3 and <= 6 ? wirePixelTotal * 1.5f / numWirePixels : 0;
 	}
 	public override object Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
 		debugBitmap?.Mutate(c => c.Brightness(0.5f));
