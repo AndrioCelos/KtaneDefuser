@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Timers;
 
 namespace BombDefuserConnector;
 internal class Simulation {
 	private int roomX;
-	private Stopwatch? rxStopwatch;
+	private readonly Timer rxTimer = new(187.5);
+	private bool rxBetweenFaces;
 	private float ry;
 	private FocusStates focusState;
 	private int selectedFaceNum;
@@ -22,6 +24,7 @@ internal class Simulation {
 
 	public Simulation() {
 		this.queueTimer.Elapsed += this.QueueTimer_Elapsed;
+		this.rxTimer.Elapsed += this.RXTimer_Elapsed;
 
 		this.moduleFaces[0] = new(new BombComponent?[,] {
 			{ TimerComponent.Instance, new Module.Button("blue", "HOLD"), null },
@@ -38,13 +41,33 @@ internal class Simulation {
 		Message("Simulation initialised.");
 	}
 
+	private void RXTimer_Elapsed(object? sender, ElapsedEventArgs e) {
+		if (rxBetweenFaces)
+			rxBetweenFaces = false;
+		else {
+			rxBetweenFaces = true;
+			this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
+			var faceNum = ((int) this.currentFace + 1) / 2 % 2;
+			if (faceNum != this.selectedFaceNum) {
+				this.selectedFaceNum = faceNum;
+				if (this.focusState == FocusStates.Module) {
+					this.focusState = FocusStates.Bomb;
+					Message("Module deselected");
+				}
+			}
+			Message($"Turned the bomb to {this.currentFace}");
+		}
+	}
+
 	private static void Message(string s) {
 		Console.ForegroundColor = ConsoleColor.Cyan;
 		Console.WriteLine($"Simulation: {s}");
 		Console.ResetColor();
 	}
 
-	private void QueueTimer_Elapsed(object? sender, ElapsedEventArgs e) {
+	private void QueueTimer_Elapsed(object? sender, ElapsedEventArgs e) => this.PopInputQueue();
+
+	private void PopInputQueue() {
 		var tokens2 = this.actionQueue.Dequeue().Split(':');
 		if (this.actionQueue.Count == 0) this.queueTimer.Stop();
 		switch (tokens2[0].ToLowerInvariant()) {
@@ -53,22 +76,10 @@ internal class Simulation {
 				break;
 			case "rx":
 				var v = float.Parse(tokens2[1]);
-				if (v > 0) {
-					this.rxStopwatch ??= Stopwatch.StartNew();
-				} else if (v == 0 && this.rxStopwatch is not null) {
-					var facesMoved = Math.Min(1, (int) Math.Round(this.rxStopwatch.ElapsedMilliseconds / 375.0));
-					this.currentFace = (BombFaces) (((int) this.currentFace + facesMoved) % 4);
-					var faceNum = ((int) this.currentFace + 1) / 2 % 2;
-					if (facesMoved > 1 || faceNum != this.selectedFaceNum) {
-						this.selectedFaceNum = faceNum;
-						if (this.focusState == FocusStates.Module) {
-							this.focusState = FocusStates.Bomb;
-							Message("Module deselected");
-						}
-					}
-					Message($"Turned the bomb to {this.currentFace}");
-					this.rxStopwatch = null;
-				}
+				if (v > 0)
+					this.rxTimer.Start();
+				else
+					this.rxTimer.Stop();
 				break;
 			case "ry":
 				this.ry = float.Parse(tokens2[1]);
@@ -118,12 +129,12 @@ internal class Simulation {
 				switch (this.focusState) {
 					case FocusStates.AlarmClock:
 					case FocusStates.Bomb:
-						if ((int)this.currentFace % 2 != 0) {
+						if ((int) this.currentFace % 2 != 0) {
 							this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
 							Message($"Aligned the bomb to {this.currentFace}");
 						}
 						this.focusState = FocusStates.Room;
-						if ((int)this.currentFace % 2 != 0) {
+						if ((int) this.currentFace % 2 != 0) {
 							this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
 							Message($"Aligned the bomb to {this.currentFace}");
 						}
@@ -194,6 +205,13 @@ internal class Simulation {
 		}
 	}
 
+	internal void SimulateScreenshot(string token) {
+		Task.Run(async () => {
+			await Task.Delay(50);
+			AimlVoice.Program.sendInput($"OOB ScreenshotReady {token} {Guid.NewGuid():N}");
+		});
+	}
+
 	private void FindNearestModule() {
 		if (this.SelectedFace.SelectedComponent is Module) return;
 		for (var d = 1; d <= 2; d++) {
@@ -210,7 +228,10 @@ internal class Simulation {
 	public void SendInputs(string inputs) {
 		foreach (var token in inputs.Split(new[] { ' ', '+', ',' }, StringSplitOptions.RemoveEmptyEntries))
 			this.actionQueue.Enqueue(token);
-		this.queueTimer.Start();
+		if (!this.queueTimer.Enabled) {
+			this.queueTimer.Start();
+			this.PopInputQueue();
+		}
 	}
 
 	public string IdentifyModule(int x1, int y1) => this.GetComponent(x1, y1)?.Type ?? "nil";

@@ -34,12 +34,9 @@ public class BombDefuserAimlService : ISraixService {
 	public BombDefuserAimlService() {
 		AimlVoice.Program.OobHandlers["takescreenshot"] = e => {
 			this.screenshotToken = e.Attributes["token"]?.Value ?? e.GetElementsByTagName("token").Cast<XmlNode>().FirstOrDefault()?.InnerText ?? "nil";
-			if (simulation is not null) {
-				Task.Run(async () => {
-					await Task.Delay(250);
-					AimlVoice.Program.sendInput($"OOB ScreenshotReady {this.screenshotToken} {Guid.NewGuid():N}");
-				});
-			} else
+			if (simulation is not null)
+				simulation.SimulateScreenshot(this.screenshotToken);
+			else
 				this.SendMessage("screenshot");
 		};
 		AimlVoice.Program.OobHandlers["tasconnect"] = e => {
