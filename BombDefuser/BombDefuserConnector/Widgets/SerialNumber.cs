@@ -6,6 +6,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using System.Linq;
 
 namespace BombDefuserConnector.Widgets;
 internal class SerialNumber : WidgetProcessor {
@@ -40,7 +41,7 @@ internal class SerialNumber : WidgetProcessor {
 		// This has many red pixels and white pixels.
 		=> Math.Max(0, Math.Min(pixelCounts.Red, pixelCounts.White) - 4096) / 8192f;
 
-	private static bool IsBlack(HsvColor hsv) => hsv.S < 0.2f && hsv.V < 0.2f;
+	private static bool IsBlack(HsvColor hsv) => hsv.S < 0.2f && hsv.V <= 0.2f;
 
 	public override object Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap) {
 		debugBitmap?.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }));
@@ -76,7 +77,7 @@ internal class SerialNumber : WidgetProcessor {
 			for (; i < textBB.Width; i++) {
 				var x = isUpsideDown!.Value ? textBB.Right - 1 - i : textBB.Left + i;
 				var anyPixels = false;
-				for (var y = textBB.Top; y <= textBB.Bottom; y++) {
+				for (var y = textBB.Top; y < textBB.Bottom; y++) {
 					if (image[x, y].B < 128) {
 						anyPixels = true;
 						break;
@@ -108,25 +109,49 @@ internal class SerialNumber : WidgetProcessor {
 		}
 		if (charImages.Count != 6) throw new ArgumentException("Found wrong number of characters");
 
-		var chars = new char[6];
-		for (int i = 0; i < 6; i++) {
-			var bestDist = int.MaxValue;
-			foreach (var (refImage, c) in referenceImages) {
-				var dist = 0;
-				for (var y = 0; y < refImage.Height; y++) {
-					for (var x = 0; x < refImage.Width; x++) {
-						var cr = refImage[x, y];
-						var cs = charImages[i][x, y];
-						dist += Math.Abs(cr.B - cs.B);
+		for (var attempt = 0; ; attempt++) {
+			var chars = new char[6];
+			for (int i = 0; i < 6; i++) {
+				var bestDist = int.MaxValue;
+				foreach (var (refImage, c) in referenceImages) {
+					var dist = 0;
+					for (var y = 0; y < refImage.Height; y++) {
+						for (var x = 0; x < refImage.Width; x++) {
+							var cr = refImage[x, y];
+							var cs = charImages[i][x, y];
+							dist += Math.Abs(cr.B - cs.B);
+						}
+					}
+					if (dist < bestDist) {
+						bestDist = dist;
+						chars[i] = c;
 					}
 				}
-				if (dist < bestDist) {
-					bestDist = dist;
-					chars[i] = c;
-				}
 			}
-		}
+			if (attempt == 0 && chars.Contains('Q')) {
+				// The descender of the 'Q' introduces whitespace below all other letters. Account for that and restart.
+				for (var i = 0; i < 6; i++) {
+					var bottom = 64;
+					charImages[i].ProcessPixelRows(a => {
+						for (var y = a.Height - 1; y >= 32; y--) {
+							var r = a.GetRowSpan(y);
+							for (var x = 0; x < a.Width; x++) {
+								if (r[x].R < 128) {
+									bottom = y + 1;
+									return;
+								}
+							}
+						}
+					});
+					if (bottom < 64) {
+						charImages[i].Mutate(c => c.Crop(64, bottom).Resize(64, 64, KnownResamplers.NearestNeighbor));
+						debugBitmap?.Mutate(c => c.DrawImage(charImages[i], new Point(64 * i, 256), 1));
+					}
+				}
+				continue;
+			}
 
-		return new string(chars);
+			return new string(chars);
+		}
 	}
 }

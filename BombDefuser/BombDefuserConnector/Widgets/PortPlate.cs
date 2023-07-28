@@ -50,10 +50,10 @@ internal class PortPlate : WidgetProcessor {
 		});
 
 		var ports = new List<string>();
-		if (pinkCount >= 1500) ports.Add("Parallel");
+		if (pinkCount >= 600) ports.Add("Parallel");
 		if (tealCount >= 300) ports.Add("Serial");
 		if (redCountEdge >= 200) ports.Add("StereoRCA");
-		if (pinkCount < 1500 && redCountMiddle >= 1000) ports.Add("DVID");
+		if (pinkCount < 600 && redCountMiddle >= 1000) ports.Add("DVID");
 		if (greenCount >= 200) ports.Add("PS2");
 		if (blackCount >= 200) ports.Add("RJ45");
 

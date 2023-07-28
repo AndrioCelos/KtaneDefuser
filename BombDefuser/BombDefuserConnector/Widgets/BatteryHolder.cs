@@ -11,7 +11,7 @@ internal class BatteryHolder : WidgetProcessor {
 		// This is the only widget with yellow pixels.
 		=> pixelCounts.Yellow / 2048f;
 
-	private static bool IsRed(HsvColor hsv) => hsv.S >= 0.5f && hsv.H is >= 345 or <= 60;
+	private static bool IsRed(HsvColor hsv) => hsv.S >= 0.4f && hsv.H is >= 345 or <= 90;
 
 	public override object Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap) {
 		debugBitmap?.Mutate(c => c.Brightness(0.5f));
