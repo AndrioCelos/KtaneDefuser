@@ -1,4 +1,3 @@
-using System.Drawing;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -249,12 +248,12 @@ public partial class TransformationForm : Form {
 			// When turning the bomb to the side, it isn't possible to position it precisely, so find the bomb position and adjust the polygons.
 			static bool isBombBacking(HsvColor hsv) => hsv.H is >= 180 and < 225 && hsv.S < 0.35f && hsv.V >= 0.35f;
 			int left;
-			for (left = 0; left < screenImage.Width; left++) {
+			for (left = 60; left < screenImage.Width - 60; left++) {
 				if (isBombBacking(HsvColor.FromColor(screenImage[left, screenImage.Height / 2])))
 					break;
 			}
 			int right;
-			for (right = screenImage.Width - 1; right >= 0; right--) {
+			for (right = screenImage.Width - 60; right >= 0; right--) {
 				if (isBombBacking(HsvColor.FromColor(screenImage[right, screenImage.Height / 2])))
 					break;
 			}

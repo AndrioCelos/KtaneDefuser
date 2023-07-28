@@ -128,8 +128,9 @@ public class BombDefuserAimlService : ISraixService {
 #if DEBUG
 						SaveDebugImage(image, "Screenshot");
 #endif
-						AimlVoice.Program.sendInput($"OOB ScreenshotReady {this.screenshotToken} {newKey}");
+						var token = this.screenshotToken;
 						this.screenshotToken = "nil";
+						AimlVoice.Program.sendInput($"OOB ScreenshotReady {token} {newKey}");  // This could set a new token.
 						break;
 					}
 					case MessageType.ReadResponse:
@@ -168,12 +169,12 @@ public class BombDefuserAimlService : ISraixService {
 				return "0";
 			var screenshotBitmap = cachedScreenshots[tokens[1]];
 			int left;
-			for (left = 0; left < screenshotBitmap.Width; left++) {
+			for (left = 60; left < screenshotBitmap.Width - 60; left++) {
 				if (isBombBacking(HsvColor.FromColor(screenshotBitmap[left, screenshotBitmap.Height / 2])))
 					break;
 			}
 			int right;
-			for (right = screenshotBitmap.Width - 1; right >= 0; right--) {
+			for (right = screenshotBitmap.Width - 60; right >= 60; right--) {
 				if (isBombBacking(HsvColor.FromColor(screenshotBitmap[right, screenshotBitmap.Height / 2])))
 					break;
 			}
