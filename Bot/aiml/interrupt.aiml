@@ -1,0 +1,214 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<aiml version='2.1'>
+	<!-- Usage: ModuleSubmit [inputs] -->
+	<!-- Usage: ModuleSubmitAsync [token] XS [inputs] -->
+	<!-- Sends the specified inputs as an interrupt, then checks the status light. Shouldn't be used for needy modules. If called within a ModuleSubmitAsync interrupt, sends inputs immediately. -->
+	<!-- Return value: The module's light state after the inputs. -->
+	<category>
+		<pattern>ModuleSubmit *</pattern>
+		<template><srai>ModuleSubmitAsync nil XS <star/></srai></template>
+	</category>
+	<category>
+		<pattern>ModuleSubmitAsync * XS *</pattern>
+		<template>
+			<condition name='ModuleSubmitInProgress'>
+				<li value='true'><srai>InterruptDone ModuleSubmit <star/> XS <star index='2'/></srai></li>
+				<li><srai>InterruptAsync ModuleSubmit <star/> XS <star index='2'/></srai></li>
+			</condition>
+		</template>
+	</category>
+	<category>
+		<pattern>ModuleSubmitDone nil XS *</pattern>
+		<template><srai>EndInterrupt</srai></template>
+	</category>
+	<category>
+		<pattern>ModuleSubmitDone nil XS strike</pattern>
+		<template>Strike. <srai>EndInterrupt</srai></template>
+	</category>
+	<category>
+		<pattern>ModuleSubmitDone nil XS solved</pattern>
+		<template>Module complete. <srai>EndInterrupt</srai></template>
+	</category>
+	<category>
+		<pattern>InterruptDone ModuleSubmit * XS *</pattern>
+		<template>
+			<think>
+				<set name='ModuleSubmitInProgress'>true</set>
+				<set name='ModuleSubmitToken'><star/></set>
+			</think>
+			<oob><sendinputs><star index='2'/> callback:ModuleSubmit</sendinputs></oob>
+		</template>
+	</category>
+	<category>
+		<pattern>OOB DefuserCallback ModuleSubmit</pattern>
+		<template>
+			<!-- Find out whether we solved or struck. -->
+			<oob><takescreenshot token='ModuleSubmitStrikeCheck'/></oob>
+		</template>
+	</category>
+	<category>
+		<pattern>OOB ScreenshotReady ModuleSubmitStrikeCheck *</pattern>
+		<template>
+			<srai>ModuleSubmitDone <get name='ModuleSubmitToken'/> XS <sraix service='BombDefuserAimlService'>GetLightState <star/> 837 393 1118 393 833 679 1124 679</sraix></srai>
+			<!-- Note: This leaves interrupts disabled. This is useful for modules like Complicated Wires that may send more inputs, but the caller will need to call EndInterrupt if a token was specified. -->
+		</template>
+	</category>
+
+	<!-- Begins an interrupt. -->
+	<category>
+		<pattern>InterruptAsync *</pattern>
+		<template>
+			<condition name='enableInterrupts'>
+				<li value='false'>
+					<condition name='interruptqueue'>
+						<li value='nil'><think><set name='interruptqueue'><star/></set></think></li>
+						<li><think><set name='interruptqueue'><get name='interruptqueue'/> XSIQ <star/></set></think></li>
+					</condition>
+				</li>
+				<li>
+					<!-- Remember which module, if any, we were working with. -->
+					<think>
+						<set name='enableInterrupts'>false</set>
+						<condition name='focusState'>
+							<li value='module'><set name='interruptedModule'><get name='module'/></set></li>
+							<li><set name='interruptedModule'>nil</set></li>
+						</condition>
+					</think>
+					<srai>InterruptDone <star/></srai>
+				</li>
+			</condition>
+		</template>
+	</category>
+
+	<!-- Ends an interrupt. -->
+	<category>
+		<pattern>EndInterrupt ^</pattern>
+		<template>
+			<think><set name='ModuleSubmitInProgress'>false</set></think>
+			<srai>InterruptDequeue <get name='interruptqueue'/></srai>
+		</template>
+	</category>
+
+	<category>
+		<pattern>DisableInterrupts</pattern>
+		<template><think><set name='interruptsenabled'>false</set></think></template>
+	</category>
+
+	<category>
+		<pattern>EnableInterrupts</pattern>
+		<template>
+			<condition name='interruptqueue'>
+				<li value='nil'><think><set name='enableinterrupts'>true</set></think></li>
+				<li>
+					<think>
+						<condition name='focusState'>
+							<li value='module'><set name='interruptedModule'><get name='module'/></set></li>
+							<li><set name='interruptedModule'>nil</set></li>
+						</condition>
+					</think>
+					<srai>InterruptDequeue <get name='interruptqueue'/></srai>
+				</li>
+			</condition>
+		</template>
+	</category>
+
+	<!-- Ends an interrupt. -->
+	<category>
+		<pattern>EndInterrupt ^</pattern>
+		<template>
+			<srai>InterruptDequeue <get name='interruptqueue'/></srai>
+		</template>
+	</category>
+
+	<category>
+		<pattern>InterruptDequeue * XSIQ *</pattern>
+		<template>
+			<think><set name='interruptqueue'><star index='2'/></set></think>
+			<srai>InterruptDone <star/></srai>
+		</template>
+	</category>
+	<category>
+		<pattern>InterruptDequeue *</pattern>
+		<template>
+			<think><set name='interruptqueue'>nil</set></think>
+			<srai>InterruptDone <star/></srai>
+		</template>
+	</category>
+	<category>
+		<pattern>InterruptDequeue nil</pattern>
+		<template>
+			<condition name='interruptedmodule'>
+				<li value='nil'><think><set name='enableInterrupts'>true</set></think></li>
+				<li>
+					<condition name='focusstate'>
+						<li value='module'>
+							<condition name='module'>
+								<li><value><get name='interruptedmodule'/></value>
+									<!-- Interrupted module is already selected. -->
+									<srai>OOB Tick UnInterrupt</srai>
+								</li>
+								<li><srai>SelectModuleAsync Uninterrupt XS <get name='interruptedmodule'/></srai></li>
+							</condition>
+						</li>
+						<li><srai>SelectModuleAsync Uninterrupt XS <get name='interruptedmodule'/></srai></li>
+					</condition>
+				</li>
+			</condition>
+		</template>
+	</category>
+	<category>
+		<pattern>SelectModuleDone UnInterrupt</pattern>
+		<template><oob><timer duration='0.5'><postback>UnInterrupt</postback></timer></oob></template>
+	</category>
+	<category>
+		<pattern>OOB Tick UnInterrupt</pattern>
+		<template>
+			<think><set name='enableInterrupts'>true</set></think>
+			<srai>ModuleDequeue <get name='modulequeue'/></srai>
+		</template>
+	</category>
+
+	<category>
+		<pattern>ModuleDequeue nil</pattern>
+		<template></template>
+	</category>
+	<category>
+		<pattern>ModuleDequeue * XS *</pattern>
+		<template>
+			<think><set name='modulequeue'>nil</set></think>
+			<oob><sendinputs><star index='2'/></sendinputs></oob>
+			<srai>ModuleInputDone <star/></srai>
+		</template>
+	</category>
+
+	<category>
+		<pattern>OOB DefuserSocketMessage AlarmClock True</pattern>
+		<template><srai>InterruptAsync AlarmClock</srai></template>
+	</category>
+	<category>
+		<pattern>OOB DefuserSocketMessage AlarmClock *</pattern>
+		<template></template>
+	</category>
+	<category>
+		<pattern>InterruptDone AlarmClock</pattern>
+		<template>
+			<oob>
+				<sendinputs>
+					<condition name='focusstate'>
+						<li value='module'>b b</li>
+						<li value='bomb'>b</li>
+					</condition>
+					left a a b right a
+					<condition name='focusstate'>
+						<li value='module'>a</li>
+					</condition>
+				</sendinputs>
+				<timer duration='1.5'><postback>AlarmClock</postback></timer>
+			</oob>
+		</template>
+	</category>
+	<category>
+		<pattern>OOB Tick AlarmClock</pattern>
+		<template><srai>EndInterrupt</srai></template>
+	</category>
+</aiml>

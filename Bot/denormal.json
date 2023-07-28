@@ -1,0 +1,10 @@
+[
+	[ " upside dash down "   , " upside-down " ],
+	[ " upside down "        , " upside-down " ],
+	[ " Xray "               , " X-ray "       ],
+
+	// Web Design
+	[ " hash ", "#" ],
+	[ " dot ", "." ],
+	[ " space ", " " ]
+]

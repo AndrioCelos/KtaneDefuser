@@ -1,0 +1,47 @@
+nil     :literally empty
+BLANK   :word BLANK
+C       :C, letter
+CEE     :CEE, Spain
+DISPLAY :DISPLAY
+DONE    :DONE
+FIRST   :FIRST
+HOLD    :HOLD
+HOLD_ON :HOLD ON
+LEAD    :LED with an Alfa
+LED     :LED, 3 letters
+LEED    :LEED with an Echo
+LEFT    :LEFT
+LIKE    :LIKE
+MIDDLE  :MIDDLE
+NEXT    :NEXT
+NO      :NO
+NOTHING :word NOTHING
+OKAY    :OKAY
+PRESS   :PRESS
+READ    :READ with an Alfa
+READY   :READY
+RED     :RED, 3 letters
+REED    :REED with an Echo
+RIGHT   :RIGHT
+SAYS    :SAYS
+SEE     :SEE a movie
+SURE    :SURE
+THEIR   :THEIR with an India
+THERE   :THERE with two Echoes
+THEY'RE :THEY'RE with apostrophe
+THEY_RE :THEY'RE with apostrophe
+THEY_ARE:THEY ARE two words
+U       :letter U
+UH_HUH  :UH HUH positive
+UH_UH   :UH UH negative
+UHHH    :U triple H
+UR      :letters U R
+WAIT    :WAIT
+WHAT    :WHAT no question mark
+WHATQ   :WHAT question mark
+YES     :YES
+YOU     :word YOU
+YOU_ARE :words YOU ARE
+YOU'RE  :YOU'RE with apostrophe
+YOU_RE  :YOU'RE with apostrophe
+YOUR    :YOUR no apostrophe

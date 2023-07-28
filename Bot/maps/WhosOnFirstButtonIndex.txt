@@ -1,0 +1,6 @@
+top left:1
+top right:2
+middle left:3
+middle right:4
+bottom left:5
+bottom right:6

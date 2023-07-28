@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<aiml version='2.1'>
+	<category>
+		<pattern>SelectingModule Keypad</pattern>
+		<template>
+			<think><set><name>KeypadHighlight<get name='module'/></name>1</set></think>
+			<srai>SelectModule Keypad XS a Keypad</srai>
+			<reply>read</reply>
+		</template>
+	</category>
+
+	<topic name='Keypad ^'>
+		<category>
+			<pattern>XRead *</pattern>
+			<template>
+				<think>
+					<set var='glyphs'><star/></set>
+					<set name='KeypadGlyphs'><star/></set>
+					<set var='result'>The symbols are</set>
+					<condition var='glyphs'>
+						<li value='nil'></li>
+						<li>
+							<set var='glyph'><first><get var='glyphs'/></first></set>
+							<set var='glyphs'><rest><get var='glyphs'/></rest></set>
+							<set var='result'><get var='result'/>, <map name='KeypadGlyphDescription'><get var='glyph'/></map></set>
+							<loop/>
+						</li>
+					</condition>
+				</think>
+				<get var='result'/>
+				<reply>press [glyph] then ...</reply>
+			</template>
+		</category>
+
+		<category>
+			<pattern>press *</pattern>
+			<template><srai>KeypadPress nil XS <get><name>KeypadHighlight<get name='module'/></name></get> XS <star/> then nil</srai></template>
+		</category>
+		<!-- Usage: KeypadPress [command list] XS [current selected button] XS [remaining user input] -->
+		<category>
+			<pattern>KeypadPress * XS * XS * then *</pattern>
+			<template>
+				<think><set var='glyph'><srai>GetKeypadGlyphName <star index='3'/></srai></set></think>
+				<condition var='glyph'>
+					<li value='unknown'>I do not recognise that glyph: <star index='3'/>.</li>
+					<li>
+						<think><set var='index'><srai>XIndex <get var='glyph'/> XS <get name='KeypadGlyphs'/></srai></set></think>
+						<condition var='index'>
+							<li value='0'>That glyph is not on the keypad: <star index='3'/>.</li>
+							<li><srai>KeypadPress <srai>XAppend <srai>GetDirectionInputs <star index='2'/> XS <get var='index'/></srai> a XS <star/></srai> XS <get var='index'/> XS <star index='4'/></srai></li>
+						</condition>
+					</li>
+				</condition>
+			</template>
+		</category>
+		<category>
+			<pattern>KeypadPress * XS * XS nil</pattern>
+			<template>
+				<think><set><name>KeypadHighlight<get name='module'/></name><star index='2'/></set></think>
+				<srai>ModuleSubmit <star/></srai>
+			</template>
+		</category>
+
+		<!-- Usage: GetDirectionInputs [from] XS [to] -->
+		<category><pattern>GetDirectionInputs 1 XS 2</pattern><template>right</template></category>
+		<category><pattern>GetDirectionInputs 1 XS 3</pattern><template>down</template></category>
+		<category><pattern>GetDirectionInputs 1 XS 4</pattern><template>down right</template></category>
+		<category><pattern>GetDirectionInputs 2 XS 1</pattern><template>left</template></category>
+		<category><pattern>GetDirectionInputs 2 XS 3</pattern><template>down left</template></category>
+		<category><pattern>GetDirectionInputs 2 XS 4</pattern><template>left</template></category>
+		<category><pattern>GetDirectionInputs 3 XS 1</pattern><template>up</template></category>
+		<category><pattern>GetDirectionInputs 3 XS 2</pattern><template>up right</template></category>
+		<category><pattern>GetDirectionInputs 3 XS 4</pattern><template>right</template></category>
+		<category><pattern>GetDirectionInputs 4 XS 1</pattern><template>up left</template></category>
+		<category><pattern>GetDirectionInputs 4 XS 2</pattern><template>up</template></category>
+		<category><pattern>GetDirectionInputs 4 XS 3</pattern><template>left</template></category>
+		<category><pattern>GetDirectionInputs *</pattern><template></template></category>
+	</topic>
+</aiml>

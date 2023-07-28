@@ -1,0 +1,30 @@
+Button:The Button
+Big Button:The Button
+Translated Button:Big Button Translated
+Translated Big Button:Big Button Translated
+Capacitor:Needy Capacitor
+Capacitor Discharge:Needy Capacitor
+Knob:Needy Knob
+Translated Password:Passwords Translated
+Password Translated:Passwords Translated
+Simon:Simon Says
+Vent Gas:Needy Vent Gas
+Venting Gas:Needy Vent Gas
+Translated Venting Gas:Vent Gas Translated
+Color Flash:Colour Flash
+Piano:Piano Keys
+Gamepad:The Gamepad
+Tic Tac Toe:Tic-Tac-Toe
+Who's That Monsplode:Who's That Monsplode?
+Who is That Monsplode:Who's That Monsplode?
+Monsplode Fight:Monsplode, Fight!
+Bulb:The Bulb
+Rock Paper Scissors Lizard Spock:Rock-Paper-Scissors-L.-Sp.
+Rock-Paper-Scissors-Lizard-Spock:Rock-Paper-Scissors-L.-Sp.
+Coloured Squares:Colored Squares
+Double Oh:Double-Oh
+Colour Math:Color Math
+Clock:The Clock
+P of O:Point of Order
+Screw:The Screw
+Swan:The Swan

@@ -1,0 +1,20 @@
+{
+	// Change this to 'true' to disable use of the <sraix> tag.
+	"SraixUnavailable": "false",
+
+	// Bomb properties: the 'new bomb' category should reset these.
+	"BombStrikeCount": "0",
+
+	"FocusState": "unknown",
+	"ModuleCount": "0",
+
+	"RuleSeed": "1",
+
+	// Configuration
+	"ModuleAnnouncements": "true",
+
+	// Module-specific event lists.
+	"OnModuleSolve": "nil",
+	"interruptqueue": "nil",
+	"modulequeue": "nil"
+}

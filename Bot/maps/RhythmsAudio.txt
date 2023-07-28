@@ -1,0 +1,7 @@
+0:<audio src='Bot/wav/Rhythms0.wav'/>
+1:<audio src='Bot/wav/Rhythms1.wav'/>
+2:<audio src='Bot/wav/Rhythms2.wav'/>
+3:<audio src='Bot/wav/Rhythms3.wav'/>
+4:<audio src='Bot/wav/Rhythms4.wav'/>
+5:<audio src='Bot/wav/Rhythms5.wav'/>
+6:<audio src='Bot/wav/Rhythms6.wav'/>

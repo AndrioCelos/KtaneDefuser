@@ -1,0 +1,190 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<aiml version='2.1'>
+	<category>
+		<pattern>OOB DefuserSocketMessage NewBomb *<!-- identifier --> *<!-- strikes --> *<!-- module count --> *<!-- starting time --></pattern>
+		<template>
+			<think>
+				<set name='timer'><star index='4'/></set>
+				<set name='waitingforlights'>true</set>
+			</think>
+		</template>
+	</category>
+
+	<!-- Game start sequence -->
+	<!-- 1. Pick up the bomb. -->
+	<category>
+		<pattern>OOB DefuserSocketMessage Lights True</pattern>
+		<template>
+			<condition name='waitingforlights' value='true'>
+				<oob><sendinputs>a</sendinputs></oob>
+				<think>
+					<srai>ClearEdgework</srai>
+					<set name='timerstamp'><calculate><sraix service='TimestampService'>ms</sraix> + 2000</calculate></set>
+					<set name='selectedface'>1</set>
+					<set name='FocusState'>bomb</set>
+				</think>
+				<oob><timer duration='1' postback='GameStart2'/></oob>
+			</condition>
+		</template>
+	</category>
+	<!-- 2. Take a screenshot. -->
+	<category>
+		<pattern>OOB Tick GameStart2</pattern>
+		<template><oob><takescreenshot token='InitialIdentify'/></oob></template>
+	</category>
+	<!-- 3. Identify components on this face. Turn the bomb around. -->
+	<category>
+		<pattern>OOB ScreenshotReady InitialIdentify *</pattern>
+		<template>
+			<srai>RegisterComponents <star/></srai>
+			<srai>SelectFaceAsync GameStart XS <condition name='selectedface'><li value='2'>1</li><li>2</li></condition> XS widgets</srai>
+		</template>
+	</category>
+	<!-- 4. Identify widgets on this side. -->
+	<category>
+		<pattern>WidgetCallback GameStart XS *</pattern>
+		<template><srai>RegisterWidgets <get name='selectedface'/> XS <star/></srai></template>
+	</category>
+	<!-- 5. Take a screenshot. Repeat steps 3-4 for the other faces, then turn the bomb to the bottom face. -->
+	<category>
+		<pattern>SelectFaceDone GameStart</pattern>
+		<template>
+			<condition name='selectedface'>
+				<li value='2'><oob><takescreenshot token='InitialIdentify'/></oob></li>
+				<li>
+					<oob><sendinputs>ry:-0.875</sendinputs></oob>
+					<oob><timer duration='0.5' postback='GameStart6'/></oob>
+				</li>
+			</condition>
+		</template>
+	</category>
+	<!-- 6. Take a screenshot. -->
+	<category>
+		<pattern>OOB Tick GameStart6</pattern>
+		<template><oob><takescreenshot token='InitialIdentify7'/></oob></template>
+	</category>
+	<!-- 7. Identify widgets on the bottom face. Turn the bomb to the top face. -->
+	<category>
+		<pattern>OOB ScreenshotReady InitialIdentify7 *</pattern>
+		<template>
+			<srai>RegisterWidgets T XS <star/></srai>
+			<oob><sendinputs>ry:1</sendinputs></oob>
+			<oob><timer duration='0.5' postback='GameStart8'/></oob>
+		</template>
+	</category>
+	<!-- 8. Take a screenshot. -->
+	<category>
+		<pattern>OOB Tick GameStart8</pattern>
+		<template><oob><takescreenshot token='InitialIdentify9'/></oob></template>
+	</category>
+	<!-- 9. Identify widgets on the top face. Reset the bomb tilt. -->
+	<category>
+		<pattern>OOB ScreenshotReady InitialIdentify9 *</pattern>
+		<template>
+			<srai>RegisterWidgets B XS <star/></srai>
+			<oob><sendinputs>ry:0</sendinputs></oob>
+			Ready.
+			<condition name='simulation' value='true'><srai>module 1</srai></condition>
+		</template>
+	</category>
+
+	<!-- Usage: RegisterComponents [screenshot token] -->
+	<category>
+		<pattern>RegisterComponents *</pattern>
+		<template>
+			<think>
+				<set var='modules'>
+					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star/> <srai>GetPoints <star/> 1 1</srai></sraix></first>
+					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star/> <srai>GetPoints <star/> 2 1</srai></sraix></first>
+					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star/> <srai>GetPoints <star/> 3 1</srai></sraix></first>
+					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star/> <srai>GetPoints <star/> 1 2</srai></sraix></first>
+					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star/> <srai>GetPoints <star/> 2 2</srai></sraix></first>
+					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star/> <srai>GetPoints <star/> 3 2</srai></sraix></first>
+				</set>
+				<set var='slotX'>1</set>
+				<set var='slotY'>1</set>
+			</think>
+			<condition var='modules'>
+				<li value='nil'></li>
+				<li>
+					<think>
+						<set var='component'><first><get var='modules'/></first></set>
+						<set var='modules'><rest><get var='modules'/></rest></set>
+						<srai>RegisterComponent <get name='selectedface'/> <get var='slotX'/> <get var='slotY'/> XS <get var='component'/></srai>
+						<!-- TODO: This assumes the vanilla bomb layout. It will need to be updated for other layouts. -->
+						<condition var='slotX'>
+							<li value='3'>
+								<set var='slotY'><map name='successor'><get var='slotY'/></map></set>
+								<set var='slotX'>1</set>
+							</li>
+							<li>
+								<set var='slotX'><map name='successor'><get var='slotX'/></map></set>
+							</li>
+						</condition>
+					</think>
+					<loop/>
+				</li>
+			</condition>
+		</template>
+	</category>
+
+	<!-- Usage: RegisterComponent [slot] XS [component type] -->
+	<category>
+		<pattern>RegisterComponent * XS nil</pattern>
+		<template><!-- Do nothing. --></template>
+	</category>
+	<category>
+		<pattern>RegisterComponent * XS timer</pattern>
+		<template>
+			<gossip>RegisterComponent <star/> / timer</gossip>
+			<think><set name='timerslot'><star/></set></think>
+		</template>
+	</category>
+	<category>
+		<pattern>RegisterComponent * XS *</pattern>
+		<template>
+			<think>
+				<gossip>RegisterComponent <star/> / <star index='2'/></gossip>
+				<!-- Set the initially selected slot on each side to be the first one with a module in it. -->
+				<condition>
+					<name>SelectedSlot<first><star/></first></name>
+					<value>unknown</value>
+					<set><name>SelectedSlot<first><star/></first></name><star/></set>
+				</condition>
+
+				<set name='ModuleCount'><map name='successor'><get name='ModuleCount'/></map></set>
+				<set><name>Module<get name='ModuleCount'/>Slot</name><star index='1'/></set>
+				<set><name>Module<get name='ModuleCount'/>Type</name><star index='2'/></set>
+				<set><name>Slot<star/>Type</name><star index='2'/></set>
+				<set><name>FaceHasModules<srai>XSlotFace <star/></srai></name>true</set>
+			</think>
+		</template>
+	</category>
+
+	<!-- Usage: RegisterWidgets [face] XS [screenshot token] -->
+	<category>
+		<pattern>RegisterWidgets * XS *</pattern>
+		<template>
+			<think>
+				<set var='isSide'><srai>XIsNumber <star/></srai></set>
+				<condition var='isSide'>
+					<li value='true'>
+						<think><gossip>D: <set var='d'><sraix service='BombDefuserAimlService'>GetSideWidgetAdjustment <star index='2'/></sraix></set></gossip></think>
+						<srai>RegisterWidget <star index='2'/> XS <calculate> 813 + <get var='d'/></calculate>  465 <calculate> 817 + <get var='d'/></calculate>  228 <calculate> 988 + <get var='d'/></calculate>  465 <calculate> 988 + <get var='d'/></calculate>  228</srai>
+						<srai>RegisterWidget <star index='2'/> XS <calculate> 988 + <get var='d'/></calculate>  465 <calculate> 988 + <get var='d'/></calculate>  228 <calculate>1163 + <get var='d'/></calculate>  465 <calculate>1158 + <get var='d'/></calculate>  228</srai>
+						<srai>RegisterWidget <star index='2'/> XS <calculate> 808 + <get var='d'/></calculate>  772 <calculate> 812 + <get var='d'/></calculate>  515 <calculate> 988 + <get var='d'/></calculate>  772 <calculate> 988 + <get var='d'/></calculate>  515</srai>
+						<srai>RegisterWidget <star index='2'/> XS <calculate> 988 + <get var='d'/></calculate>  772 <calculate> 988 + <get var='d'/></calculate>  515 <calculate>1168 + <get var='d'/></calculate>  772 <calculate>1164 + <get var='d'/></calculate>  515</srai>
+					</li>
+					<li>
+						<srai>RegisterWidget <star index='2'/> XS  588  430  784  430  587  541  784  541</srai>
+						<srai>RegisterWidget <star index='2'/> XS  824  430 1140  430  824  541 1140  541</srai>
+						<srai>RegisterWidget <star index='2'/> XS 1181  430 1389  430 1182  540 1390  541</srai>
+						<srai>RegisterWidget <star index='2'/> XS  580  566  783  566  578  678  782  678</srai>
+						<srai>RegisterWidget <star index='2'/> XS  821  566 1140  566  821  678 1140  678</srai>
+						<srai>RegisterWidget <star index='2'/> XS 1181  566 1390  566 1182  678 1392  678</srai>
+					</li>
+				</condition>
+			</think>
+		</template>
+	</category>
+</aiml>

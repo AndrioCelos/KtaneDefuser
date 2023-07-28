@@ -1,0 +1,8 @@
+{
+	"name": "Angelina",
+	"version": "0.1",
+	"IrcHost": "localhost",
+	"IrcPort": "6677",
+
+	"UseMorseCode": "true"
+}

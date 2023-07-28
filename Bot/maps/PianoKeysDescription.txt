@@ -1,0 +1,22 @@
+Natural:natural
+Flat:flat
+Sharp:sharp
+Mordent:mordent
+Turn:turn
+CommonTime:common time
+CutCommonTime:cut-common time
+Fermata:fermata
+CClef:alto clef
+CrotchetRest:crotchet rest
+DownBow:down bow
+Breve:breve
+SemiquaverRest:semiquaver rest
+DoubleSharp:double sharp
+SemiquaverNote:semiquaver note
+SemibreveNote:semibreve note
+UpBow:up bow
+Caesura:caesura
+DalSegno:Dal Segno
+Marcato:Marcato
+PedalUp:pedal up
+Accent:accent

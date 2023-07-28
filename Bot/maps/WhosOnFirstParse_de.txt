@@ -1,0 +1,102 @@
+# This map attempts to parse a user description of the display or button text.
+
+ja:JA
+oben:OBEN
+drück:DRÜCK
+druck:DRÜCK
+okay:OKAY
+da steht:DA STEHT
+nein:NEIN
+nichts:NICHTS
+leer:LEER
+
+blank:nil
+literally blank:nil
+empty:nil
+literally empty:nil
+nil:nil
+
+kuh:error Please specify 'kuh 3 letters', 'coup 4 letters', or 'letter Q'.
+q:error Please specify 'kuh 3 letters', 'coup 4 letters', or 'letter Q'.
+coup:error Please specify 'kuh 3 letters', 'coup 4 letters', or 'letter Q'.
+
+kuh 3 letters:KUH
+k u h:KUH
+
+Quebec:Q
+letter Q:Q
+letter Quebec:Q
+Q letter:Q
+Quebec letter:Q
+
+coup 4 letters:COUP
+c o u p:COUP
+
+fertig:FERTIG
+nochmal:NOCHMAL
+moment:MOMENT
+warte:WARTE
+
+so ein:error Please specify 'so ein 2 words', 'so'n apostrophe' or 'sohn 1 word'.
+so'n:error Please specify 'so ein 2 words', 'so'n apostrophe' or 'sohn 1 word'.
+sohn:error Please specify 'so ein 2 words', 'so'n apostrophe' or 'sohn 1 word'.
+
+so ein 2 words:SO EIN
+s o e i n:SO EIN
+
+so'n apostrophe:SO'N
+s o apostrophe n:SO'N
+
+sohn 1 word:SOHN
+sohn 4 letters:SOHN
+s o h n:SOHN
+
+oh gott:OH GOTT
+
+zehn:error Please specify 'zehn 4 letters', 'numeral 10' or 'zehen 5 letters'.
+zehen:error Please specify 'zehn 4 letters', 'numeral 10' or 'zehen 5 letters'.
+
+zehn one E:ZEHN
+zehn 4 letters:ZEHN
+z e h n:ZEHN
+
+# Assuming this is going to be parsed in English
+10:10
+ten:10
+numeral 10:10
+number 10:10
+10 numerals:10
+1 0:10
+
+zehen 2 Es:ZEHEN
+zehen 5 letters:ZEHEN
+z e h e n:ZEHEN
+
+cn:CN
+cn 2 letters:CN
+c n:CN
+
+zäh:ZÄH
+zah:ZÄH
+zäh A:ZÄH
+zah A:ZÄH
+z ä h:ZÄH
+z a h:ZÄH
+
+zeh:ZEH
+zeh E:ZEH
+z e h:ZEH
+
+c:C
+Charlie:E
+c letter:C
+c 1 letter:C
+Charlie letter:C
+Charlie 1 letter:C
+letter c:C
+letter Charlie:C
+
+cee:CEE
+cee 3 letters:CEE
+c e e:CEE
+Cee Spain:CEE

@@ -1,0 +1,28 @@
+ja              :ja XS ɪaː
+oben            :oben XS oːbən
+drück           :drück XS dʀyːk
+okay            :okay
+DA STEHT        :da steht XS daː.ʃtət
+NEIN            :nein XS naɪn
+NICHTS          :nichts XS nɪçt͡s
+LEER            :leer
+nil             :literally empty
+kuh             :kuh XS kuː
+q               :the letter Q
+COUP            :coup XS kuː
+FERTIG          :fertig XS fɐʀtɪg
+NOCHMAL         :nochmal XS nɔçmaːl
+MOMENT          :MOMENT
+warte           :warte XS vaːtə
+SO EIN          :so ein XS zɔ.aɪn
+SO'N            :so'n XS zɔn
+SOHN            :SOHN XS zɔn
+OH GOTT         :oh gott XS oː.gɔt
+ZEHN            :zehn XS zeːn
+10              :10 in numerals
+ZEHEN           :zehen XS zeːn
+CN              :c n
+ZÄH             :ZÄH XS zə
+ZEH             :ZEH XS zə
+C               :the letter C
+CEE             :Cee Spain

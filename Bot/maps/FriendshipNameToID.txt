@@ -1,0 +1,251 @@
+Starstreak          :Starstreak
+Coloratura          :Coloratura
+Pickpocket          :Pickpocket
+Lemon Zest          :LemonZest
+Night Light         :NightLight
+Bow Hothoof         :BowHothoof
+Midnight Strike     :MidnightStrike
+Amethyst Star       :AmethystStar
+Mayor Mare          :MayorMare
+Non pony 6          :Nonpony6
+Score               :Score
+Apple Flora         :AppleFlora
+Sandbar             :Sandbar
+Joe                 :Joe
+Spitfire            :Spitfire
+Lily                :Lily
+Snips               :Snips
+Suri Polomare       :SuriPolomare
+Shoeshine           :Shoeshine
+Noteworthy          :Noteworthy
+Rainbow Swoop       :RainbowSwoop
+Lucky Clover        :LuckyClover
+Cherry Berry        :CherryBerry
+Meadow Song         :MeadowSong
+Tootsie Flute       :TootsieFlute
+Sapphire Shores     :SapphireShores
+Pursey Pink         :PurseyPink
+Lemon Hearts        :LemonHearts
+Filthy Rich         :FilthyRich
+Snails              :Snails
+Cherry Jubilee      :CherryJubilee
+Cozy Glow           :CozyGlow
+Count Caesar        :CountCaesar
+Mr Carrot Cake      :MrCarrotCake
+Cheerilee           :Cheerilee
+Cadance             :Cadance
+Strawberry Sunrise  :StrawberrySunrise
+Silverstar          :Silverstar
+Lily Lace           :LilyLace
+Globe Trotter       :GlobeTrotter
+Royal Riff          :RoyalRiff
+Horte Cuisine       :HorteCuisine
+Sealed Scroll       :SealedScroll
+Granny Smith        :GrannySmith
+Non pony 10         :Nonpony10
+Igneous Rock Pie    :IgneousRockPie
+Derpy               :Derpy
+Limestone Pie       :LimestonePie
+Apple Fritter       :AppleFritter
+Sunset Shimmer      :SunsetShimmer
+Daring Do           :DaringDo
+Aria Blaze          :AriaBlaze
+Pinny Lane          :PinnyLane
+Photo Finish        :PhotoFinish
+Ms Harshwhinny      :MsHarshwhinny
+Starlight Glimmer   :StarlightGlimmer
+Stellar Eclipse     :StellarEclipse
+Fleetfoot           :Fleetfoot
+Mrs Cup Cake        :MrsCupCake
+Caramel             :Caramel
+Hoops               :Hoops
+Open Skies          :OpenSkies
+Moon Dancer         :MoonDancer
+Minty               :Minty
+Dr Caballeron       :DrCaballeron
+Non pony 5          :Nonpony5
+Non pony 9          :Nonpony9
+Featherweight       :Featherweight
+Blossomforth        :Blossomforth
+Sunshower Raindrops :SunshowerRaindrops
+Spoiled Rich        :SpoiledRich
+Mr Stripes          :MrStripes
+Clear Skies         :ClearSkies
+Radiant Hope        :RadiantHope
+Apple Honey         :AppleHoney
+Sugarcoat           :Sugarcoat
+Shooting Star       :ShootingStar
+Quibble Pants       :QuibblePants
+Lyra                :Lyra
+Coco Pommel         :CocoPommel
+Comet Tail          :CometTail
+Sweetie Belle       :SweetieBelle
+Screwball           :Screwball
+Twist               :Twist
+Starry Eyes         :StarryEyes
+Indigo Zap          :IndigoZap
+Trixie              :Trixie
+White Lightning     :WhiteLightning
+Apple Split         :AppleSplit
+Cloudy Quartz       :CloudyQuartz
+Zephyr Breeze       :ZephyrBreeze
+Leadwing            :Leadwing
+Electric Sky        :ElectricSky
+Silver Shill        :SilverShill
+Fleur Dis Lee       :FleurDisLee
+Dr. Horse           :DrHorse
+Cheese Sandwich     :CheeseSandwich
+Flash Sentry        :FlashSentry
+Apple Bumpkin       :AppleBumpkin
+Non pony 3          :Nonpony3
+Flax Seed           :FlaxSeed
+Hoity Toity         :HoityToity
+Rose                :Rose
+Scootaloo           :Scootaloo
+Thunderlane         :Thunderlane
+Red Gala            :RedGala
+Cloud Kicker        :CloudKicker
+Sour Sweet          :SourSweet
+Hayseed Turnip Truck:HayseedTurnipTruck
+Prim Hemline        :PrimHemline
+Pinkie Pie          :PinkiePie
+Hondo Flanks        :HondoFlanks
+Twilight Velvet     :TwilightVelvet
+Fancy Pants         :FancyPants
+Dr Fauna            :DrFauna
+Firecracker Burst   :FirecrackerBurst
+Tender Taps         :TenderTaps
+Inky Rose           :InkyRose
+Screwy              :Screwy
+Golden Gavel        :GoldenGavel
+Blow Dry            :BlowDry
+Auntie Applesauce   :AuntieApplesauce
+Torch Song          :TorchSong
+All Aboard          :AllAboard
+Emerald Green       :EmeraldGreen
+Non pony 1          :Nonpony1
+Pear Butter         :PearButter
+Pixel Pizzaz        :PixelPizzaz
+Biff                :Biff
+Davenport           :Davenport
+Peachy Sweet        :PeachySweet
+Peachy Pie          :PeachyPie
+Strike              :Strike
+Violet Blurr        :VioletBlurr
+Rarity              :Rarity
+Diamond Tiara       :DiamondTiara
+Trouble Shoes       :TroubleShoes
+Hughbert Jellius    :HughbertJellius
+Babs Seed           :BabsSeed
+Aloe Blossom        :AloeBlossom
+Flam                :Flam
+Apple Leaves        :AppleLeaves
+Apple Rose          :AppleRose
+Lily Blossom        :LilyBlossom
+Plaid Stripes       :PlaidStripes
+Sweetie Drops       :SweetieDrops
+Nurse Redheart      :NurseRedheart
+Non pony 12         :Nonpony12
+Sprinkle Medley     :SprinkleMedley
+Windy Whistles      :WindyWhistles
+Celestia            :Celestia
+Adagio Dazzle       :AdagioDazzle
+Saffron Masala      :SaffronMasala
+Non pony 7          :Nonpony7
+Truffle             :Truffle
+Feather Bangs       :FeatherBangs
+Twinkleshine        :Twinkleshine
+Vapor Trail         :VaporTrail
+Non pony 2          :Nonpony2
+Golden Harvest      :GoldenHarvest
+Octavia Melody      :OctaviaMelody
+Apple Bloom         :AppleBloom
+Unconditioner       :Unconditioner
+Sassaflash          :Sassaflash
+Magnet Bolt         :MagnetBolt
+Rainbow Dash        :RainbowDash
+Meadow Flower       :MeadowFlower
+Bright Mac          :BrightMac
+Ms Peachbottom      :MsPeachbottom
+Holly Dash          :HollyDash
+Silver Spoon        :SilverSpoon
+Rockhoof            :Rockhoof
+Apple Cobbler       :AppleCobbler
+Mane Moon           :ManeMoon
+Fluttershy          :Fluttershy
+Apple Strudel       :AppleStrudel
+Diamond Rose        :DiamondRose
+Luna                :Luna
+Blue Bobbin         :BlueBobbin
+Fluffy Clouds       :FluffyClouds
+Flitter             :Flitter
+Non pony 8          :Nonpony8
+Archer              :Archer
+Cookie Crumbles     :CookieCrumbles
+Lickety Split       :LicketySplit
+Upper Crust         :UpperCrust
+Aunt Orange         :AuntOrange
+Withers             :Withers
+Rogue               :Rogue
+Royal Pin           :RoyalPin
+Big McIntosh        :BigMcIntosh
+Flim                :Flim
+Double Diamond      :DoubleDiamond
+Bumblesweet         :Bumblesweet
+Jet Set             :JetSet
+Toola Roola         :ToolaRoola
+Apple Cinnamon      :AppleCinnamon
+Neon Brush          :NeonBrush
+Clean Sweep         :CleanSweep
+Coriander Cumin     :CorianderCumin
+Sea Swirl           :SeaSwirl
+Compass Star        :CompassStar
+Cloudchaser         :Cloudchaser
+Comb Over           :CombOver
+Twilight Sparkle    :TwilightSparkle
+Banana Fluff        :BananaFluff
+Applejack           :Applejack
+Wild Fire           :WildFire
+Cherry Fizzy        :CherryFizzy
+Sunny Daze          :SunnyDaze
+Wheat Grass         :WheatGrass
+Non pony 13         :Nonpony13
+Vinyl Scratch       :VinylScratch
+Maud Pie            :MaudPie
+Sunburst            :Sunburst
+Prince Blueblood    :PrinceBlueblood
+Silver Spanner      :SilverSpanner
+Crusoe Palm         :CrusoePalm
+Quick Trim          :QuickTrim
+Lotus Blossom       :LotusBlossom
+Sunshower           :Sunshower
+Orange Swirl        :OrangeSwirl
+Daisy               :Daisy
+Sunny Rays          :SunnyRays
+Dumb-Bell           :DumbBell
+Goldengrape         :Goldengrape
+Soarin              :Soarin
+Zipporwhill         :Zipporwhill
+Toe Tapper          :ToeTapper
+Night Glider        :NightGlider
+Star Swirl          :StarSwirl
+Beauty Brass        :BeautyBrass
+Marble Pie          :MarblePie
+Tree Hugger         :TreeHugger
+Bulk Biceps         :BulkBiceps
+Uncle Orange        :UncleOrange
+Lightning Dust      :LightningDust
+Non pony 4          :Nonpony4
+Time Turner         :TimeTurner
+Berryshine          :Berryshine
+Gladmane            :Gladmane
+Timber Spruce       :TimberSpruce
+Coconut Cream       :CoconutCream
+Rainbowshine        :Rainbowshine
+Sonata Dusk         :SonataDusk
+Non pony 14         :Nonpony14
+Equality            :Equality
+Braeburn            :Braeburn
+Parasol             :Parasol
+Shining Armor       :ShiningArmor
+Trenderhoof         :Trenderhoof

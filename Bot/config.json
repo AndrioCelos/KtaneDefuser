@@ -1,0 +1,25 @@
+{
+	"DefaultPredicate": "unknown",
+	"DefaultMap": "unknown",
+	"DefaultHistory": "nil",
+	"DefaultListItem": "nil",
+	"DefaultTriple": "nil",
+	"DefaultWildcard": "nil",
+	//"HistorySize": 16,
+	"DefaultResponse": "",
+	//"Timeout": 10000,
+	//"TimeoutMessage": "That query took too long for me to process.",
+	//"RecursionLimit": 50,
+	//"RecursionLimitMessage": "Too much recursion in AIML.",
+	"LogLevel": "Diagnostic",
+	"LogRecursionLimit": 3,
+	"LoopLimit": 100,
+	//"AimlDirectory": "aiml",
+	//"LogDirectory": "logs",
+	//"SetsDirectory": "sets",
+	//"MapsDirectory": "maps",
+	"Splitters": [ ".", "!", "?", ";" ],
+	//"Locale": "en-AU",
+	//"LearnfFile": "aiml/learnf.aiml
+	"UnbindPredicatesWithDefaultValue": true
+}

@@ -1,0 +1,35 @@
+A:A sharp
+A sharp:B
+B flat:B
+B:C
+C:C sharp
+C sharp:D
+D flat:D
+D:D sharp
+D sharp:E
+E flat:E
+E:F
+F:F sharp
+F sharp:G
+G flat:G
+G:G sharp
+G sharp:A
+A flat:A
+
+Alfa:A sharp
+Alfa sharp:B
+Bravo flat:B
+Bravo:C
+Charlie:C sharp
+Charlie sharp:D
+Delta flat:D
+Delta:D sharp
+Delta sharp:E
+Echo flat:E
+Echo:F
+Foxtrot:F sharp
+Foxtrot sharp:G
+Golf flat:G
+Golf:G sharp
+Golf sharp:A
+Alfa flat:A

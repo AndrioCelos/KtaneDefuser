@@ -1,0 +1,72 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<aiml version='2.1'>
+	<!-- Slot IDs are of the form: [face] [x] [y]. -->
+	<!-- Module face IDs are 1, 2, W1, W2, WT, WB. -->
+	<!-- X and Y are one-based starting at the top left corner. -->
+
+	<!-- Usage: XSlotFace [slot] -->
+	<!-- Returns the face ID for the specified slot. -->
+	<category>
+		<pattern>XSlotFace * * *</pattern>
+		<template><star index='1'/></template>
+	</category>
+	<!-- Usage: XSlotX [slot] -->
+	<!-- Returns the X coordinate for the specified slot. -->
+	<category>
+		<pattern>XSlotX * * *</pattern>
+		<template><star index='2'/></template>
+	</category>
+	<!-- Usage: XSlotY [slot] -->
+	<!-- Returns the Y coordinate for the specified slot. -->
+	<category>
+		<pattern>XSlotY * * *</pattern>
+		<template><star index='3'/></template>
+	</category>
+
+	<!-- Usage: GetPoints [slot] -->
+	<!-- Returns the corner points of the specified slot, whether or not a module is focused. The specified slot should be on the current bomb face. -->
+	<category>
+		<pattern>GetPoints * * *</pattern>
+		<template>
+			<condition name='FocusState'>
+				<li value='module'>
+					<think>
+						<set var='dx'><calculate><star index='2'/> - <srai>XSlotX <get><name>SelectedSlot<get name='SelectedFace'/></name></get></srai></calculate></set>
+						<set var='dy'><calculate><star index='3'/> - <srai>XSlotY <get><name>SelectedSlot<get name='SelectedFace'/></name></get></srai></calculate></set>
+						<set var='d'><get var='dx'/> <get var='dy'/></set>
+					</think>
+					<condition var='d'>
+						<li value='-2 -1'>220 100 496 100 193 359 479 359</li>
+						<li value='-1 -1'>535 100 806 101 522 359 801 360</li>
+						<li value='0 -1'>840 101 1113 101 836 360 1119 360</li>
+						<li value='1 -1'>1147 101 1407 101 1154 360 1421 360</li>
+						<li value='2 -1'>1456 102 1718 102 1474 360 1745 360</li>
+						<li value='-2 0'>190 392 477 392 160 678 459 678</li>
+						<li value='-1 0'>520 392 800 392 501 677 794 677</li>
+						<li value='0 0'>837 393 1118 393 833 679 1124 679</li>
+						<li value='1 0'>1155 390 1425 390 1163 676 1442 676</li>
+						<li value='2 0'>1476 390 1748 390 1497 676 1779 676</li>
+						<li value='-2 1'>157 706 457 705 124 1019 436 1018</li>
+						<li value='-1 1'>501 705 794 705 481 1018 787 1017</li>
+						<li value='0 1'>829 705 1125 704 828 1018 1134 1016</li>
+						<li value='1 1'>1164 704 1444 704 1173 1016 1465 1015</li>
+						<li value='2 1'>1499 704 1782 703 1521 1015 1816 1014</li>
+					</condition>
+				</li>
+				<li value='bomb'>
+					<think>
+						<set var='d'><star index='2'/> <star index='3'/></set>
+					</think>
+					<condition var='d'>
+						<li value='1 1'>572 291 821 291 559 534 816 534</li>
+						<li value='2 1'>852 291 1096 291 848 534 1101 534</li>
+						<li value='3 1'>1127 292 1369 292 1134 533 1383 533</li>
+						<li value='1 2'>558 558 816 558 544 822 811 822</li>
+						<li value='2 2'>848 558 1099 558 845 821 1106 821</li>
+						<li value='3 2'>1134 558 1385 558 1141 821 1400 821</li>
+					</condition>
+				</li>
+			</condition>
+		</template>
+	</category>
+</aiml>

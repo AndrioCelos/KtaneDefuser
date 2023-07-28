@@ -1,0 +1,9 @@
+Parallel:Parallel
+Serial:Serial
+PS2:PS2
+RCA:StereoRCA
+Stereo RCA:StereoRCA
+DVI:DVID
+DVI-D:DVID
+RJ:RJ45
+RJ-45:RJ45

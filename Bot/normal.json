@@ -1,0 +1,41 @@
+[
+	[ "<oob><speak/><alt comment=\"souvenir\"/></oob>" , "SouvenirQuestionMarker"        ],
+
+	// That matching
+	[ "<oob><tp>" , "BeginTPTag " ],
+	[ "</tp></oob>" , " EndTPTag" ],
+
+	// Chinese digits for Coordinates
+	[ " 十", " 1" ],
+	[ " 二十", " 2" ],
+	[ " 三十", " 3" ],
+	[ " 四十", " 4" ],
+	[ " 五十", " 5" ],
+	[ " 六十", " 6" ],
+	[ " 七十", " 7" ],
+	[ " 八十", " 8" ],
+	[ " 九十", " 9" ],
+	[ "一 ", "1 " ],
+	[ "二 ", "2 " ],
+	[ "三 ", "3 " ],
+	[ "四 ", "4 " ],
+	[ "五 ", "5 " ],
+	[ "六 ", "6 " ],
+	[ "七 ", "7 " ],
+	[ "八 ", "8 " ],
+	[ "九 ", "9 " ],
+	[ "(?<=十) ", "0 ", "regex" ],
+
+	//[ " center ", " centre " ],
+	[ " color ", " colour " ],
+	[ "gray", "grey" ],
+	[ " don't "         , " do not "        ],
+	[ " X-ray "         , " Xray "        ],
+
+	[ "°" , " degree " ],  // Laundry
+	[ "4815162342" , "4 8 15 16 23 42" ],  // Modules Against Humanity
+	[ "(?<=\\d)lb " , " lb ", "regex" ],  // Cheap Checkout
+	[ " tickmark" , " tick mark" ],  // The Clock
+
+	[ "%2a" , "*" ]  // Big Button Translated
+]

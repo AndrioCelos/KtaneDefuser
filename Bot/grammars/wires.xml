@@ -1,0 +1,21 @@
+<grammar version='1.0' xml:lang='en-gb' root='root' xmlns='http://www.w3.org/2001/06/grammar'>
+	<rule id='root'>
+		<one-of>
+			<item><ruleref uri='bomb.xml'/></item>
+			<item> read </item>
+			<item>
+				<item> cut the </item>
+				<one-of>
+					<item> first </item>
+					<item> second </item>
+					<item> third </item>
+					<item> fourth </item>
+					<item> fifth </item>
+					<item> sixth </item>
+					<item> last </item>
+				</one-of>
+				<item> wire </item>
+			</item>
+		</one-of>
+	</rule>
+</grammar>

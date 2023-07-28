@@ -1,0 +1,22 @@
+English            :an English
+Custom             :a custom
+čeština            :a Czech
+Dansk              :a Danish
+Deutsch            :a German
+eesti              :an Estonian
+Español            :a Spanish
+Esperanto          :an Esperanto
+Français           :a French
+עברית              :a Hebrew
+한국어                :a Korean
+Italiano           :an Italian
+Nederlands         :a Dutch
+Norsk              :a Norwegian
+日本語                :a Japanese
+Polski             :a Polish
+Português do Brasil:a Portugese
+Русский            :a Russian
+Suomi              :a Finnish
+Svenska            :a Swedish
+ภาษาไทย            :a Thai
+简体中文               :a Chinese

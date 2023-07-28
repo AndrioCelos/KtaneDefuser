@@ -1,0 +1,116 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<aiml version='2.1'>
+	<!-- Usage: AddHandler [event] [handler ...] -->
+	<!--
+		Appends a handler to an event handler list.
+		An event handler list is a predicate that contains a list of categories.
+		When the event is called, each added handler category will be called with parameters appended.
+	-->
+	<category>
+		<pattern>AddHandler * *</pattern>
+		<template>
+			<think>
+				<set>
+					<name>On<star/></name>
+					<condition>
+						<name>On<star/></name>
+						<li value='nil'><star index='2'/></li>
+						<li value='unknown'><star index='2'/></li>
+						<li><get><name>On<star/></name></get> XXS <star index='2'/></li>
+					</condition>
+				</set>
+			</think>
+		</template>
+	</category>
+	<!-- Usage: RemoveHandler [event] [handler ...] -->
+	<!--
+		Removes a handler from an event handler list.
+	-->
+	<category>
+		<pattern>RemoveHandler * *</pattern>
+		<template>
+			<think>
+				<set>
+					<name>On<star/></name>
+					<srai>RemoveHandler2 <star index='2'/> XXS <get><name>On<star/></name></get></srai>
+				</set>
+				<condition value=''><name>On<star/></name><set><name>On<star/></name>nil</set></condition>
+			</think>
+		</template>
+	</category>
+	<category>
+		<pattern>RemoveHandler2 * XXS nil</pattern>
+		<template>nil</template>
+	</category>
+	<category>
+		<pattern>RemoveHandler2 * XXS *</pattern>
+		<template>
+			<think>
+				<set var='needle'><star/></set>
+				<set var='e'><star index='2'/></set>
+			</think><condition var='e'>
+				<li><value><get var='needle'/></value></li>
+				<li><star index='2'/></li>
+			</condition>
+		</template>
+	</category>
+	<category>
+		<pattern>RemoveHandler2 * XXS * XXS *</pattern>
+		<template>
+			<think>
+				<set var='needle'><star/></set>
+				<set var='e'><star index='2'/></set>
+			</think><condition var='e'>
+				<li><value><get var='needle'/></value></li>
+				<li><star index='2'/> XXS </li>
+			</condition><srai>RemoveHandler2 <star/> XXS <star index='3'/></srai>
+		</template>
+	</category>
+	<!-- Usage: ClearHandlers [event] -->
+	<!-- Clears the specified event handler list. -->
+	<category>
+		<pattern>ClearHandlers *</pattern>
+		<template><think><set><name>On<star/></name>nil</set></think></template>
+	</category>
+	<!-- Usage: CallEvent [event] [parameters ...] -->
+	<!-- Calls all handler categories for the specified event. -->
+	<category>
+		<pattern>CallEvent * ^</pattern>
+		<template>
+			<srai>CallList <star index='2'/> XXS <get><name>On<star/></name></get></srai>
+		</template>
+	</category>
+	<category>
+		<pattern>CallList * XXS *</pattern>
+		<template><srai><star index='2'/> <star/></srai></template>
+	</category>
+	<category>
+		<pattern>CallList nil XXS *</pattern>
+		<template><sr/></template>
+	</category>
+	<category>
+		<pattern>CallList _ XXS nil</pattern>
+		<template></template>
+	</category>
+	<category>
+		<pattern>CallList _ XXS unknown</pattern>
+		<template></template>
+	</category>
+	<category>
+		<pattern>CallList _ XXS nil XXS *</pattern>
+		<template><srai>CallList <star/> XXS <star index='2'/></srai>
+		</template>
+	</category>
+	<category>
+		<pattern>CallList _ XXS unknown XXS *</pattern>
+		<template><srai>CallList <star/> XXS <star index='2'/></srai>
+		</template>
+	</category>
+	<category>
+		<pattern>CallList _ XXS * XXS *</pattern>
+		<template>
+			<srai>CallList <star/> XXS <star index='2'/></srai>
+			<srai>CallList <star/> XXS <star index='3'/></srai>
+		</template>
+	</category>
+</aiml>

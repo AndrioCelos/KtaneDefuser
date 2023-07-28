@@ -1,0 +1,22 @@
+en   :an English
+cu   :a custom
+cs   :a Czech
+da   :a Danish
+de   :a German
+et   :an Estonian
+es   :a Spanish
+eo   :an Esperanto
+fr   :a French
+he   :a Hebrew
+ko   :a Korean
+it   :an Italian
+nl   :a Dutch
+no   :a Norwegian
+jp   :a Japanese
+pl   :a Polish
+pt-br:a Portugese
+ru   :a Russian
+fi   :a Finnish
+sv   :a Swedish
+th   :a Thai
+zh-cn:a Chinese
