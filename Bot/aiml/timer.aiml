@@ -1,17 +1,17 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <aiml version='2.1'>
 	<category>
-		<pattern>test readtimer</pattern>
+		<pattern>ReadTimerAsync *</pattern>
 		<template>
 			<condition name='timerslot'>
-				<li value='*'><srai>SelectFaceAsync ReadTimer XS <srai>XSlotFace <get name='timerslot'/></srai> XS true</srai></li>
+				<li value='*'><srai>SelectFaceAsync ReadTimer <star/> XS <srai>XSlotFace <get name='timerslot'/></srai> XS true</srai></li>
 				<li>Don't know where the timer is.</li>
 			</condition>
 		</template>
 	</category>
 	<category>
-		<pattern>SelectFaceDone ReadTimer</pattern>
-		<template><srai>OOB Tick ReadTimerSingleRead nil</srai></template>
+		<pattern>SelectFaceDone ReadTimer *</pattern>
+		<template><srai>OOB Tick ReadTimerSingleRead <star/> XS nil</srai></template>
 	</category>
 	<category>
 		<pattern>OOB Tick ReadTimerSingleRead *</pattern>
@@ -20,47 +20,40 @@
 		</template>
 	</category>
 	<category>
-		<pattern>OOB ScreenshotReady ReadTimer * *</pattern>
+		<pattern>OOB ScreenshotReady ReadTimer * XS * *</pattern>
 		<template>
 			<think><set var='coords'><rest><get name='timerslot'/></rest></set></think>
-			<srai>ReadTimerResult <star/> XS <sraix service='BombDefuserAimlService'>Timer <star index='2'/> <srai>GetPoints <get name='timerslot'/></srai></sraix></srai>
+			<srai>ReadTimerResult <star/> XS <star index='2'/> XS <sraix service='BombDefuserAimlService'>Timer <star index='3'/> <srai>GetPoints <get name='timerslot'/></srai></sraix></srai>
 		</template>
 	</category>
 	<category>
-		<pattern>ReadTimerResult nil XS * * * *</pattern>
-		<template><oob><timer duration='0.1'><postback>ReadTimerSingleRead <star index='2'/></postback></timer></oob></template>
+		<pattern>ReadTimerResult * XS nil XS * * * *</pattern>
+		<template>
+			<!-- Keep watching the timer until it ticks over to get sub-second precision. -->
+			<oob><timer duration='0.1'><postback>ReadTimerSingleRead <star/> XS <star index='3'/></postback></timer></oob>
+		</template>
 	</category>
 	<category>
-		<pattern>ReadTimerResult * XS * * * *</pattern>
+		<pattern>ReadTimerResult * XS * XS * * * *</pattern>
 		<template>
 			<think>
-				<set var='lastSeconds'><star/></set>
-				<set name='gamemode'><star index='2'/></set>
+				<set var='lastSeconds'><star index='2'/></set>
+				<set name='gamemode'><star index='3'/></set>
 			</think>
-			<!-- Keep watching the timer until it ticks over to get sub-second precision. -->
 			<condition var='lastSeconds'>
-				<li><value><star index='3'/></value><oob><timer duration='0.1'><postback>ReadTimerSingleRead <star index='3'/></postback></timer></oob></li>
+				<li><value><star index='4'/></value><oob><timer duration='0.1'><postback>ReadTimerSingleRead <star/> XS <star index='4'/></postback></timer></oob></li>
 				<li>
 					<think>
 						<condition name='gamemode'>
-							<li value='Zen'>
-								<set name='timer'><star index='3'/></set>
-								<set name='timerstamp'><calculate><sraix service='TimestampService'>ms</sraix> - 50</calculate></set>
-							</li>
-							<li>
-								<set name='timer'><star/></set>
-								<set name='timerstamp'><calculate><sraix service='TimestampService'>ms</sraix> - 50</calculate></set>
-							</li>
+							<li value='Zen'><set name='timer'><star index='4'/></set></li>
+							<li><set name='timer'><get var='lastSeconds'/></set></li>
 						</condition>
+						<set name='timerstamp'><calculate><sraix service='TimestampService'>ms</sraix> - 50</calculate></set>
 					</think>
-					<srai>ReadTimerDone</srai>
+					<srai>ReadTimerDone <star/></srai>
 				</li>
 			</condition>
 		</template>
-	</category>
-	<category>
-		<pattern>ReadTimerDone</pattern>
-		<template><get name='timer'/></template>
 	</category>
 
 	<category>

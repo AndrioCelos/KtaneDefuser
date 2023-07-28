@@ -16,13 +16,16 @@
 		<pattern>OOB DefuserSocketMessage Lights True</pattern>
 		<template>
 			<condition name='waitingforlights' value='true'>
-				<oob><sendinputs>a</sendinputs></oob>
+				<!-- Clear previous game variables. -->
 				<think>
+					<set name='timerslot'>unknown</set>
 					<srai>ClearEdgework</srai>
 					<set name='timerstamp'><calculate><sraix service='TimestampService'>ms</sraix> + 2000</calculate></set>
 					<set name='selectedface'>1</set>
 					<set name='FocusState'>bomb</set>
 				</think>
+				<!-- Pick up the bomb. -->
+				<oob><sendinputs>a</sendinputs></oob>
 				<oob><timer duration='1' postback='GameStart2'/></oob>
 			</condition>
 		</template>
@@ -36,9 +39,12 @@
 	<category>
 		<pattern>OOB ScreenshotReady InitialIdentify *</pattern>
 		<template>
-			<srai>RegisterComponents <star/></srai>
-			<srai>SelectFaceAsync GameStart XS <condition name='selectedface'><li value='2'>1</li><li>2</li></condition> XS widgets</srai>
+			<srai>RegisterComponentsAsync InitialIdentify XS <star/></srai>
 		</template>
+	</category>
+	<category>
+		<pattern>RegisterComponentsDone InitialIdentify</pattern>
+		<template><srai>SelectFaceAsync GameStart XS <condition name='selectedface'><li value='2'>1</li><li>2</li></condition> XS widgets</srai></template>
 	</category>
 	<!-- 4. Identify widgets on this side. -->
 	<category>
@@ -88,26 +94,24 @@
 		</template>
 	</category>
 
-	<!-- Usage: RegisterComponents [screenshot token] -->
+	<!-- Usage: RegisterComponentsAsync [token] XS [screenshot token] -->
 	<category>
-		<pattern>RegisterComponents *</pattern>
+		<pattern>RegisterComponentsAsync * XS *</pattern>
 		<template>
 			<think>
 				<set var='modules'>
-					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star/> <srai>GetPoints <star/> 1 1</srai></sraix></first>
-					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star/> <srai>GetPoints <star/> 2 1</srai></sraix></first>
-					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star/> <srai>GetPoints <star/> 3 1</srai></sraix></first>
-					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star/> <srai>GetPoints <star/> 1 2</srai></sraix></first>
-					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star/> <srai>GetPoints <star/> 2 2</srai></sraix></first>
-					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star/> <srai>GetPoints <star/> 3 2</srai></sraix></first>
+					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star index='2'/> <srai>GetPoints nil 1 1</srai></sraix></first>
+					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star index='2'/> <srai>GetPoints nil 2 1</srai></sraix></first>
+					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star index='2'/> <srai>GetPoints nil 3 1</srai></sraix></first>
+					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star index='2'/> <srai>GetPoints nil 1 2</srai></sraix></first>
+					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star index='2'/> <srai>GetPoints nil 2 2</srai></sraix></first>
+					<first><sraix service='BombDefuserAimlService'>IdentifyModule <star index='2'/> <srai>GetPoints nil 3 2</srai></sraix></first>
 				</set>
 				<set var='slotX'>1</set>
 				<set var='slotY'>1</set>
-			</think>
-			<condition var='modules'>
-				<li value='nil'></li>
-				<li>
-					<think>
+				<condition var='modules'>
+					<li value='nil'></li>
+					<li>
 						<set var='component'><first><get var='modules'/></first></set>
 						<set var='modules'><rest><get var='modules'/></rest></set>
 						<srai>RegisterComponent <get name='selectedface'/> <get var='slotX'/> <get var='slotY'/> XS <get var='component'/></srai>
@@ -121,11 +125,25 @@
 								<set var='slotX'><map name='successor'><get var='slotX'/></map></set>
 							</li>
 						</condition>
-					</think>
-					<loop/>
-				</li>
+						<!-- If we saw the timer but don't already know the bomb time, read it now. -->
+						<condition var='component' value='Timer'>
+							<condition name='timer' value='unknown'>
+								<set var='needTimerRead'>true</set>
+							</condition>
+						</condition>
+						<loop/>
+					</li>
+				</condition>
+			</think>
+			<condition var='needTimerRead'>
+				<li value='true'><srai>ReadTimerAsync RegisterComponents <star/></srai></li>
+				<li><srai>RegisterComponentsDone <star/></srai></li>
 			</condition>
 		</template>
+	</category>
+	<category>
+		<pattern>ReadTimerDone RegisterComponents *</pattern>
+		<template><srai>RegisterComponentsDone <star/></srai></template>
 	</category>
 
 	<!-- Usage: RegisterComponent [slot] XS [component type] -->
@@ -138,6 +156,15 @@
 		<template>
 			<gossip>RegisterComponent <star/> / timer</gossip>
 			<think><set name='timerslot'><star/></set></think>
+		</template>
+	</category>
+	<category>
+		<pattern>GameStartReadTimer * * * *</pattern>
+		<template>
+			<think>
+				<set name='gamemode'><star/></set>
+				<set name='timer'><star index='2'/></set>
+			</think>
 		</template>
 	</category>
 	<category>

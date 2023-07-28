@@ -3,7 +3,10 @@
 	<category>
 		<pattern>test start</pattern>
 		<template>
-			<think><set name='waitingforlights'>true</set></think>
+			<think>
+				<set name='timer'>unknown</set>
+				<set name='waitingforlights'>true</set>
+			</think>
 			<oob><sendinputs>b b</sendinputs></oob>
 			<srai>OOB DefuserSocketMessage Lights True</srai>
 		</template>
@@ -95,7 +98,18 @@
 	</category>
 	<category>
 		<pattern>test timer</pattern>
-		<template><srai>GetTimerMs</srai></template>
+		<template>
+			<srai>GetTimerMs</srai>
+			<sraix service='BombDefuserAimlService'>Timer <star index='3'/> <srai>GetPoints <get name='timerslot'/></srai></sraix>
+		</template>
+	</category>
+	<category>
+		<pattern>test readtimer</pattern>
+		<template><srai>ReadTimerAsync Test</srai></template>
+	</category>
+	<category>
+		<pattern>ReadTimerDone Test</pattern>
+		<template><get name='timer'/></template>
 	</category>
 
 	<category>
