@@ -24,14 +24,20 @@ internal class Timer : ComponentProcessor<Timer.ReadData> {
 
 		var timerCorners = ImageUtils.FindCorners(image, new(16, 96, 224, 144), predicate, false);
 		using var timerBitmap = ImageUtils.PerspectiveUndistort(image, timerCorners, InterpolationMode.NearestNeighbour, new(256, 128));
-		var strikesCorners = ImageUtils.FindCorners(image, new(88, 16, 96, 64), predicate, false);
-		using var strikesBitmap = ImageUtils.PerspectiveUndistort(image, strikesCorners, InterpolationMode.NearestNeighbour, new(128, 64));
+
+		Point[]? strikesCorners = null;
+		try {
+			strikesCorners = ImageUtils.FindCorners(image, new(88, 16, 96, 64), predicate, false);
+		} catch { }
+		using var strikesBitmap = strikesCorners is not null ? ImageUtils.PerspectiveUndistort(image, strikesCorners, InterpolationMode.NearestNeighbour, new(128, 64)) : null;
 
 		if (debugBitmap is not null) {
 			ImageUtils.DebugDrawPoints(debugBitmap, timerCorners);
-			ImageUtils.DebugDrawPoints(debugBitmap, strikesCorners);
 			debugBitmap.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Transparent }).DrawImage(timerBitmap, new Point(0, 256), 1));
-			debugBitmap.Mutate(c => c.Brightness(1.5f).DrawImage(strikesBitmap, new Point(0, 384), 1));
+			if (strikesBitmap is not null) {
+				ImageUtils.DebugDrawPoints(debugBitmap, strikesCorners!);
+				debugBitmap.Mutate(c => c.Brightness(1.5f).DrawImage(strikesBitmap, new Point(0, 384), 1));
+			}
 		}
 
 		static bool isOn(Rgb24 pixel, ref Rgb24 timerColour) {
@@ -45,7 +51,7 @@ internal class Timer : ComponentProcessor<Timer.ReadData> {
 		}
 
 		static char readDigit(Image<Rgb24> image, int centreX, ref Rgb24 timerColour) {
-			var segments = 
+			var segments =
 				(isOn(image[centreX + 0, 16], ref timerColour) ? (1 << 0) : 0) |
 				(isOn(image[centreX + 16, 40], ref timerColour) ? (1 << 1) : 0) |
 				(isOn(image[centreX + 16, 92], ref timerColour) ? (1 << 2) : 0) |
@@ -76,8 +82,10 @@ internal class Timer : ComponentProcessor<Timer.ReadData> {
 
 		var s = new StringBuilder();
 
-		var strikes = isOn(strikesBitmap[34, 34], ref timerColour) ?
-			isOn(strikesBitmap[94, 32], ref timerColour) ? 2 : 1
+		var strikes = strikesBitmap is null
+			? 0
+			: isOn(strikesBitmap[34, 34], ref timerColour)
+			? isOn(strikesBitmap[94, 32], ref timerColour) ? 2 : 1
 			: 0;
 
 		var gameMode = timerColour.B > 0
