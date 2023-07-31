@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
+using WireFlags = BombDefuserConnector.Components.ComplicatedWires.WireFlags;
 
 namespace BombDefuserConnector;
 internal class Simulation {
@@ -27,18 +28,25 @@ internal class Simulation {
 		this.rxTimer.Elapsed += this.RXTimer_Elapsed;
 
 		this.moduleFaces[0] = new(new BombComponent?[,] {
-			{ TimerComponent.Instance, new Module.Button("blue", "HOLD"), null },
-			{ null, null, null }
+			{ TimerComponent.Instance, new Modules.ComplicatedWires(new[] { WireFlags.Red, WireFlags.None, WireFlags.None, WireFlags.Blue }), new Modules.ComplicatedWires(new[] { WireFlags.Red, WireFlags.Blue, WireFlags.Blue | WireFlags.Light }) },
+			{ null, null, new Modules.ComplicatedWires(new[] { WireFlags.Red, WireFlags.Blue, WireFlags.Red }) }
 		});
 		this.moduleFaces[1] = new(new BombComponent?[,] {
 			{ null, null, null },
 			{ null, null, null }
 		});
-		this.widgetFaces[0] = new(new Widget?[] { new("SerialNumber", "AB3DE6"), null, null, null });
-		this.widgetFaces[1] = new(new Widget?[] { null, null, null, null });
-		this.widgetFaces[2] = new(new Widget?[] { null, null, null, null, null, null });
-		this.widgetFaces[3] = new(new Widget?[] { null, null, null, null, null, null });
+		this.widgetFaces[0] = new(new Widget?[] { Widget.Create(new Widgets.SerialNumber(), "AB3DE6"), null, null, null });
+		this.widgetFaces[1] = new(new Widget?[] { Widget.Create(new Widgets.Indicator(), new(false, "BOB")), Widget.Create(new Widgets.Indicator(), new(true, "FRQ")), null, null });
+		this.widgetFaces[2] = new(new Widget?[] { Widget.Create(new Widgets.BatteryHolder(), 2), null, null, null, null, null });
+		this.widgetFaces[3] = new(new Widget?[] { Widget.Create(new Widgets.PortPlate(), new Widgets.PortPlate.Ports(Widgets.PortPlate.PortType.Parallel | Widgets.PortPlate.PortType.Serial)), Widget.Create(new Widgets.PortPlate(), new Widgets.PortPlate.Ports(0)), null, null, null, null });
 		Message("Simulation initialised.");
+
+		foreach (var face in this.moduleFaces) {
+			foreach (var module in face.Slots) {
+				if (module is NeedyModule needyModule)
+					needyModule.Activate();
+			}
+		}
 	}
 
 	private void RXTimer_Elapsed(object? sender, ElapsedEventArgs e) {
@@ -103,9 +111,9 @@ internal class Simulation {
 							Message("No module is highlighted.");
 						else if (component is Module module1) {
 							this.focusState = FocusStates.Module;
-							Message($"{component.Type} [{module1.ID}] ({this.SelectedFace.X + 1}, {this.SelectedFace.Y + 1}) selected");
+							Message($"{component.Processor.Name} [{module1.ID}] ({this.SelectedFace.X + 1}, {this.SelectedFace.Y + 1}) selected");
 						} else
-							Message($"Can't select {component.Type}.");
+							Message($"Can't select {component.Processor.Name}.");
 						break;
 					case FocusStates.Module:
 						if (this.SelectedFace.SelectedComponent is Module module2) {
@@ -152,7 +160,9 @@ internal class Simulation {
 						if (this.roomX == 0) this.roomX = -1;
 						break;
 					case FocusStates.Bomb:
-						if (this.SelectedFace.X > 0) this.SelectedFace.X--;
+						do {
+							this.SelectedFace.X--;
+						} while (this.SelectedFace.SelectedComponent is not Module);
 						break;
 					case FocusStates.Module:
 						if (this.SelectedFace.SelectedComponent is Module module)
@@ -166,7 +176,9 @@ internal class Simulation {
 						if (this.roomX == -1) this.roomX = 0;
 						break;
 					case FocusStates.Bomb:
-						if (this.SelectedFace.X < this.SelectedFace.Slots.GetUpperBound(1)) this.SelectedFace.X++;
+						do {
+							this.SelectedFace.X++;
+						} while (this.SelectedFace.SelectedComponent is not Module);
 						break;
 					case FocusStates.Module:
 						if (this.SelectedFace.SelectedComponent is Module module)
@@ -177,10 +189,8 @@ internal class Simulation {
 			case "up":
 				switch (this.focusState) {
 					case FocusStates.Bomb:
-						if (this.SelectedFace.Y > 0) {
-							this.SelectedFace.Y--;
-							this.FindNearestModule();
-						}
+						this.SelectedFace.Y--;
+						this.FindNearestModule();
 						break;
 					case FocusStates.Module:
 						if (this.SelectedFace.SelectedComponent is Module module)
@@ -191,10 +201,8 @@ internal class Simulation {
 			case "down":
 				switch (this.focusState) {
 					case FocusStates.Bomb:
-						if (this.SelectedFace.Y < this.SelectedFace.Slots.GetUpperBound(0)) {
-							this.SelectedFace.Y++;
-							this.FindNearestModule();
-						}
+						this.SelectedFace.Y++;
+						this.FindNearestModule();
 						break;
 					case FocusStates.Module:
 						if (this.SelectedFace.SelectedComponent is Module module)
@@ -218,7 +226,7 @@ internal class Simulation {
 			for (var dir = 0; dir < 2; dir++) {
 				var x = dir == 0 ? this.SelectedFace.X - d : this.SelectedFace.X + d;
 				if (x >= 0 && x < this.SelectedFace.Slots.GetLength(1) && this.SelectedFace.Slots[this.SelectedFace.Y, x] is Module) {
-					this.SelectedFace.X -= d;
+					this.SelectedFace.X = x;
 					return;
 				}
 			}
@@ -234,18 +242,34 @@ internal class Simulation {
 		}
 	}
 
-	public string IdentifyModule(int x1, int y1) => this.GetComponent(x1, y1)?.Type ?? "nil";
+	public string? IdentifyComponent(int x1, int y1) => this.GetComponent(x1, y1)?.Processor.GetType().Name;
+	public string? IdentifyComponent(int face, int x, int y) => this.moduleFaces[face - 1].Slots[y - 1, x - 1]?.Processor.GetType().Name;
 
+	public T ReadComponent<T>(ComponentProcessor<T> processor, int x1, int y1) where T : notnull {
+		var component = this.GetComponent(x1, y1);
+		if (component is null)
+			throw new ArgumentException("Attempt to read blank component");
+		if (processor is Components.Timer) {
+			if (component is not TimerComponent timerComponent || timerComponent.Details is not T t)
+				throw new ArgumentException("Wrong type for specified component.");
+			return t;
+		}
+		if (component is not Module<T> module)
+			throw new ArgumentException("Attempt to read something that isn't a module");
+		if (component.Processor.GetType() != processor.GetType())
+			throw new ArgumentException("Wrong type for specified component.");
+		return module.Details;
+	}
 	public string ReadModule(string type, int x1, int y1) {
 		var component = this.GetComponent(x1, y1);
 		if (component is null)
 			throw new ArgumentException("Attempt to read blank component");
-		if (!component.Type.Equals(type, StringComparison.InvariantCultureIgnoreCase))
+		if (!component.Processor.GetType().Name.Equals(type, StringComparison.InvariantCultureIgnoreCase))
 			throw new ArgumentException("Wrong type for specified component.");
-		return component.Details;
+		return component.DetailsString;
 	}
 
-	public string GetLightState(int x1, int y1) => (this.GetComponent(x1, y1) is Module module ? module.LightState : ModuleLightState.Off).ToString();
+	public ModuleLightState GetLightState(int x1, int y1) => this.GetComponent(x1, y1) is Module module ? module.LightState : ModuleLightState.Off;
 
 	private BombComponent? GetComponent(int x1, int y1) {
 		switch (this.focusState) {
@@ -266,15 +290,23 @@ internal class Simulation {
 		}
 	}
 
-	public string IdentifyWidget(int x1, int y1) => this.GetWidget(x1, y1)?.Type ?? "nil";
+	public string? IdentifyWidget(int x1, int y1) => this.GetWidget(x1, y1)?.Processor.GetType().Name;
 
+	public T ReadWidget<T>(WidgetProcessor<T> processor, int x1, int y1) where T : notnull {
+		var widget = this.GetWidget(x1, y1);
+		if (widget is null)
+			throw new ArgumentException("Attempt to read blank widget.");
+		if (widget is not Widget<T> widget2)
+			throw new ArgumentException("Wrong type for specified widget.");
+		return widget2.Details;
+	}
 	public string ReadWidget(string type, int x1, int y1) {
 		var widget = this.GetWidget(x1, y1);
 		if (widget is null)
 			throw new ArgumentException("Attempt to read blank widget.");
-		if (!widget.Type.Equals(type, StringComparison.InvariantCultureIgnoreCase))
+		if (!widget.Processor.GetType().Name.Equals(type, StringComparison.InvariantCultureIgnoreCase))
 			throw new ArgumentException("Wrong type for specified widget.");
-		return widget.Details;
+		return widget.DetailsString;
 	}
 
 	private Widget? GetWidget(int x1, int y1) {
@@ -358,42 +390,38 @@ internal class Simulation {
 	}
 
 	private abstract class BombComponent {
-		internal string Type { get; }
-		internal abstract string Details { get; }
-
-		protected BombComponent(string type) => this.Type = type ?? throw new ArgumentNullException(nameof(type));
+		internal ComponentProcessor Processor { get; }
+		internal abstract string DetailsString { get; }
+		protected BombComponent(ComponentProcessor processor) => this.Processor = processor ?? throw new ArgumentNullException(nameof(processor));
 	}
 
-	private class Module : BombComponent {
+	private abstract class Module : BombComponent {
 		private readonly Timer ResetLightTimer = new(2000) { AutoReset = false };
 
 		private static int NextID;
 
 		internal int ID { get; }
-		internal override string Details { get; }
 		public ModuleLightState LightState { get; private set; }
 
 		public int X;
 		public int Y;
 
-		protected Module(string type) : this(type, "") { }
-		public Module(string type, string details) : base(type) {
+		public Module(ComponentProcessor processor) : base(processor) {
 			++NextID;
 			this.ID = NextID;
-			this.Details = details ?? throw new ArgumentNullException(nameof(details));
 			this.ResetLightTimer.Elapsed += this.ResetLightTimer_Elapsed;
 		}
 
 		private void ResetLightTimer_Elapsed(object? sender, ElapsedEventArgs e) => this.LightState = ModuleLightState.Off;
 
 		public void Solve() {
-			Message($"{this.Type} solved.");
+			Message($"{this.Processor.Name} solved.");
 			this.LightState = ModuleLightState.Solved;
 			this.ResetLightTimer.Stop();
 		}
 
 		public void StrikeFlash() {
-			Message($"{this.Type} strike.");
+			Message($"{this.Processor.Name} strike.");
 			if (this.LightState != ModuleLightState.Solved) {
 				this.LightState = ModuleLightState.Strike;
 				this.ResetLightTimer.Stop();
@@ -402,25 +430,125 @@ internal class Simulation {
 		}
 
 		public virtual void Interact() {
-			Message($"Selected ({this.X}, {this.Y}) in {this.Type}");
+			Message($"Selected ({this.X}, {this.Y}) in {this.Processor.Name}");
 		}
 		public virtual void StopInteract() { }
+	}
 
-		public class ComplicatedWires : Module {
+	private abstract class Module<TDetails> : Module where TDetails : notnull {
+		internal virtual TDetails Details { get; }
+		internal override string DetailsString => this.Details.ToString() ?? "";
+
+		protected Module(ComponentProcessor<TDetails> processor) : this(processor, default!) { }
+		public Module(ComponentProcessor<TDetails> processor, TDetails details) : base(processor) => this.Details = details;
+	}
+
+	private abstract class NeedyModule : Module {
+		private readonly Stopwatch stopwatch = new();
+		private readonly TimeSpan startingTime;
+		private TimeSpan initialTime;
+
+		public bool IsActive { get; private set; }
+		public TimeSpan RemainingTime => this.stopwatch is not null ? this.initialTime - this.stopwatch.Elapsed : TimeSpan.Zero;
+
+		protected NeedyModule(ComponentProcessor processor, TimeSpan startingTime) : base(processor) => this.startingTime = startingTime;
+
+		public void Activate() {
+			this.initialTime = this.startingTime;
+			this.stopwatch.Restart();
+			this.IsActive = true;
+		}
+
+		public void Deactivate() {
+			Message($"{this.Processor.Name} deactivated with {this.RemainingTime.TotalSeconds}s left.");
+			this.stopwatch.Stop();
+			this.IsActive = false;
+		}
+
+		public void AddTime(TimeSpan time, TimeSpan max) {
+			this.initialTime += time;
+			if (this.RemainingTime > max) {
+				this.initialTime = max;
+				this.stopwatch.Restart();
+			}
+		}
+	}
+
+	private abstract class NeedyModule<TProcessor, TDetails> : NeedyModule where TProcessor : ComponentProcessor<TDetails> where TDetails : notnull {
+		internal virtual TDetails Details { get; }
+		internal override string DetailsString => this.Details.ToString() ?? "";
+
+		protected NeedyModule(TimeSpan startingTime) : this(default!, startingTime) { }
+		protected NeedyModule(TDetails details, TimeSpan startingTime) : base(BombDefuserAimlService.GetComponentProcessor<TProcessor>(), startingTime) => this.Details = details;
+	}
+
+	private class TimerComponent : BombComponent {
+		public TimeSpan Elapsed => this.stopwatch.Elapsed;
+
+		internal static TimerComponent Instance { get; } = new();
+
+		private readonly Stopwatch stopwatch = Stopwatch.StartNew();
+		
+		internal Components.Timer.ReadData Details {
+			get {
+				var elapsed = this.stopwatch.ElapsedTicks;
+				var seconds = elapsed / Stopwatch.Frequency;
+				return new(Components.Timer.GameMode.Zen, (int) seconds, seconds < 60 ? (int) (elapsed / (Stopwatch.Frequency / 100) % 100) : 0, 0);
+			}
+		}
+		internal override string DetailsString => this.Details.ToString();
+
+		private TimerComponent() : base(new Components.Timer()) { }
+	}
+
+	private abstract class Widget {
+		internal WidgetProcessor Processor { get; }
+		internal abstract string DetailsString { get; }
+
+		protected Widget(WidgetProcessor processor) => this.Processor = processor ?? throw new ArgumentNullException(nameof(processor));
+
+		internal static Widget<T> Create<T>(WidgetProcessor<T> processor, T details) where T : notnull => new(processor, details);
+	}
+
+	private class Widget<T> : Widget where T : notnull {
+		internal T Details { get; }
+		internal override string DetailsString => this.Details.ToString() ?? "";
+
+		public Widget(WidgetProcessor<T> processor, T details) : base(processor) => this.Details = details;
+	}
+
+	private static class Modules {
+		public class Wires : Module<Components.Wires.ReadData> {
+			internal override Components.Wires.ReadData Details => new(this.wires);
+
+			private readonly Components.Wires.Colour[] wires;
+			private bool[] isCut;
+			private int shouldCut;
+
+			public Wires(int shouldCut, params Components.Wires.Colour[] wires) : base(BombDefuserAimlService.GetComponentProcessor<Components.Wires>()) {
+				this.shouldCut = shouldCut;
+				this.wires = wires;
+				this.isCut = new bool[wires.Length];
+			}
+
+			public override void Interact() {
+				Message($"Cut wire {this.Y + 1}");
+				if (this.isCut[this.Y])
+					return;
+				this.isCut[this.Y] = true;
+				if (this.Y == this.shouldCut)
+					this.Solve();
+				else
+					this.StrikeFlash();
+			}
+		}
+
+		public class ComplicatedWires : Module<Components.ComplicatedWires.ReadData> {
 			internal static readonly ComplicatedWires Test1 = new(new WireFlags[] { WireFlags.None, WireFlags.None, WireFlags.Blue });
 			internal static readonly ComplicatedWires Test2 = new(new WireFlags[] { WireFlags.Blue, WireFlags.Red, WireFlags.Blue | WireFlags.Light });
 			internal static readonly ComplicatedWires Test3 = new(new WireFlags[] { WireFlags.Red, WireFlags.Blue | WireFlags.Star, WireFlags.Blue | WireFlags.Light });
 
-			internal override string Details => $"{this.X + 1} XS {string.Join("XS ", from w in wires select w == 0 ? "nil " : $"{(w.HasFlag(WireFlags.Red) ? "red " : "")}{(w.HasFlag(WireFlags.Blue) ? "blue " : "")}{(w.HasFlag(WireFlags.Star) ? "star " : "")}{(w.HasFlag(WireFlags.Light) ? "light " : "")}")}";
-
-			[Flags]
-			public enum WireFlags {
-				None,
-				Red = 1,
-				Blue = 2,
-				Star = 4,
-				Light = 8
-			}
+			internal override Components.ComplicatedWires.ReadData Details => new(this.X, this.wires);
 
 			public static bool[] ShouldCut = new bool[16];
 			private readonly WireFlags[] wires;
@@ -434,7 +562,7 @@ internal class Simulation {
 				ShouldCut[(int) (WireFlags.Blue | WireFlags.Star | WireFlags.Light)] = true;
 			}
 
-			public ComplicatedWires(WireFlags[] wires) : base("ComplicatedWires") {
+			public ComplicatedWires(WireFlags[] wires) : base(BombDefuserAimlService.GetComponentProcessor<Components.ComplicatedWires>()) {
 				this.wires = wires;
 				this.isCut = new bool[wires.Length];
 			}
@@ -455,18 +583,18 @@ internal class Simulation {
 			}
 		}
 
-		public class Button : Module {
-			private readonly string colour;
-			private readonly string label;
-			private string? indicatorColour;
+		public class Button : Module<Components.Button.ReadData> {
+			private readonly Components.Button.Colour colour;
+			private readonly Components.Button.Label label;
+			private Components.Button.Colour? indicatorColour;
 			private int correctDigit;
 			private readonly Timer pressTimer = new(500) { AutoReset = false };
 
-			internal override string Details => $"{colour} {label} {indicatorColour ?? "nil"}";
+			internal override Components.Button.ReadData Details => new(this.colour, this.label, this.indicatorColour);
 
-			public Button(string colour, string label) : base("Button") {
-				this.colour = colour ?? throw new ArgumentNullException(nameof(colour));
-				this.label = label ?? throw new ArgumentNullException(nameof(label));
+			public Button(Components.Button.Colour colour, Components.Button.Label label) : base(BombDefuserAimlService.GetComponentProcessor<Components.Button>()) {
+				this.colour = colour;
+				this.label = label;
 				this.pressTimer.Elapsed += this.PressTimer_Elapsed;
 			}
 
@@ -503,38 +631,61 @@ internal class Simulation {
 			}
 
 			private void PressTimer_Elapsed(object? sender, ElapsedEventArgs e) {
-				this.indicatorColour = "blue";
+				this.indicatorColour = Components.Button.Colour.Blue;
 				this.correctDigit = 4;
 				Message($"Button held - indicator is {this.indicatorColour}");
 			}
 		}
-	}
 
-	private class TimerComponent : BombComponent {
-		public TimeSpan Elapsed => this.stopwatch.Elapsed;
+		public class Keypad : Module<Components.Keypad.ReadData> {
+			internal override Components.Keypad.ReadData Details => new(this.symbols);
 
-		internal static TimerComponent Instance { get; } = new();
+			private readonly Components.Keypad.Symbol[] symbols;
+			private readonly int[] correctOrder;
+			private readonly bool[] isPressed;
 
-		private readonly Stopwatch stopwatch = Stopwatch.StartNew();
-		
-		internal override string Details {
-			get {
-				var elapsed = this.stopwatch.ElapsedTicks;
-				var seconds = elapsed / Stopwatch.Frequency;
-				return $"Zen {seconds} {(seconds < 60 ? elapsed / (Stopwatch.Frequency / 100) % 100 : 0)} 0";
+			public Keypad(Components.Keypad.Symbol[] symbols, int[] correctOrder) : base(BombDefuserAimlService.GetComponentProcessor<Components.Keypad>()) {
+				this.symbols = symbols;
+				this.correctOrder = correctOrder;
+				this.isPressed = new bool[symbols.Length];
+			}
+
+			public override void Interact() {
+				if (this.X is < 0 or >= 2 || this.Y is < 0 or >= 2) throw new InvalidOperationException("Invalid highlight position");
+				var index = this.Y * 2 + this.X;
+				Message($"Pressed button {index}");
+				if (this.isPressed[index])
+					return;
+				foreach (var i in this.correctOrder) {
+					if (i == index) break;
+					if (!this.isPressed[i]) {
+						this.StrikeFlash();
+						return;
+					}
+				}
+				this.isPressed[index] = true;
+				if (!this.isPressed.Contains(false))
+					this.Solve();
 			}
 		}
+		/*
+		public class CapacitorDischarge : NeedyModule<int> {
+			private Stopwatch pressStopwatch = new();
 
-		private TimerComponent() : base("Timer") { }
-	}
+			internal override int Details => (int) this.RemainingTime.TotalSeconds;
 
-	private class Widget {
-		internal string Type { get; }
-		internal string Details { get; }
+			public CapacitorDischarge() : base(null, TimeSpan.FromSeconds(45)) { }
 
-		public Widget(string type, string details) {
-			this.Type = type ?? throw new ArgumentNullException(nameof(type));
-			this.Details = details ?? throw new ArgumentNullException(nameof(details));
+			public override void Interact() {
+				Message($"{this.Processor.Name} pressed with {this.RemainingTime.TotalSeconds} s left.");
+				pressStopwatch.Restart();
+			}
+
+			public override void StopInteract() {
+				this.AddTime(pressStopwatch.Elapsed * 5, TimeSpan.FromSeconds(45));
+				Message($"{this.Processor.Name} released with {this.RemainingTime.TotalSeconds} s left.");
+			}
 		}
+		*/
 	}
 }

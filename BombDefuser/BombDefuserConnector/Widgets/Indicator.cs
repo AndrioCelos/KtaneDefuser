@@ -8,7 +8,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Widgets;
-internal class Indicator : WidgetProcessor {
+public class Indicator : WidgetProcessor<Indicator.ReadData> {
 	public override string Name => "Indicator";
 
 	private static readonly Font FONT;
@@ -45,7 +45,7 @@ internal class Indicator : WidgetProcessor {
 
 	private static readonly (Image<Rgb24> image, string text)[] referenceImages;
 
-	public override float IsWidgetPresent(Image<Rgb24> image, LightsState lightsState, PixelCounts pixelCounts)
+	protected internal override float IsWidgetPresent(Image<Rgb24> image, LightsState lightsState, PixelCounts pixelCounts)
 		// This has many red pixels, few white pixels and no yellow pixels.
 		=> Math.Max(0, pixelCounts.Red - pixelCounts.Yellow * 2 - Math.Max(0, pixelCounts.White - 4096) * 2) / 8192f;
 
@@ -53,7 +53,7 @@ internal class Indicator : WidgetProcessor {
 	private static bool IsLit(HsvColor hsv) => hsv.V >= 1;
 	private static bool IsUnlit(HsvColor hsv) => hsv.H >= 30 && hsv.S < 0.15f && hsv.V is >= 0.05f and < 0.2f;
 
-	public override object Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap) {
+	protected internal override ReadData Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap) {
 		var corners = ImageUtils.FindCorners(image, image.Bounds, c => IsRed(HsvColor.FromColor(c)), true);
 		var indicatorImage = ImageUtils.PerspectiveUndistort(image, corners, InterpolationMode.NearestNeighbour, new(256, 112));
 		if (debugBitmap is not null)
@@ -107,6 +107,10 @@ internal class Indicator : WidgetProcessor {
 			}
 		}
 
-		return $"{(isLit ? "Lit" : "Unlit")} {label}";
+		return new(isLit, label);
+	}
+
+	public record ReadData(bool IsLit, string Label) {
+		public override string ToString() => $"{(this.IsLit ? "Lit" : "Unlit")} {this.Label}";
 	}
 }

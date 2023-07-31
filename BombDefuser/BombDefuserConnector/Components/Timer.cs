@@ -7,17 +7,17 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Components;
-internal class Timer : ComponentProcessor<Timer.ReadData> {
+public class Timer : ComponentProcessor<Timer.ReadData> {
 	private static readonly Image<Rgba32>[] Samples = new[] { Image.Load<Rgba32>(Resources.Timer1), Image.Load<Rgba32>(Resources.Timer2) };
 
 	public override string Name => "Timer";
-	public override bool UsesNeedyFrame => false;
+	protected internal override bool UsesNeedyFrame => false;
 
-	public override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgb24> image) {
 		return ImageUtils.CheckSimilarity(image, Samples);
 	}
 
-	public override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
 		static bool predicate(Rgb24 c) {
 			return c.G < 12 && c.B < 12;
 		}

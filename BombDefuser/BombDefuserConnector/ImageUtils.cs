@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
@@ -8,9 +9,9 @@ using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector;
 public static class ImageUtils {
-	public static Image<Rgb24> PerspectiveUndistort(Image<Rgb24> originalImage, Point[] points, InterpolationMode interpolationMode)
+	public static Image<Rgb24> PerspectiveUndistort(Image<Rgb24> originalImage, IReadOnlyList<Point> points, InterpolationMode interpolationMode)
 		=> PerspectiveUndistort(originalImage, points, interpolationMode, new(256, 256));
-	public static Image<Rgb24> PerspectiveUndistort(Image<Rgb24> originalImage, Point[] points, InterpolationMode interpolationMode, Size resolution) {
+	public static Image<Rgb24> PerspectiveUndistort(Image<Rgb24> originalImage, IReadOnlyList<Point> points, InterpolationMode interpolationMode, Size resolution) {
 		var bitmap = new Image<Rgb24>(resolution.Width, resolution.Height);
 		bitmap.ProcessPixelRows(p => {
 			for (var y = 0; y < bitmap.Height; y++) {
@@ -45,6 +46,11 @@ public static class ImageUtils {
 		});
 		return bitmap;
 	}
+
+	public static bool IsModuleBack(Rgb24 color, LightsState lightsState)
+		=> Math.Abs(color.R - 136) + Math.Abs(color.G - 138) + Math.Abs(color.B - 150) <= 90;
+	public static bool IsModuleBack(HsvColor hsv, LightsState lightsState)
+		=> hsv.H is >= 180 and < 255 && hsv.S is >= 0.025f and < 0.25f && hsv.V is >= 0.45f and < 0.75f;
 
 	public static Point[] FindCorners(Image<Rgb24> image, Rectangle bounds, Predicate<Rgb24> predicate, bool checkContinuity) {
 		var points = new Point[4];
@@ -239,7 +245,8 @@ public static class ImageUtils {
 		return orangePixels >= 40000;
 	}
 
-	public static ModuleLightState GetLightState(Image<Rgb24> image, Point[] points) {
+	public static ModuleLightState GetLightState(Image<Rgb24> image, params Point[] points) => GetLightState(image, (IReadOnlyList<Point>) points);
+	public static ModuleLightState GetLightState(Image<Rgb24> image, IReadOnlyList<Point> points) {
 		var x = (int) Math.Round(points[1].X + (points[2].X - points[1].X) * 0.1015625);
 		var y = (int) Math.Round(points[1].Y + (points[2].Y - points[1].Y) * 0.1015625);
 		var hsv = HsvColor.FromColor(image[x, y]);

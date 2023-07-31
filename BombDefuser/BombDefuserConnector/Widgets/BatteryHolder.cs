@@ -4,16 +4,16 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Widgets;
-internal class BatteryHolder : WidgetProcessor {
+public class BatteryHolder : WidgetProcessor<int> {
 	public override string Name => "Battery Holder";
 
-	public override float IsWidgetPresent(Image<Rgb24> image, LightsState lightsState, PixelCounts pixelCounts)
+	protected internal override float IsWidgetPresent(Image<Rgb24> image, LightsState lightsState, PixelCounts pixelCounts)
 		// This is the only widget with yellow pixels.
 		=> pixelCounts.Yellow / 2048f;
 
 	private static bool IsRed(HsvColor hsv) => hsv.S >= 0.4f && hsv.H is >= 345 or <= 90;
 
-	public override object Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap) {
+	protected internal override int Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap) {
 		debugBitmap?.Mutate(c => c.Brightness(0.5f));
 
 		var maxCount = 0;
@@ -40,6 +40,6 @@ internal class BatteryHolder : WidgetProcessor {
 			}
 			maxCount = Math.Max(maxCount, batteryCount);
 		}
-		return maxCount is 1 or 2 ? (object) maxCount : throw new InvalidOperationException("Invalid battery count?!");
+		return maxCount is 1 or 2 ? maxCount : throw new InvalidOperationException("Invalid battery count?!");
 	}
 }

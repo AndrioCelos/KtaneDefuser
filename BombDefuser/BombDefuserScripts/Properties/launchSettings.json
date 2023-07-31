@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "BombDefuser (AimlVoice)": {
+      "commandName": "Executable",
+      "executablePath": "..\\Aiml\\AimlVoice\\bin\\Debug\\net7.0-windows\\AimlVoice.exe",
+      "commandLineArgs": "-e ..\\Aiml\\AimlCSharpInterface\\bin\\Debug\\net7.0\\AimlCSharpInterface.dll -e BombDefuser\\BombDefuserConnector\\bin\\Debug\\net7.0-windows\\BombDefuserConnector.dll -e ..\\Aiml\\AimlVoiceTimers\\bin\\Debug\\net7.0-windows\\AimlVoiceTimers.dll --no-sr -r 1 Bot",
+      "workingDirectory": "D:\\Users\\Andrea\\Nextcloud\\Projects\\BombDefuser"
+    }
+  }
+}

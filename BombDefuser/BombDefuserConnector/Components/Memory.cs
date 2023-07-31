@@ -8,14 +8,14 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Components;
-internal class Memory : ComponentProcessor<Memory.ReadData> {
+public class Memory : ComponentProcessor<Memory.ReadData> {
 	private static readonly Image<Rgb24>[] numberBitmaps = Enumerable.Range(1, 4).Select(n => Image.Load<Rgb24>((byte[]) Properties.Resources.ResourceManager.GetObject($@"MemoryB{n}")!)).ToArray();
 	private static readonly Image<Rgb24>[] displayBitmaps = Enumerable.Range(1, 4).Select(n => Image.Load<Rgb24>((byte[]) Properties.Resources.ResourceManager.GetObject($@"MemoryD{n}")!)).ToArray();
 
 	public override string Name => "Memory";
-	public override bool UsesNeedyFrame => false;
+	protected internal override bool UsesNeedyFrame => false;
 
-	public override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgb24> image) {
 		var minDist = int.MaxValue;
 		var referenceColour = new Rgb24(55, 95, 81);
 		for (int x = image.Width / 4 - 10; x < image.Width / 4 + 10; x++) {
@@ -50,7 +50,7 @@ internal class Memory : ComponentProcessor<Memory.ReadData> {
 		return Math.Max(1 - (float) minDist / 50, 0) * 0.5f + Math.Max(0, count / 148 - count2 / 148) * 0.5f;
 	}
 
-	public override ReadData Process(Image<Rgb24> image, ref Image<Rgb24> debugBitmap) {
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
 		bool isButtonBackP(Point point) => isButtonBack(image[point.X, point.Y]);
 		bool isButtonBack(Rgb24 color) {
 			var hsv = HsvColor.FromColor(color);
@@ -66,12 +66,15 @@ internal class Memory : ComponentProcessor<Memory.ReadData> {
 		}
 		bool isDisplayTextColor(Rgb24 color)
 			=> color.R >= 224 && color.G >= 224 && color.B >= 224;
-		debugBitmap.Mutate(c => c.Brightness(0.5f));
-		for (var y = 0; y < image.Height; y++) {
-			for (var x = 0; x < image.Width; x++) {
-				var color = image[x, y];
-				if (y >= 144 ? isButtonBack(color) : isDisplayBack(new(x, y)))
-					debugBitmap[x, y] = color;
+
+		if (debugBitmap is not null) {
+			debugBitmap.Mutate(c => c.Brightness(0.5f));
+			for (var y = 0; y < image.Height; y++) {
+				for (var x = 0; x < image.Width; x++) {
+					var color = image[x, y];
+					if (y >= 144 ? isButtonBack(color) : isDisplayBack(new(x, y)))
+						debugBitmap[x, y] = color;
+				}
 			}
 		}
 
@@ -106,7 +109,7 @@ internal class Memory : ComponentProcessor<Memory.ReadData> {
 						point2 -= dir;
 					}
 					points[n] = new((point.X + point2.X) / 2, (point.Y + point2.Y) / 2);
-					debugBitmap.Mutate(c => c.Fill(n switch { 0 => Color.Red, 1 => Color.Yellow, 2 => Color.Lime, _ => Color.RoyalBlue }, new EllipsePolygon(points[n], 3)));
+					debugBitmap?.Mutate(c => c.Fill(n switch { 0 => Color.Red, 1 => Color.Yellow, 2 => Color.Lime, _ => Color.RoyalBlue }, new EllipsePolygon(points[n], 3)));
 					break;
 				}
 				diagonalPoint1 += increment;
@@ -147,7 +150,7 @@ internal class Memory : ComponentProcessor<Memory.ReadData> {
 						point2 -= dir;
 					}
 					displayPoints[n] = new((point.X + point2.X) / 2, (point.Y + point2.Y) / 2);
-					debugBitmap.Mutate(c => c.Fill(n switch { 0 => Color.Red, 1 => Color.Yellow, 2 => Color.Lime, _ => Color.RoyalBlue }, new EllipsePolygon(points[n], 3)));
+					debugBitmap?.Mutate(c => c.Fill(n switch { 0 => Color.Red, 1 => Color.Yellow, 2 => Color.Lime, _ => Color.RoyalBlue }, new EllipsePolygon(points[n], 3)));
 					break;
 				}
 				diagonalPoint1 += increment;
@@ -169,7 +172,7 @@ internal class Memory : ComponentProcessor<Memory.ReadData> {
 		}
 
 		var keypadBitmap = ImageUtils.PerspectiveUndistort(image, points, InterpolationMode.Bilinear, new(304, 128));
-		debugBitmap.Mutate(c => c.Resize(512, 512, KnownResamplers.NearestNeighbor).DrawImage(keypadBitmap, 1));
+		debugBitmap?.Mutate(c => c.Resize(512, 512, KnownResamplers.NearestNeighbor).DrawImage(keypadBitmap, 1));
 
 		var matches = new List<(int pos, int label, int matchScore)>();
 		var labels = new int[4];
@@ -188,7 +191,7 @@ internal class Memory : ComponentProcessor<Memory.ReadData> {
 		}
 
 		var displayBitmap = ImageUtils.PerspectiveUndistort(image, displayPoints, InterpolationMode.Bilinear, new(160, 128));
-		debugBitmap.Mutate(c => c.DrawImage(displayBitmap, new Point(512 - 160, 160), 1));
+		debugBitmap?.Mutate(c => c.DrawImage(displayBitmap, new Point(512 - 160, 160), 1));
 
 		var best = 0;
 		var bestMatchScore = -1;

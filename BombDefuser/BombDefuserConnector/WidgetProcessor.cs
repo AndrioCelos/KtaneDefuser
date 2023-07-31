@@ -6,11 +6,11 @@ namespace BombDefuserConnector;
 public abstract class WidgetProcessor {
 	public abstract string Name { get; }
 
-	public abstract float IsWidgetPresent(Image<Rgb24> image, LightsState lightsState, PixelCounts pixelCounts);
+	protected internal abstract float IsWidgetPresent(Image<Rgb24> image, LightsState lightsState, PixelCounts pixelCounts);
 
-	public abstract object Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap);
+	protected internal abstract object ProcessNonGeneric(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap);
 
-	public static PixelCounts GetPixelCounts(Image<Rgb24> image, LightsState lightsState) {
+	internal static PixelCounts GetPixelCounts(Image<Rgb24> image, LightsState lightsState) {
 		int red = 0, yellow = 0, grey = 0, white = 0;
 		for (var y = 0; y < image.Width; y++) {
 			for (var x = 0; x < image.Height; x++) {
@@ -61,4 +61,11 @@ public abstract class WidgetProcessor {
 	}
 
 	public record PixelCounts(int Red, int Yellow, int Grey, int White);
+}
+
+public abstract class WidgetProcessor<T> : WidgetProcessor where T : notnull {
+	protected internal abstract T Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap);
+
+	protected internal override object ProcessNonGeneric(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap)
+		=> this.Process(image, lightsState, ref debugBitmap);
 }

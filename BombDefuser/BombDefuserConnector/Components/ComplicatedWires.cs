@@ -7,16 +7,16 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Components;
-internal class ComplicatedWires : ComponentProcessor<object> {
+public class ComplicatedWires : ComponentProcessor<ComplicatedWires.ReadData> {
 	public override string Name => "Complicated Wires";
-	public override bool UsesNeedyFrame => false;
+	protected internal override bool UsesNeedyFrame => false;
 
-	public override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgb24> image) {
 		// Complicated Wires: look for vertical wires crossing the centre
 		var inWire = 0;
 		var numWires = 0;
-		var numWirePixels = 0;
-		var wirePixelTotal = 0f;
+		var numPixels = 0;
+		var pixelScore = 0f;
 		for (var x = 16; x < 224; x++) {
 			var color = image[x, 128];
 			var hsv = HsvColor.FromColor(color);
@@ -25,19 +25,24 @@ internal class ComplicatedWires : ComponentProcessor<object> {
 				if (inWire == 0)
 					numWires++;
 				inWire = 4;
-				numWirePixels++;
-				wirePixelTotal += colour switch {
+				numPixels++;
+				pixelScore += colour switch {
 					Colour.White => hsv.V,
 					Colour.Red or Colour.Highlight => hsv.S * Math.Max(0, 1 - Math.Abs(hsv.H >= 180 ? hsv.H - 360 : hsv.H) * 0.05f),
 					Colour.Blue => Math.Min(1, hsv.S * 1.25f) * (1 - Math.Abs(225 - hsv.H) * 0.05f),
 					_ => 0
 				};
-			} else if (inWire > 0)
-				inWire--;
+			} else {
+				// There shouldn't be any colour other than the backing here.
+				numPixels++;
+				if (ImageUtils.IsModuleBack(color, LightsState.On)) pixelScore++;
+				if (inWire > 0)
+					inWire--;
+			}
 		}
-		return numWires is >= 3 and <= 6 ? wirePixelTotal * 1.5f / numWirePixels : 0;
+		return numWires is >= 3 and <= 6 ? pixelScore * 1.5f / numPixels : 0;
 	}
-	public override object Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
 		debugBitmap?.Mutate(c => c.Brightness(0.5f));
 
 		WireFlags? currentFlags = null;
@@ -100,7 +105,11 @@ internal class ComplicatedWires : ComponentProcessor<object> {
 			}
 		}
 
-		return $"{(highlight >= 0 ? (highlight + 1).ToString() : "nil")} XS {string.Join("XS ", from w in wires select w == 0 ? "nil " : $"{(w.HasFlag(WireFlags.Red) ? "red " : "")}{(w.HasFlag(WireFlags.Blue) ? "blue " : "")}{(w.HasFlag(WireFlags.Star) ? "star " : "")}{(w.HasFlag(WireFlags.Light) ? "light " : "")}")}";
+		return new(highlight >= 0 ? highlight : null, wires);
+	}
+
+	public record ReadData(int? CurrentWire, IReadOnlyList<WireFlags> Wires) {
+		public override string ToString() => $"{(this.CurrentWire.HasValue ? (this.CurrentWire + 1).ToString() : "nil")} XS {string.Join("XS ", from w in this.Wires select w == 0 ? "nil " : $"{(w.HasFlag(WireFlags.Red) ? "red " : "")}{(w.HasFlag(WireFlags.Blue) ? "blue " : "")}{(w.HasFlag(WireFlags.Star) ? "star " : "")}{(w.HasFlag(WireFlags.Light) ? "light " : "")}")}";
 	}
 
 	private static Colour GetColour(HsvColor hsv) {
@@ -120,7 +129,8 @@ internal class ComplicatedWires : ComponentProcessor<object> {
 	}
 
 	[Flags]
-	private enum WireFlags {
+	public enum WireFlags {
+		None,
 		Red = 1,
 		Blue = 2,
 		Star = 4,

@@ -1,8 +1,0 @@
-AND:AND
-OR:OR
-XOR:XOR
-NAND:NAND
-NOR:NOR
-XNOR:XNOR
-IMPLeft:implies
-IMPRight:implied by

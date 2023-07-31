@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using SixLabors.Fonts;
 using System.IO;
+using System.Linq;
+using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using System.Linq;
 
 namespace BombDefuserConnector.Widgets;
-internal class SerialNumber : WidgetProcessor {
+public class SerialNumber : WidgetProcessor<string> {
 	public override string Name => "SerialNumber";
 
 	private static readonly Font FONT;
@@ -37,13 +37,13 @@ internal class SerialNumber : WidgetProcessor {
 
 	private static readonly (Image<Rgb24> image, char c)[] referenceImages;
 
-	public override float IsWidgetPresent(Image<Rgb24> image, LightsState lightsState, PixelCounts pixelCounts)
+	protected internal override float IsWidgetPresent(Image<Rgb24> image, LightsState lightsState, PixelCounts pixelCounts)
 		// This has many red pixels and white pixels.
 		=> Math.Max(0, Math.Min(pixelCounts.Red, pixelCounts.White) - 4096) / 8192f;
 
-	private static bool IsBlack(HsvColor hsv) => hsv.S < 0.2f && hsv.V <= 0.2f;
+	private static bool IsBlack(HsvColor hsv) => hsv.H < 180 && hsv.S < 0.2f && hsv.V <= 0.2f;
 
-	public override object Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap) {
+	protected internal override string Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap) {
 		debugBitmap?.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }));
 
 		// Find the text bounding box.
@@ -52,7 +52,7 @@ internal class SerialNumber : WidgetProcessor {
 		// Find out whether the image is upside-down or not.
 		bool? isUpsideDown = null;
 		image.ProcessPixelRows(a => {
-			for (var i = 1; ; i++) {
+			for (var i = 1; i < 256; i++) {
 				for (var rowNumber = 0; rowNumber < 2; rowNumber++) {
 					var y = rowNumber == 0 ? textBB.Top - i : textBB.Bottom + i;
 					if (y >= 0 && y < a.Height) {
@@ -66,6 +66,7 @@ internal class SerialNumber : WidgetProcessor {
 					}
 				}
 			}
+			throw new InvalidOperationException("Can't find the serial number heading");
 		});
 
 		debugBitmap?.Mutate(c => c.Draw(isUpsideDown!.Value ? Color.Yellow : Color.Lime, 1, textBB));
@@ -104,7 +105,7 @@ internal class SerialNumber : WidgetProcessor {
 
 		if (debugBitmap != null) {
 			for (var i = 0; i < charImages.Count; i++) {
-				debugBitmap.Mutate(c => c.DrawImage(charImages[i], new Point(64 * i, 256), 1));
+				debugBitmap?.Mutate(c => c.DrawImage(charImages[i], new Point(64 * i, 256), 1));
 			}
 		}
 		if (charImages.Count != 6) throw new ArgumentException("Found wrong number of characters");

@@ -9,7 +9,7 @@ using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Drawing.Processing;
 
 namespace BombDefuserConnector.Components;
-internal class Button : ComponentProcessor<Button.ReadData> {
+public class Button : ComponentProcessor<Button.ReadData> {
 
 	private static readonly Dictionary<Label, Image<Rgba32>> referenceButtonLabels = new() {
 		{ Label.Abort, Image.Load<Rgba32>(Resources.ButtonAbort) },
@@ -19,7 +19,7 @@ internal class Button : ComponentProcessor<Button.ReadData> {
 	};
 
 	public override string Name => "The Button";
-	public override bool UsesNeedyFrame => false;
+	protected internal override bool UsesNeedyFrame => false;
 
 	private bool isCoveredRed(HsvColor hsv) => hsv.H is >= 330 or <= 15 && hsv.S is >= 0.2f and <= 0.4f && hsv.V >= 0.5f;
 	private bool isCoveredYellow(HsvColor hsv) => hsv.H is >= 45 and <= 90 && hsv.S is >= 0.2f and <= 0.4f && hsv.V >= 0.5f;
@@ -44,7 +44,7 @@ internal class Button : ComponentProcessor<Button.ReadData> {
 		return x is >= 0 and < 256 && y is >= 0 and < 256 && predicate(HsvColor.FromColor(image[x, y]));
 	}
 
-	public override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgb24> image) {
 		// The Button: look for the large circle.
 		// This is only expected to work under normal lighting (not corrected buzzing/off/emergency lighting)
 
@@ -102,8 +102,8 @@ internal class Button : ComponentProcessor<Button.ReadData> {
 		*/
 	}
 
-	public override ReadData Process(Image<Rgb24> image, ref Image<Rgb24> debugBitmap) {
-		debugBitmap.Mutate(c => c.Brightness(0.5f));
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
+		debugBitmap?.Mutate(c => c.Brightness(0.5f));
 
 		var checkResult = getIsModulePresentColours1(image);
 
@@ -120,8 +120,10 @@ internal class Button : ComponentProcessor<Button.ReadData> {
 					if (((checkPixel(image, x - ISOLATION_CHECK_RADIUS * 2, y, predicate) && checkPixel(image, x - ISOLATION_CHECK_RADIUS, y, predicate)) || (checkPixel(image, x + ISOLATION_CHECK_RADIUS * 2, y, predicate) && checkPixel(image, x + ISOLATION_CHECK_RADIUS, y, predicate)))
 						&& ((checkPixel(image, x, y - ISOLATION_CHECK_RADIUS * 2, predicate) && checkPixel(image, x, y - ISOLATION_CHECK_RADIUS, predicate)) || (checkPixel(image, x, y + ISOLATION_CHECK_RADIUS * 2, predicate) && checkPixel(image, x, y + ISOLATION_CHECK_RADIUS, predicate)))) {
 						var distSq = (x - 100) * (x - 100) + (y - 150) * (y - 150);
-						if (distSq <= 70 * 70) { count += 10; debugBitmap[x, y] = new(0, 255, 0); } else if (distSq <= 110 * 110) { count += 3; debugBitmap[x, y] = new(0, 128, 0); } else { count -= 200; debugBitmap[x, y] = new(255, 0, 0); }
-					} else
+						if (distSq <= 70 * 70) { count += 10; if (debugBitmap is not null) debugBitmap[x, y] = new(0, 255, 0); }
+						else if (distSq <= 110 * 110) { count += 3; if (debugBitmap is not null) debugBitmap[x, y] = new(0, 128, 0); }
+						else { count -= 200; if (debugBitmap is not null) debugBitmap[x, y] = new(255, 0, 0); }
+					} else if (debugBitmap is not null)
 						debugBitmap[x, y] = new(255, 255, 255);
 				}
 			}
@@ -240,7 +242,7 @@ internal class Button : ComponentProcessor<Button.ReadData> {
 			edgeIndex %= 4;
 		}
 		bbox.Inflate(-1, -1);
-		debugBitmap.Mutate(c => c.Draw(Pens.Solid(Color.Lime, 1), bbox));
+		debugBitmap?.Mutate(c => c.Draw(Pens.Solid(Color.Lime, 1), bbox));
 
 		// Find the bounding box of the label by shrinking the face bounding box.
 		// Shrink it in each direction until the edge contains one or more adjacent label pixels with directly adjacent face pixels on both sides.
@@ -308,10 +310,10 @@ internal class Button : ComponentProcessor<Button.ReadData> {
 			}
 		}
 
-		debugBitmap.Mutate(c => c.Draw(Pens.Solid(Color.Cyan, 1), labelBB));
+		debugBitmap?.Mutate(c => c.Draw(Pens.Solid(Color.Cyan, 1), labelBB));
 
 		var labelBitmap = image.Clone(c => c.Crop(labelBB).Resize(96, 32));
-		debugBitmap.Mutate(c => c.DrawImage(labelBitmap, 1));
+		debugBitmap?.Mutate(c => c.DrawImage(labelBitmap, 1));
 
 		var bestLabel = Label.Abort;
 		var bestMatchScore = -1;
@@ -330,10 +332,10 @@ internal class Button : ComponentProcessor<Button.ReadData> {
 			}
 		}
 
-		return new(buttonColour, bestLabel, indicatorColour, count);
+		return new(buttonColour, bestLabel, indicatorColour);
 	}
 
-	public record ReadData(Colour Colour, Label Label, Colour? IndicatorColour, object debug) {
+	public record ReadData(Colour Colour, Label Label, Colour? IndicatorColour) {
 		public override string ToString() => $"{this.Colour} {this.Label} {this.IndicatorColour?.ToString() ?? "nil"}";
 	}
 

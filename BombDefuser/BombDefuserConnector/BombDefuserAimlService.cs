@@ -14,39 +14,54 @@ using SixLabors.ImageSharp.Processing;
 namespace BombDefuserConnector;
 public class BombDefuserAimlService : ISraixService {
 	private TcpClient? tcpClient;
-	private byte[] writeBuffer = new byte[1024];
-	private byte[] readBuffer = new byte[14745612];
+	private readonly byte[] writeBuffer = new byte[1024];
+	private readonly byte[] readBuffer = new byte[14745612];
 	//private static readonly HttpClient httpClient = new();
 	//private ClientWebSocket? webSocket;
 	//private CancellationTokenSource? tokenSource;
-	private static readonly List<ModuleProcessor> moduleProcessors
-		= typeof(ModuleProcessor).Assembly.GetTypes().Where(typeof(ModuleProcessor).IsAssignableFrom).Where(t => !t.IsAbstract)
-		.Select(t => (ModuleProcessor) Activator.CreateInstance(t)!).ToList();
+	private static readonly List<ComponentProcessor> moduleProcessors
+		= typeof(ComponentProcessor).Assembly.GetTypes().Where(typeof(ComponentProcessor).IsAssignableFrom).Where(t => !t.IsAbstract)
+		.Select(t => (ComponentProcessor) Activator.CreateInstance(t)!).ToList();
 	private static readonly List<WidgetProcessor> widgetProcessors
 		= typeof(WidgetProcessor).Assembly.GetTypes().Where(typeof(WidgetProcessor).IsAssignableFrom).Where(t => !t.IsAbstract)
 		.Select(t => (WidgetProcessor) Activator.CreateInstance(t)!).ToList();
-	private readonly Dictionary<string, Image<Rgb24>> cachedScreenshots = new(StringComparer.InvariantCultureIgnoreCase);
-	private readonly Queue<string> cachedScreenshotKeys = new();
+	private static readonly Dictionary<string, Image<Rgb24>> cachedScreenshots = new(StringComparer.InvariantCultureIgnoreCase);
+	private static readonly Queue<string> cachedScreenshotKeys = new();
 	private string screenshotToken = "nil";
 	private TaskCompletionSource<string>? readTaskSource;
 	private Simulation? simulation;
 
+	private static BombDefuserAimlService? instance;
+	public static BombDefuserAimlService Instance => instance ?? throw new InvalidOperationException("Service not yet initialised");
+
+	public static Components.Timer TimerProcessor { get; }
+
+	static BombDefuserAimlService() => TimerProcessor = moduleProcessors.OfType<Components.Timer>().First();
+
 	public BombDefuserAimlService() {
+		instance = this;
 		AimlVoice.Program.OobHandlers["takescreenshot"] = e => {
 			this.screenshotToken = e.Attributes["token"]?.Value ?? e.GetElementsByTagName("token").Cast<XmlNode>().FirstOrDefault()?.InnerText ?? "nil";
-			if (simulation is not null)
-				simulation.SimulateScreenshot(this.screenshotToken);
+			if (this.simulation is not null) {
+				Task.Run(async () => {
+					await Task.Delay(50);
+					var token = this.screenshotToken;
+					this.screenshotToken = "nil";
+					AimlVoice.Program.sendInput($"OOB ScreenshotReady {token} dummy");
+				});
+			}
 			else
 				this.SendMessage("screenshot");
 		};
 		AimlVoice.Program.OobHandlers["tasconnect"] = e => {
 			if (e.HasAttribute("simulation")) {
-				simulation = new();
+				this.simulation = new();
+				cachedScreenshots["dummy"] = new(1, 1);
 				AimlVoice.Program.sendInput("OOB DefuserSocketConnected");
 			} else {
 				try {
-					tcpClient = new TcpClient("localhost", 8086);
-					_ = readLoopAsync();
+					this.tcpClient = new TcpClient("localhost", 8086);
+					_ = this.readLoopAsync();
 					AimlVoice.Program.sendInput("OOB DefuserSocketConnected");
 				} catch (Exception ex) {
 					AimlVoice.Program.sendInput($"OOB DefuserSocketError {ex.Message}");
@@ -54,32 +69,32 @@ public class BombDefuserAimlService : ISraixService {
 			}
 		};
 		AimlVoice.Program.OobHandlers["sendinputs"] = e => {
-			if (simulation is not null)
-				simulation.SendInputs(e.InnerText);
+			if (this.simulation is not null)
+				this.simulation.SendInputs(e.InnerText);
 			else {
 				try {
 					var text = e.InnerText;
-					SendMessage($"input {text}");
+					this.SendMessage($"input {text}");
 				} catch (Exception ex) {
 					AimlVoice.Program.sendInput($"OOB DefuserSocketError {ex.Message}");
 				}
 			}
 		};
 		AimlVoice.Program.OobHandlers["solve"] = e => {
-			if (simulation is not null)
-				simulation.Solve();
+			if (this.simulation is not null)
+				this.simulation.Solve();
 			else
 				throw new InvalidOperationException("No simulation active");
 		};
 		AimlVoice.Program.OobHandlers["strike"] = e => {
-			if (simulation is not null)
-				simulation.Solve();
+			if (this.simulation is not null)
+				this.simulation.Solve();
 			else
 				throw new InvalidOperationException("No simulation active");
 		};
 		AimlVoice.Program.OobHandlers["triggeralarmclock"] = e => {
-			if (simulation is not null)
-				simulation.SetAlarmClock(true);
+			if (this.simulation is not null)
+				this.simulation.SetAlarmClock(true);
 			else
 				throw new InvalidOperationException("No simulation active");
 		};
@@ -95,8 +110,8 @@ public class BombDefuserAimlService : ISraixService {
 	}
 
 	private async Task readLoopAsync() {
-		if (tcpClient == null) return;
-		var stream = tcpClient.GetStream();
+		if (this.tcpClient == null) return;
+		var stream = this.tcpClient.GetStream();
 		try {
 			while (true) {
 				await stream.ReadExactlyAsync(this.readBuffer, 0, 5);
@@ -130,7 +145,7 @@ public class BombDefuserAimlService : ISraixService {
 #endif
 						var token = this.screenshotToken;
 						this.screenshotToken = "nil";
-						AimlVoice.Program.sendInput($"OOB ScreenshotReady {token} {newKey}");  // This could set a new token.
+						_ = Task.Run(() => AimlVoice.Program.sendInput($"OOB ScreenshotReady {token} {newKey}"));  // This could set a new token.
 						break;
 					}
 					case MessageType.ReadResponse:
@@ -143,7 +158,7 @@ public class BombDefuserAimlService : ISraixService {
 						break;
 					case MessageType.InputCallback:
 						await stream.ReadExactlyAsync(this.readBuffer, 0, length);
-						AimlVoice.Program.sendInput($"OOB DefuserCallback {Encoding.UTF8.GetString(this.readBuffer, 0, length)}");
+						_ = Task.Run(() => AimlVoice.Program.sendInput($"OOB DefuserCallback {Encoding.UTF8.GetString(this.readBuffer, 0, length)}"));
 						break;
 				}
 			}
@@ -165,80 +180,30 @@ public class BombDefuserAimlService : ISraixService {
 	public string Process(string text, XmlAttributeCollection attributes, RequestProcess process) {
 		var tokens = text.Split();
 		if (tokens[0].Equals("GetSideWidgetAdjustment", StringComparison.InvariantCultureIgnoreCase)) {
-			if (simulation is not null)
-				return "0";
 			var screenshotBitmap = cachedScreenshots[tokens[1]];
-			int left;
-			for (left = 60; left < screenshotBitmap.Width - 60; left++) {
-				if (isBombBacking(HsvColor.FromColor(screenshotBitmap[left, screenshotBitmap.Height / 2])))
-					break;
-			}
-			int right;
-			for (right = screenshotBitmap.Width - 60; right >= 60; right--) {
-				if (isBombBacking(HsvColor.FromColor(screenshotBitmap[right, screenshotBitmap.Height / 2])))
-					break;
-			}
-			return ((left + right) / 2 - 988).ToString();
+			return this.GetSideWidgetAdjustment(screenshotBitmap).ToString();
 		} else if (tokens[0].Equals("IdentifyModule", StringComparison.InvariantCultureIgnoreCase)) {
-			if (simulation is not null)
-				return simulation.IdentifyModule(int.Parse(tokens[2]), int.Parse(tokens[3]));
-
 			var screenshotBitmap = cachedScreenshots[tokens[1]];
-			var bitmap = ImageUtils.PerspectiveUndistort(screenshotBitmap,
-				new Point[] { new(int.Parse(tokens[2]), int.Parse(tokens[3])), new(int.Parse(tokens[4]), int.Parse(tokens[5])), new(int.Parse(tokens[6]), int.Parse(tokens[7])), new(int.Parse(tokens[8]), int.Parse(tokens[9])) },
-				InterpolationMode.NearestNeighbour);
-
-			if (ImageUtils.CheckForBlankComponent(bitmap))
-				return "nil";
-
-			var needyRating = ImageUtils.CheckForNeedyFrame(bitmap);
-			var looksLikeANeedyModule = needyRating >= 0.5f;
-
-			var ratings = new List<(string moduleType, float rating)>();
-			foreach (var processor in moduleProcessors) {
-				if (processor.UsesNeedyFrame == looksLikeANeedyModule)
-					ratings.Add((processor.GetType().Name, processor.IsModulePresent(bitmap)));
-			}
-
-			ratings.Sort((e1, e2) => e2.rating.CompareTo(e1.rating));
-			return ratings[0].moduleType;
+			var points = new Point[] { new(int.Parse(tokens[2]), int.Parse(tokens[3])), new(int.Parse(tokens[4]), int.Parse(tokens[5])), new(int.Parse(tokens[6]), int.Parse(tokens[7])), new(int.Parse(tokens[8]), int.Parse(tokens[9])) };
+			return this.GetComponentProcessor(screenshotBitmap, points)?.GetType().Name ?? "nil";
 		} else if (tokens[0].Equals("IdentifyWidget", StringComparison.InvariantCultureIgnoreCase)) {
-			if (simulation is not null)
-				return simulation.IdentifyWidget(int.Parse(tokens[2]), int.Parse(tokens[3]));
-
 			var screenshotBitmap = cachedScreenshots[tokens[1]];
-			var bitmap = ImageUtils.PerspectiveUndistort(screenshotBitmap,
-				new Point[] { new(int.Parse(tokens[2]), int.Parse(tokens[3])), new(int.Parse(tokens[4]), int.Parse(tokens[5])), new(int.Parse(tokens[6]), int.Parse(tokens[7])), new(int.Parse(tokens[8]), int.Parse(tokens[9])) },
-				InterpolationMode.NearestNeighbour);
-			var pixelCounts = WidgetProcessor.GetPixelCounts(bitmap, 0);
-
-			var ratings = new List<(string widgetType, float rating)>();
-			foreach (var processor in widgetProcessors) {
-				ratings.Add((processor.GetType().Name, processor.IsWidgetPresent(bitmap, 0, pixelCounts)));
-			}
-			ratings.Sort((e1, e2) => e2.rating.CompareTo(e1.rating));
-			return ratings[0].rating >= 0.25f ? ratings[0].widgetType : "nil";
+			var points = new Point[] { new(int.Parse(tokens[2]), int.Parse(tokens[3])), new(int.Parse(tokens[4]), int.Parse(tokens[5])), new(int.Parse(tokens[6]), int.Parse(tokens[7])), new(int.Parse(tokens[8]), int.Parse(tokens[9])) };
+			return this.GetWidgetProcessor(screenshotBitmap, points)?.GetType().Name ?? "nil";
 		} else if (tokens[0].Equals("GetLightState", StringComparison.InvariantCultureIgnoreCase)) {
-			if (simulation is not null)
-				return simulation.GetLightState(int.Parse(tokens[2]), int.Parse(tokens[3]));
-
 			var screenshotBitmap = cachedScreenshots[tokens[1]];
-			return ImageUtils.GetLightState(screenshotBitmap, new Point[] { new(int.Parse(tokens[2]), int.Parse(tokens[3])), new(int.Parse(tokens[4]), int.Parse(tokens[5])), new(int.Parse(tokens[6]), int.Parse(tokens[7])), new(int.Parse(tokens[8]), int.Parse(tokens[9])) }).ToString();
+			var points = new Point[] { new(int.Parse(tokens[2]), int.Parse(tokens[3])), new(int.Parse(tokens[4]), int.Parse(tokens[5])), new(int.Parse(tokens[6]), int.Parse(tokens[7])), new(int.Parse(tokens[8]), int.Parse(tokens[9])) };
+			return this.GetLightState(screenshotBitmap, points).ToString();
 		} else if (tokens[0].Equals("Read", StringComparison.InvariantCultureIgnoreCase)) {
-			if (simulation is not null)
-				throw new NotImplementedException();
-
-			if (this.tcpClient == null)
-				throw new InvalidOperationException("Socket not connected");
-			this.readTaskSource = new();
-			this.SendMessage($"read {string.Join(' ', tokens.Skip(1))}");
-			return this.readTaskSource.Task.Result;
+			return this.CheatRead(tokens);
+		} else if (tokens[0].Equals("GetModuleName", StringComparison.InvariantCultureIgnoreCase)) {
+			return this.CheatGetComponentProcessor(int.Parse(tokens[1]), int.Parse(tokens[2]), int.Parse(tokens[3]))?.GetType().Name ?? "nil";
 		} else {
-			if (simulation is not null) {
+			if (this.simulation is not null) {
 				return moduleProcessors.Any(p => p.GetType().Name.Equals(tokens[0], StringComparison.InvariantCultureIgnoreCase))
-					? simulation.ReadModule(tokens[0], int.Parse(tokens[2]), int.Parse(tokens[3]))
+					? this.simulation.ReadModule(tokens[0], int.Parse(tokens[2]), int.Parse(tokens[3]))
 					: widgetProcessors.Any(p => p.GetType().Name.Equals(tokens[0], StringComparison.InvariantCultureIgnoreCase))
-					? simulation.ReadWidget(tokens[0], int.Parse(tokens[2]), int.Parse(tokens[3]))
+					? this.simulation.ReadWidget(tokens[0], int.Parse(tokens[2]), int.Parse(tokens[3]))
 					: throw new ArgumentException($"No such command, module or widget is known: {tokens[0]}");
 			}
 
@@ -261,12 +226,129 @@ public class BombDefuserAimlService : ISraixService {
 
 			var processor2 = widgetProcessors.FirstOrDefault(p => p.GetType().Name.Equals(tokens[0], StringComparison.InvariantCultureIgnoreCase));
 			if (processor2 is not null) {
-				var result = processor2.Process(image, 0, ref debugBitmap);
+				var result = processor2.ProcessNonGeneric(image, 0, ref debugBitmap);
 				return result?.ToString() ?? "nil";
 			}
 
 			throw new ArgumentException($"No such command, module or widget is known: {tokens[0]}");
 		}
+	}
+
+	public Image<Rgb24> GetScreenshot(string screenshotID) => cachedScreenshots[screenshotID];
+
+	public int GetSideWidgetAdjustment(string screenshotID) => this.GetSideWidgetAdjustment(cachedScreenshots[screenshotID]);
+	public int GetSideWidgetAdjustment(Image<Rgb24> screenshotBitmap) {
+		if (this.simulation is not null)
+			return 0;
+		int left;
+		for (left = 60; left < screenshotBitmap.Width - 60; left++) {
+			if (isBombBacking(HsvColor.FromColor(screenshotBitmap[left, screenshotBitmap.Height / 2])))
+				break;
+		}
+		int right;
+		for (right = screenshotBitmap.Width - 60; right >= 60; right--) {
+			if (isBombBacking(HsvColor.FromColor(screenshotBitmap[right, screenshotBitmap.Height / 2])))
+				break;
+		}
+		return (left + right) / 2 - 988;
+	}
+
+	public ComponentProcessor? GetComponentProcessor(string screenshotID, IReadOnlyList<Point> points) => this.GetComponentProcessor(cachedScreenshots[screenshotID], points);
+	public ComponentProcessor? GetComponentProcessor(Image<Rgb24> screenshotBitmap, IReadOnlyList<Point> points) {
+		if (this.simulation is not null)
+			return this.simulation.IdentifyComponent(points[0].X, points[0].Y) is string s ? moduleProcessors.First(p => p.GetType().Name == s) : null;
+
+		var bitmap = ImageUtils.PerspectiveUndistort(screenshotBitmap,
+			points,
+			InterpolationMode.NearestNeighbour);
+
+		if (ImageUtils.CheckForBlankComponent(bitmap))
+			return null;
+
+		var needyRating = ImageUtils.CheckForNeedyFrame(bitmap);
+		var looksLikeANeedyModule = needyRating >= 0.5f;
+
+		var ratings = new List<(ComponentProcessor processor, float rating)>();
+		foreach (var processor in moduleProcessors) {
+			if (processor.UsesNeedyFrame == looksLikeANeedyModule)
+				ratings.Add((processor, processor.IsModulePresent(bitmap)));
+		}
+
+		ratings.Sort((e1, e2) => e2.rating.CompareTo(e1.rating));
+		return ratings[0].processor;
+	}
+
+	public WidgetProcessor? GetWidgetProcessor(string screenshotID, IReadOnlyList<Point> points) => this.GetWidgetProcessor(cachedScreenshots[screenshotID], points);
+	public WidgetProcessor? GetWidgetProcessor(Image<Rgb24> screenshotBitmap, IReadOnlyList<Point> points) {
+		if (this.simulation is not null)
+			return this.simulation.IdentifyWidget(points[0].X, points[0].Y) is string s ? widgetProcessors.First(p => p.GetType().Name == s) : null;
+
+		var bitmap = ImageUtils.PerspectiveUndistort(screenshotBitmap,
+			points,
+			InterpolationMode.NearestNeighbour);
+		var pixelCounts = WidgetProcessor.GetPixelCounts(bitmap, 0);
+
+		var ratings = new List<(WidgetProcessor processor, float rating)>();
+		foreach (var processor in widgetProcessors) {
+			ratings.Add((processor, processor.IsWidgetPresent(bitmap, 0, pixelCounts)));
+		}
+		ratings.Sort((e1, e2) => e2.rating.CompareTo(e1.rating));
+		return ratings[0].rating >= 0.25f ? ratings[0].processor : null;
+	}
+
+	public static T GetComponentProcessor<T>() where T : ComponentProcessor => moduleProcessors.OfType<T>().First();
+
+	public T ReadComponent<T>(string screenshotID, ComponentProcessor<T> processor, IReadOnlyList<Point> polygon) where T : notnull => ReadComponent(cachedScreenshots[screenshotID], processor, polygon);
+	public T ReadComponent<T>(Image<Rgb24> screenshot, ComponentProcessor<T> processor, IReadOnlyList<Point> polygon) where T : notnull {
+		if (this.simulation is not null)
+			return this.simulation.ReadComponent<T>(processor, polygon[0].X, polygon[0].Y);
+		var image = ImageUtils.PerspectiveUndistort(screenshot, polygon, InterpolationMode.NearestNeighbour);
+#if DEBUG
+		SaveDebugImage(image, processor.Name);
+#endif
+		Image<Rgb24>? debugBitmap = null;
+		return processor.Process(image, ref debugBitmap);
+	}
+
+	public T ReadWidget<T>(string screenshotID, WidgetProcessor<T> processor, IReadOnlyList<Point> polygon) where T : notnull => ReadWidget(cachedScreenshots[screenshotID], processor, polygon);
+	public T ReadWidget<T>(Image<Rgb24> screenshot, WidgetProcessor<T> processor, IReadOnlyList<Point> polygon) where T : notnull {
+			if (this.simulation is not null)
+			return this.simulation.ReadWidget<T>(processor, polygon[0].X, polygon[0].Y);
+		var image = ImageUtils.PerspectiveUndistort(screenshot, polygon, InterpolationMode.NearestNeighbour);
+#if DEBUG
+		SaveDebugImage(image, processor.Name);
+#endif
+		Image<Rgb24>? debugBitmap = null;
+		return processor.Process(image, 0, ref debugBitmap);
+	}
+
+	public ModuleLightState GetLightState(string screenshotID, IReadOnlyList<Point> points) => this.GetLightState(cachedScreenshots[screenshotID], points);
+	public ModuleLightState GetLightState(Image<Rgb24> screenshotBitmap, IReadOnlyList<Point> points)
+		=> this.simulation is not null
+			? this.simulation.GetLightState(points[0].X, points[0].Y)
+			: ImageUtils.GetLightState(screenshotBitmap, points);
+
+	public string CheatRead(string[] tokens) {
+		if (this.simulation is not null)
+			throw new NotImplementedException();
+
+		if (this.tcpClient == null)
+			throw new InvalidOperationException("Socket not connected");
+		this.readTaskSource = new();
+		this.SendMessage($"read {string.Join(' ', tokens.Skip(1))}");
+		return this.readTaskSource.Task.Result;
+	}
+
+	public ComponentProcessor? CheatGetComponentProcessor(int face, int x, int y) {
+		if (this.simulation is not null)
+			return this.simulation.IdentifyComponent(face, x, y) is string s ? moduleProcessors.First(p => p.GetType().Name == s) : null;
+
+		if (this.tcpClient == null)
+			throw new InvalidOperationException("Socket not connected");
+		this.readTaskSource = new();
+		this.SendMessage($"getmodulename {face} {x} {y}");
+		var name = this.readTaskSource.Task.Result;
+		return moduleProcessors.FirstOrDefault(p => p.GetType().Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
 	}
 
 	public enum MessageType {

@@ -3,11 +3,11 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserConnector.Components;
-internal class WireSequence : ComponentProcessor<object> {
+public class WireSequence : ComponentProcessor<object> {
 	public override string Name => "Wire Sequence";
-	public override bool UsesNeedyFrame => false;
+	protected internal override bool UsesNeedyFrame => false;
 
-	public override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgb24> image) {
 		// Wire Sequence: look for the stage indicator, wires and background
 		var count = 0;
 		for (var y = 96; y < 224; y++) {
@@ -35,7 +35,7 @@ internal class WireSequence : ComponentProcessor<object> {
 		return count / 5120f + count2 / 280f;
 	}
 
-	public override object Process(Image<Rgb24> image, ref Image<Rgb24> debugBitmap) {
+	protected internal override object Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
 		throw new NotImplementedException();
 	}
 }

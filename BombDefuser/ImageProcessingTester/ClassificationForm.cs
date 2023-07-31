@@ -52,7 +52,7 @@ public partial class ClassificationForm : Form {
 
 					var looksLikeANeedyModule = needyRating >= 0.5f;
 
-					foreach (var processor in comboBox1.Items.OfType<ModuleProcessor>()) {
+					foreach (var processor in comboBox1.Items.OfType<ComponentProcessor>()) {
 						if (processor.UsesNeedyFrame == looksLikeANeedyModule) {
 							var result = processor.IsModulePresent(bitmap);
 							probs[processor.Name] = result;
@@ -83,12 +83,12 @@ public partial class ClassificationForm : Form {
 				var debugBitmap = bitmap2;
 				try {
 					switch (comboBox1.SelectedItem) {
-						case ModuleProcessor moduleProcessor:
+						case ComponentProcessor moduleProcessor:
 							var result = moduleProcessor.ProcessNonGeneric(bitmap, ref debugBitmap);
 							s = result.ToString();
 							break;
 						case WidgetProcessor widgetProcessor:
-							result = widgetProcessor.Process(bitmap, 0, ref debugBitmap);
+							result = widgetProcessor.ProcessNonGeneric(bitmap, 0, ref debugBitmap);
 							s = result.ToString();
 							break;
 					}
@@ -110,8 +110,8 @@ public partial class ClassificationForm : Form {
 	}
 
 	private void ClassificationForm_Load(object sender, EventArgs e) {
-		foreach (var type in typeof(ModuleProcessor).Assembly.GetTypes()) {
-			if (!type.IsAbstract && typeof(ModuleProcessor).IsAssignableFrom(type))
+		foreach (var type in typeof(ComponentProcessor).Assembly.GetTypes()) {
+			if (!type.IsAbstract && typeof(ComponentProcessor).IsAssignableFrom(type))
 				comboBox1.Items.Add(Activator.CreateInstance(type));
 			else if (!type.IsAbstract && typeof(WidgetProcessor).IsAssignableFrom(type))
 				comboBox1.Items.Add(Activator.CreateInstance(type));

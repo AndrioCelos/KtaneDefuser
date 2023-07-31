@@ -9,7 +9,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Components;
-internal class Keypad : ComponentProcessor<Keypad.ReadData> {
+public class Keypad : ComponentProcessor<Keypad.ReadData> {
 	private static readonly (Image<L8> image, Symbol symbol)[] ReferenceSymbols = new[] {
 		(LoadSampleImage(Resources.KeypadAe), Symbol.Ae),
 		(LoadSampleImage(Resources.KeypadBalloon), Symbol.Balloon),
@@ -53,9 +53,9 @@ internal class Keypad : ComponentProcessor<Keypad.ReadData> {
 	}
 
 	public override string Name => "Keypad";
-	public override bool UsesNeedyFrame => false;
+	protected internal override bool UsesNeedyFrame => false;
 
-	public override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgb24> image) {
 		// Keypad: look for white keys and gray bezel
 		var referenceColour = new Rgb24(136, 140, 150);
 		var referenceColour2 = new Rgb24(232, 217, 194);
@@ -77,28 +77,24 @@ internal class Keypad : ComponentProcessor<Keypad.ReadData> {
 		return Math.Min(1, count / 100f);
 	}
 
-	public override ReadData Process(Image<Rgb24> image, ref Image<Rgb24> debugBitmap) {
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
 		static bool predicate(Rgb24 c) {
 			var hsv = HsvColor.FromColor(c);
 			return hsv.H is >= 30 and <= 60 && hsv.S <= 0.4f && hsv.V >= 0.35f;
 		}
 
-		debugBitmap.Mutate(c => c.Brightness(0.5f));
+		debugBitmap?.Mutate(c => c.Brightness(0.5f));
 		for (var y = 0; y < image.Width; y++) {
 			for (var x = 0; x < image.Width; x++) {
 				var color = image[x, y];
-				if (predicate(color))
-					debugBitmap[x, y] = color;
-				else {
-					var hsv = HsvColor.FromColor(color);
-					//if (hsv.V < 0.5f)
-					//	debugBitmap.SetPixel(x, y, Color.Green);
+				if (predicate(color)) {
+					if (debugBitmap is not null) debugBitmap[x, y] = color;
 				}
 			}
 		}
 
 		var keypadCorners = ImageUtils.FindCorners(image, new(0, 48, 208, 208), predicate, true);
-		ImageUtils.DebugDrawPoints(debugBitmap, keypadCorners);
+		if (debugBitmap is not null) ImageUtils.DebugDrawPoints(debugBitmap, keypadCorners);
 
 		var keysBitmap = ImageUtils.PerspectiveUndistort(image, keypadCorners, InterpolationMode.Bilinear, new(256, 256));
 
@@ -219,10 +215,12 @@ internal class Keypad : ComponentProcessor<Keypad.ReadData> {
 			keyRectangles[i] = bbox;
 		}
 
-		debugBitmap.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }).DrawImage(keysBitmap, new Point(0, 256), 1));
-		foreach (var rect in keyRectangles) {
-			rect.Offset(0, 256);
-			debugBitmap.Mutate(c => c.Draw(Pens.Solid(Color.Lime, 1), rect));
+		if (debugBitmap is not null) {
+			debugBitmap?.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }).DrawImage(keysBitmap, new Point(0, 256), 1));
+			foreach (var rect in keyRectangles) {
+				rect.Offset(0, 256);
+				debugBitmap?.Mutate(c => c.Draw(Pens.Solid(Color.Lime, 1), rect));
+			}
 		}
 
 		var symbols = new Symbol[4];

@@ -3,11 +3,11 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserConnector.Components;
-internal class Maze : ComponentProcessor<object> {
+public class Maze : ComponentProcessor<object> {
 	public override string Name => "Maze";
-	public override bool UsesNeedyFrame => false;
+	protected internal override bool UsesNeedyFrame => false;
 
-	public override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgb24> image) {
 		// Maze: look for the display
 		var count = 0;
 		for (var y = 60; y < 208; y++) {
@@ -23,7 +23,7 @@ internal class Maze : ComponentProcessor<object> {
 		return count / 828800f;
 	}
 
-	public override object Process(Image<Rgb24> image, ref Image<Rgb24> debugBitmap) {
+	protected internal override object Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
 		throw new NotImplementedException();
 	}
 }

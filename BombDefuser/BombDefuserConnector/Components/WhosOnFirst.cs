@@ -3,11 +3,11 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserConnector.Components;
-internal class WhosOnFirst : ComponentProcessor<object> {
+public class WhosOnFirst : ComponentProcessor<object> {
 	public override string Name => "Who's on First";
-	public override bool UsesNeedyFrame => false;
+	protected internal override bool UsesNeedyFrame => false;
 
-	public override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgb24> image) {
 		// Who's on First: look for the display and keys
 		var referenceColour = new Rgb24(71, 91, 104);
 		var referenceColour2 = new Rgb24(170, 150, 120);
@@ -33,7 +33,7 @@ internal class WhosOnFirst : ComponentProcessor<object> {
 
 		return count / 192 + count2 / 2240;
 	}
-	public override object Process(Image<Rgb24> image, ref Image<Rgb24> debugBitmap) {
+	protected internal override object Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
 		throw new NotImplementedException();
 	}
 }

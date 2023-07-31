@@ -3,11 +3,11 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserConnector.Components;
-internal class MorseCode : ComponentProcessor<object> {
+public class MorseCode : ComponentProcessor<object> {
 	public override string Name => "Morse Code";
-	public override bool UsesNeedyFrame => false;
+	protected internal override bool UsesNeedyFrame => false;
 
-	public override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgb24> image) {
 		// Morse Code: look for the orange display pixels
 		var count = 0f;
 		for (var y = 144; y < 160; y++) {
@@ -18,7 +18,7 @@ internal class MorseCode : ComponentProcessor<object> {
 		}
 		return Math.Min(count / 600, 1);
 	}
-	public override object Process(Image<Rgb24> image, ref Image<Rgb24> debugBitmap) {
+	protected internal override object Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
 		throw new NotImplementedException();
 	}
 }

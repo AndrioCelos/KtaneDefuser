@@ -1,14 +1,15 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Widgets;
-internal class PortPlate : WidgetProcessor {
+public class PortPlate : WidgetProcessor<PortPlate.Ports> {
 	public override string Name => "Port Plate";
 
-	public override float IsWidgetPresent(Image<Rgb24> image, LightsState lightsState, PixelCounts pixelCounts)
+	protected internal override float IsWidgetPresent(Image<Rgb24> image, LightsState lightsState, PixelCounts pixelCounts)
 		// This has many dark grey pixels.
 		=> Math.Max(0, pixelCounts.Grey - 4096) / 8192f;
 
@@ -19,7 +20,7 @@ internal class PortPlate : WidgetProcessor {
 	private static bool IsDviRed(HsvColor hsv) => hsv.H is >= 345 or < 30 && hsv.S is >= 0.4f and < 0.75f && hsv.V is >= 0.25f and < 0.75f;
 	private static bool IsGreen(HsvColor hsv) => hsv.H is >= 120 and < 150 && hsv.S is >= 0.3f and < 0.6f && hsv.V is >= 0.5f and < 0.75f;
 
-	public override object Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap) {
+	protected internal override Ports Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap) {
 		var corners = ImageUtils.FindCorners(image, new(8, 8, 240, 240), c => IsGrey(HsvColor.FromColor(c)), true);
 		var plateImage = ImageUtils.PerspectiveUndistort(image, corners, InterpolationMode.NearestNeighbour, new(256, 128));
 		if (debugBitmap is not null)
@@ -49,18 +50,53 @@ internal class PortPlate : WidgetProcessor {
 			}
 		});
 
-		var ports = new List<string>();
-		if (pinkCount >= 600) ports.Add("Parallel");
-		if (tealCount >= 300) ports.Add("Serial");
-		if (redCountEdge >= 200) ports.Add("StereoRCA");
-		if (pinkCount < 600 && redCountMiddle >= 1000) ports.Add("DVID");
-		if (greenCount >= 200) ports.Add("PS2");
-		if (blackCount >= 200) ports.Add("RJ45");
-
-		return new ReadData(ports, pinkCount, tealCount, redCountEdge, redCountMiddle, greenCount, blackCount);
+		var ports = (PortType) 0;
+		if (pinkCount >= 600) ports |= PortType.Parallel;
+		if (tealCount >= 300) ports |= PortType.Serial;
+		if (redCountEdge >= 200) ports |= PortType.StereoRCA;
+		if (pinkCount < 600 && redCountMiddle >= 1000) ports |= PortType.DviD;
+		if (greenCount >= 200) ports |= PortType.PS2;
+		if (blackCount >= 200) ports |= PortType.RJ45;
+		return new(ports);
 	}
 
-	public record ReadData(ICollection<string> ports, int pinkCount, int tealCount, int redCountEdge, int redCountMiddle, int greenCount, int blackCount) {
-		public override string? ToString() => ports.Count == 0 ? "nil" : string.Join(' ', this.ports);
+	public struct Ports : IReadOnlyCollection<PortType> {
+		public PortType Value;
+
+		public Ports(PortType value) => this.Value = value;
+
+		public readonly bool Contains(PortType portType) => this.Value.HasFlag(portType);
+
+		public readonly int Count {
+			get {
+				var count = 0;
+				var enumerator = this.GetEnumerator();
+				while (enumerator.MoveNext()) count++;
+				return count;
+			}
+		}
+
+		public readonly IEnumerator<PortType> GetEnumerator() {
+			if (this.Value.HasFlag(PortType.Parallel)) yield return PortType.Parallel;
+			if (this.Value.HasFlag(PortType.Serial)) yield return PortType.Serial;
+			if (this.Value.HasFlag(PortType.StereoRCA)) yield return PortType.StereoRCA;
+			if (this.Value.HasFlag(PortType.DviD)) yield return PortType.DviD;
+			if (this.Value.HasFlag(PortType.PS2)) yield return PortType.PS2;
+			if (this.Value.HasFlag(PortType.RJ45)) yield return PortType.RJ45;
+		}
+
+		readonly IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+
+		public override readonly string ToString() => this.Value != 0 ? string.Join(' ', this) : "nil";
+	} 
+
+	[Flags]
+	public enum PortType {
+		Parallel = 1,
+		Serial = 2,
+		StereoRCA = 4,
+		DviD = 8,
+		PS2 = 16,
+		RJ45 = 32
 	}
 }

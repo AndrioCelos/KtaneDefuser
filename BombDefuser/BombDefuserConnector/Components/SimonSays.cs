@@ -3,11 +3,11 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserConnector.Components;
-internal class SimonnSays : ComponentProcessor<object> {
+public class SimonSays : ComponentProcessor<object> {
 	public override string Name => "Simon Says";
-	public override bool UsesNeedyFrame => false;
+	protected internal override bool UsesNeedyFrame => false;
 
-	public override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgb24> image) {
 		// Simon: look for the colours
 		var count = 0f;
 		var referenceHues = new float[] { 237, 356, 45, 108 };
@@ -28,7 +28,7 @@ internal class SimonnSays : ComponentProcessor<object> {
 		return count / 576f;
 	}
 
-	public override object Process(Image<Rgb24> image, ref Image<Rgb24> debugBitmap) {
+	protected internal override object Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
 		throw new NotImplementedException();
 	}
 }

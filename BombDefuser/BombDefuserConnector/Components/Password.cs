@@ -3,11 +3,11 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserConnector.Components;
-internal class Password : ComponentProcessor<object> {
+public class Password : ComponentProcessor<object> {
 	public override string Name => "Password";
-	public override bool UsesNeedyFrame => false;
+	protected internal override bool UsesNeedyFrame => false;
 
-	public override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgb24> image) {
 		// Password: look for the display in the correct Y range
 		var count = 0f;
 		var count2 = 0f;
@@ -27,7 +27,7 @@ internal class Password : ComponentProcessor<object> {
 		return Math.Min(1, Math.Max(0, count / 200 - count2 / 100));
 	}
 
-	public override object Process(Image<Rgb24> image, ref Image<Rgb24> debugBitmap) {
+	protected internal override object Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
 		throw new NotImplementedException();
 	}
 }
