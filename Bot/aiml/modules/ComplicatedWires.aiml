@@ -5,10 +5,16 @@
 		<template>
 			<think><set><name>ComplicatedWires<get name='module'/>Wires</name>0</set></think>
 			<srai>SelectModule ComplicatedWires XS Complicated Wires</srai><reply>read</reply>
+			<oob><timer duration='1' postback='Read'/></oob>
 		</template>
 	</category>
 
 	<topic name='ComplicatedWires ^'>
+		<category>
+			<pattern>OOB Tick Read</pattern>
+			<template><srai>read</srai></template>
+		</category>
+
 		<category>
 			<pattern>read</pattern>
 			<template>
@@ -157,19 +163,34 @@
 			<pattern>CutRemainingWires</pattern>
 			<template>
 				<think>
-					<set var='wire'><first><get><name>ComplicatedWires<get name='module'/>ToCut</name></get></first></set>
-					<set><name>ComplicatedWires<get name='module'/>ToCut</name><rest><get><name>ComplicatedWires<get name='module'/>ToCut</name></get></rest></set>
+					<set var='commands'></set>
+					<set var='wires'><get><name>ComplicatedWires<get name='module'/>ToCut</name></get></set>
+					<condition var='wires'>
+						<li value='nil'></li>
+						<li>
+							<set var='wire'><first><get var='wires'/></first></set>
+							<set var='wires'><rest><get var='wires'/></rest></set>
+							<set var='commands'><get var='commands'/> <srai>GetPressesToMoveTo <get var='wire'/></srai> a</set>
+							<set><name>Focus<get name='module'/></name><get var='wire'/></set>
+							<set><name>ComplicatedWires<get name='module'/>Cut<get var='wire'/></name>true</set>
+							<loop/>
+						</li>
+					</condition>
+					<set><name>ComplicatedWires<get name='module'/>ToCut</name>nil</set>
 				</think>
-				<oob><sendinputs><srai>GetPressesToMoveTo <get var='wire'/></srai> a callback:cut</sendinputs></oob>
-				<think>
-					<set><name>Focus<get name='module'/></name><get var='wire'/></set>
-					<set><name>ComplicatedWires<get name='module'/>Cut<get var='wire'/></name>true</set>
-				</think>
+				<oob><sendinputs><get var='commands'/> callback:cut</sendinputs></oob>
 			</template>
 		</category>
 
 		<category>
 			<pattern>OOB DefuserCallback cut</pattern>
+			<template>
+				<!-- Find out whether we solved or struck. -->
+				<oob><timer duration='0.5' postback='ComplicatedWiresStrikeCheck'/></oob>
+			</template>
+		</category>
+		<category>
+			<pattern>OOB Tick ComplicatedWiresStrikeCheck</pattern>
 			<template>
 				<!-- Find out whether we solved or struck. -->
 				<oob><takescreenshot token='StrikeCheck'/></oob>
