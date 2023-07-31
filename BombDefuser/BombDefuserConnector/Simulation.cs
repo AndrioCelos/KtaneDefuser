@@ -32,7 +32,7 @@ internal class Simulation {
 			{ null, null, new Modules.ComplicatedWires(new[] { WireFlags.Red, WireFlags.Blue, WireFlags.Red }) }
 		});
 		this.moduleFaces[1] = new(new BombComponent?[,] {
-			{ null, null, null },
+			{ new Modules.ComplicatedWires(new[] { WireFlags.Red, WireFlags.Blue, WireFlags.Red }), null, null },
 			{ null, null, null }
 		});
 		this.widgetFaces[0] = new(new Widget?[] { Widget.Create(new Widgets.SerialNumber(), "AB3DE6"), null, null, null });

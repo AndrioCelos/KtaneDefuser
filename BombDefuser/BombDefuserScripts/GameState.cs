@@ -15,10 +15,9 @@ public class GameState {
 	public int? SelectedModuleNum {
 		get => selectedModuleNum;
 		set {
-			if (selectedModuleNum != null) {
-				if (value == null) return;
+			if (value == selectedModuleNum) return;
+			if (selectedModuleNum != null)
 				this.ModuleDeselected?.Invoke(null, EventArgs.Empty);
-			}
 			selectedModuleNum = value;
 			if (value != null)
 				this.ModuleSelected?.Invoke(null, EventArgs.Empty);

@@ -67,7 +67,7 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 						builder.Append("left ");
 						module.X--;
 					}
-					builder.Append('a');
+					builder.Append("a ");
 					this.wires[i].isCut = true;
 					var result = await interrupt.SubmitAsync(builder.ToString());
 					if (result == ModuleLightState.Strike) {
