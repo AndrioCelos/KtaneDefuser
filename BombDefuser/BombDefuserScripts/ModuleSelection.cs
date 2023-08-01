@@ -17,6 +17,6 @@ internal static class ModuleSelection {
 		context.Reply($"<oob><queue/><setgrammar>{script.Topic}</setgrammar></oob> Module {number} is {script.IndefiniteDescription}.");
 		await Utils.SelectModuleAsync(context, index);
 		context.RequestProcess.User.Topic = script.Topic;
-		script.Enter(context);
+		script.Entering(context);
 	}
 }

@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
-using WireFlags = BombDefuserConnector.Components.ComplicatedWires.WireFlags;
+using static BombDefuserConnector.Components.ComplicatedWires;
 
 namespace BombDefuserConnector;
 internal class Simulation {
@@ -28,11 +28,11 @@ internal class Simulation {
 		this.rxTimer.Elapsed += this.RXTimer_Elapsed;
 
 		this.moduleFaces[0] = new(new BombComponent?[,] {
-			{ TimerComponent.Instance, new Modules.ComplicatedWires(new[] { WireFlags.Red, WireFlags.None, WireFlags.None, WireFlags.Blue }), new Modules.ComplicatedWires(new[] { WireFlags.Red, WireFlags.Blue, WireFlags.Blue | WireFlags.Light }) },
-			{ null, null, new Modules.ComplicatedWires(new[] { WireFlags.Red, WireFlags.Blue, WireFlags.Red }) }
+			{ TimerComponent.Instance, new Modules.Button(Components.Button.Colour.Blue, Components.Button.Label.Detonate), null },
+			{ null, null, null }
 		});
 		this.moduleFaces[1] = new(new BombComponent?[,] {
-			{ new Modules.ComplicatedWires(new[] { WireFlags.Red, WireFlags.Blue, WireFlags.Red }), null, null },
+			{ new Modules.NeedyCapacitor(), null, null },
 			{ null, null, null }
 		});
 		this.widgetFaces[0] = new(new Widget?[] { Widget.Create(new Widgets.SerialNumber(), "AB3DE6"), null, null, null });
@@ -41,6 +41,19 @@ internal class Simulation {
 		this.widgetFaces[3] = new(new Widget?[] { Widget.Create(new Widgets.PortPlate(), new Widgets.PortPlate.Ports(Widgets.PortPlate.PortType.Parallel | Widgets.PortPlate.PortType.Serial)), Widget.Create(new Widgets.PortPlate(), new Widgets.PortPlate.Ports(0)), null, null, null, null });
 		Message("Simulation initialised.");
 
+		for (var i = 0; i < this.moduleFaces.Length; i++) {
+			for (var y = 0; y < this.moduleFaces[i].Slots.GetLength(0); y++) {
+				for (var x = 0; x < this.moduleFaces[i].Slots.GetLength(1); x++) {
+					if (this.moduleFaces[i].Slots[y, x] is NeedyModule needyModule)
+						needyModule.Initialise(i, y, x);
+				}
+			}
+		}
+		this.DelayActivateNeedy();
+	}
+
+	private async void DelayActivateNeedy() {
+		await Task.Delay(10000);
 		foreach (var face in this.moduleFaces) {
 			foreach (var module in face.Slots) {
 				if (module is NeedyModule needyModule)
@@ -444,6 +457,9 @@ internal class Simulation {
 	}
 
 	private abstract class NeedyModule : Module {
+		private int faceNum;
+		private int x;
+		private int y;
 		private readonly Stopwatch stopwatch = new();
 		private readonly TimeSpan startingTime;
 		private TimeSpan initialTime;
@@ -453,16 +469,26 @@ internal class Simulation {
 
 		protected NeedyModule(ComponentProcessor processor, TimeSpan startingTime) : base(processor) => this.startingTime = startingTime;
 
+		public void Initialise(int faceNum, int x, int y) {
+			this.faceNum = faceNum;
+			this.x = x;
+			this.y = y;
+			AimlVoice.Program.sendInput($"OOB DefuserSocketMessage NeedyStateChanged {this.faceNum} {this.x} {this.y} AwaitingActivation");
+		}
+
 		public void Activate() {
 			this.initialTime = this.startingTime;
 			this.stopwatch.Restart();
 			this.IsActive = true;
+			Message($"{this.Processor.Name} activated with {this.startingTime} s left.");
+			AimlVoice.Program.sendInput($"OOB DefuserSocketMessage NeedyStateChanged {this.faceNum} {this.x} {this.y} Running");
 		}
 
 		public void Deactivate() {
-			Message($"{this.Processor.Name} deactivated with {this.RemainingTime.TotalSeconds}s left.");
 			this.stopwatch.Stop();
 			this.IsActive = false;
+			Message($"{this.Processor.Name} deactivated with {this.RemainingTime.TotalSeconds} s left.");
+			AimlVoice.Program.sendInput($"OOB DefuserSocketMessage NeedyStateChanged {this.faceNum} {this.x} {this.y} Cooldown");
 		}
 
 		public void AddTime(TimeSpan time, TimeSpan max) {
@@ -474,12 +500,12 @@ internal class Simulation {
 		}
 	}
 
-	private abstract class NeedyModule<TProcessor, TDetails> : NeedyModule where TProcessor : ComponentProcessor<TDetails> where TDetails : notnull {
+	private abstract class NeedyModule<TDetails> : NeedyModule where TDetails : notnull {
 		internal virtual TDetails Details { get; }
 		internal override string DetailsString => this.Details.ToString() ?? "";
 
-		protected NeedyModule(TimeSpan startingTime) : this(default!, startingTime) { }
-		protected NeedyModule(TDetails details, TimeSpan startingTime) : base(BombDefuserAimlService.GetComponentProcessor<TProcessor>(), startingTime) => this.Details = details;
+		protected NeedyModule(ComponentProcessor<TDetails> processor, TimeSpan startingTime) : this(processor, default!, startingTime) { }
+		protected NeedyModule(ComponentProcessor<TDetails> processor, TDetails details, TimeSpan startingTime) : base(processor, startingTime) => this.Details = details;
 	}
 
 	private class TimerComponent : BombComponent {
@@ -488,7 +514,7 @@ internal class Simulation {
 		internal static TimerComponent Instance { get; } = new();
 
 		private readonly Stopwatch stopwatch = Stopwatch.StartNew();
-		
+
 		internal Components.Timer.ReadData Details {
 			get {
 				var elapsed = this.stopwatch.ElapsedTicks;
@@ -668,13 +694,13 @@ internal class Simulation {
 					this.Solve();
 			}
 		}
-		/*
-		public class CapacitorDischarge : NeedyModule<int> {
+
+		public class NeedyCapacitor : NeedyModule<Components.NeedyCapacitor.ReadData> {
 			private Stopwatch pressStopwatch = new();
 
-			internal override int Details => (int) this.RemainingTime.TotalSeconds;
+			internal override Components.NeedyCapacitor.ReadData Details => new(this.IsActive ? (int) this.RemainingTime.TotalSeconds : null);
 
-			public CapacitorDischarge() : base(null, TimeSpan.FromSeconds(45)) { }
+			public NeedyCapacitor() : base(BombDefuserAimlService.GetComponentProcessor<Components.NeedyCapacitor>(), TimeSpan.FromSeconds(45)) { }
 
 			public override void Interact() {
 				Message($"{this.Processor.Name} pressed with {this.RemainingTime.TotalSeconds} s left.");
@@ -682,10 +708,9 @@ internal class Simulation {
 			}
 
 			public override void StopInteract() {
-				this.AddTime(pressStopwatch.Elapsed * 5, TimeSpan.FromSeconds(45));
+				this.AddTime(pressStopwatch.Elapsed * 6, TimeSpan.FromSeconds(45));
 				Message($"{this.Processor.Name} released with {this.RemainingTime.TotalSeconds} s left.");
 			}
 		}
-		*/
 	}
 }

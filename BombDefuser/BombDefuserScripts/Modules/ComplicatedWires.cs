@@ -10,7 +10,7 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 	private (WireFlags flags, bool isCut)[]? wires;
 	private WireFlags? currentFlags;
 
-	public override async void Enter(AimlAsyncContext context) {
+	protected internal override async void Entering(AimlAsyncContext context) {
 		await AimlTasks.Delay(1);
 		Read(context);
 	}

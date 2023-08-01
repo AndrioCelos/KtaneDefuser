@@ -54,7 +54,7 @@ public class Indicator : WidgetProcessor<Indicator.ReadData> {
 	private static bool IsUnlit(HsvColor hsv) => hsv.H >= 30 && hsv.S < 0.15f && hsv.V is >= 0.05f and < 0.2f;
 
 	protected internal override ReadData Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap) {
-		var corners = ImageUtils.FindCorners(image, image.Bounds, c => IsRed(HsvColor.FromColor(c)), true);
+		var corners = ImageUtils.FindCorners(image, image.Bounds, c => IsRed(HsvColor.FromColor(c)), 12) ?? throw new ArgumentException("Can't find indicator corners");
 		var indicatorImage = ImageUtils.PerspectiveUndistort(image, corners, InterpolationMode.NearestNeighbour, new(256, 112));
 		if (debugBitmap is not null)
 			ImageUtils.DebugDrawPoints(debugBitmap, corners);

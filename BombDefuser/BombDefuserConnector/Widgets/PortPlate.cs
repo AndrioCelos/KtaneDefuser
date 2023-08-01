@@ -21,7 +21,7 @@ public class PortPlate : WidgetProcessor<PortPlate.Ports> {
 	private static bool IsGreen(HsvColor hsv) => hsv.H is >= 120 and < 150 && hsv.S is >= 0.3f and < 0.6f && hsv.V is >= 0.5f and < 0.75f;
 
 	protected internal override Ports Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap) {
-		var corners = ImageUtils.FindCorners(image, new(8, 8, 240, 240), c => IsGrey(HsvColor.FromColor(c)), true);
+		var corners = ImageUtils.FindCorners(image, new(8, 8, 240, 240), c => IsGrey(HsvColor.FromColor(c)), 12) ?? throw new ArgumentException("Can't find port plate corners");
 		var plateImage = ImageUtils.PerspectiveUndistort(image, corners, InterpolationMode.NearestNeighbour, new(256, 128));
 		if (debugBitmap is not null)
 			ImageUtils.DebugDrawPoints(debugBitmap, corners);

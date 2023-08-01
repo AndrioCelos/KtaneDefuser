@@ -95,11 +95,14 @@ internal static class Start {
 				break;
 			default:
 				var script = ModuleScript.Create(component);
+				script.ModuleIndex = GameState.Current.Modules.Count;
 				var module = new ModuleState(slot, component, script);
 				GameState.Current.Faces[slot.Face][slot] = module;
 				GameState.Current.Modules.Add(module);
 				GameState.Current.Faces[slot.Face].HasModules = true;
-				context.RequestProcess.Log(LogLevel.Info, $"Registering module {GameState.Current.Modules.Count}: {component.Name} @ {slot}");
+				context.RequestProcess.Log(LogLevel.Info, $"Registering module {script.ModuleIndex + 1}: {component.Name} @ {slot}");
+				if (script.PriorityCategory != PriorityCategory.None)
+					context.Reply($"<oob><queue/></oob> Module {script.ModuleIndex + 1} is {script.IndefiniteDescription}.");
 				break;
 		}
 	}

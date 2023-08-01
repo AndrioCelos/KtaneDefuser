@@ -22,13 +22,10 @@ public class Timer : ComponentProcessor<Timer.ReadData> {
 			return c.G < 12 && c.B < 12;
 		}
 
-		var timerCorners = ImageUtils.FindCorners(image, new(16, 96, 224, 144), predicate, false);
+		var timerCorners = ImageUtils.FindCorners(image, new(16, 96, 224, 144), predicate, 0) ?? throw new ArgumentException("Can't find timer display corners");
 		using var timerBitmap = ImageUtils.PerspectiveUndistort(image, timerCorners, InterpolationMode.NearestNeighbour, new(256, 128));
 
-		Point[]? strikesCorners = null;
-		try {
-			strikesCorners = ImageUtils.FindCorners(image, new(88, 16, 96, 64), predicate, false);
-		} catch { }
+		Point[]? strikesCorners = ImageUtils.FindCorners(image, new(88, 16, 96, 64), predicate, 0);
 		using var strikesBitmap = strikesCorners is not null ? ImageUtils.PerspectiveUndistort(image, strikesCorners, InterpolationMode.NearestNeighbour, new(128, 64)) : null;
 
 		if (debugBitmap is not null) {

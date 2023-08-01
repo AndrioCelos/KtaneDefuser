@@ -93,7 +93,7 @@ public class Keypad : ComponentProcessor<Keypad.ReadData> {
 			}
 		}
 
-		var keypadCorners = ImageUtils.FindCorners(image, new(0, 48, 208, 208), predicate, true);
+		var keypadCorners = ImageUtils.FindCorners(image, new(0, 48, 208, 208), predicate, 12) ?? throw new ArgumentException("Can't find keypad corners");
 		if (debugBitmap is not null) ImageUtils.DebugDrawPoints(debugBitmap, keypadCorners);
 
 		var keysBitmap = ImageUtils.PerspectiveUndistort(image, keypadCorners, InterpolationMode.Bilinear, new(256, 256));

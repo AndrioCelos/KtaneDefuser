@@ -52,7 +52,7 @@ public static class ImageUtils {
 	public static bool IsModuleBack(HsvColor hsv, LightsState lightsState)
 		=> hsv.H is >= 180 and < 255 && hsv.S is >= 0.025f and < 0.25f && hsv.V is >= 0.45f and < 0.75f;
 
-	public static Point[] FindCorners(Image<Rgb24> image, Rectangle bounds, Predicate<Rgb24> predicate, bool checkContinuity) {
+	public static Point[]? FindCorners(Image<Rgb24> image, Rectangle bounds, Predicate<Rgb24> predicate, int continuitySize) {
 		var points = new Point[4];
 		var diagonalSweeps = new (Point start, Size dir, Size increment)[] {
 			(new(bounds.Left, bounds.Top), new(-1, 1), new(1, 0)),
@@ -70,7 +70,7 @@ public static class ImageUtils {
 				var point = diagonalPoint1;
 				for (var j = 0; j <= i; j++) {
 					if (bounds.Contains(point) && predicate(image[point.X, point.Y])) {
-						if (checkContinuity) {
+						if (continuitySize > 0) {
 							// Try to filter out outliers by requiring 12 out of 16 further pixels along the diagonal to also match.
 							var pixelCount = 0;
 							for (var k = 1; k <= 16; k++) {
@@ -78,7 +78,7 @@ public static class ImageUtils {
 								if (bounds.Contains(point3) && predicate(image[point3.X, point3.Y]))
 									pixelCount++;
 							}
-							if (pixelCount >= 12)
+							if (pixelCount >= continuitySize)
 								found = true;
 						} else
 							found = true;
@@ -91,14 +91,14 @@ public static class ImageUtils {
 					var point2 = diagonalPoint2;
 					for (var j = 0; j <= i; j++) {
 						if (bounds.Contains(point2) && predicate(image[point2.X, point2.Y])) {
-							if (checkContinuity) {
+							if (continuitySize > 0) {
 								var pixelCount = 0;
 								for (var k = 1; k <= 16; k++) {
 									var point3 = point2 + (increment * 2 + dir) * k;
 									if (bounds.Contains(point3) && predicate(image[point3.X, point3.Y]))
 										pixelCount++;
 								}
-								if (pixelCount >= 12)
+								if (pixelCount >= continuitySize)
 									break;
 							} else
 								break;
@@ -226,11 +226,11 @@ public static class ImageUtils {
 		for (int y = 0; y < image.Height * 80 / 256; y++) {
 			for (int x = 0; x < image.Width; x++) {
 				var hsvColor = HsvColor.FromColor(image[x, y]);
-				if (hsvColor.H is >= 40 and <= 60 && hsvColor.S >= 0.5f && hsvColor.V >= 0.4f)
+				if (hsvColor.H is >= 30 and <= 60 && hsvColor.S >= 0.5f && hsvColor.V >= 0.4f)  // Include the stripboard on Capacitor Discharge.
 					yellowPixels++;
 			}
 		}
-		return yellowPixels / 2500f;
+		return yellowPixels / 1000f;
 	}
 
 	public static bool CheckForBlankComponent(Image<Rgb24> image) {
