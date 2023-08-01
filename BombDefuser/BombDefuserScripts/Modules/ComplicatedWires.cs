@@ -22,11 +22,10 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 		var module = GameState.Current.SelectedModule!;
 		var script = GameState.Current.CurrentScript<ComplicatedWires>();
 		script.wires ??= (from w in data.Wires select (w, false)).ToArray();
-		if (data.CurrentWire is not null) module.X = data.CurrentWire.Value;
-		await script.FindWiresToCut(context);
+		await script.FindWiresToCut(context, false);
 	}
 
-	private async Task FindWiresToCut(AimlAsyncContext context) {
+	private async Task FindWiresToCut(AimlAsyncContext context, bool fromUserInput) {
 		var module = GameState.Current.SelectedModule!;
 
 		while (true) {
@@ -56,25 +55,30 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 			if (toCut.Count > 0) {
 				using var interrupt = await Interrupt.EnterAsync(context);
 				context = interrupt.Context;
-				foreach (var i in toCut) {
-					var builder = new StringBuilder();
-					context.RequestProcess.Log(Aiml.LogLevel.Info, $"Cutting wire {i + 1}");
-					while (module.X < i) {
+				var builder = new StringBuilder();
+				for (var i = 0; i < toCut.Count; i++) {
+					var wireIndex = toCut[i];
+					context.RequestProcess.Log(Aiml.LogLevel.Info, $"Cutting wire {wireIndex + 1}");
+					while (module.X < wireIndex) {
 						builder.Append("right ");
 						module.X++;
 					}
-					while (module.X > i) {
+					while (module.X > wireIndex) {
 						builder.Append("left ");
 						module.X--;
 					}
 					builder.Append("a ");
-					this.wires[i].isCut = true;
-					var result = await interrupt.SubmitAsync(builder.ToString());
-					if (result == ModuleLightState.Strike) {
-						shouldCut[(int) this.wires[i].flags] = false;
-						break;
-					} else if (result == ModuleLightState.Solved)
-						return;
+					this.wires[wireIndex].isCut = true;
+					if ((fromUserInput && i == 0) || i + 1 >= toCut.Count) {
+						// Check whether this was a strike or solve. If in response to the user saying to cut a wire, check after the first wire. Otherwise, only check after all wires for speed.
+						var result = await interrupt.SubmitAsync(builder.ToString());
+						builder.Clear();
+						if (result == ModuleLightState.Strike) {
+							shouldCut[(int) this.wires[wireIndex].flags] = false;
+							break;
+						} else if (result == ModuleLightState.Solved)
+							return;
+					}
 				}
 			} else if (firstUnknown != null) {
 				currentFlags = firstUnknown.Value;
@@ -96,7 +100,7 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 		var script = GameState.Current.CurrentScript<ComplicatedWires>();
 		if (script.currentFlags == null) return;
 		shouldCut[(int) script.currentFlags] = true;
-		await script.FindWiresToCut(context);
+		await script.FindWiresToCut(context, true);
 	}
 
 	[AimlCategory("do not cut")]
@@ -106,6 +110,6 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 		var script = GameState.Current.CurrentScript<ComplicatedWires>();
 		if (script.currentFlags == null) return;
 		shouldCut[(int) script.currentFlags] = false;
-		await script.FindWiresToCut(context);
+		await script.FindWiresToCut(context, false);
 	}
 }
