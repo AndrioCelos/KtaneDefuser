@@ -18,7 +18,10 @@ public abstract class ModuleScript {
 
 	public static ModuleScript Create(ComponentProcessor processor) {
 		var processorType = processor.GetType();
-		var (scriptType, topic) = Scripts[processorType];
+		if (!Scripts.TryGetValue(processorType, out var entry))
+			return new UnknownModuleScript();
+
+		var (scriptType, topic) = entry;
 		if (!CreateMethodCache.TryGetValue(scriptType, out var method)) {
 			method = CreateMethodBase.MakeGenericMethod(scriptType, processorType);
 			CreateMethodCache[scriptType] = method;
@@ -44,6 +47,10 @@ public abstract class ModuleScript<TProcessor> : ModuleScript where TProcessor :
 	protected TProcessor Processor => processor ?? throw new InvalidOperationException("Script not yet initialised");
 
 	protected static TProcessor GetProcessor() => BombDefuserAimlService.GetComponentProcessor<TProcessor>();
+}
+
+internal class UnknownModuleScript : ModuleScript {
+	public override string IndefiniteDescription => "an unknown module";
 }
 
 public enum PriorityCategory {

@@ -112,7 +112,7 @@ public static class ImageUtils {
 				diagonalPoint2 += increment + dir;
 			}
 			if (!found)
-				throw new ArgumentException($"Can't find corner {n}");
+				return null;
 		}
 		return points;
 	}

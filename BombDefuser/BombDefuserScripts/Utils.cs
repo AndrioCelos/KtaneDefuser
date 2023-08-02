@@ -146,4 +146,6 @@ internal static class Utils {
 		GameState.Current.SelectedModuleNum = moduleNum;
 		GameState.Current.FocusState = FocusState.Module;
 	}
+
+	internal static bool CanReadModuleImmediately(int moduleIndex) => GameState.Current.Modules[moduleIndex].Slot.Face == GameState.Current.SelectedFaceNum;
 }
