@@ -1,9 +1,10 @@
 ﻿using System;
+using BombDefuserConnector.DataTypes;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserConnector.Components;
-public class Maze : ComponentProcessor<object> {
+public class Maze : ComponentProcessor<Maze.ReadData> {
 	public override string Name => "Maze";
 	protected internal override bool UsesNeedyFrame => false;
 
@@ -23,7 +24,51 @@ public class Maze : ComponentProcessor<object> {
 		return count / 828800f;
 	}
 
-	protected internal override object Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
-		throw new NotImplementedException();
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
+		GridCell? start = null, goal = null, circle1 = null, circle2 = null;
+		image.ProcessPixelRows(a => {
+			for (var y = 0; y < 6; y++) {
+				var row = a.GetRowSpan(72 + 23 * y);
+				for (var x = 0; x < 6; x++) {
+					var p = row[58 + 23 * x];
+					if (p.R >= 128) {
+						if (p.G >= 128) {
+							if (start is not null) throw new ArgumentException("Found more than one start location.");
+							start = new(x, y);
+						} else {
+							if (goal is not null) throw new ArgumentException("Found more than one goal location.");
+							goal = new(x, y);
+						}
+					}
+					var foundLeft = false;
+					for (var dx = 0; dx < 8; dx++) {
+						if (row[44 + 23 * x + dx].G >= 96) {
+							foundLeft = true;
+							break;
+						}
+					}
+					if (!foundLeft) continue;
+					for (var dx = 0; dx < 8; dx++) {
+						if (row[64 + 23 * x + dx].G >= 96) {
+							if (circle1 is null)
+								circle1 = new(x, y);
+							else if (circle2 is null)
+								circle2 = new(x, y);
+							else
+								throw new ArgumentException("Found more than two circle locations.");
+							break;
+						}
+					}
+				}
+			}
+		});
+		return new(
+			start ?? throw new ArgumentException("Could not find the start location."),
+			goal ?? throw new ArgumentException("Could not find the goal location."),
+			circle1 ?? throw new ArgumentException("Could not find the first circle location."),
+			circle2
+		);
 	}
+
+	public record ReadData(GridCell Start, GridCell Goal, GridCell Circle1, GridCell? Circle2);
 }

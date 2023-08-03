@@ -2,7 +2,7 @@
 
 namespace BombDefuserScripts;
 internal static class Utils {
-	public static Point[] CurrentModulePoints { get; } = new Point[] { new(837, 393), new(1118, 393), new(833, 679), new(1124, 679) };
+	public static Point[] CurrentModulePoints { get; } = new Point[] { new(835, 390), new(1118, 390), new(832, 677), new(1124, 677) };
 	private static readonly Point[][] modulePointsLists = new[] {
 		new Point[] { new(220, 100), new(496, 100), new(193, 359), new(479, 359) },
 		new Point[] { new(535, 100), new(806, 101), new(522, 359), new(801, 360) },

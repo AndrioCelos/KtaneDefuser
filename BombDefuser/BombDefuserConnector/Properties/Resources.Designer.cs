@@ -113,6 +113,16 @@ namespace BombDefuserConnector.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
+        internal static byte[] CabinMedium {
+            get {
+                object obj = ResourceManager.GetObject("CabinMedium", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
         internal static byte[] CapacitorDischarge1 {
             get {
                 object obj = ResourceManager.GetObject("CapacitorDischarge1", resourceCulture);
@@ -526,86 +536,6 @@ namespace BombDefuserConnector.Properties {
         internal static byte[] Memory {
             get {
                 object obj = ResourceManager.GetObject("Memory", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] MemoryB1 {
-            get {
-                object obj = ResourceManager.GetObject("MemoryB1", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] MemoryB2 {
-            get {
-                object obj = ResourceManager.GetObject("MemoryB2", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] MemoryB3 {
-            get {
-                object obj = ResourceManager.GetObject("MemoryB3", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] MemoryB4 {
-            get {
-                object obj = ResourceManager.GetObject("MemoryB4", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] MemoryD1 {
-            get {
-                object obj = ResourceManager.GetObject("MemoryD1", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] MemoryD2 {
-            get {
-                object obj = ResourceManager.GetObject("MemoryD2", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] MemoryD3 {
-            get {
-                object obj = ResourceManager.GetObject("MemoryD3", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] MemoryD4 {
-            get {
-                object obj = ResourceManager.GetObject("MemoryD4", resourceCulture);
                 return ((byte[])(obj));
             }
         }

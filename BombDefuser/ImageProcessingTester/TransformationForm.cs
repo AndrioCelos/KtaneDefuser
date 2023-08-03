@@ -203,7 +203,7 @@ public partial class TransformationForm : Form {
 	private Preset[] sidePresets = Enumerable.Range(1, 4).Select(i => new Preset($"Side widget {i}", new Point[4])).ToArray();
 
 	private void TransformationForm_Load(object sender, EventArgs e) {
-		presetBox.Items.Add(new Preset("Focus", new Point[] { new( 837,  393), new(1118,  393), new( 833,  679), new(1124,  679) }));
+		presetBox.Items.Add(new Preset("Focus", new Point[] { new( 835,  390), new(1118,  390), new( 832,  677), new(1124,  677) }));
 
 		presetBox.Items.Add(new Preset("Module 1", new Point[] { new( 572,  291), new( 821,  291), new( 559,  534), new( 816,  534) }));
 		presetBox.Items.Add(new Preset("Module 2", new Point[] { new( 852,  291), new(1096,  291), new( 848,  534), new(1101,  534) }));

@@ -2,7 +2,6 @@
 using System.Text;
 using BombDefuserConnector.Properties;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
@@ -93,8 +92,8 @@ public class Timer : ComponentProcessor<Timer.ReadData> {
 		return new(gameMode, isMinutes ? (n1 * 60 + n2) : n1, isMinutes ? 0 : n2, strikes);
 	}
 
-	public record ReadData(GameMode gameMode, int time, int cs, int strikes) {
-		public override string ToString() => $"{gameMode} {time} {cs} {strikes}";
+	public record ReadData(GameMode GameMode, int Time, int CS, int Strikes) {
+		public override string ToString() => $"{this.GameMode} {this.Time} {this.CS} {this.Strikes}";
 	}
 
 	public enum GameMode {
