@@ -31,7 +31,7 @@ internal partial class Simulation {
 			{ null, null, null }
 		});
 		this.moduleFaces[1] = new(new BombComponent?[,] {
-			{ new Modules.NeedyKnob(), null, null },
+			{ new Modules.NeedyVentGas(), null, null },
 			{ null, null, null }
 		});
 		this.widgetFaces[0] = new(new Widget?[] { Widget.Create(new Widgets.SerialNumber(), "AB3DE6"), null, null, null });
@@ -412,14 +412,42 @@ internal partial class Simulation {
 
 		public int X;
 		public int Y;
+		protected bool[,] SelectableGrid { get; }
 
-		public Module(ComponentProcessor processor) : base(processor) {
+		public Module(ComponentProcessor processor, int selectableWidth, int selectableHeight) : base(processor) {
 			++NextID;
 			this.ID = NextID;
 			this.ResetLightTimer.Elapsed += this.ResetLightTimer_Elapsed;
+			this.SelectableGrid = new bool[selectableHeight, selectableWidth];
 		}
 
 		private void ResetLightTimer_Elapsed(object? sender, ElapsedEventArgs e) => this.LightState = ModuleLightState.Off;
+
+		public void MoveHighlight(DataTypes.Direction direction) {
+			for (var side = 0; side < 3; side++) {
+				for (var forward = 0; forward < 3; forward++) {
+					var (x1, y1, x2, y2) = direction switch {
+						DataTypes.Direction.Up => (this.X - side, this.Y - forward, this.X + side, this.Y - forward),
+						DataTypes.Direction.Right => (this.X + forward, this.Y - side, this.X + forward, this.Y + side),
+						DataTypes.Direction.Down => (this.X - side, this.Y + forward, this.X + side, this.Y + forward),
+						_ => (this.X + forward, this.Y - side, this.X + forward, this.Y + side)
+					};
+					if (x1 >= 0 && x1 < this.SelectableGrid.GetLength(1) && y1 >= 0 && y1 < this.SelectableGrid.GetLength(0)
+						&& this.SelectableGrid[x1, y1]) {
+						this.X = x1;
+						this.Y = y1;
+						return;
+					}
+					if (x2 >= 0 && x2 < this.SelectableGrid.GetLength(1) && y2 >= 0 && y2 < this.SelectableGrid.GetLength(0)
+						&& this.SelectableGrid[x2, y2]) {
+						this.X = x2;
+						this.Y = y2;
+						return;
+					}
+				}
+			}
+			throw new ArgumentException("Highlight movement went out of bounds");
+		}
 
 		public void Solve() {
 			Message($"{this.Processor.Name} solved.");
@@ -446,8 +474,8 @@ internal partial class Simulation {
 		internal virtual TDetails Details { get; }
 		internal override string DetailsString => this.Details.ToString() ?? "";
 
-		protected Module(ComponentProcessor<TDetails> processor) : this(processor, default!) { }
-		public Module(ComponentProcessor<TDetails> processor, TDetails details) : base(processor) => this.Details = details;
+		protected Module(ComponentProcessor<TDetails> processor, int selectableWidth, int selectableHeight) : this(processor, default!, selectableWidth, selectableHeight) { }
+		public Module(ComponentProcessor<TDetails> processor, TDetails details, int selectableWidth, int selectableHeight) : base(processor, selectableWidth, selectableHeight) => this.Details = details;
 	}
 
 	private abstract class NeedyModule : Module {
@@ -465,7 +493,7 @@ internal partial class Simulation {
 		public TimeSpan RemainingTime => this.stopwatch is not null ? this.baseTime - this.stopwatch.Elapsed : TimeSpan.Zero;
 		public int? DisplayedTime => this.IsActive ? (int?) this.RemainingTime.TotalSeconds : null;
 
-		protected NeedyModule(ComponentProcessor processor) : base(processor) {
+		protected NeedyModule(ComponentProcessor processor, int selectableWidth, int selectableHeight) : base(processor, selectableWidth, selectableHeight) {
 			this.timer.Elapsed += this.ReactivateTimer_Elapsed;
 		}
 
@@ -527,8 +555,8 @@ internal partial class Simulation {
 		internal virtual TDetails Details { get; }
 		internal override string DetailsString => this.Details.ToString() ?? "";
 
-		protected NeedyModule(ComponentProcessor<TDetails> processor) : this(processor, default!) { }
-		protected NeedyModule(ComponentProcessor<TDetails> processor, TDetails details) : base(processor) => this.Details = details;
+		protected NeedyModule(ComponentProcessor<TDetails> processor, int selectableWidth, int selectableHeight) : this(processor, default!, selectableWidth, selectableHeight) { }
+		protected NeedyModule(ComponentProcessor<TDetails> processor, TDetails details, int selectableWidth, int selectableHeight) : base(processor, selectableWidth, selectableHeight) => this.Details = details;
 	}
 
 	private class TimerComponent : BombComponent {

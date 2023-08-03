@@ -8,6 +8,13 @@
 	</category>
 
 	<category>
+		<pattern>test read *</pattern>
+		<template>
+			<sraix service='BombDefuserAimlService'>read <star/></sraix>
+		</template>
+	</category>
+
+	<category>
 		<pattern>test triggeralarmclock</pattern>
 		<template><oob><triggeralarmclock/></oob></template>
 	</category>

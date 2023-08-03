@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BombDefuserConnector.DataTypes;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Timers;
@@ -14,7 +15,7 @@ internal partial class Simulation {
 			private bool[] isCut;
 			private int shouldCut;
 
-			public Wires(int shouldCut, params Components.Wires.Colour[] wires) : base(BombDefuserAimlService.GetComponentProcessor<Components.Wires>()) {
+			public Wires(int shouldCut, params Components.Wires.Colour[] wires) : base(BombDefuserAimlService.GetComponentProcessor<Components.Wires>(), 1, wires.Length) {
 				this.shouldCut = shouldCut;
 				this.wires = wires;
 				this.isCut = new bool[wires.Length];
@@ -51,7 +52,7 @@ internal partial class Simulation {
 				ShouldCut[(int) (WireFlags.Blue | WireFlags.Star | WireFlags.Light)] = true;
 			}
 
-			public ComplicatedWires(WireFlags[] wires) : base(BombDefuserAimlService.GetComponentProcessor<Components.ComplicatedWires>()) {
+			public ComplicatedWires(WireFlags[] wires) : base(BombDefuserAimlService.GetComponentProcessor<Components.ComplicatedWires>(), wires.Length, 1) {
 				this.wires = wires;
 				this.isCut = new bool[wires.Length];
 			}
@@ -81,7 +82,7 @@ internal partial class Simulation {
 
 			internal override Components.Button.ReadData Details => new(this.colour, this.label, this.indicatorColour);
 
-			public Button(Components.Button.Colour colour, Components.Button.Label label) : base(BombDefuserAimlService.GetComponentProcessor<Components.Button>()) {
+			public Button(Components.Button.Colour colour, Components.Button.Label label) : base(BombDefuserAimlService.GetComponentProcessor<Components.Button>(), 1, 1) {
 				this.colour = colour;
 				this.label = label;
 				this.pressTimer.Elapsed += this.PressTimer_Elapsed;
@@ -133,7 +134,7 @@ internal partial class Simulation {
 			private readonly int[] correctOrder;
 			private readonly bool[] isPressed;
 
-			public Keypad(Components.Keypad.Symbol[] symbols, int[] correctOrder) : base(BombDefuserAimlService.GetComponentProcessor<Components.Keypad>()) {
+			public Keypad(Components.Keypad.Symbol[] symbols, int[] correctOrder) : base(BombDefuserAimlService.GetComponentProcessor<Components.Keypad>(), 2, 2) {
 				this.symbols = symbols;
 				this.correctOrder = correctOrder;
 				this.isPressed = new bool[symbols.Length];
@@ -158,12 +159,36 @@ internal partial class Simulation {
 			}
 		}
 
+		public class Maze : Module<Components.Maze.ReadData> {
+			internal override Components.Maze.ReadData Details => new(this.start, this.goal, this.circle1, this.circle2);
+
+			private readonly GridCell start;
+			private readonly GridCell goal;
+			private readonly GridCell circle1;
+			private readonly GridCell circle2;
+
+			public Maze(GridCell start, GridCell goal, GridCell circle1, GridCell circle2) : base(BombDefuserAimlService.GetComponentProcessor<Components.Maze>(), 3, 3) {
+				this.start = start;
+				this.goal = goal;
+				this.circle1 = circle1;
+				this.circle2 = circle2;
+				this.SelectableGrid[0, 0] = false;
+				this.SelectableGrid[0, 2] = false;
+				this.SelectableGrid[1, 1] = false;
+				this.SelectableGrid[2, 0] = false;
+				this.SelectableGrid[2, 2] = false;
+			}
+
+			public override void Interact() {
+			}
+		}
+
 		public class NeedyCapacitor : NeedyModule<Components.NeedyCapacitor.ReadData> {
 			private Stopwatch pressStopwatch = new();
 
 			internal override Components.NeedyCapacitor.ReadData Details => new(this.IsActive ? (int) this.RemainingTime.TotalSeconds : null);
 
-			public NeedyCapacitor() : base(BombDefuserAimlService.GetComponentProcessor<Components.NeedyCapacitor>()) { }
+			public NeedyCapacitor() : base(BombDefuserAimlService.GetComponentProcessor<Components.NeedyCapacitor>(), 1, 1) { }
 
 			protected override void OnActivate() { }
 
@@ -192,7 +217,7 @@ internal partial class Simulation {
 
 			internal override Components.NeedyKnob.ReadData Details => new(this.DisplayedTime, this.lights);
 
-			public NeedyKnob() : base(BombDefuserAimlService.GetComponentProcessor<Components.NeedyKnob>()) { }
+			public NeedyKnob() : base(BombDefuserAimlService.GetComponentProcessor<Components.NeedyKnob>(), 1, 1) { }
 
 			protected override void OnActivate() {
 				var state = states[nextStateIndex];
@@ -210,6 +235,34 @@ internal partial class Simulation {
 				if (this.position != this.correctPosition)
 					this.StrikeFlash();
 				this.lights = inactiveLights;
+			}
+		}
+
+		public class NeedyVentGas : NeedyModule<Components.NeedyVentGas.ReadData> {
+			private static readonly string[] messages = new[] { "VENT GAS?", "DETONATE?" };
+			private int messageIndex = 1;
+
+			internal override Components.NeedyVentGas.ReadData Details => new(this.DisplayedTime, this.DisplayedTime is not null ? messages[this.messageIndex] : null);
+
+			public NeedyVentGas() : base(BombDefuserAimlService.GetComponentProcessor<Components.NeedyVentGas>(), 2, 1) { }
+
+			protected override void OnActivate() {
+				this.messageIndex ^= 1;
+				Message($"Display: {messages[this.messageIndex]}");
+			}
+
+			public override void Interact() {
+				Message($"{(this.X == 0 ? 'Y' : 'N')} was pressed.");
+				if (this.X == 0) {
+					if (this.messageIndex != 0) this.StrikeFlash();
+					this.Deactivate();
+				} else {
+					if (this.messageIndex != 0) this.Deactivate();
+				}
+			}
+
+			public override void OnTimerExpired() {
+				this.StrikeFlash();
 			}
 		}
 	}

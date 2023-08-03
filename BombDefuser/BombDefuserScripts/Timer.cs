@@ -8,15 +8,15 @@ internal static class Timer {
 		// Keep watching the timer until it ticks over to get sub-second precision.
 		while (true) {
 			var data = BombDefuserAimlService.Instance.ReadComponent(screenshot, BombDefuserAimlService.TimerProcessor, polygon);
-			GameState.Current.GameMode = data.gameMode;
-			if (lastSeconds is not null && data.time != lastSeconds.Value) {
-				GameState.Current.TimerBaseTime = data.gameMode is BombDefuserConnector.Components.Timer.GameMode.Zen or BombDefuserConnector.Components.Timer.GameMode.Training
-					? TimeSpan.FromSeconds(data.time) - TimeSpan.FromMilliseconds(50)
+			GameState.Current.GameMode = data.GameMode;
+			if (lastSeconds is not null && data.Time != lastSeconds.Value) {
+				GameState.Current.TimerBaseTime = data.GameMode is BombDefuserConnector.Components.Timer.GameMode.Zen or BombDefuserConnector.Components.Timer.GameMode.Training
+					? TimeSpan.FromSeconds(data.Time) - TimeSpan.FromMilliseconds(50)
 					: TimeSpan.FromSeconds(lastSeconds.Value) + TimeSpan.FromMilliseconds(50);
 				GameState.Current.TimerStopwatch.Restart();
 				return;
 			}
-			lastSeconds = data.time;
+			lastSeconds = data.Time;
 			await AimlTasks.Delay(0.1);
 			screenshot = await AimlTasks.TakeScreenshotAsync();
 		}
