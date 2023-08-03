@@ -133,6 +133,9 @@
   <data name="ButtonPress" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\The Button\ButtonPress.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="CabinMedium" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Fonts\Cabin-Medium.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="CapacitorDischarge1" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\ComponentSamples\CapacitorDischarge1.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
@@ -258,30 +261,6 @@
   </data>
   <data name="Memory" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\ComponentSamples\Memory.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="MemoryB1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Memory\MemoryB1.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="MemoryB2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Memory\MemoryB2.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="MemoryB3" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Memory\MemoryB3.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="MemoryB4" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Memory\MemoryB4.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="MemoryD1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Memory\MemoryD1.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="MemoryD2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Memory\MemoryD2.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="MemoryD3" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Memory\MemoryD3.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="MemoryD4" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Memory\MemoryD4.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="MorseCode1" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\ComponentSamples\MorseCode1.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
