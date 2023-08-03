@@ -18,5 +18,7 @@ internal static class ModuleSelection {
 		await Utils.SelectModuleAsync(context, index);
 		context.RequestProcess.User.Topic = script.Topic;
 		script.Entering(context);
+		await AimlTasks.Delay(0.75);
+		script.ModuleSelected(context);
 	}
 }

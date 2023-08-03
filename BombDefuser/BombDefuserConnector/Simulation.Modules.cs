@@ -204,6 +204,54 @@ internal partial class Simulation {
 			}
 		}
 
+		public class Memory : Module<Components.Memory.ReadData> {
+			internal override Components.Memory.ReadData Details => !this.isAnimating ? new(this.stagesCleared, this.display, this.keyDigits) : throw new InvalidOperationException("Tried to read module while animating");
+
+			private int display;
+			private readonly int[] keyDigits = new int[4];
+			private int stagesCleared;
+			private bool isAnimating;
+			private readonly Timer animationTimer = new(2900) { AutoReset = false };
+
+			public Memory() : base(BombDefuserAimlService.GetComponentProcessor<Components.Memory>(), 4, 1) {
+				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
+				this.SetKeysAndDisplay();
+			}
+
+			private void AnimationTimer_Elapsed(object? sender, ElapsedEventArgs e) {
+				this.SetKeysAndDisplay();
+				this.isAnimating = false;
+			}
+
+			private void SetKeysAndDisplay() {
+				for (var i = 0; i < 4; i++)
+					this.keyDigits[i] = (i + stagesCleared) % 4 + 1;
+				this.display = this.keyDigits[0];
+			}
+
+			private void StartAnimation() {
+				this.isAnimating = true;
+				this.animationTimer.Start();
+			}
+
+			public override void Interact() {
+				if (this.isAnimating) throw new InvalidOperationException("Memory button pressed during animation");
+				Message($"Pressed button {this.X + 1}");
+				if (this.LightState == ModuleLightState.Solved) return;
+				if (this.X != this.stagesCleared % 4) {
+					this.StrikeFlash();
+					this.stagesCleared = 0;
+					this.StartAnimation();
+				} else {
+					this.stagesCleared++;
+					if (this.stagesCleared >= 5)
+						this.Solve();
+					else
+						this.StartAnimation();
+				}
+			}
+		}
+
 		public class NeedyCapacitor : NeedyModule<Components.NeedyCapacitor.ReadData> {
 			private Stopwatch pressStopwatch = new();
 

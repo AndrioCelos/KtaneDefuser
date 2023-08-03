@@ -27,7 +27,7 @@ internal partial class Simulation {
 		this.rxTimer.Elapsed += this.RXTimer_Elapsed;
 
 		this.moduleFaces[0] = new(new BombComponent?[,] {
-			{ TimerComponent.Instance, new Modules.Maze(new(0, 0), new(5, 5), new(0, 1), new(5, 2)), null },
+			{ TimerComponent.Instance, null, null },
 			{ null, null, null }
 		});
 		this.moduleFaces[1] = new(new BombComponent?[,] {
@@ -453,7 +453,7 @@ internal partial class Simulation {
 						_ => (this.X - forward, this.Y - side, this.X - forward, this.Y + side)
 					};
 					if (x1 >= 0 && x1 < this.SelectableGrid.GetLength(1) && y1 >= 0 && y1 < this.SelectableGrid.GetLength(0)
-						&& this.SelectableGrid[x1, y1]) {
+						&& this.SelectableGrid[y1, x1]) {
 						this.X = x1;
 						this.Y = y1;
 						return;

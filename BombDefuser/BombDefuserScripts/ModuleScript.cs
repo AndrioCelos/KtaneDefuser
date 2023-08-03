@@ -39,6 +39,7 @@ public abstract class ModuleScript {
 
 	protected internal virtual void Initialise(AimlAsyncContext context) { }
 	protected internal virtual void Entering(AimlAsyncContext context) { }
+	protected internal virtual void ModuleSelected(AimlAsyncContext context) { }
 	protected internal virtual void NeedyStateChanged(AimlAsyncContext context, NeedyState newState) { }
 }
 

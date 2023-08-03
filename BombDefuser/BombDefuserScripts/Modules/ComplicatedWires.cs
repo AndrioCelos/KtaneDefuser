@@ -11,10 +11,7 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 	private WireFlags? currentFlags;
 	private int highlight;
 
-	protected internal override async void Entering(AimlAsyncContext context) {
-		await AimlTasks.Delay(1);
-		Read(context);
-	}
+	protected internal override void ModuleSelected(AimlAsyncContext context) => Read(context);
 
 	[AimlCategory("read")]
 	internal static async void Read(AimlAsyncContext context) {
