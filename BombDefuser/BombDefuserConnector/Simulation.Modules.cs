@@ -160,15 +160,15 @@ internal partial class Simulation {
 		}
 
 		public class Maze : Module<Components.Maze.ReadData> {
-			internal override Components.Maze.ReadData Details => new(this.start, this.goal, this.circle1, this.circle2);
+			internal override Components.Maze.ReadData Details => new(this.position, this.goal, this.circle1, this.circle2);
 
-			private readonly GridCell start;
+			private GridCell position;
 			private readonly GridCell goal;
 			private readonly GridCell circle1;
 			private readonly GridCell circle2;
 
 			public Maze(GridCell start, GridCell goal, GridCell circle1, GridCell circle2) : base(BombDefuserAimlService.GetComponentProcessor<Components.Maze>(), 3, 3) {
-				this.start = start;
+				this.position = start;
 				this.goal = goal;
 				this.circle1 = circle1;
 				this.circle2 = circle2;
@@ -180,6 +180,27 @@ internal partial class Simulation {
 			}
 
 			public override void Interact() {
+				var direction = this.Y switch {
+					0 => Direction.Up,
+					2 => Direction.Down,
+					_ => this.X == 0 ? Direction.Left : Direction.Right
+				};
+				var newPosition = position;
+				switch (direction) {
+					case Direction.Up: newPosition.Y--; break;
+					case Direction.Right: newPosition.X++; break;
+					case Direction.Down: newPosition.Y++; break;
+					case Direction.Left: newPosition.X--; break;
+				}
+				if (newPosition.X is < 0 or >= 6  || newPosition.Y is < 0 or >= 6) {
+					Message($"{direction} pressed; hit the boundary.");
+					this.StrikeFlash();
+				} else {
+					this.position = newPosition;
+					Message($"{direction} pressed; moved to {this.position}.");
+					if (this.position == this.goal)
+						this.Solve();
+				}
 			}
 		}
 

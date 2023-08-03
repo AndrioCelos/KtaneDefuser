@@ -4,7 +4,9 @@ namespace BombDefuserScripts.Modules;
 [AimlInterface("Wires")]
 internal class Wires : ModuleScript<BombDefuserConnector.Components.Wires> {
 	public override string IndefiniteDescription => "Wires";
-	int wireCount;
+	
+	private int wireCount;
+	private int highlight;
 
 	[AimlCategory("read")]
 	internal static async void Read(AimlAsyncContext context) {
@@ -17,14 +19,14 @@ internal class Wires : ModuleScript<BombDefuserConnector.Components.Wires> {
 	internal static async Task CutWire(AimlAsyncContext context, int wireNum) {
 		wireNum--;
 		var builder = new StringBuilder();
-		var module = GameState.Current.SelectedModule!;
-		while (module.Y < wireNum) {
+		var script = GameState.Current.CurrentScript<Wires>();
+		while (script.highlight < wireNum) {
 			builder.Append("down ");
-			module.Y++;
+			script.highlight++;
 		}
-		while (module.Y > wireNum) {
+		while (script.highlight > wireNum) {
 			builder.Append("up ");
-			module.Y--;
+			script.highlight--;
 		}
 		builder.Append('a');
 		await Interrupt.SubmitAsync(context, builder.ToString());

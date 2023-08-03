@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using AimlCSharpInterface;
 
 namespace BombDefuserScripts.Modules;
 
@@ -9,9 +8,9 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 	public override PriorityCategory PriorityCategory => PriorityCategory.Needy;
 
 	private Counts? counts;
-	private KnobDirection direction;
+	private Direction direction;
 
-	private static readonly Dictionary<Counts, KnobDirection> correctDirections = new();
+	private static readonly Dictionary<Counts, Direction> correctDirections = new();
 	private static NeedyKnob? currentKnob;
 
 	protected internal override async void NeedyStateChanged(AimlAsyncContext context, NeedyState newState) {
@@ -51,7 +50,7 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 		return interrupt;
 	}
 
-	private async Task HandleInputAsync(AimlAsyncContext context, KnobDirection direction) {
+	private async Task HandleInputAsync(AimlAsyncContext context, Direction direction) {
 		if (counts is null) {
 			context.Reply("It is not active.");
 			return;
@@ -63,7 +62,7 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 		}
 	}
 
-	private async Task TurnAsync(Interrupt interrupt, KnobDirection direction) {
+	private async Task TurnAsync(Interrupt interrupt, Direction direction) {
 		var builder = new StringBuilder();
 		var d = direction - this.direction;
 		if (d < 0) d += 4;
@@ -79,7 +78,7 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 	[AimlCategory("<set>KnobDirection</set> position", That = "Counts *", Topic = "*")]
 	[AimlCategory("<set>KnobDirection</set> position", Topic = "*")]
 	[AimlCategory("knob is <set>KnobDirection</set>", Topic = "*")]
-	internal static Task Read(AimlAsyncContext context, KnobDirection direction) {
+	internal static Task Read(AimlAsyncContext context, Direction direction) {
 		if (currentKnob is null) {
 			context.Reply("It is not active.");
 			return Task.CompletedTask;
@@ -90,8 +89,8 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 		return task;
 	}
 
-	[AimlCategory("knob <set>number</set> is <set>KnobDirection</set>", Topic = "*")]
-	internal static Task Read(AimlAsyncContext context, int moduleNum, KnobDirection direction) {
+	[AimlCategory("knob <set>number</set> is <set>Direction</set>", Topic = "*")]
+	internal static Task Read(AimlAsyncContext context, int moduleNum, Direction direction) {
 		if (GameState.Current.Modules[moduleNum - 1].Script is not NeedyKnob knobScript) {
 			context.Reply("That is not a Knob.");
 			return Task.CompletedTask;
@@ -101,12 +100,4 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 	}
 
 	private record struct Counts(int Left, int Right);
-
-	[AimlSet]
-	public enum KnobDirection {
-		Up,
-		Right,
-		Down,
-		Left
-	}
 }

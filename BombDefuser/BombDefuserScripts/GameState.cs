@@ -88,8 +88,6 @@ public enum PortTypes {
 public class ModuleState {
 	public ComponentSlot Slot { get; }
 	public ComponentProcessor Processor { get; }
-	public int X { get; set; }
-	public int Y { get; set; }
 	public ModuleScript? Script { get; }  // Will be null for the timer.
 
 	public ModuleState(ComponentSlot slot, ComponentProcessor processor, ModuleScript? script) {

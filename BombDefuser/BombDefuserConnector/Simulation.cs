@@ -27,11 +27,11 @@ internal partial class Simulation {
 		this.rxTimer.Elapsed += this.RXTimer_Elapsed;
 
 		this.moduleFaces[0] = new(new BombComponent?[,] {
-			{ TimerComponent.Instance, new Modules.Button(Components.Button.Colour.Blue, Components.Button.Label.Detonate), null },
+			{ TimerComponent.Instance, new Modules.Maze(new(0, 0), new(5, 5), new(0, 1), new(5, 2)), null },
 			{ null, null, null }
 		});
 		this.moduleFaces[1] = new(new BombComponent?[,] {
-			{ new Modules.NeedyVentGas(), null, null },
+			{ null, null, null },
 			{ null, null, null }
 		});
 		this.widgetFaces[0] = new(new Widget?[] { Widget.Create(new Widgets.SerialNumber(), "AB3DE6"), null, null, null });
@@ -43,8 +43,11 @@ internal partial class Simulation {
 		for (var i = 0; i < this.moduleFaces.Length; i++) {
 			for (var y = 0; y < this.moduleFaces[i].Slots.GetLength(0); y++) {
 				for (var x = 0; x < this.moduleFaces[i].Slots.GetLength(1); x++) {
-					if (this.moduleFaces[i].Slots[y, x] is NeedyModule needyModule)
-						needyModule.Initialise(i, y, x);
+					if (this.moduleFaces[i].Slots[y, x] is Module module) {
+						module.InitialiseHighlight();
+						if (module is NeedyModule needyModule)
+							needyModule.Initialise(i, y, x);
+					}
 				}
 			}
 		}
@@ -173,7 +176,7 @@ internal partial class Simulation {
 						break;
 					case FocusStates.Module:
 						if (this.SelectedFace.SelectedComponent is Module module)
-							module.X--;
+							module.MoveHighlight(DataTypes.Direction.Left);
 						break;
 				}
 				break;
@@ -189,7 +192,7 @@ internal partial class Simulation {
 						break;
 					case FocusStates.Module:
 						if (this.SelectedFace.SelectedComponent is Module module)
-							module.X++;
+							module.MoveHighlight(DataTypes.Direction.Right);
 						break;
 				}
 				break;
@@ -201,7 +204,7 @@ internal partial class Simulation {
 						break;
 					case FocusStates.Module:
 						if (this.SelectedFace.SelectedComponent is Module module)
-							module.Y--;
+							module.MoveHighlight(DataTypes.Direction.Up);
 						break;
 				}
 				break;
@@ -213,10 +216,12 @@ internal partial class Simulation {
 						break;
 					case FocusStates.Module:
 						if (this.SelectedFace.SelectedComponent is Module module)
-							module.Y++;
+							module.MoveHighlight(DataTypes.Direction.Down);
 						break;
 				}
 				break;
+			default:
+				throw new InvalidOperationException($"Invalid control instruction: {tokens2[0]}");
 		}
 	}
 
@@ -419,18 +424,33 @@ internal partial class Simulation {
 			this.ID = NextID;
 			this.ResetLightTimer.Elapsed += this.ResetLightTimer_Elapsed;
 			this.SelectableGrid = new bool[selectableHeight, selectableWidth];
+			for (var y = 0; y < selectableHeight; y++)
+				for (var x = 0; x < selectableWidth; x++)
+					this.SelectableGrid[y, x] = true;
 		}
 
 		private void ResetLightTimer_Elapsed(object? sender, ElapsedEventArgs e) => this.LightState = ModuleLightState.Off;
 
+		public void InitialiseHighlight() {
+			for (var y = 0; y < this.SelectableGrid.GetLength(0); y++) {
+				for (var x = 0; x < this.SelectableGrid.GetLength(1); x++) {
+					if (this.SelectableGrid[y, x]) {
+						this.X = x;
+						this.Y = y;
+						return;
+					}
+				}
+			}
+		}
+
 		public void MoveHighlight(DataTypes.Direction direction) {
 			for (var side = 0; side < 3; side++) {
-				for (var forward = 0; forward < 3; forward++) {
+				for (var forward = 1; forward < 3; forward++) {
 					var (x1, y1, x2, y2) = direction switch {
 						DataTypes.Direction.Up => (this.X - side, this.Y - forward, this.X + side, this.Y - forward),
 						DataTypes.Direction.Right => (this.X + forward, this.Y - side, this.X + forward, this.Y + side),
 						DataTypes.Direction.Down => (this.X - side, this.Y + forward, this.X + side, this.Y + forward),
-						_ => (this.X + forward, this.Y - side, this.X + forward, this.Y + side)
+						_ => (this.X - forward, this.Y - side, this.X - forward, this.Y + side)
 					};
 					if (x1 >= 0 && x1 < this.SelectableGrid.GetLength(1) && y1 >= 0 && y1 < this.SelectableGrid.GetLength(0)
 						&& this.SelectableGrid[x1, y1]) {
@@ -450,6 +470,7 @@ internal partial class Simulation {
 		}
 
 		public void Solve() {
+			if (this.LightState == ModuleLightState.Solved) return;
 			Message($"{this.Processor.Name} solved.");
 			this.LightState = ModuleLightState.Solved;
 			this.ResetLightTimer.Stop();

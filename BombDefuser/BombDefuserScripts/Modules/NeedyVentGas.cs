@@ -6,7 +6,7 @@ internal class NeedyVentGas : ModuleScript<BombDefuserConnector.Components.Needy
 	public override string IndefiniteDescription => "Needy Vent Gas";
 	public override PriorityCategory PriorityCategory => PriorityCategory.Needy;
 
-	private int highlightX;
+	private int highlight;
 
 	protected internal override async void NeedyStateChanged(AimlAsyncContext context, NeedyState newState) {
 		if (newState != NeedyState.Running) return;
@@ -23,9 +23,9 @@ internal class NeedyVentGas : ModuleScript<BombDefuserConnector.Components.Needy
 
 	private async Task PressButtonAsync(AimlAsyncContext context, int x) {
 		var builder = new StringBuilder();
-		if (x != this.highlightX) {
+		if (x != this.highlight) {
 			builder.Append(x == 0 ? "left " : "right ");
-			this.highlightX = x;
+			this.highlight = x;
 		}
 		builder.Append('a');
 		await context.SendInputsAsync(builder.ToString());

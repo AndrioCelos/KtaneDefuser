@@ -40,6 +40,7 @@ internal class Keypad : ModuleScript<BombDefuserConnector.Components.Keypad> {
 	public override string IndefiniteDescription => "a Keypad";
 
 	private Symbol[]? symbols;
+	private int highlight;
 
 	[AimlCategory("read")]
 	internal static async Task Read(AimlAsyncContext context) {
@@ -50,13 +51,14 @@ internal class Keypad : ModuleScript<BombDefuserConnector.Components.Keypad> {
 
 	[AimlCategory("press *")]
 	internal static async Task Press(AimlAsyncContext context, string buttons) {
+		var script = GameState.Current.CurrentScript<Keypad>();
 		var symbols = GameState.Current.CurrentScript<Keypad>().symbols;
 		if (symbols == null) {
 			context.Reply("We need to read the module first.");
 			return;
 		}
 		var presses = new List<(string inputs, int index)>();
-		var cursorIndex = GameState.Current.SelectedModule!.Y * 2 + GameState.Current.SelectedModule!.X;
+		var cursorIndex = script.highlight;
 		var descriptions = buttons.Split(" then ", StringSplitOptions.TrimEntries);
 		foreach (var desc in descriptions) {
 			var symbol = Enum.Parse<Symbol>(context.RequestProcess.Srai($"GetKeypadGlyphName {desc}"), true);
@@ -80,8 +82,7 @@ internal class Keypad : ModuleScript<BombDefuserConnector.Components.Keypad> {
 		}
 		using var interrupt = await Interrupt.EnterAsync(context);
 		foreach (var (inputs, index) in presses) {
-			GameState.Current.SelectedModule!.X = index % 2;
-			GameState.Current.SelectedModule!.Y = index / 2;
+			script.highlight = index;
 			var result = await interrupt.SubmitAsync(inputs);
 			if (result != ModuleLightState.Off) return;
 		}

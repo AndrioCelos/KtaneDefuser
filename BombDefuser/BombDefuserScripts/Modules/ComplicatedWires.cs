@@ -9,6 +9,7 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 	private static readonly bool?[] shouldCut = new bool?[16];
 	private (WireFlags flags, bool isCut)[]? wires;
 	private WireFlags? currentFlags;
+	private int highlight;
 
 	protected internal override async void Entering(AimlAsyncContext context) {
 		await AimlTasks.Delay(1);
@@ -26,8 +27,6 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 	}
 
 	private async Task FindWiresToCut(AimlAsyncContext context, bool fromUserInput) {
-		var module = GameState.Current.SelectedModule!;
-
 		while (true) {
 			// Find any wires we already know should be cut.
 			// TODO: Clear this data when starting a new bomb.
@@ -59,13 +58,13 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 				for (var i = 0; i < toCut.Count; i++) {
 					var wireIndex = toCut[i];
 					context.RequestProcess.Log(Aiml.LogLevel.Info, $"Cutting wire {wireIndex + 1}");
-					while (module.X < wireIndex) {
+					while (this.highlight < wireIndex) {
 						builder.Append("right ");
-						module.X++;
+						this.highlight++;
 					}
-					while (module.X > wireIndex) {
+					while (this.highlight > wireIndex) {
 						builder.Append("left ");
-						module.X--;
+						this.highlight--;
 					}
 					builder.Append("a ");
 					this.wires[wireIndex].isCut = true;
