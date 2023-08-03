@@ -12,6 +12,22 @@ public abstract class ComponentProcessor {
 
 	protected internal abstract object ProcessNonGeneric(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap);
 
+	protected static int ReadStageIndicator(Image<Rgb24> image) {
+		var count = 0;
+		var lastState = false;
+		for (var y = 80; y < 224; y++) {
+			var hsv = HsvColor.FromColor(image[218, y]);
+			if (hsv.H is >= 60 and <= 135 && hsv.S >= 0.25f) {
+				if (!lastState) {
+					lastState = true;
+					count++;
+				}
+			} else
+				lastState = false;
+		}
+		return count;
+	}
+
 	protected static int? ReadNeedyTimer(Image<Rgb24> image, Image<Rgb24>? debugBitmap) {
 		var bezelCorners = ImageUtils.FindCorners(image, new(80, 16, 96, 64), c => HsvColor.FromColor(c) is HsvColor hsv && hsv.H <= 150 && hsv.S <= 0.25f && hsv.V is >= 0.3f and <= 0.75f, 6) ?? throw new ArgumentException("Can't find needy timer bezel corners");
 		if (debugBitmap != null) ImageUtils.DebugDrawPoints(debugBitmap, bezelCorners);

@@ -117,13 +117,18 @@ public static class ImageUtils {
 		return points;
 	}
 
-	public static Rectangle FindEdges(Image<Rgb24> image, Rectangle rectangle, Predicate<Rgb24> predicate) {
-		for (int edge = 0; edge < 2; edge++) {
+	public static Rectangle FindEdges<TPixel>(Image<TPixel> image, Rectangle rectangle, Predicate<TPixel> predicate) where TPixel : unmanaged, IPixel<TPixel> {
+		image.ProcessPixelRows(a => rectangle = FindEdges(a, rectangle, predicate));
+		return rectangle;
+	}
+	public static Rectangle FindEdges<TPixel>(PixelAccessor<TPixel> accessor, Rectangle rectangle, Predicate<TPixel> predicate) where TPixel : unmanaged, IPixel<TPixel> {
+		if (rectangle.Height <= 0 || rectangle.Width <= 0) return rectangle;
+		for (var edge = 0; edge < 2; edge++) {
 			while (true) {
-				var y = edge == 0 ? rectangle.Top : rectangle.Bottom - 1;
+				var r = accessor.GetRowSpan(edge == 0 ? rectangle.Top : rectangle.Bottom - 1);
 				var found = false;
-				for (int x = rectangle.Left; x < rectangle.Right; x++) {
-					if (predicate(image[x, y])) {
+				for (var  x = rectangle.Left; x < rectangle.Right; x++) {
+					if (predicate(r[x])) {
 						found = true;
 						break;
 					}
@@ -131,14 +136,15 @@ public static class ImageUtils {
 				if (found) break;
 				if (edge == 0) rectangle.Y++;
 				rectangle.Height--;
+				if (rectangle.Height == 0) return rectangle;
 			}
 		}
-		for (int edge = 0; edge < 2; edge++) {
+		for (var edge = 0; edge < 2; edge++) {
 			while (true) {
 				var x = edge == 0 ? rectangle.Left : rectangle.Right - 1;
 				var found = false;
-				for (int y = rectangle.Top; y < rectangle.Bottom; y++) {
-					if (predicate(image[x, y])) {
+				for (var y = rectangle.Top; y < rectangle.Bottom; y++) {
+					if (predicate(accessor.GetRowSpan(y)[x])) {
 						found = true;
 						break;
 					}
@@ -230,7 +236,7 @@ public static class ImageUtils {
 					yellowPixels++;
 			}
 		}
-		return yellowPixels / 1000f;
+		return yellowPixels / 2000f;
 	}
 
 	public static bool CheckForBlankComponent(Image<Rgb24> image) {

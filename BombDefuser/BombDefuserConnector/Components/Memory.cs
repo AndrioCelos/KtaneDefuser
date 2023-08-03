@@ -1,19 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Components;
 public class Memory : ComponentProcessor<Memory.ReadData> {
-	private static readonly Image<Rgb24>[] numberBitmaps = Enumerable.Range(1, 4).Select(n => Image.Load<Rgb24>((byte[]) Properties.Resources.ResourceManager.GetObject($@"MemoryB{n}")!)).ToArray();
-	private static readonly Image<Rgb24>[] displayBitmaps = Enumerable.Range(1, 4).Select(n => Image.Load<Rgb24>((byte[]) Properties.Resources.ResourceManager.GetObject($@"MemoryD{n}")!)).ToArray();
-
 	public override string Name => "Memory";
 	protected internal override bool UsesNeedyFrame => false;
+
+	private static readonly TextRecogniser displayRecogniser = new(new(TextRecogniser.Fonts.CABIN_MEDIUM, 48), 70, 255, new(64, 64),
+		"1", "2", "3", "4");
+	private static readonly TextRecogniser keyRecogniser = new(new(TextRecogniser.Fonts.OSTRICH_SANS_HEAVY, 48), 160, 44, new(64, 64),
+		"1", "2", "3", "4");
 
 	protected internal override float IsModulePresent(Image<Rgb24> image) {
 		var minDist = int.MaxValue;
@@ -51,162 +51,30 @@ public class Memory : ComponentProcessor<Memory.ReadData> {
 	}
 
 	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
-		bool isButtonBackP(Point point) => isButtonBack(image[point.X, point.Y]);
-		bool isButtonBack(Rgb24 color) {
-			var hsv = HsvColor.FromColor(color);
-			return hsv.S >= 0.2f && hsv.H is >= 30 and <= 50 && hsv.V >= 0.6f;
-		}
-		bool isDisplayBack(Point point)
-			=> isDisplayBack2(point) && (isDisplayBack2(new(point.X - 4, point.Y)) || isDisplayBack2(new(point.X + 4, point.Y)) || isDisplayBack2(new(point.X, point.Y - 4)) || isDisplayBack2(new(point.X, point.Y + 4)));
-		bool isDisplayBack2(Point point)
-			=> point.X is >= 0 and < 256 && point.Y is >= 0 and < 256 && isDisplayBackColor(image[point.X, point.Y]);
-		bool isDisplayBackColor(Rgb24 color) {
-			var hsv = HsvColor.FromColor(color);
-			return hsv.H is >= 145 and <= 180 && hsv.S >= 0.35f && hsv.V >= 0.25f;
-		}
-		bool isDisplayTextColor(Rgb24 color)
-			=> color.R >= 224 && color.G >= 224 && color.B >= 224;
+		var displayBorderRect = ImageUtils.FindEdges(image, new(50, 40, 108, 80), c => c.R < 44 && c.G < 44 && c.B < 44);
+		displayBorderRect.Inflate(-4, -4);
+		var textRect = ImageUtils.FindEdges(image, displayBorderRect, c => c.G >= 192);
 
-		if (debugBitmap is not null) {
-			debugBitmap.Mutate(c => c.Brightness(0.5f));
-			for (var y = 0; y < image.Height; y++) {
-				for (var x = 0; x < image.Width; x++) {
-					var color = image[x, y];
-					if (y >= 144 ? isButtonBack(color) : isDisplayBack(new(x, y)))
-						debugBitmap[x, y] = color;
-				}
-			}
+		debugBitmap?.Mutate(c => c.Draw(Color.Red, 1, displayBorderRect).Draw(Color.Lime, 1, textRect));
+		var displayText = displayRecogniser.Recognise(image, textRect);
+
+		var keypadRect = ImageUtils.FindEdges(image, new(20, 148, 164, 72), c => HsvColor.FromColor(c) is HsvColor hsv && hsv.H is >= 30 and <= 45 && hsv.S is >= 0.2f and <= 0.4f);
+		debugBitmap?.Mutate(c => c.Draw(Color.Yellow, 1, keypadRect));
+		var keyLabels = new int[4];
+		for (int i = 0; i < 4; i++) {
+			var rect = new Rectangle(keypadRect.X + keypadRect.Width * i / 4, keypadRect.Y, keypadRect.Width / 4, keypadRect.Height);
+			rect = Rectangle.Inflate(rect, -2, -2);
+			rect = ImageUtils.FindEdges(image, rect, c => HsvColor.FromColor(c) is HsvColor hsv && hsv.H <= 60 && hsv.V < 0.25f);
+			debugBitmap?.Mutate(c => c.Draw(Color.Green, 1, rect));
+			keyLabels[i] = keyRecogniser.Recognise(image, rect)[0] - '0';
 		}
 
-		// Extract the keypad.
-		var points = new Point[4];
-		var diagonalSweeps = new (Point start, Size dir, Size increment)[] {
-			(new(0, 128), new(-1, 1), new(1, 0)),
-			(new(255, 128), new(1, 1), new(-1, 0)),
-			(new(0, 255), new(1, 1), new(0, -1)),
-			(new(255, 255), new(-1, 1), new(0, -1)),
-		};
-
-		for (var n = 0; n < 4; n++) {
-			var found = false;
-			var (start, dir, increment) = diagonalSweeps[n];
-			var diagonalPoint1 = start;
-			var diagonalPoint2 = start;
-			for (var i = 0; i < 256; i++) {
-				var point = diagonalPoint1;
-				for (var j = 0; j <= i; j++) {
-					if (point.Y >= 128 && isButtonBackP(point)) {
-						found = true;
-						break;
-					}
-					point += dir;
-				}
-				if (found) {
-					var point2 = diagonalPoint2;
-					for (var j = 0; j <= i; j++) {
-						if (point2.Y >= 128 && isButtonBackP(point2))
-							break;
-						point2 -= dir;
-					}
-					points[n] = new((point.X + point2.X) / 2, (point.Y + point2.Y) / 2);
-					debugBitmap?.Mutate(c => c.Fill(n switch { 0 => Color.Red, 1 => Color.Yellow, 2 => Color.Lime, _ => Color.RoyalBlue }, new EllipsePolygon(points[n], 3)));
-					break;
-				}
-				diagonalPoint1 += increment;
-				diagonalPoint2 += increment + dir;
-			}
-			if (!found)
-				throw new ArgumentException($"Can't find keypad corner {n}");
-		}
-
-		// Extract the display.
-		var displayPoints = new Point[4];
-		var diagonalSweeps2 = new (Point start, Size dir, Size increment)[] {
-							(new(0, 0), new(-1, 1), new(1, 0)),
-							(new(255, 0), new(1, 1), new(-1, 0)),
-							(new(0, 127), new(1, 1), new(0, -1)),
-							(new(255, 127), new(-1, 1), new(0, -1)),
-						};
-
-		for (var n = 0; n < 4; n++) {
-			var found = false;
-			var (start, dir, increment) = diagonalSweeps2[n];
-			var diagonalPoint1 = start;
-			var diagonalPoint2 = start;
-			for (var i = 0; i < 256; i++) {
-				var point = diagonalPoint1;
-				for (var j = 0; j <= i; j++) {
-					if (isDisplayBack(point)) {
-						found = true;
-						break;
-					}
-					point += dir;
-				}
-				if (found) {
-					var point2 = diagonalPoint2;
-					for (var j = 0; j <= i; j++) {
-						if (isDisplayBack(point2))
-							break;
-						point2 -= dir;
-					}
-					displayPoints[n] = new((point.X + point2.X) / 2, (point.Y + point2.Y) / 2);
-					debugBitmap?.Mutate(c => c.Fill(n switch { 0 => Color.Red, 1 => Color.Yellow, 2 => Color.Lime, _ => Color.RoyalBlue }, new EllipsePolygon(points[n], 3)));
-					break;
-				}
-				diagonalPoint1 += increment;
-				diagonalPoint2 += increment + dir;
-			}
-			if (!found)
-				throw new ArgumentException($"Can't find keypad corner {n}");
-		}
-
-		int matchImages(Image<Rgb24> reference, Image<Rgb24> sample, Point sampleLocation, Func<Rgb24, bool> colorKeySelector) {
-			var matchingPixels = 0;
-			for (var y = 0; y < reference.Height; y++) {
-				for (var x = 0; x < reference.Width; x++) {
-					if (colorKeySelector(reference[x, y]) == colorKeySelector(sample[x + sampleLocation.X, y + sampleLocation.Y]))
-						matchingPixels++;
-				}
-			}
-			return matchingPixels;
-		}
-
-		var keypadBitmap = ImageUtils.PerspectiveUndistort(image, points, InterpolationMode.Bilinear, new(304, 128));
-		debugBitmap?.Mutate(c => c.Resize(512, 512, KnownResamplers.NearestNeighbor).DrawImage(keypadBitmap, 1));
-
-		var matches = new List<(int pos, int label, int matchScore)>();
-		var labels = new int[4];
-		var totalMatchScore = 0;
-		for (var p = 0; p < 4; p++) {
-			for (var n = 0; n < 4; n++) {
-				matches.Add((p, n + 1, matchImages(numberBitmaps[n], keypadBitmap, new(p * 80, 0), isButtonBack)));
-			}
-		}
-
-		while (matches.Count > 0) {
-			var topEntry = matches.MaxBy(e => e.matchScore);
-			totalMatchScore += topEntry.matchScore;
-			labels[topEntry.pos] = topEntry.label;
-			matches.RemoveAll(e => e.pos == topEntry.pos || e.label == topEntry.label);
-		}
-
-		var displayBitmap = ImageUtils.PerspectiveUndistort(image, displayPoints, InterpolationMode.Bilinear, new(160, 128));
-		debugBitmap?.Mutate(c => c.DrawImage(displayBitmap, new Point(512 - 160, 160), 1));
-
-		var best = 0;
-		var bestMatchScore = -1;
-		for (var i = 1; i <= 4; i++) {
-			var matchScore = matchImages(displayBitmaps[i - 1], displayBitmap, Point.Empty, isDisplayTextColor);
-			if (matchScore > bestMatchScore) {
-				best = i;
-				bestMatchScore = matchScore;
-			}
-		}
-
-		return new(best, labels);
+		return Enumerable.Range(1, 4).All(keyLabels.Contains)
+			? new(ReadStageIndicator(image), displayText[0] - '0', keyLabels)
+			: throw new ArgumentException("Invalid key labels found.");
 	}
 
-	public record ReadData(int Display, int[] Buttons) {
-		public override string ToString() => $"{this.Display} XS {string.Join(' ', this.Buttons)}";
+	public record ReadData(int StagesCleared, int Display, int[] Keys) {
+		public override string ToString() => $"ReadData {{ StagesCleared = {this.StagesCleared}, Display = {this.Display}, Keys = {{ {string.Join(", ", this.Keys)} }} }}";
 	}
 }
