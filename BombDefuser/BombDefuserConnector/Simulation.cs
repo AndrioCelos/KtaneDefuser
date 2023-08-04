@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -459,7 +459,7 @@ internal partial class Simulation {
 						return;
 					}
 					if (x2 >= 0 && x2 < this.SelectableGrid.GetLength(1) && y2 >= 0 && y2 < this.SelectableGrid.GetLength(0)
-						&& this.SelectableGrid[x2, y2]) {
+						&& this.SelectableGrid[y2, x2]) {
 						this.X = x2;
 						this.Y = y2;
 						return;

@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using AimlCSharpInterface;
 
 namespace BombDefuserScripts;
 internal static class Utils {
@@ -43,20 +44,6 @@ internal static class Utils {
 		new Point[] { new(1181,  566), new(1390,  566), new(1182,  678), new(1392,  678) }
 	};
 
-	private static readonly Dictionary<string, int> ordinals = new(StringComparer.CurrentCultureIgnoreCase) {
-		{ "zeroth", 0 },
-		{ "first", 1 },
-		{ "second", 2 },
-		{ "third", 3 },
-		{ "fourth", 4 },
-		{ "fifth", 5 },
-		{ "sixth", 6 },
-		{ "seventh", 7 },
-		{ "eighth", 8 },
-		{ "ninth", 9 },
-		{ "tenth", 10 }
-	};
-
 	public static IReadOnlyList<Point> GetPoints(ComponentSlot slot) {
 		if (GameState.Current.FocusState == FocusState.Module) {
 			var selectedSlot = GameState.Current.SelectedFace.SelectedSlot;
@@ -67,7 +54,7 @@ internal static class Utils {
 			return bombPointsLists[slot.Y * 3 + slot.X];
 	}
 
-	public static int ParseOrdinal(string ordinal) => ordinals[ordinal];
+	public static int ParseOrdinal(string ordinal) => (int) Enum.Parse<Ordinal>(ordinal, true);
 
 	internal static async Task SelectFaceAsync(AimlAsyncContext context, int face, SelectFaceAlignMode alignMode) {
 		if (GameState.Current.SelectedFaceNum == face) return;  // The requested side is already selected; do nothing.
@@ -148,4 +135,30 @@ internal static class Utils {
 	}
 
 	internal static bool CanReadModuleImmediately(int moduleIndex) => GameState.Current.Modules[moduleIndex].Slot.Face == GameState.Current.SelectedFaceNum;
+}
+
+[AimlSet]
+public enum Ordinal {
+	[AimlSetItem("zeroth"), AimlSetItem("0th")]
+	Zeroth,
+	[AimlSetItem("first"), AimlSetItem("1st")]
+	First,
+	[AimlSetItem("second"), AimlSetItem("2nd")]
+	Second,
+	[AimlSetItem("third"), AimlSetItem("3rd")]
+	Third,
+	[AimlSetItem("fourth"), AimlSetItem("4th")]
+	Fourth,
+	[AimlSetItem("fifth"), AimlSetItem("5th")]
+	Fifth,
+	[AimlSetItem("sixth"), AimlSetItem("6th")]
+	Sixth,
+	[AimlSetItem("seventh"), AimlSetItem("7th")]
+	Seventh,
+	[AimlSetItem("eighth"), AimlSetItem("8th")]
+	Eighth,
+	[AimlSetItem("ninth"), AimlSetItem("9th")]
+	Ninth,
+	[AimlSetItem("tenth"), AimlSetItem("10th")]
+	Tenth
 }

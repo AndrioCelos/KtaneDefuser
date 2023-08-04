@@ -252,6 +252,54 @@ internal partial class Simulation {
 			}
 		}
 
+		public class MorseCode : Module<Components.MorseCode.ReadData> {
+			internal override Components.MorseCode.ReadData Details => new(this.lightOn);
+
+			private bool lightOn;
+			private readonly long pattern = 0b10101000101010111000111011100011101110111000101010111;  // bombs
+			private readonly int patternLength = 53;
+			private int index;
+			private readonly Timer animationTimer = new(250);
+			private int selectedFrequency;
+			private static readonly string[] allFrequencies = new[] { "505", "515", "522", "532", "535", "542", "545", "552", "555", "565", "572", "575", "582", "592", "595", "600" };
+
+			public MorseCode() : base(BombDefuserAimlService.GetComponentProcessor<Components.MorseCode>(), 3, 2) {
+				this.SelectableGrid[0, 1] = false;
+				this.SelectableGrid[1, 0] = false;
+				this.SelectableGrid[1, 2] = false;
+				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
+				this.animationTimer.Start();
+			}
+
+			private void AnimationTimer_Elapsed(object? sender, ElapsedEventArgs e) {
+				this.index++;
+				if (this.index >= this.patternLength) this.index = -10;
+				this.lightOn = this.index >= 0 && (this.pattern & 1L << this.index) != 0;
+			}
+
+			public override void Interact() {
+				switch (this.X) {
+					case 0:
+						if (this.selectedFrequency == 0) throw new InvalidOperationException("Pointer went out of bounds.");
+						this.selectedFrequency--;
+						break;
+					case 2:
+						if (this.selectedFrequency == 15) throw new InvalidOperationException("Pointer went out of bounds.");
+						this.selectedFrequency++;
+						break;
+					case 1:
+						Message($"3.{allFrequencies[this.selectedFrequency]} MHz was submitted.");
+						if (this.selectedFrequency == 9) {
+							this.Solve();
+							this.animationTimer.Stop();
+							this.lightOn = false;
+						} else
+							this.StrikeFlash();
+						break;
+				}
+			}
+		}
+
 		public class NeedyCapacitor : NeedyModule<Components.NeedyCapacitor.ReadData> {
 			private Stopwatch pressStopwatch = new();
 

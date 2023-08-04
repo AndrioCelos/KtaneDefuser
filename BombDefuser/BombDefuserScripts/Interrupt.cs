@@ -5,7 +5,7 @@ internal class Interrupt : IDisposable {
 	public static int? InterruptedModuleNum { get; set; }
 	private static Queue<(TaskCompletionSource<Interrupt> taskSource, AimlAsyncContext context)> interruptQueue = new();
 
-	private bool isDisposed;
+	public bool IsDisposed { get; private set; }
 	
 	public AimlAsyncContext Context { get; }
 
@@ -52,7 +52,7 @@ internal class Interrupt : IDisposable {
 	}
 
 	public async Task<ModuleLightState> SubmitAsync(string inputs) {
-		if (this.isDisposed) throw new ObjectDisposedException(nameof(Interrupt));
+		if (this.IsDisposed) throw new ObjectDisposedException(nameof(Interrupt));
 		var context = AimlAsyncContext.Current ?? throw new InvalidOperationException("No current request");
 		await context.SendInputsAsync(inputs);
 		await AimlTasks.Delay(0.5);  // Wait for the interaction punch to end.
@@ -68,8 +68,8 @@ internal class Interrupt : IDisposable {
 	public void Exit() => this.Dispose();
 
 	public void Dispose() {
-		if (!this.isDisposed) {
-			this.isDisposed = true;
+		if (!this.IsDisposed) {
+			this.IsDisposed = true;
 			Exit(AimlAsyncContext.Current ?? throw new InvalidOperationException("No current request"));
 		}
 	}
