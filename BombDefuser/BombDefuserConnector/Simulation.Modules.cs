@@ -1,6 +1,7 @@
 ﻿using BombDefuserConnector.DataTypes;
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Timers;
 using static BombDefuserConnector.Components.ComplicatedWires;
@@ -478,6 +479,59 @@ internal partial class Simulation {
 				} else {
 					this.inputProgress++;
 					this.tick = -20;
+				}
+			}
+		}
+
+		public class WhosOnFirst : Module<Components.WhosOnFirst.ReadData> {
+			internal override Components.WhosOnFirst.ReadData Details => !this.isAnimating ? new(this.stagesCleared, this.display, this.keys) : throw new InvalidOperationException("Tried to read module while animating");
+
+			private string display;
+			private readonly string[] keys = new string[6];
+			private int stagesCleared;
+			private bool isAnimating;
+			private readonly Timer animationTimer = new(2900) { AutoReset = false };
+
+			private static readonly string[] displayStrings = new[] { "", "YES", "FIRST", "DISPLAY", "OKAY", "SAYS", "NOTHING", "BLANK", "NO", "LED", "LEAD", "READ", "RED", "REED", "LEED",
+				"HOLD ON", "YOU", "YOU ARE", "YOUR", "YOU'RE", "UR", "THERE", "THEY'RE", "THEIR", "THEY ARE", "SEE", "C", "CEE" };
+			private static readonly string[] keyStrings = new[] { "READY", "FIRST", "NO", "BLANK", "NOTHING", "YES", "WHAT", "UHHH", "LEFT", "RIGHT", "MIDDLE", "OKAY", "WAIT", "PRESS",
+				"YOU", "YOU ARE", "YOUR", "YOU’RE", "UR", "U", "UH HUH", "UH UH", "WHAT?", "DONE", "NEXT", "HOLD", "SURE", "LIKE" };
+
+			public WhosOnFirst() : base(BombDefuserAimlService.GetComponentProcessor<Components.WhosOnFirst>(), 2, 3) {
+				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
+				this.SetKeysAndDisplay();
+			}
+
+			private void AnimationTimer_Elapsed(object? sender, ElapsedEventArgs e) {
+				this.SetKeysAndDisplay();
+				this.isAnimating = false;
+			}
+
+			[MemberNotNull(nameof(display))]
+			private void SetKeysAndDisplay() {
+				for (var i = 0; i < 6; i++)
+					this.keys[i] = keyStrings[i + this.stagesCleared * 8];
+				this.display = displayStrings[this.stagesCleared];
+			}
+
+			private void StartAnimation() {
+				this.isAnimating = true;
+				this.animationTimer.Start();
+			}
+
+			public override void Interact() {
+				if (this.isAnimating) throw new InvalidOperationException("Memory button pressed during animation");
+				Message($"Pressed button {this.X + this.Y * 2 + 1}");
+				if (this.LightState == ModuleLightState.Solved) return;
+				if (this.X + this.Y * 2 != this.stagesCleared) {
+					this.StrikeFlash();
+					this.StartAnimation();
+				} else {
+					this.stagesCleared++;
+					if (this.stagesCleared >= 3)
+						this.Solve();
+					else
+						this.StartAnimation();
 				}
 			}
 		}
