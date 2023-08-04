@@ -301,7 +301,7 @@ internal partial class Simulation {
 		}
 
 		public class NeedyCapacitor : NeedyModule<Components.NeedyCapacitor.ReadData> {
-			private Stopwatch pressStopwatch = new();
+			private readonly Stopwatch pressStopwatch = new();
 
 			internal override Components.NeedyCapacitor.ReadData Details => new(this.IsActive ? (int) this.RemainingTime.TotalSeconds : null);
 
@@ -380,6 +380,45 @@ internal partial class Simulation {
 
 			public override void OnTimerExpired() {
 				this.StrikeFlash();
+			}
+		}
+
+		public class Password : Module<Components.Password.ReadData> {
+			private readonly char[,] columns = new[,] {
+				{ 'A', 'B', 'C', 'D', 'E', 'F' },
+				{ 'G', 'B', 'H', 'I', 'J', 'K' },
+				{ 'L', 'M', 'N', 'O', 'P', 'Q' },
+				{ 'R', 'S', 'T', 'U', 'V', 'W' },
+				{ 'W', 'X', 'Y', 'Z', 'A', 'T' }
+			};
+			private readonly int[] columnPositions = new int[5];
+
+			internal override Components.Password.ReadData Details => new(columnPositions.Select((y, x) => columns[x, y]).ToArray());
+
+			public Password() : base(BombDefuserAimlService.GetComponentProcessor<Components.Password>(), 5, 3) {
+				this.SelectableGrid[2, 0] = false;
+				this.SelectableGrid[2, 1] = false;
+				this.SelectableGrid[2, 3] = false;
+				this.SelectableGrid[2, 4] = false;
+			}
+
+			public override void Interact() {
+				if (this.Y == 2) {
+					Message($"{new string(this.Details.Display)} was submitted.");
+					if (this.columnPositions[0] == 0 && this.columnPositions[1] == 1 && this.columnPositions[2] == 3 && this.columnPositions[3] == 3 && this.columnPositions[4] == 5)
+						this.Solve();
+					else
+						this.StrikeFlash();
+				} else {
+					ref var columnPosition = ref this.columnPositions[this.X];
+					if (this.Y == 0) {
+						columnPosition--;
+						if (columnPosition < 0) columnPosition = 5;
+					} else {
+						columnPosition++;
+						if (columnPosition >= 6) columnPosition = 0;
+					}
+				}
 			}
 		}
 	}

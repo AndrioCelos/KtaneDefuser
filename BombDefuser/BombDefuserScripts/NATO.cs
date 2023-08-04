@@ -4,12 +4,12 @@ using System.Text;
 namespace BombDefuserScripts;
 
 internal static class NATO {
-	private static readonly Dictionary<char, string> EncodeMap = new(new CaseInsensitiveCharComparer());
-	private static readonly Dictionary<string, char> DecodeMap = new(StringComparer.CurrentCultureIgnoreCase);
+	private static readonly Dictionary<char, string> encodeMap = new(new CaseInsensitiveCharComparer());
+	private static readonly Dictionary<string, char> decodeMap = new(StringComparer.CurrentCultureIgnoreCase);
 
 	private static void Map(char c, string codeWord) {
-		EncodeMap.TryAdd(c, codeWord);
-		DecodeMap[codeWord] = c;
+		encodeMap.TryAdd(c, codeWord);
+		decodeMap[codeWord] = c;
 	}
 
 	static NATO() {
@@ -54,15 +54,17 @@ internal static class NATO {
 		Map('9', "Nine");
 	}
 
-	public static string Speak(string s) {
+	public static char DecodeChar(string natoWord) => natoWord.Length == 1 ? natoWord[0] : decodeMap[natoWord];
+
+	public static string Speak(IEnumerable<char> chars) {
 		var builder = new StringBuilder();
-		Speak(builder, s);
+		Speak(builder, chars);
 		return builder.ToString();
 	}
-	public static void Speak(StringBuilder builder, string s) {
+	public static void Speak(StringBuilder builder, IEnumerable<char> chars) {
 		builder.Append("<oob><speak><s>");
 		var any = false;
-		foreach (var c in s) {
+		foreach (var c in chars) {
 			if (char.IsWhiteSpace(c)) continue;
 			if (any)
 				builder.Append(' ');
@@ -71,12 +73,12 @@ internal static class NATO {
 
 			if (c is >= '0' and <= '9')
 				builder.Append($"<say-as interpret-as='number'>{c}</say-as>");
-			else if (EncodeMap.TryGetValue(c, out var codeWord))
+			else if (encodeMap.TryGetValue(c, out var codeWord))
 				builder.Append(codeWord);
 			else
 				builder.Append(c);
 		}
-		builder.Append($"</s></speak><alt>{s}</alt></oob>");
+		builder.Append($"</s></speak><alt>{(chars is string s ? s : string.Join(null, chars))}</alt></oob>");
 	}
 
 	private class CaseInsensitiveCharComparer : IEqualityComparer<char> {

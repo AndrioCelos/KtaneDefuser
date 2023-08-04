@@ -11,7 +11,7 @@
 	//"TimeoutMessage": "That query took too long for me to process.",
 	//"RecursionLimit": 50,
 	//"RecursionLimitMessage": "Too much recursion in AIML.",
-	"LogLevel": "Diagnostic",
+	"LogLevel": "Info",
 	"LogRecursionLimit": 3,
 	"LoopLimit": 100,
 	//"AimlDirectory": "aiml",
