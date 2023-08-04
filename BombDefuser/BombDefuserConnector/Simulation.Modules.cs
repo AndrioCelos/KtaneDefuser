@@ -421,5 +421,65 @@ internal partial class Simulation {
 				}
 			}
 		}
+
+		public class SimonSays : Module<Components.SimonSays.ReadData> {
+			internal override Components.SimonSays.ReadData Details => new(this.litColour);
+
+			private readonly Timer timer = new(500);
+			private SimonColour? litColour;
+			private int stagesCleared;
+			private int inputProgress;
+			private int tick;
+
+			public SimonSays() : base(BombDefuserAimlService.GetComponentProcessor<Components.SimonSays>(), 3, 3) {
+				this.SelectableGrid[0, 0] = false;
+				this.SelectableGrid[0, 2] = false;
+				this.SelectableGrid[1, 1] = false;
+				this.SelectableGrid[2, 0] = false;
+				this.SelectableGrid[2, 2] = false;
+				this.timer.Elapsed += this.Timer_Elapsed;
+				this.timer.Start();
+			}
+
+			private void Timer_Elapsed(object? sender, ElapsedEventArgs e) {
+				if (tick >= 0) {
+					inputProgress = 0;
+					if (tick % 3 == 2)
+						litColour = null;
+					else
+						litColour = (SimonColour) (tick / 3);
+				} else if (tick is -18 or -4)
+					litColour = null;
+				tick++;
+				if (tick >= (stagesCleared + 1) * 3)
+					tick = -20;
+			}
+
+			public override void Interact() {
+				var pressedColour = this.Y switch {
+					0 => SimonColour.Blue,
+					2 => SimonColour.Green,
+					_ => this.X == 0 ? SimonColour.Red : SimonColour.Yellow
+				};
+				this.litColour = pressedColour;
+				Message($"{pressedColour} was pressed.");
+				if (this.LightState == ModuleLightState.Solved) return;
+				if (pressedColour != (SimonColour) this.inputProgress) {
+					this.StrikeFlash();
+					this.inputProgress = 0;
+				} else if (this.inputProgress >= this.stagesCleared) {
+					this.stagesCleared++;
+					this.inputProgress = 0;
+					this.tick = -6;
+					if (this.stagesCleared >= 4) {
+						this.Solve();
+						this.timer.Stop();
+					}
+				} else {
+					this.inputProgress++;
+					this.tick = -20;
+				}
+			}
+		}
 	}
 }
