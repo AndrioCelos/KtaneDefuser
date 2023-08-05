@@ -8,11 +8,11 @@ public abstract class ComponentReader {
 	public abstract string Name { get; }
 	protected internal abstract bool UsesNeedyFrame { get; }
 
-	protected internal abstract float IsModulePresent(Image<Rgb24> image);
+	protected internal abstract float IsModulePresent(Image<Rgba32> image);
 
-	protected internal abstract object ProcessNonGeneric(Image<Rgb24> image, ref Image<Rgb24>? debugImage);
+	protected internal abstract object ProcessNonGeneric(Image<Rgba32> image, ref Image<Rgba32>? debugImage);
 
-	protected static int ReadStageIndicator(Image<Rgb24> image) {
+	protected static int ReadStageIndicator(Image<Rgba32> image) {
 		var count = 0;
 		var lastState = false;
 		for (var y = 80; y < 224; y++) {
@@ -28,7 +28,7 @@ public abstract class ComponentReader {
 		return count;
 	}
 
-	protected static int? ReadNeedyTimer(Image<Rgb24> image, Image<Rgb24>? debugImage) {
+	protected static int? ReadNeedyTimer(Image<Rgba32> image, Image<Rgba32>? debugImage) {
 		var bezelCorners = ImageUtils.FindCorners(image, new(80, 16, 96, 64), c => HsvColor.FromColor(c) is HsvColor hsv && hsv.H <= 150 && hsv.S <= 0.25f && hsv.V is >= 0.3f and <= 0.75f, 6) ?? throw new ArgumentException("Can't find needy timer bezel corners");
 		if (debugImage != null) ImageUtils.DebugDrawPoints(debugImage, bezelCorners);
 		var left = Math.Min(bezelCorners[0].X, bezelCorners[2].X);
@@ -42,7 +42,7 @@ public abstract class ComponentReader {
 		var displayImage = ImageUtils.PerspectiveUndistort(image, displayCorners, InterpolationMode.NearestNeighbour, new(128, 64));
 		debugImage?.Mutate(p => p.DrawImage(displayImage, 1));
 
-		bool checkRectangle(Image<Rgb24> image, Rectangle rectangle) {
+		bool checkRectangle(Image<Rgba32> image, Rectangle rectangle) {
 			for (var dy = 0; dy < rectangle.Height; dy++) {
 				for (var dx = 0; dx < rectangle.Width; dx++) {
 					var p = image[rectangle.Left + dx, rectangle.Top + dy];
@@ -51,7 +51,7 @@ public abstract class ComponentReader {
 			}
 			return false;
 		}
-		int? readDigit(Image<Rgb24> image, int x) {
+		int? readDigit(Image<Rgba32> image, int x) {
 			var segments =
 				(checkRectangle(image, new(x + 0, 0, 1, 16)) ? (1 << 0) : 0) |
 				(checkRectangle(image, new(x + 0, 18, 16, 1)) ? (1 << 1) : 0) |
@@ -87,8 +87,8 @@ public abstract class ComponentReader {
 }
 
 public abstract class ComponentReader<T> : ComponentReader where T : notnull {
-	protected internal abstract T Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage);
+	protected internal abstract T Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage);
 
-	protected internal override object ProcessNonGeneric(Image<Rgb24> image, ref Image<Rgb24>? debugImage)
+	protected internal override object ProcessNonGeneric(Image<Rgba32> image, ref Image<Rgba32>? debugImage)
 		=> this.Process(image, ref debugImage);
 }

@@ -15,9 +15,9 @@ public class Memory : ComponentReader<Memory.ReadData> {
 	private static readonly TextRecogniser keyRecogniser = new(new(TextRecogniser.Fonts.OSTRICH_SANS_HEAVY, 48), 160, 44, new(64, 64),
 		"1", "2", "3", "4");
 
-	protected internal override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		var minDist = int.MaxValue;
-		var referenceColour = new Rgb24(55, 95, 81);
+		var referenceColour = new Rgba32(55, 95, 81);
 		for (int x = image.Width / 4 - 10; x < image.Width / 4 + 10; x++) {
 			for (int y = image.Height / 4 - 10; y < image.Height / 4 + 10; y++) {
 				var pixel = image[x, y];
@@ -28,8 +28,8 @@ public class Memory : ComponentReader<Memory.ReadData> {
 
 		// Keypad should be at about Y = 192
 		var count = 0f;
-		var referenceColour2 = new Rgb24(220, 196, 155);
-		var referenceColour3 = new Rgb24(51, 46, 37);
+		var referenceColour2 = new Rgba32(220, 196, 155);
+		var referenceColour3 = new Rgba32(51, 46, 37);
 		for (var x = 24; x < 172; x++) {
 			var pixel = image[x, 192];
 			var dist = pixel.R < 128
@@ -40,7 +40,7 @@ public class Memory : ComponentReader<Memory.ReadData> {
 
 		// And not at about Y = 128
 		var count2 = 0f;
-		var referenceColour4 = new Rgb24(170, 150, 120);
+		var referenceColour4 = new Rgba32(170, 150, 120);
 		for (var x = 24; x < 172; x++) {
 			var pixel = image[x, 128];
 			var dist = Math.Abs(pixel.R - referenceColour4.R) + Math.Abs(pixel.G - referenceColour4.G) + Math.Abs(pixel.B - referenceColour4.B);
@@ -50,7 +50,7 @@ public class Memory : ComponentReader<Memory.ReadData> {
 		return Math.Max(1 - (float) minDist / 50, 0) * 0.5f + Math.Max(0, count / 148 - count2 / 148) * 0.5f;
 	}
 
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
 		var displayBorderRect = ImageUtils.FindEdges(image, new(50, 40, 108, 80), c => c.R < 44 && c.G < 44 && c.B < 44);
 		displayBorderRect.Inflate(-4, -4);
 		var textRect = ImageUtils.FindEdges(image, displayBorderRect, c => c.G >= 192);

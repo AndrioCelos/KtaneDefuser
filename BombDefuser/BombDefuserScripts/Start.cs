@@ -28,32 +28,32 @@ internal static class Start {
 		context.SendInputs("a");
 		await AimlTasks.Delay(1);
 		// 2. Identify components on the bomb.
-		var ss = DefuserConnector.Instance.TakeScreenshot();
-		await RegisterComponentsAsync(context, ss);
+		using (var ss = DefuserConnector.Instance.TakeScreenshot())
+			await RegisterComponentsAsync(context, ss);
 		// 3. Turn the bomb around and identify widgets on the side.
 		await Utils.SelectFaceAsync(context, 1, SelectFaceAlignMode.CheckWidgets);
 		// 4. Repeat steps 2-3 for the other faces.
-		ss = DefuserConnector.Instance.TakeScreenshot();
-		await RegisterComponentsAsync(context, ss);
+		using (var ss = DefuserConnector.Instance.TakeScreenshot())
+			await RegisterComponentsAsync(context, ss);
 		await Utils.SelectFaceAsync(context, 0, SelectFaceAlignMode.CheckWidgets);
 		// 5. Turn the bomb to the bottom face.
 		context.SendInputs("ry:-0.875");
 		await AimlTasks.Delay(0.5);
 		// 6. Identify widgets on the bottom face.
-		ss = DefuserConnector.Instance.TakeScreenshot();
-		Edgework.RegisterWidgets(context, false, ss);
+		using (var ss = DefuserConnector.Instance.TakeScreenshot())
+			Edgework.RegisterWidgets(context, false, ss);
 		// 7. Turn the bomb to the top face.
 		context.SendInputs("ry:1");
 		await AimlTasks.Delay(0.5);
 		// 8. Identify widgets on the top face.
-		ss = DefuserConnector.Instance.TakeScreenshot();
-		Edgework.RegisterWidgets(context, false, ss);
+		using (var ss = DefuserConnector.Instance.TakeScreenshot())
+			Edgework.RegisterWidgets(context, false, ss);
 		// 9. Reset the bomb tilt.
 		context.SendInputs("ry:0");
 		context.Reply("Ready.");
 	}
 
-	private static async Task RegisterComponentsAsync(AimlAsyncContext context, Image<Rgb24> screenshot) {
+	private static async Task RegisterComponentsAsync(AimlAsyncContext context, Image<Rgba32> screenshot) {
 		var components = Enumerable.Range(0, 6).Select(i => DefuserConnector.Instance.GetComponentReader(screenshot, Utils.GetPoints(new ComponentSlot(GameState.Current.SelectedFaceNum, i % 3, i / 3)))).ToList();
 		var needTimerRead = false;
 		var anyModules = false;

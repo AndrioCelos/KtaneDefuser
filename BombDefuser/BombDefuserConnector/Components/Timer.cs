@@ -12,12 +12,12 @@ public class Timer : ComponentReader<Timer.ReadData> {
 	public override string Name => "Timer";
 	protected internal override bool UsesNeedyFrame => false;
 
-	protected internal override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		return ImageUtils.CheckSimilarity(image, Samples);
 	}
 
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
-		static bool predicate(Rgb24 c) {
+	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
+		static bool predicate(Rgba32 c) {
 			return c.G < 12 && c.B < 12;
 		}
 
@@ -36,7 +36,7 @@ public class Timer : ComponentReader<Timer.ReadData> {
 			}
 		}
 
-		static bool isOn(Rgb24 pixel, ref Rgb24 timerColour) {
+		static bool isOn(Rgba32 pixel, ref Rgba32 timerColour) {
 			if (pixel.R >= 128 || pixel.G >= 128 || pixel.B >= 128) {
 				timerColour.R = pixel.R >= 128 ? byte.MaxValue : (byte) 0;
 				timerColour.G = pixel.G >= 128 ? byte.MaxValue : (byte) 0;
@@ -46,7 +46,7 @@ public class Timer : ComponentReader<Timer.ReadData> {
 			return false;
 		}
 
-		static char readDigit(Image<Rgb24> image, int centreX, ref Rgb24 timerColour) {
+		static char readDigit(Image<Rgba32> image, int centreX, ref Rgba32 timerColour) {
 			var segments =
 				(isOn(image[centreX + 0, 16], ref timerColour) ? (1 << 0) : 0) |
 				(isOn(image[centreX + 16, 40], ref timerColour) ? (1 << 1) : 0) |
@@ -70,7 +70,7 @@ public class Timer : ComponentReader<Timer.ReadData> {
 			};
 		}
 
-		var timerColour = default(Rgb24);
+		var timerColour = default(Rgba32);
 		var isMinutes = isOn(timerBitmap[130, 38], ref timerColour);
 
 		var n1 = int.Parse($"{readDigit(timerBitmap, 32, ref timerColour)}{readDigit(timerBitmap, 90, ref timerColour)}");

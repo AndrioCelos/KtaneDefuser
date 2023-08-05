@@ -6,11 +6,11 @@ namespace BombDefuserConnector;
 public abstract class WidgetReader {
 	public abstract string Name { get; }
 
-	protected internal abstract float IsWidgetPresent(Image<Rgb24> image, LightsState lightsState, PixelCounts pixelCounts);
+	protected internal abstract float IsWidgetPresent(Image<Rgba32> image, LightsState lightsState, PixelCounts pixelCounts);
 
-	protected internal abstract object ProcessNonGeneric(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugImage);
+	protected internal abstract object ProcessNonGeneric(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage);
 
-	internal static PixelCounts GetPixelCounts(Image<Rgb24> image, LightsState lightsState) {
+	internal static PixelCounts GetPixelCounts(Image<Rgba32> image, LightsState lightsState) {
 		int red = 0, yellow = 0, grey = 0, white = 0;
 		for (var y = 0; y < image.Width; y++) {
 			for (var x = 0; x < image.Height; x++) {
@@ -64,8 +64,8 @@ public abstract class WidgetReader {
 }
 
 public abstract class WidgetReader<T> : WidgetReader where T : notnull {
-	protected internal abstract T Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugImage);
+	protected internal abstract T Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage);
 
-	protected internal override object ProcessNonGeneric(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugImage)
+	protected internal override object ProcessNonGeneric(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage)
 		=> this.Process(image, lightsState, ref debugImage);
 }

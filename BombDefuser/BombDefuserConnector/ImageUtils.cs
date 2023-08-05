@@ -9,10 +9,10 @@ using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector;
 public static class ImageUtils {
-	public static Image<Rgb24> PerspectiveUndistort(Image<Rgb24> originalImage, IReadOnlyList<Point> points, InterpolationMode interpolationMode)
+	public static Image<Rgba32> PerspectiveUndistort(Image<Rgba32> originalImage, IReadOnlyList<Point> points, InterpolationMode interpolationMode)
 		=> PerspectiveUndistort(originalImage, points, interpolationMode, new(256, 256));
-	public static Image<Rgb24> PerspectiveUndistort(Image<Rgb24> originalImage, IReadOnlyList<Point> points, InterpolationMode interpolationMode, Size resolution) {
-		var bitmap = new Image<Rgb24>(resolution.Width, resolution.Height);
+	public static Image<Rgba32> PerspectiveUndistort(Image<Rgba32> originalImage, IReadOnlyList<Point> points, InterpolationMode interpolationMode, Size resolution) {
+		var bitmap = new Image<Rgba32>(resolution.Width, resolution.Height);
 		bitmap.ProcessPixelRows(p => {
 			for (var y = 0; y < bitmap.Height; y++) {
 				var row = p.GetRowSpan(y);
@@ -47,12 +47,12 @@ public static class ImageUtils {
 		return bitmap;
 	}
 
-	public static bool IsModuleBack(Rgb24 color, LightsState lightsState)
+	public static bool IsModuleBack(Rgba32 color, LightsState lightsState)
 		=> Math.Abs(color.R - 136) + Math.Abs(color.G - 138) + Math.Abs(color.B - 150) <= 90;
 	public static bool IsModuleBack(HsvColor hsv, LightsState lightsState)
 		=> hsv.H is >= 180 and < 255 && hsv.S is >= 0.025f and < 0.25f && hsv.V is >= 0.45f and < 0.75f;
 
-	public static Point[]? FindCorners(Image<Rgb24> image, Rectangle bounds, Predicate<Rgb24> predicate, int continuitySize) {
+	public static Point[]? FindCorners(Image<Rgba32> image, Rectangle bounds, Predicate<Rgba32> predicate, int continuitySize) {
 		var points = new Point[4];
 		var diagonalSweeps = new (Point start, Size dir, Size increment)[] {
 			(new(bounds.Left, bounds.Top), new(-1, 1), new(1, 0)),
@@ -163,16 +163,16 @@ public static class ImageUtils {
 		}
 	}
 
-	public static int ColorProximity(Rgb24 color, int refR, int refG, int refB, int scale)
+	public static int ColorProximity(Rgba32 color, int refR, int refG, int refB, int scale)
 		=> Math.Max(0, scale - Math.Abs(color.R - refR) - Math.Abs(color.G - refG) - Math.Abs(color.B - refB));
 
-	public static int ColorProximity(Rgb24 color, int refR1, int refG1, int refB1, int refR2, int refG2, int refB2, int scale)
+	public static int ColorProximity(Rgba32 color, int refR1, int refG1, int refB1, int refR2, int refG2, int refB2, int scale)
 		=> Math.Max(0, scale - Math.Min(
 			Math.Abs(color.R - refR1) + Math.Abs(color.G - refG1) + Math.Abs(color.B - refB1),
 			Math.Abs(color.R - refR2) + Math.Abs(color.G - refG2) + Math.Abs(color.B - refB2)
 		));
 
-	public static void ColourCorrect(Image<Rgb24> image, LightsState lightsState) {
+	public static void ColourCorrect(Image<Rgba32> image, LightsState lightsState) {
 		if (lightsState == LightsState.On) return;
 
 		// This will apply a linear function to each component of each pixel.
@@ -203,7 +203,7 @@ public static class ImageUtils {
 		});
 	}
 
-	public static float CheckSimilarity(Image<Rgb24> subject, params Image<Rgba32>[] samples) {
+	public static float CheckSimilarity(Image<Rgba32> subject, params Image<Rgba32>[] samples) {
 		var size = samples.First().Size;
 		int score = 0, total = 0;
 		for (int y = 0; y < size.Height; y++) {
@@ -227,7 +227,7 @@ public static class ImageUtils {
 		return (float) score / total;
 	}
 
-	public static float CheckForNeedyFrame(Image<Rgb24> image) {
+	public static float CheckForNeedyFrame(Image<Rgba32> image) {
 		var yellowPixels = 0;
 		for (int y = 0; y < image.Height * 80 / 256; y++) {
 			for (int x = 0; x < image.Width; x++) {
@@ -239,7 +239,7 @@ public static class ImageUtils {
 		return yellowPixels / 2000f;
 	}
 
-	public static bool CheckForBlankComponent(Image<Rgb24> image) {
+	public static bool CheckForBlankComponent(Image<Rgba32> image) {
 		var orangePixels = 0;
 		for (int y = 0; y < image.Height; y++) {
 			for (int x = 0; x < image.Width; x++) {
@@ -251,8 +251,8 @@ public static class ImageUtils {
 		return orangePixels >= 40000;
 	}
 
-	public static ModuleLightState GetLightState(Image<Rgb24> image, params Point[] points) => GetLightState(image, (IReadOnlyList<Point>) points);
-	public static ModuleLightState GetLightState(Image<Rgb24> image, IReadOnlyList<Point> points) {
+	public static ModuleLightState GetLightState(Image<Rgba32> image, params Point[] points) => GetLightState(image, (IReadOnlyList<Point>) points);
+	public static ModuleLightState GetLightState(Image<Rgba32> image, IReadOnlyList<Point> points) {
 		var x = (int) Math.Round(points[1].X + (points[2].X - points[1].X) * 0.1015625);
 		var y = (int) Math.Round(points[1].Y + (points[2].Y - points[1].Y) * 0.1015625);
 		var hsv = HsvColor.FromColor(image[x, y]);

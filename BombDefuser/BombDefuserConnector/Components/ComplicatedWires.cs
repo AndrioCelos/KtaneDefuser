@@ -11,7 +11,7 @@ public class ComplicatedWires : ComponentReader<ComplicatedWires.ReadData> {
 	public override string Name => "Complicated Wires";
 	protected internal override bool UsesNeedyFrame => false;
 
-	protected internal override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Complicated Wires: look for vertical wires crossing the centre
 		var inWire = 0;
 		var numWires = 0;
@@ -42,7 +42,7 @@ public class ComplicatedWires : ComponentReader<ComplicatedWires.ReadData> {
 		}
 		return numWires is >= 3 and <= 6 ? pixelScore * 1.5f / numPixels : 0;
 	}
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
 		debugImage?.Mutate(c => c.Brightness(0.5f));
 
 		WireFlags? currentFlags = null;

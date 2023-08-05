@@ -8,7 +8,7 @@ public class SimonSays : ComponentReader<SimonSays.ReadData> {
 	public override string Name => "Simon Says";
 	protected internal override bool UsesNeedyFrame => false;
 
-	protected internal override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Simon: look for the colours
 		var count = 0f;
 		var referenceHues = new float[] { 237, 356, 45, 108 };
@@ -29,7 +29,7 @@ public class SimonSays : ComponentReader<SimonSays.ReadData> {
 		return count / 576f;
 	}
 
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
 		int red = 0, yellow = 0, green = 0, blue = 0;
 		image.ProcessPixelRows(a => {
 			for (var y = 20; y < 224; y++) {

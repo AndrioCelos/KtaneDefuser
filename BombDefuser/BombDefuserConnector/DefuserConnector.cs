@@ -21,7 +21,7 @@ public class DefuserConnector {
 	private readonly byte[] writeBuffer = new byte[1024];
 	private readonly byte[] readBuffer = new byte[14745612];
 
-	private TaskCompletionSource<Image<Rgb24>>? screenshotTaskSource;
+	private TaskCompletionSource<Image<Rgba32>>? screenshotTaskSource;
 	private TaskCompletionSource<string>? readTaskSource;
 	private Simulation? simulation;
 
@@ -67,8 +67,7 @@ public class DefuserConnector {
 						await stream.ReadExactlyAsync(this.readBuffer, 0, length);
 						var w = BitConverter.ToInt32(this.readBuffer, 0);
 						var h = BitConverter.ToInt32(this.readBuffer, 4);
-						using var image0 = Image.LoadPixelData<Rgba32>(this.readBuffer.AsSpan()[8..length], w, h);
-						var image = image0.CloneAs<Rgb24>();
+						var image = Image.LoadPixelData<Rgba32>(this.readBuffer.AsSpan()[8..length], w, h);
 						image.Mutate(c => c.Flip(FlipMode.Vertical));
 #if DEBUG
 						SaveDebugImage(image, "Screenshot");
@@ -112,8 +111,8 @@ public class DefuserConnector {
 	}
 #endif
 
-	public Image<Rgb24> TakeScreenshot() => this.TakeScreenshotAsync().Result;
-	public async Task<Image<Rgb24>> TakeScreenshotAsync() {
+	public Image<Rgba32> TakeScreenshot() => this.TakeScreenshotAsync().Result;
+	public async Task<Image<Rgba32>> TakeScreenshotAsync() {
 		if (this.simulation is not null)
 			return Simulation.DummyScreenshot;
 		if (this.screenshotTaskSource is not null) throw new InvalidOperationException("Already taking a screenshot.");
@@ -158,7 +157,7 @@ public class DefuserConnector {
 
 	private static bool IsBombBacking(HsvColor hsv) => hsv.H is >= 180 and < 225 && hsv.S < 0.35f && hsv.V >= 0.35f;
 
-	public int GetSideWidgetAdjustment(Image<Rgb24> screenshotBitmap) {
+	public int GetSideWidgetAdjustment(Image<Rgba32> screenshotBitmap) {
 		if (this.simulation is not null)
 			return 0;
 		int left;
@@ -174,21 +173,21 @@ public class DefuserConnector {
 		return (left + right) / 2 - 988;
 	}
 
-	public static LightsState GetLightsState(Image<Rgb24> screenshot) => screenshot[screenshot.Width / 2, 0].R switch {
+	public static LightsState GetLightsState(Image<Rgba32> screenshot) => screenshot[screenshot.Width / 2, 0].R switch {
 		< 17 => LightsState.Off,
 		< 32 => LightsState.Buzz,
 		< 75 => LightsState.On,
 		_ => LightsState.Emergency
 	};
 
-	public ModuleLightState GetModuleLightState(Image<Rgb24> screenshotBitmap, IReadOnlyList<Point> points)
+	public ModuleLightState GetModuleLightState(Image<Rgba32> screenshotBitmap, IReadOnlyList<Point> points)
 		=> this.simulation is not null
 			? this.simulation.GetLightState(points[0])
 			: ImageUtils.GetLightState(screenshotBitmap, points);
 
 	public static T GetComponentReader<T>() where T : ComponentReader => (T) componentReaders[typeof(T)];
 
-	public ComponentReader? GetComponentReader(Image<Rgb24> screenshotBitmap, IReadOnlyList<Point> points) {
+	public ComponentReader? GetComponentReader(Image<Rgba32> screenshotBitmap, IReadOnlyList<Point> points) {
 		if (this.simulation is not null)
 			return this.simulation.GetComponentReader(points[0]);
 
@@ -224,7 +223,7 @@ public class DefuserConnector {
 		return !string.IsNullOrEmpty(name) && typeof(ComponentReader).Assembly.GetType($"{nameof(BombDefuserConnector)}.{nameof(Components)}.{name}") is Type t ? componentReaders[t] : null;
 	}
 
-	public WidgetReader? GetWidgetReader(Image<Rgb24> screenshotBitmap, IReadOnlyList<Point> points) {
+	public WidgetReader? GetWidgetReader(Image<Rgba32> screenshotBitmap, IReadOnlyList<Point> points) {
 		if (this.simulation is not null)
 			return this.simulation.GetWidgetReader(points[0]);
 
@@ -241,25 +240,25 @@ public class DefuserConnector {
 		return ratings[0].rating >= 0.25f ? ratings[0].reader : null;
 	}
 
-	public T ReadComponent<T>(Image<Rgb24> screenshot, ComponentReader<T> reader, IReadOnlyList<Point> polygon) where T : notnull {
+	public T ReadComponent<T>(Image<Rgba32> screenshot, ComponentReader<T> reader, IReadOnlyList<Point> polygon) where T : notnull {
 		if (this.simulation is not null)
 			return this.simulation.ReadComponent<T>(polygon[0]);
 		var image = ImageUtils.PerspectiveUndistort(screenshot, polygon, InterpolationMode.NearestNeighbour);
 #if DEBUG
 		SaveDebugImage(image, reader.Name);
 #endif
-		Image<Rgb24>? debugImage = null;
+		Image<Rgba32>? debugImage = null;
 		return reader.Process(image, ref debugImage);
 	}
 
-	public T ReadWidget<T>(Image<Rgb24> screenshot, WidgetReader<T> reader, IReadOnlyList<Point> polygon) where T : notnull {
+	public T ReadWidget<T>(Image<Rgba32> screenshot, WidgetReader<T> reader, IReadOnlyList<Point> polygon) where T : notnull {
 		if (this.simulation is not null)
 			return this.simulation.ReadWidget<T>(polygon[0]);
 		var image = ImageUtils.PerspectiveUndistort(screenshot, polygon, InterpolationMode.NearestNeighbour);
 #if DEBUG
 		SaveDebugImage(image, reader.Name);
 #endif
-		Image<Rgb24>? debugImage = null;
+		Image<Rgba32>? debugImage = null;
 		return reader.Process(image, 0, ref debugImage);
 	}
 
@@ -274,7 +273,7 @@ public class DefuserConnector {
 		return this.readTaskSource.Task.Result;
 	}
 
-	internal string? Read(string readerName, Image<Rgb24> screenshot, Point[] points) {
+	internal string? Read(string readerName, Image<Rgba32> screenshot, Point[] points) {
 		if (this.simulation is not null)
 			return typeof(ComponentReader).Assembly.GetType($"{nameof(BombDefuserConnector)}.{nameof(Components)}.{readerName}", false, true) is Type t
 				? this.simulation.ReadModule(t.Name, points[0])
@@ -283,7 +282,7 @@ public class DefuserConnector {
 				: throw new ArgumentException($"No such command, module or widget is known: {readerName}");
 
 		var image = ImageUtils.PerspectiveUndistort(screenshot, points, InterpolationMode.NearestNeighbour);
-		Image<Rgb24>? debugImage = null;
+		Image<Rgba32>? debugImage = null;
 #if DEBUG
 		SaveDebugImage(image, readerName);
 #endif

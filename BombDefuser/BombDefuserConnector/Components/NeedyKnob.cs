@@ -8,7 +8,7 @@ public class NeedyKnob : ComponentReader<NeedyKnob.ReadData> {
 	public override string Name => "Needy Knob";
 	protected internal override bool UsesNeedyFrame => true;
 
-	protected internal override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		var knobCount = 0;
 		var ledCount = 0;
 		image.ProcessPixelRows(a => {
@@ -49,11 +49,11 @@ public class NeedyKnob : ComponentReader<NeedyKnob.ReadData> {
 		new(185, 206, 8, 8),
 		new(203, 178, 8, 8)
 	};
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
 		var time = ReadNeedyTimer(image, debugImage);
 		var lights = new bool[12];
 
-		bool isRectangleLit(PixelAccessor<Rgb24> a, Rectangle rectangle) {
+		bool isRectangleLit(PixelAccessor<Rgba32> a, Rectangle rectangle) {
 			var count = 0;
 			for (var dy = 0; dy < rectangle.Height; dy++) {
 				var r = a.GetRowSpan(rectangle.Y + dy);

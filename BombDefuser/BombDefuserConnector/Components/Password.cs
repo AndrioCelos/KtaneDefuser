@@ -40,7 +40,7 @@ public class Password : ComponentReader<Password.ReadData> {
 		{ new(0b0011100001000100010000111), 'Z' }
 	};
 
-	protected internal override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Password: look for the display in the correct Y range
 		var count = 0f;
 		var count2 = 0f;
@@ -60,8 +60,8 @@ public class Password : ComponentReader<Password.ReadData> {
 		return Math.Min(1, Math.Max(0, count / 200 - count2 / 100));
 	}
 
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
-		static Rectangle GetLetterBounds(PixelAccessor<Rgb24> a, int x) {
+	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
+		static Rectangle GetLetterBounds(PixelAccessor<Rgba32> a, int x) {
 			int top, bottom, left, right, misses;
 
 			misses = 0;
@@ -69,7 +69,7 @@ public class Password : ComponentReader<Password.ReadData> {
 				var r = a.GetRowSpan(top);
 				misses++;
 				for (var dx = -12; dx < 12; dx++) {
-					if (r[x + dx] is Rgb24 p && p.G < 96 && p.B < 24) {
+					if (r[x + dx] is Rgba32 p && p.G < 96 && p.B < 24) {
 						misses = 0;
 						break;
 					}
@@ -83,7 +83,7 @@ public class Password : ComponentReader<Password.ReadData> {
 				var r = a.GetRowSpan(bottom);
 				misses++;
 				for (var dx = -12; dx < 12; dx++) {
-					if (r[x + dx] is Rgb24 p && p.G < 96 && p.B < 24) {
+					if (r[x + dx] is Rgba32 p && p.G < 96 && p.B < 24) {
 						misses = 0;
 						break;
 					}
@@ -96,7 +96,7 @@ public class Password : ComponentReader<Password.ReadData> {
 			for (left = x; ; left--) {
 				misses++;
 				for (var y = top; y < bottom; y++) {
-					if (a.GetRowSpan(y)[left] is Rgb24 p && p.G < 96 && p.B < 24) {
+					if (a.GetRowSpan(y)[left] is Rgba32 p && p.G < 96 && p.B < 24) {
 						misses = 0;
 						break;
 					}
@@ -108,7 +108,7 @@ public class Password : ComponentReader<Password.ReadData> {
 			for (right = x; ; right++) {
 				misses++;
 				for (var y = top; y < bottom; y++) {
-					if (a.GetRowSpan(y)[right] is Rgb24 p && p.G < 96 && p.B < 24) {
+					if (a.GetRowSpan(y)[right] is Rgba32 p && p.G < 96 && p.B < 24) {
 						misses = 0;
 						break;
 					}

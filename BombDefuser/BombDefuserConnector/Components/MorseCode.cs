@@ -7,7 +7,7 @@ public class MorseCode : ComponentReader<MorseCode.ReadData> {
 	public override string Name => "Morse Code";
 	protected internal override bool UsesNeedyFrame => false;
 
-	protected internal override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Morse Code: look for the orange display pixels
 		var count = 0f;
 		for (var y = 144; y < 160; y++) {
@@ -18,7 +18,7 @@ public class MorseCode : ComponentReader<MorseCode.ReadData> {
 		}
 		return Math.Min(count / 600, 1);
 	}
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage)
+	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage)
 		=> new(image[89, 39].R >= 192);
 
 	public record ReadData(bool IsLightOn);

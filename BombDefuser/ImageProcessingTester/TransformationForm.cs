@@ -14,8 +14,8 @@ using SizeF = System.Drawing.SizeF;
 namespace ImageProcessingTester;
 
 public partial class TransformationForm : Form {
-	private Image<Rgb24>? screenImage;
-	private Image<Rgb24>? distortedImage;
+	private Image<Rgba32>? screenImage;
+	private Image<Rgba32>? distortedImage;
 	private Bitmap? screenBitmap;
 	private Point[] points = new Point[4];
 	private int? draggingPoint;
@@ -29,7 +29,7 @@ public partial class TransformationForm : Form {
 
 	private void screenshotLoadButton_Click(object sender, EventArgs e) {
 		if (openFileDialog.ShowDialog(this) == DialogResult.OK) {
-			screenImage = Image.Load<Rgb24>(openFileDialog.FileName);
+			screenImage = Image.Load<Rgba32>(openFileDialog.FileName);
 			screenBitmap = screenImage.ToWinFormsImage();
 			points[1].X = Math.Min(points[1].X, screenImage.Width);
 			points[2].Y = Math.Min(points[2].Y, screenImage.Height);
@@ -155,7 +155,7 @@ public partial class TransformationForm : Form {
 	private void screenshotPasteButton_Click(object sender, EventArgs e) {
 		if (Clipboard.ContainsImage()) {
 			screenBitmap = new Bitmap(Clipboard.GetImage()!);
-			screenImage = screenBitmap.ToImage<Rgb24>();
+			screenImage = screenBitmap.ToImage<Rgba32>();
 			points[1].X = Math.Min(points[1].X, screenImage.Width);
 			points[2].Y = Math.Min(points[2].Y, screenImage.Height);
 			points[3].X = Math.Min(points[3].X, screenImage.Width);
@@ -307,7 +307,7 @@ public partial class TransformationForm : Form {
 				var w = BitConverter.ToInt32(networkBuffer, 0);
 				var h = BitConverter.ToInt32(networkBuffer, 4);
 				using var image = Image.LoadPixelData<Rgba32>(networkBuffer.AsSpan()[8..length], w, h);
-				screenImage = image.CloneAs<Rgb24>();
+				screenImage = image.CloneAs<Rgba32>();
 				screenImage.Mutate(c => c.Flip(FlipMode.Vertical));
 				screenBitmap = screenImage.ToWinFormsImage();
 				points[1].X = Math.Min(points[1].X, screenImage.Width);

@@ -33,7 +33,7 @@ public abstract class ModuleScript {
 		=> new() { topic = topic };
 
 	protected static T ReadCurrent<T>(ComponentReader<T> reader) where T : notnull {
-		var ss = DefuserConnector.Instance.TakeScreenshot();
+		using var ss = DefuserConnector.Instance.TakeScreenshot();
 		return DefuserConnector.Instance.ReadComponent(ss, reader, Utils.CurrentModulePoints);
 	}
 

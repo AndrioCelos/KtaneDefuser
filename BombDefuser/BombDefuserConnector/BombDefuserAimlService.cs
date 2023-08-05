@@ -10,7 +10,7 @@ using SixLabors.ImageSharp.PixelFormats;
 namespace BombDefuserConnector;
 public class BombDefuserAimlService : ISraixService {
 	private readonly DefuserConnector connector = new();
-	private static readonly Dictionary<string, Image<Rgb24>> cachedScreenshots = new(StringComparer.InvariantCultureIgnoreCase);
+	private static readonly Dictionary<string, Image<Rgba32>> cachedScreenshots = new(StringComparer.InvariantCultureIgnoreCase);
 	private static readonly Queue<string> cachedScreenshotIds = new();
 
 	public BombDefuserAimlService() {

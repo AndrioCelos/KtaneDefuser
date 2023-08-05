@@ -41,7 +41,7 @@ internal class TextRecogniser {
 		}
 	}
 
-	public string Recognise(Image<Rgb24> image, Rectangle rectangle) {
+	public string Recognise(Image<Rgba32> image, Rectangle rectangle) {
 		string? result = null;
 		var bestDist = int.MaxValue;
 		var checkRatio = (float) rectangle.Width / rectangle.Height;

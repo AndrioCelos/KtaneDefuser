@@ -56,7 +56,7 @@ internal class Interrupt : IDisposable {
 		var context = AimlAsyncContext.Current ?? throw new InvalidOperationException("No current request");
 		await context.SendInputsAsync(inputs);
 		await AimlTasks.Delay(0.5);  // Wait for the interaction punch to end.
-		var ss = DefuserConnector.Instance.TakeScreenshot();
+		using var ss = DefuserConnector.Instance.TakeScreenshot();
 		var result = DefuserConnector.Instance.GetModuleLightState(ss, Utils.CurrentModulePoints);
 		switch (result) {
 			case ModuleLightState.Solved: context.Reply("Module complete."); break;

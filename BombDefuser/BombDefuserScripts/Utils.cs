@@ -63,7 +63,7 @@ internal static class Utils {
 		if (alignMode == SelectFaceAlignMode.CheckWidgets) {
 			await AimlTasks.Delay(0.375);
 			context.SendInputs("rx:0");
-			var ss = DefuserConnector.Instance.TakeScreenshot();
+			using var ss = DefuserConnector.Instance.TakeScreenshot();
 			Edgework.RegisterWidgets(context, true, ss);
 			context.SendInputs("rx:1");
 			await AimlTasks.Delay(0.125);

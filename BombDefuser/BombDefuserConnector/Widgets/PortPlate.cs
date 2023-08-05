@@ -9,7 +9,7 @@ namespace BombDefuserConnector.Widgets;
 public class PortPlate : WidgetReader<PortPlate.Ports> {
 	public override string Name => "Port Plate";
 
-	protected internal override float IsWidgetPresent(Image<Rgb24> image, LightsState lightsState, PixelCounts pixelCounts)
+	protected internal override float IsWidgetPresent(Image<Rgba32> image, LightsState lightsState, PixelCounts pixelCounts)
 		// This has many dark grey pixels.
 		=> Math.Max(0, pixelCounts.Grey - 4096) / 8192f;
 
@@ -20,7 +20,7 @@ public class PortPlate : WidgetReader<PortPlate.Ports> {
 	private static bool IsDviRed(HsvColor hsv) => hsv.H is >= 345 or < 30 && hsv.S is >= 0.4f and < 0.75f && hsv.V is >= 0.25f and < 0.75f;
 	private static bool IsGreen(HsvColor hsv) => hsv.H is >= 120 and < 150 && hsv.S is >= 0.3f and < 0.6f && hsv.V is >= 0.5f and < 0.75f;
 
-	protected internal override Ports Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugImage) {
+	protected internal override Ports Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		var corners = ImageUtils.FindCorners(image, new(8, 8, 240, 240), c => IsGrey(HsvColor.FromColor(c)), 12) ?? throw new ArgumentException("Can't find port plate corners");
 		var plateImage = ImageUtils.PerspectiveUndistort(image, corners, InterpolationMode.NearestNeighbour, new(256, 128));
 		if (debugImage is not null)

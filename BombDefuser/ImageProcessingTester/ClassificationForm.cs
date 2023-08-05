@@ -8,7 +8,7 @@ using Point = SixLabors.ImageSharp.Point;
 
 namespace ImageProcessingTester;
 public partial class ClassificationForm : Form {
-	internal Image<Rgb24>? screenBitmap;
+	internal Image<Rgba32>? screenBitmap;
 
 	public ClassificationForm() {
 		InitializeComponent();
@@ -17,7 +17,7 @@ public partial class ClassificationForm : Form {
 
 	private void button1_Click(object sender, EventArgs e) {
 		if (openFileDialog.ShowDialog(this) == DialogResult.OK) {
-			screenBitmap = Image.Load<Rgb24>(openFileDialog.FileName);
+			screenBitmap = Image.Load<Rgba32>(openFileDialog.FileName);
 			pictureBox1.Image = screenBitmap.ToWinFormsImage();
 			comboBox1_SelectedIndexChanged(sender, EventArgs.Empty);
 		}
@@ -25,7 +25,7 @@ public partial class ClassificationForm : Form {
 
 	private void button2_Click(object sender, EventArgs e) {
 		if (Clipboard.ContainsImage()) {
-			screenBitmap = Clipboard.GetImage()!.ToImage<Rgb24>();
+			screenBitmap = Clipboard.GetImage()!.ToImage<Rgba32>();
 			pictureBox1.Image = screenBitmap.ToWinFormsImage();
 			comboBox1_SelectedIndexChanged(sender, EventArgs.Empty);
 		} else

@@ -6,7 +6,7 @@ public class NeedyCapacitor : ComponentReader<NeedyCapacitor.ReadData> {
 	public override string Name => "Needy Capacitor";
 	protected internal override bool UsesNeedyFrame => true;
 
-	protected internal override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Look for the brown lever frame.
 		var count = 0;
 		image.ProcessPixelRows(a => {
@@ -26,7 +26,7 @@ public class NeedyCapacitor : ComponentReader<NeedyCapacitor.ReadData> {
 		});
 		return count / 6000f;
 	}
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
 		// Find the timer.
 		return new(ReadNeedyTimer(image, debugImage));
 	}

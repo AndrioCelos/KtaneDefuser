@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -21,7 +21,7 @@ internal partial class Simulation {
 	private readonly WidgetFace[] widgetFaces = new WidgetFace[4];
 	private bool isAlarmClockOn;
 
-	internal static Image<Rgb24> DummyScreenshot { get; } = new(1, 1);
+	internal static Image<Rgba32> DummyScreenshot { get; } = new(1, 1);
 
 	private ComponentFace SelectedFace => this.moduleFaces[this.selectedFaceNum];
 

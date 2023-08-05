@@ -7,13 +7,13 @@ namespace BombDefuserConnector.Widgets;
 public class BatteryHolder : WidgetReader<int> {
 	public override string Name => "Battery Holder";
 
-	protected internal override float IsWidgetPresent(Image<Rgb24> image, LightsState lightsState, PixelCounts pixelCounts)
+	protected internal override float IsWidgetPresent(Image<Rgba32> image, LightsState lightsState, PixelCounts pixelCounts)
 		// This is the only widget with yellow pixels.
 		=> pixelCounts.Yellow / 2048f;
 
 	private static bool IsRed(HsvColor hsv) => hsv.S >= 0.4f && hsv.H is >= 345 or <= 90;
 
-	protected internal override int Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugImage) {
+	protected internal override int Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		debugImage?.Mutate(c => c.Brightness(0.5f));
 
 		var maxCount = 0;

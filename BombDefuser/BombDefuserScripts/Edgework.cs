@@ -5,7 +5,7 @@ namespace BombDefuserScripts;
 
 [AimlInterface]
 internal static class Edgework {
-	internal static void RegisterWidget(AimlAsyncContext context, WidgetReader? widget, Image<Rgb24> screenshot, Point[] polygon) {
+	internal static void RegisterWidget(AimlAsyncContext context, WidgetReader? widget, Image<Rgba32> screenshot, Point[] polygon) {
 		if (widget is null) return;
 
 		context.RequestProcess.Log(LogLevel.Info, $"Registering widget: {widget.Name}");
@@ -28,7 +28,7 @@ internal static class Edgework {
 		}
 	}
 
-	internal static void RegisterWidgets(AimlAsyncContext context, bool isSide, Image<Rgb24> screenshot) {
+	internal static void RegisterWidgets(AimlAsyncContext context, bool isSide, Image<Rgba32> screenshot) {
 		Point[][] polygons;
 		if (isSide) {
 			var adjustment = DefuserConnector.Instance.GetSideWidgetAdjustment(screenshot);

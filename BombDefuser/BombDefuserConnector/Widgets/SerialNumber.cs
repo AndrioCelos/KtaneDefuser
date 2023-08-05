@@ -20,30 +20,30 @@ public class SerialNumber : WidgetReader<string> {
 		var fontFamily = fontCollection.Add(ms);
 		FONT = new(fontFamily, 72);
 
-		referenceImages = new (Image<Rgb24> image, char c)[36];
+		referenceImages = new (Image<Rgba32> image, char c)[36];
 		for (int i = 0; i < 10; i++)
 			referenceImages[i] = CreateSampleImage((char) ('0' + i));
 		for (int i = 0; i < 26; i++)
 			referenceImages[10 + i] = CreateSampleImage((char) ('A' + i));  // I know that the letters 'O' and 'Y' never appear in the serial number normally, but I'm including all letters for simplicity.
 	}
 
-	private static (Image<Rgb24> image, char c) CreateSampleImage(char c) {
-		var image = new Image<Rgb24>(128, 128, Color.White);
+	private static (Image<Rgba32> image, char c) CreateSampleImage(char c) {
+		var image = new Image<Rgba32>(128, 128, Color.White);
 		image.Mutate(ctx => ctx.DrawText(new TextOptions(FONT) { Dpi = 96, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Origin = new(64, 64) }, c.ToString(), Color.Black));
 		var charBB = ImageUtils.FindEdges(image, image.Bounds, c => c.B < 128);
 		image.Mutate(ctx => ctx.Crop(charBB).Resize(64, 64, KnownResamplers.NearestNeighbor));
 		return (image, c);
 	}
 
-	private static readonly (Image<Rgb24> image, char c)[] referenceImages;
+	private static readonly (Image<Rgba32> image, char c)[] referenceImages;
 
-	protected internal override float IsWidgetPresent(Image<Rgb24> image, LightsState lightsState, PixelCounts pixelCounts)
+	protected internal override float IsWidgetPresent(Image<Rgba32> image, LightsState lightsState, PixelCounts pixelCounts)
 		// This has many red pixels and white pixels.
 		=> Math.Max(0, Math.Min(pixelCounts.Red, pixelCounts.White) - 4096) / 8192f;
 
 	private static bool IsBlack(HsvColor hsv) => hsv.H < 180 && hsv.S < 0.2f && hsv.V <= 0.2f;
 
-	protected internal override string Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugImage) {
+	protected internal override string Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		debugImage?.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }));
 
 		// Find the text bounding box.
@@ -71,7 +71,7 @@ public class SerialNumber : WidgetReader<string> {
 
 		debugImage?.Mutate(c => c.Draw(isUpsideDown!.Value ? Color.Yellow : Color.Lime, 1, textBB));
 
-		var charImages = new List<Image<Rgb24>>();
+		var charImages = new List<Image<Rgba32>>();
 		var lastX = 0;
 		int? charStart = null;
 		for (var i = 0; i < textBB.Width; i++) {

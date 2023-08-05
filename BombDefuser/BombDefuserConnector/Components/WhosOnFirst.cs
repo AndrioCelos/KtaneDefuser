@@ -16,11 +16,11 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 		"READY", "FIRST", "NO", "BLANK", "NOTHING", "YES", "WHAT", "UHHH", "LEFT", "RIGHT", "MIDDLE", "OKAY", "WAIT", "PRESS",
 		"YOU", "YOU ARE", "YOUR", "YOU’RE", "UR", "U", "UH HUH", "UH UH", "WHAT?", "DONE", "NEXT", "HOLD", "SURE", "LIKE");
 
-	protected internal override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Who's on First: look for the display and keys
-		var referenceColour = new Rgb24(71, 91, 104);
-		var referenceColour2 = new Rgb24(200, 154, 140);
-		var referenceColour3 = new Rgb24(51, 46, 37);
+		var referenceColour = new Rgba32(71, 91, 104);
+		var referenceColour2 = new Rgba32(200, 154, 140);
+		var referenceColour3 = new Rgba32(51, 46, 37);
 		var count = 0f;
 		var count2 = 0f;
 
@@ -42,7 +42,7 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 
 		return count / 192 + count2 / 2240;
 	}
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
 		var displayBorderRect = ImageUtils.FindEdges(image, new(28, 22, 140, 50), c => c.R < 44 && c.G < 44 && c.B < 44);
 		displayBorderRect.Inflate(-4, -4);
 		var textRect = ImageUtils.FindEdges(image, displayBorderRect, c => c.B >= 192);
@@ -50,7 +50,7 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 		debugImage?.Mutate(c => c.Draw(Color.Red, 1, displayBorderRect).Draw(Color.Lime, 1, textRect));
 		var displayText = textRect.Height == 0 ? "" : displayRecogniser.Recognise(image, textRect);
 
-		static bool isKeyBackground(Rgb24 c) => HsvColor.FromColor(c) is HsvColor hsv && hsv.H is >= 30 and <= 45 && hsv.S is >= 0.2f and <= 0.4f;
+		static bool isKeyBackground(Rgba32 c) => HsvColor.FromColor(c) is HsvColor hsv && hsv.H is >= 30 and <= 45 && hsv.S is >= 0.2f and <= 0.4f;
 
 		var baseRects = new[] {
 			ImageUtils.FindEdges(image, new(31, 90, 80, 48), isKeyBackground),

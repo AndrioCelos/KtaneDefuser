@@ -9,7 +9,7 @@ public class Wires : ComponentReader<Wires.ReadData> {
 	public override string Name => "Wires";
 	protected internal override bool UsesNeedyFrame => false;
 
-	protected internal override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Wires: look for horizontal wires crossing the centre
 		var inWire = 0;
 		var numWires = 0;
@@ -47,7 +47,7 @@ public class Wires : ComponentReader<Wires.ReadData> {
 		return numWires is >= 3 and <= 6 ? wirePixelTotal / numWirePixels : 0;
 	}
 
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
 		debugImage?.Mutate(c => c.Brightness(0.5f));
 
 		var inWire = 0;

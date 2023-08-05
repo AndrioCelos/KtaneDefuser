@@ -54,10 +54,10 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 	public override string Name => "Keypad";
 	protected internal override bool UsesNeedyFrame => false;
 
-	protected internal override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Keypad: look for white keys and gray bezel
-		var referenceColour = new Rgb24(136, 140, 150);
-		var referenceColour2 = new Rgb24(232, 217, 194);
+		var referenceColour = new Rgba32(136, 140, 150);
+		var referenceColour2 = new Rgba32(232, 217, 194);
 		var count = 0f;
 
 		for (var y = 32; y <= 224; y += 16) {
@@ -76,8 +76,8 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 		return Math.Min(1, count / 100f);
 	}
 
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
-		static bool predicate(Rgb24 c) {
+	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
+		static bool predicate(Rgba32 c) {
 			var hsv = HsvColor.FromColor(c);
 			return hsv.H is >= 30 and <= 60 && hsv.S <= 0.4f && hsv.V >= 0.35f;
 		}

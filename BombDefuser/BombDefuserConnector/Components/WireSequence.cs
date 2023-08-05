@@ -13,7 +13,7 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 	private static readonly TextRecogniser numberRecogniser = new(new(TextRecogniser.Fonts.OSTRICH_SANS_HEAVY, 12), 144, 0, new(64, 64),
 		"1", "4", "7", "10");
 
-	protected internal override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Wire Sequence: look for the stage indicator, wires and background
 		var count = 0;
 		for (var y = 96; y < 224; y++) {
@@ -42,7 +42,7 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 		return count / 5120f + count2 / 280f;
 	}
 
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
 		var textRects = new[] {
 			new Rectangle(24, 60, 32, 48),
 			new Rectangle(24, 100, 32, 48),
@@ -63,7 +63,7 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 		// This will use a fairly strict condition to check for the selection highlight, so it will sometimes fail to match.
 		// It will be necessary to look at the module multiple times until the selection highlight opacity is high enough.
 		static bool isSelectionHighlightStrict(HsvColor hsv) => hsv.H is >= 5 and <= 15 && hsv.S >= 0.93f && hsv.V >= 0.9f;
-		static (int x, bool isStrictMatch)? getSelectionHighlight(Image<Rgb24> image, Rectangle textRect) {
+		static (int x, bool isStrictMatch)? getSelectionHighlight(Image<Rgba32> image, Rectangle textRect) {
 			var x = textRect.Right;
 			while (true) {
 				for (var y = textRect.Top; y < textRect.Bottom; y++) {
@@ -76,7 +76,7 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 				x++;
 			}
 		}
-		static WireColour? getWireColour(Image<Rgb24> image, Rectangle textRect, int x, bool isHighlighted) {
+		static WireColour? getWireColour(Image<Rgba32> image, Rectangle textRect, int x, bool isHighlighted) {
 			for (; x < 76; x++) {
 				for (var y = textRect.Top; y < textRect.Bottom; y++) {
 					var hsv = HsvColor.FromColor(image[x, y]);

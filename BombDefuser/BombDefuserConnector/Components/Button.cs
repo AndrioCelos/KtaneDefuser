@@ -26,7 +26,7 @@ public class Button : ComponentReader<Button.ReadData> {
 	private bool isCoveredBlue(HsvColor hsv) => hsv.H is >= 210 and <= 220 && hsv.S is >= 0.30f and <= 0.55f && hsv.V >= 0.5f;
 	private bool isCoveredWhite(HsvColor hsv) => hsv.H is >= 150 and <= 180 && hsv.S <= 0.15f && hsv.V >= 0.5f;
 
-	private (int red, int yellow, int blue, int white) getIsModulePresentColours1(Image<Rgb24> image) {
+	private (int red, int yellow, int blue, int white) getIsModulePresentColours1(Image<Rgba32> image) {
 		int red = 0, yellow = 0, blue = 0, white = 0;
 		for (var y = 90; y <= 210; y += 30) {
 			for (var x = 40; x <= 160; x += 30) {
@@ -40,11 +40,11 @@ public class Button : ComponentReader<Button.ReadData> {
 		return (red, yellow, blue, white);
 	}
 
-	private bool checkPixel(Image<Rgb24> image, int x, int y, Predicate<HsvColor> predicate) {
+	private bool checkPixel(Image<Rgba32> image, int x, int y, Predicate<HsvColor> predicate) {
 		return x is >= 0 and < 256 && y is >= 0 and < 256 && predicate(HsvColor.FromColor(image[x, y]));
 	}
 
-	protected internal override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// The Button: look for the large circle.
 		// This is only expected to work under normal lighting (not corrected buzzing/off/emergency lighting)
 
@@ -102,7 +102,7 @@ public class Button : ComponentReader<Button.ReadData> {
 		*/
 	}
 
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
 		debugImage?.Mutate(c => c.Brightness(0.5f));
 
 		var checkResult = getIsModulePresentColours1(image);

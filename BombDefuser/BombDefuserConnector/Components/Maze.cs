@@ -8,7 +8,7 @@ public class Maze : ComponentReader<Maze.ReadData> {
 	public override string Name => "Maze";
 	protected internal override bool UsesNeedyFrame => false;
 
-	protected internal override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Maze: look for the display
 		var count = 0;
 		for (var y = 60; y < 208; y++) {
@@ -24,7 +24,7 @@ public class Maze : ComponentReader<Maze.ReadData> {
 		return count / 828800f;
 	}
 
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
 		GridCell? start = null, goal = null, circle1 = null, circle2 = null;
 		image.ProcessPixelRows(a => {
 			for (var y = 0; y < 6; y++) {

@@ -19,8 +19,8 @@ public struct HsvColor {
 
 	public static HsvColor FromColor(Color color)
 		=> FromArgb(color.A, color.R, color.G, color.B);
-	public static HsvColor FromColor(Rgb24 pixel)
-		=> FromArgb(255, pixel.R, pixel.G, pixel.B);
+	public static HsvColor FromColor(Rgba32 pixel)
+		=> FromArgb(pixel.A, pixel.R, pixel.G, pixel.B);
 	public static HsvColor FromArgb(byte a, byte r, byte g, byte b) {
 		var rf = r / 255f;
 		var gf = g / 255f;

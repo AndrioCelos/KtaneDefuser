@@ -11,7 +11,7 @@ public class NeedyVentGas : ComponentReader<NeedyVentGas.ReadData> {
 	private static readonly TextRecogniser displayRecogniser = new(new(TextRecogniser.Fonts.CABIN_MEDIUM, 24), 0, 128, new(256, 64),
 		"VENT GAS?", "DETONATE?");
 
-	protected internal override float IsModulePresent(Image<Rgb24> image) {
+	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Look for the brown lever frame.
 		var count = 0;
 		image.ProcessPixelRows(a => {
@@ -26,7 +26,7 @@ public class NeedyVentGas : ComponentReader<NeedyVentGas.ReadData> {
 		});
 		return count / 36000f;
 	}
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
 		var time = ReadNeedyTimer(image, debugImage);
 		if (time == null) return new(null, null);
 

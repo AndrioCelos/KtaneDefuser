@@ -14,7 +14,7 @@ public class Indicator : WidgetReader<Indicator.ReadData> {
 	private static readonly TextRecogniser textRecogniser = new(new(TextRecogniser.Fonts.OSTRICH_SANS_HEAVY, 48), 0, 255, new(128, 64),
 		"SND", "CLR", "CAR", "IND", "FRQ", "SIG", "NSA", "MSA", "TRN", "BOB", "FRK", "NLL");
 
-	protected internal override float IsWidgetPresent(Image<Rgb24> image, LightsState lightsState, PixelCounts pixelCounts)
+	protected internal override float IsWidgetPresent(Image<Rgba32> image, LightsState lightsState, PixelCounts pixelCounts)
 		// This has many red pixels, few white pixels and no yellow pixels.
 		=> Math.Max(0, pixelCounts.Red - pixelCounts.Yellow * 2 - Math.Max(0, pixelCounts.White - 4096) * 2) / 8192f;
 
@@ -22,7 +22,7 @@ public class Indicator : WidgetReader<Indicator.ReadData> {
 	private static bool IsLit(HsvColor hsv) => hsv.V >= 1;
 	private static bool IsUnlit(HsvColor hsv) => hsv.H >= 30 && hsv.S < 0.15f && hsv.V is >= 0.05f and < 0.2f;
 
-	protected internal override ReadData Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		var corners = ImageUtils.FindCorners(image, image.Bounds, c => IsRed(HsvColor.FromColor(c)), 12) ?? throw new ArgumentException("Can't find indicator corners");
 		var indicatorImage = ImageUtils.PerspectiveUndistort(image, corners, InterpolationMode.NearestNeighbour, new(256, 112));
 		if (debugImage is not null)
