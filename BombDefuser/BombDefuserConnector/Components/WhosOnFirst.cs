@@ -5,7 +5,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Components;
-public class WhosOnFirst : ComponentProcessor<WhosOnFirst.ReadData> {
+public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 	public override string Name => "Who's on First";
 	protected internal override bool UsesNeedyFrame => false;
 
@@ -42,12 +42,12 @@ public class WhosOnFirst : ComponentProcessor<WhosOnFirst.ReadData> {
 
 		return count / 192 + count2 / 2240;
 	}
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
 		var displayBorderRect = ImageUtils.FindEdges(image, new(28, 22, 140, 50), c => c.R < 44 && c.G < 44 && c.B < 44);
 		displayBorderRect.Inflate(-4, -4);
 		var textRect = ImageUtils.FindEdges(image, displayBorderRect, c => c.B >= 192);
 
-		debugBitmap?.Mutate(c => c.Draw(Color.Red, 1, displayBorderRect).Draw(Color.Lime, 1, textRect));
+		debugImage?.Mutate(c => c.Draw(Color.Red, 1, displayBorderRect).Draw(Color.Lime, 1, textRect));
 		var displayText = textRect.Height == 0 ? "" : displayRecogniser.Recognise(image, textRect);
 
 		static bool isKeyBackground(Rgb24 c) => HsvColor.FromColor(c) is HsvColor hsv && hsv.H is >= 30 and <= 45 && hsv.S is >= 0.2f and <= 0.4f;
@@ -73,7 +73,7 @@ public class WhosOnFirst : ComponentProcessor<WhosOnFirst.ReadData> {
 			keyRect = ImageUtils.FindEdges(image, keyRect, isKeyBackground);
 			textRect = Rectangle.Inflate(keyRect, -2, -5);
 			textRect = ImageUtils.FindEdges(image, textRect, c => c.R < 128);
-			debugBitmap?.Mutate(c => c.Draw(Color.Yellow, 1, keyRect).Draw(Color.Green, 1, textRect));
+			debugImage?.Mutate(c => c.Draw(Color.Yellow, 1, keyRect).Draw(Color.Green, 1, textRect));
 			keyLabels[i] = keyRecogniser.Recognise(image, textRect);
 		}
 

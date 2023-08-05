@@ -6,7 +6,7 @@ internal static class Timer {
 		int? lastSeconds = null;
 		// Keep watching the timer until it ticks over to get sub-second precision.
 		while (true) {
-			var data = DefuserConnector.Instance.ReadComponent(screenshot, DefuserConnector.TimerProcessor, polygon);
+			var data = DefuserConnector.Instance.ReadComponent(screenshot, DefuserConnector.TimerReader, polygon);
 			GameState.Current.GameMode = data.GameMode;
 			if (lastSeconds is not null && data.Time != lastSeconds.Value) {
 				GameState.Current.TimerBaseTime = data.GameMode is BombDefuserConnector.Components.Timer.GameMode.Zen or BombDefuserConnector.Components.Timer.GameMode.Training

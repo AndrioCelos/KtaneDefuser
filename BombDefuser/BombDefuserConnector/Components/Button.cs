@@ -9,7 +9,7 @@ using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Drawing.Processing;
 
 namespace BombDefuserConnector.Components;
-public class Button : ComponentProcessor<Button.ReadData> {
+public class Button : ComponentReader<Button.ReadData> {
 
 	private static readonly Dictionary<Label, Image<Rgba32>> referenceButtonLabels = new() {
 		{ Label.Abort, Image.Load<Rgba32>(Resources.ButtonAbort) },
@@ -102,8 +102,8 @@ public class Button : ComponentProcessor<Button.ReadData> {
 		*/
 	}
 
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
-		debugBitmap?.Mutate(c => c.Brightness(0.5f));
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
+		debugImage?.Mutate(c => c.Brightness(0.5f));
 
 		var checkResult = getIsModulePresentColours1(image);
 
@@ -120,11 +120,11 @@ public class Button : ComponentProcessor<Button.ReadData> {
 					if (((checkPixel(image, x - ISOLATION_CHECK_RADIUS * 2, y, predicate) && checkPixel(image, x - ISOLATION_CHECK_RADIUS, y, predicate)) || (checkPixel(image, x + ISOLATION_CHECK_RADIUS * 2, y, predicate) && checkPixel(image, x + ISOLATION_CHECK_RADIUS, y, predicate)))
 						&& ((checkPixel(image, x, y - ISOLATION_CHECK_RADIUS * 2, predicate) && checkPixel(image, x, y - ISOLATION_CHECK_RADIUS, predicate)) || (checkPixel(image, x, y + ISOLATION_CHECK_RADIUS * 2, predicate) && checkPixel(image, x, y + ISOLATION_CHECK_RADIUS, predicate)))) {
 						var distSq = (x - 100) * (x - 100) + (y - 150) * (y - 150);
-						if (distSq <= 70 * 70) { count += 10; if (debugBitmap is not null) debugBitmap[x, y] = new(0, 255, 0); }
-						else if (distSq <= 110 * 110) { count += 3; if (debugBitmap is not null) debugBitmap[x, y] = new(0, 128, 0); }
-						else { count -= 200; if (debugBitmap is not null) debugBitmap[x, y] = new(255, 0, 0); }
-					} else if (debugBitmap is not null)
-						debugBitmap[x, y] = new(255, 255, 255);
+						if (distSq <= 70 * 70) { count += 10; if (debugImage is not null) debugImage[x, y] = new(0, 255, 0); }
+						else if (distSq <= 110 * 110) { count += 3; if (debugImage is not null) debugImage[x, y] = new(0, 128, 0); }
+						else { count -= 200; if (debugImage is not null) debugImage[x, y] = new(255, 0, 0); }
+					} else if (debugImage is not null)
+						debugImage[x, y] = new(255, 255, 255);
 				}
 			}
 		}
@@ -188,14 +188,14 @@ public class Button : ComponentProcessor<Button.ReadData> {
 		Predicate<HsvColor> facePredicate = buttonColour switch { Colour.Red => isRedColor, Colour.Yellow => isYellowColor, Colour.Blue => isBlueColor, _ => isWhiteColor };
 		Predicate<HsvColor> labelPredicate = buttonColour switch { Colour.White or Colour.Yellow => isBlackColor, _ => isWhiteLabelColor };
 		/*
-		for (var y = 0; y < debugBitmap.Width; y++) {
-			for (var x = 0; x < debugBitmap.Width; x++) {
+		for (var y = 0; y < debugImage.Width; y++) {
+			for (var x = 0; x < debugImage.Width; x++) {
 				var color = bitmap.GetPixel(x, y);
 				var hsv = HsvColor.FromColor(color);
 				if (facePredicate(hsv))
-					debugBitmap.SetPixel(x, y, color);
+					debugImage.SetPixel(x, y, color);
 				else if (labelPredicate(hsv))
-					debugBitmap.SetPixel(x, y, Color.Green);
+					debugImage.SetPixel(x, y, Color.Green);
 			}
 		}
 		*/
@@ -242,7 +242,7 @@ public class Button : ComponentProcessor<Button.ReadData> {
 			edgeIndex %= 4;
 		}
 		bbox.Inflate(-1, -1);
-		debugBitmap?.Mutate(c => c.Draw(Pens.Solid(Color.Lime, 1), bbox));
+		debugImage?.Mutate(c => c.Draw(Pens.Solid(Color.Lime, 1), bbox));
 
 		// Find the bounding box of the label by shrinking the face bounding box.
 		// Shrink it in each direction until the edge contains one or more adjacent label pixels with directly adjacent face pixels on both sides.
@@ -310,10 +310,10 @@ public class Button : ComponentProcessor<Button.ReadData> {
 			}
 		}
 
-		debugBitmap?.Mutate(c => c.Draw(Pens.Solid(Color.Cyan, 1), labelBB));
+		debugImage?.Mutate(c => c.Draw(Pens.Solid(Color.Cyan, 1), labelBB));
 
 		var labelBitmap = image.Clone(c => c.Crop(labelBB).Resize(96, 32));
-		debugBitmap?.Mutate(c => c.DrawImage(labelBitmap, 1));
+		debugImage?.Mutate(c => c.DrawImage(labelBitmap, 1));
 
 		var bestLabel = Label.Abort;
 		var bestMatchScore = -1;

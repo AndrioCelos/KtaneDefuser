@@ -16,7 +16,7 @@ internal class Memory : ModuleScript<BombDefuserConnector.Components.Memory> {
 	}
 
 	private void Read(AimlAsyncContext context) {
-		var data = ReadCurrent(GetProcessor());
+		var data = ReadCurrent(GetReader());
 		this.keyLabels = data.Keys;
 		context.Reply(data.Display.ToString());
 	}

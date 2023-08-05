@@ -118,7 +118,7 @@ internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCod
 		MorseCode.interrupt = null;
 	}
 
-	private static bool IsLightOn() => ReadCurrent(GetProcessor()).IsLightOn;
+	private static bool IsLightOn() => ReadCurrent(GetReader()).IsLightOn;
 	private static Task<bool> WaitForStateAsync(Interrupt interrupt, bool state) => WaitForStateAsync(interrupt, state, int.MaxValue);
 	private static async Task<bool> WaitForStateAsync(Interrupt interrupt, bool state, int limit) {
 		var count = 0;

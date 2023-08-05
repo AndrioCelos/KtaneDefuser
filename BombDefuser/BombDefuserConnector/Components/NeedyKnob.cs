@@ -4,7 +4,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Components;
-public class NeedyKnob : ComponentProcessor<NeedyKnob.ReadData> {
+public class NeedyKnob : ComponentReader<NeedyKnob.ReadData> {
 	public override string Name => "Needy Knob";
 	protected internal override bool UsesNeedyFrame => true;
 
@@ -49,8 +49,8 @@ public class NeedyKnob : ComponentProcessor<NeedyKnob.ReadData> {
 		new(185, 206, 8, 8),
 		new(203, 178, 8, 8)
 	};
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
-		var time = ReadNeedyTimer(image, debugBitmap);
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
+		var time = ReadNeedyTimer(image, debugImage);
 		var lights = new bool[12];
 
 		bool isRectangleLit(PixelAccessor<Rgb24> a, Rectangle rectangle) {
@@ -75,9 +75,9 @@ public class NeedyKnob : ComponentProcessor<NeedyKnob.ReadData> {
 				lights[i] = isRectangleLit(a, rectangles[i]);
 			}
 		});
-		if (debugBitmap != null) {
+		if (debugImage != null) {
 			for (var i = 0; i < 12; i++) {
-				debugBitmap.Mutate(p => p.Draw(lights[i] ? Color.Lime : Color.Grey, 1, rectangles[i]));
+				debugImage.Mutate(p => p.Draw(lights[i] ? Color.Lime : Color.Grey, 1, rectangles[i]));
 			}
 		}
 

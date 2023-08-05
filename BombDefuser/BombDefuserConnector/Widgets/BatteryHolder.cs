@@ -4,7 +4,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Widgets;
-public class BatteryHolder : WidgetProcessor<int> {
+public class BatteryHolder : WidgetReader<int> {
 	public override string Name => "Battery Holder";
 
 	protected internal override float IsWidgetPresent(Image<Rgb24> image, LightsState lightsState, PixelCounts pixelCounts)
@@ -13,8 +13,8 @@ public class BatteryHolder : WidgetProcessor<int> {
 
 	private static bool IsRed(HsvColor hsv) => hsv.S >= 0.4f && hsv.H is >= 345 or <= 90;
 
-	protected internal override int Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap) {
-		debugBitmap?.Mutate(c => c.Brightness(0.5f));
+	protected internal override int Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugImage) {
+		debugImage?.Mutate(c => c.Brightness(0.5f));
 
 		var maxCount = 0;
 		for (var i = 0; i < 3; i++) {
@@ -24,13 +24,13 @@ public class BatteryHolder : WidgetProcessor<int> {
 			var batteryCount = 0;
 			for (var y = 32; y < 240; y++) {
 				var color = image[x, y];
-				if (debugBitmap != null)
-					debugBitmap[x, y] = color;
+				if (debugImage != null)
+					debugImage[x, y] = color;
 				var hsv = HsvColor.FromColor(color);
 
 				if (IsRed(hsv)) {
-					if (debugBitmap != null)
-						debugBitmap[x, y] = new(255, 0, 0);
+					if (debugImage != null)
+						debugImage[x, y] = new(255, 0, 0);
 					if (!inBattery) {
 						batteryCount++;
 						inBattery = true;

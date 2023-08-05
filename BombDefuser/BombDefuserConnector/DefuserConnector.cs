@@ -12,12 +12,12 @@ using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector;
 public class DefuserConnector {
-	private static readonly List<ComponentProcessor> componentProcessors
-		= typeof(ComponentProcessor).Assembly.GetTypes().Where(typeof(ComponentProcessor).IsAssignableFrom).Where(t => !t.IsAbstract)
-		.Select(t => (ComponentProcessor) Activator.CreateInstance(t)!).ToList();
-	private static readonly List<WidgetProcessor> widgetProcessors
-		= typeof(WidgetProcessor).Assembly.GetTypes().Where(typeof(WidgetProcessor).IsAssignableFrom).Where(t => !t.IsAbstract)
-		.Select(t => (WidgetProcessor) Activator.CreateInstance(t)!).ToList();
+	private static readonly List<ComponentReader> componentReaders
+		= typeof(ComponentReader).Assembly.GetTypes().Where(typeof(ComponentReader).IsAssignableFrom).Where(t => !t.IsAbstract)
+		.Select(t => (ComponentReader) Activator.CreateInstance(t)!).ToList();
+	private static readonly List<WidgetReader> widgetReaders
+		= typeof(WidgetReader).Assembly.GetTypes().Where(typeof(WidgetReader).IsAssignableFrom).Where(t => !t.IsAbstract)
+		.Select(t => (WidgetReader) Activator.CreateInstance(t)!).ToList();
 
 	private TcpClient? tcpClient;
 	private readonly byte[] writeBuffer = new byte[1024];
@@ -29,13 +29,13 @@ public class DefuserConnector {
 
 	private static DefuserConnector? instance;
 	public static DefuserConnector Instance => instance ?? throw new InvalidOperationException("Service not yet initialised");
-	public static Components.Timer TimerProcessor { get; }
+	public static Components.Timer TimerReader { get; }
 
 	public bool IsConnected { get; private set; }
 
 	private const int PORT = 8086;
 
-	static DefuserConnector() => TimerProcessor = componentProcessors.OfType<Components.Timer>().First();
+	static DefuserConnector() => TimerReader = componentReaders.OfType<Components.Timer>().First();
 
 	public DefuserConnector() => instance ??= this;
 
@@ -188,11 +188,11 @@ public class DefuserConnector {
 			? this.simulation.GetLightState(points[0])
 			: ImageUtils.GetLightState(screenshotBitmap, points);
 
-	public static T GetComponentProcessor<T>() where T : ComponentProcessor => componentProcessors.OfType<T>().First();
+	public static T GetComponentReader<T>() where T : ComponentReader => componentReaders.OfType<T>().First();
 
-	public ComponentProcessor? GetComponentProcessor(Image<Rgb24> screenshotBitmap, IReadOnlyList<Point> points) {
+	public ComponentReader? GetComponentReader(Image<Rgb24> screenshotBitmap, IReadOnlyList<Point> points) {
 		if (this.simulation is not null)
-			return this.simulation.IdentifyComponent(points[0]) is string s ? componentProcessors.First(p => p.GetType().Name == s) : null;
+			return this.simulation.IdentifyComponent(points[0]) is string s ? componentReaders.First(p => p.GetType().Name == s) : null;
 
 		var bitmap = ImageUtils.PerspectiveUndistort(screenshotBitmap,
 			points,
@@ -204,65 +204,65 @@ public class DefuserConnector {
 		var needyRating = ImageUtils.CheckForNeedyFrame(bitmap);
 		var looksLikeANeedyModule = needyRating >= 0.5f;
 
-		var ratings = new List<(ComponentProcessor processor, float rating)>();
-		foreach (var processor in componentProcessors) {
-			if (processor.UsesNeedyFrame == looksLikeANeedyModule)
-				ratings.Add((processor, processor.IsModulePresent(bitmap)));
+		var ratings = new List<(ComponentReader reader, float rating)>();
+		foreach (var reader in componentReaders) {
+			if (reader.UsesNeedyFrame == looksLikeANeedyModule)
+				ratings.Add((reader, reader.IsModulePresent(bitmap)));
 		}
 
 		ratings.Sort((e1, e2) => e2.rating.CompareTo(e1.rating));
-		return ratings[0].processor;
+		return ratings[0].reader;
 	}
 
-	public ComponentProcessor? CheatGetComponentProcessor(int face, int x, int y) {
+	public ComponentReader? CheatGetComponentReader(int face, int x, int y) {
 		if (this.simulation is not null)
-			return this.simulation.IdentifyComponent(face, x, y) is string s ? componentProcessors.First(p => p.GetType().Name == s) : null;
+			return this.simulation.IdentifyComponent(face, x, y) is string s ? componentReaders.First(p => p.GetType().Name == s) : null;
 
 		if (this.tcpClient == null)
 			throw new InvalidOperationException("Socket not connected");
 		this.readTaskSource = new();
 		this.SendMessage($"getmodulename {face} {x} {y}");
 		var name = this.readTaskSource.Task.Result;
-		return componentProcessors.FirstOrDefault(p => p.GetType().Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+		return componentReaders.FirstOrDefault(p => p.GetType().Name.Equals(name, StringComparison.OrdinalIgnoreCase));
 	}
 
-	public WidgetProcessor? GetWidgetProcessor(Image<Rgb24> screenshotBitmap, IReadOnlyList<Point> points) {
+	public WidgetReader? GetWidgetReader(Image<Rgb24> screenshotBitmap, IReadOnlyList<Point> points) {
 		if (this.simulation is not null)
-			return this.simulation.IdentifyWidget(points[0]) is string s ? widgetProcessors.First(p => p.GetType().Name == s) : null;
+			return this.simulation.IdentifyWidget(points[0]) is string s ? widgetReaders.First(p => p.GetType().Name == s) : null;
 
 		var bitmap = ImageUtils.PerspectiveUndistort(screenshotBitmap,
 			points,
 			InterpolationMode.NearestNeighbour);
-		var pixelCounts = WidgetProcessor.GetPixelCounts(bitmap, 0);
+		var pixelCounts = WidgetReader.GetPixelCounts(bitmap, 0);
 
-		var ratings = new List<(WidgetProcessor processor, float rating)>();
-		foreach (var processor in widgetProcessors) {
-			ratings.Add((processor, processor.IsWidgetPresent(bitmap, 0, pixelCounts)));
+		var ratings = new List<(WidgetReader reader, float rating)>();
+		foreach (var reader in widgetReaders) {
+			ratings.Add((reader, reader.IsWidgetPresent(bitmap, 0, pixelCounts)));
 		}
 		ratings.Sort((e1, e2) => e2.rating.CompareTo(e1.rating));
-		return ratings[0].rating >= 0.25f ? ratings[0].processor : null;
+		return ratings[0].rating >= 0.25f ? ratings[0].reader : null;
 	}
 
-	public T ReadComponent<T>(Image<Rgb24> screenshot, ComponentProcessor<T> processor, IReadOnlyList<Point> polygon) where T : notnull {
+	public T ReadComponent<T>(Image<Rgb24> screenshot, ComponentReader<T> reader, IReadOnlyList<Point> polygon) where T : notnull {
 		if (this.simulation is not null)
 			return this.simulation.ReadComponent<T>(polygon[0]);
 		var image = ImageUtils.PerspectiveUndistort(screenshot, polygon, InterpolationMode.NearestNeighbour);
 #if DEBUG
-		SaveDebugImage(image, processor.Name);
+		SaveDebugImage(image, reader.Name);
 #endif
-		Image<Rgb24>? debugBitmap = null;
-		return processor.Process(image, ref debugBitmap);
+		Image<Rgb24>? debugImage = null;
+		return reader.Process(image, ref debugImage);
 	}
 
-	public T ReadWidget<T>(Image<Rgb24> screenshot, WidgetProcessor<T> processor, IReadOnlyList<Point> polygon) where T : notnull {
+	public T ReadWidget<T>(Image<Rgb24> screenshot, WidgetReader<T> reader, IReadOnlyList<Point> polygon) where T : notnull {
 		if (this.simulation is not null)
 			return this.simulation.ReadWidget<T>(polygon[0]);
 		var image = ImageUtils.PerspectiveUndistort(screenshot, polygon, InterpolationMode.NearestNeighbour);
 #if DEBUG
-		SaveDebugImage(image, processor.Name);
+		SaveDebugImage(image, reader.Name);
 #endif
-		Image<Rgb24>? debugBitmap = null;
-		return processor.Process(image, 0, ref debugBitmap);
+		Image<Rgb24>? debugImage = null;
+		return reader.Process(image, 0, ref debugImage);
 	}
 
 	public string CheatRead(string[] tokens) {
@@ -276,29 +276,29 @@ public class DefuserConnector {
 		return this.readTaskSource.Task.Result;
 	}
 
-	internal string? Read(string processorName, Image<Rgb24> screenshot, Point[] points) {
+	internal string? Read(string readerName, Image<Rgb24> screenshot, Point[] points) {
 		if (this.simulation is not null)
-			return componentProcessors.Any(p => p.GetType().Name.Equals(processorName, StringComparison.OrdinalIgnoreCase))
-				? this.simulation.ReadModule(processorName, points[0])
-				: widgetProcessors.Any(p => p.GetType().Name.Equals(processorName, StringComparison.OrdinalIgnoreCase))
-				? this.simulation.ReadWidget(processorName, points[0])
-				: throw new ArgumentException($"No such command, module or widget is known: {processorName}");
+			return componentReaders.Any(p => p.GetType().Name.Equals(readerName, StringComparison.OrdinalIgnoreCase))
+				? this.simulation.ReadModule(readerName, points[0])
+				: widgetReaders.Any(p => p.GetType().Name.Equals(readerName, StringComparison.OrdinalIgnoreCase))
+				? this.simulation.ReadWidget(readerName, points[0])
+				: throw new ArgumentException($"No such command, module or widget is known: {readerName}");
 
 		var image = ImageUtils.PerspectiveUndistort(screenshot, points, InterpolationMode.NearestNeighbour);
-		Image<Rgb24>? debugBitmap = null;
+		Image<Rgb24>? debugImage = null;
 #if DEBUG
-		SaveDebugImage(image, processorName);
+		SaveDebugImage(image, readerName);
 #endif
 
-		var componentProcessor = componentProcessors.FirstOrDefault(p => p.GetType().Name.Equals(processorName, StringComparison.OrdinalIgnoreCase));
-		if (componentProcessor is not null)
-			return componentProcessor.ProcessNonGeneric(image, ref debugBitmap)?.ToString();
+		var componentReader = componentReaders.FirstOrDefault(p => p.GetType().Name.Equals(readerName, StringComparison.OrdinalIgnoreCase));
+		if (componentReader is not null)
+			return componentReader.ProcessNonGeneric(image, ref debugImage)?.ToString();
 
-		var widgetProcessor = widgetProcessors.FirstOrDefault(p => p.GetType().Name.Equals(processorName, StringComparison.OrdinalIgnoreCase));
-		if (widgetProcessor is not null)
-			return widgetProcessor.ProcessNonGeneric(image, 0, ref debugBitmap)?.ToString();
+		var widgetReader = widgetReaders.FirstOrDefault(p => p.GetType().Name.Equals(readerName, StringComparison.OrdinalIgnoreCase));
+		if (widgetReader is not null)
+			return widgetReader.ProcessNonGeneric(image, 0, ref debugImage)?.ToString();
 
-		throw new ArgumentException($"No such command, component or widget is known: {processorName}");
+		throw new ArgumentException($"No such command, component or widget is known: {readerName}");
 	}
 
 	public enum MessageType {

@@ -6,7 +6,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Components;
-public class Timer : ComponentProcessor<Timer.ReadData> {
+public class Timer : ComponentReader<Timer.ReadData> {
 	private static readonly Image<Rgba32>[] Samples = new[] { Image.Load<Rgba32>(Resources.Timer1), Image.Load<Rgba32>(Resources.Timer2) };
 
 	public override string Name => "Timer";
@@ -16,7 +16,7 @@ public class Timer : ComponentProcessor<Timer.ReadData> {
 		return ImageUtils.CheckSimilarity(image, Samples);
 	}
 
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
 		static bool predicate(Rgb24 c) {
 			return c.G < 12 && c.B < 12;
 		}
@@ -27,12 +27,12 @@ public class Timer : ComponentProcessor<Timer.ReadData> {
 		Point[]? strikesCorners = ImageUtils.FindCorners(image, new(88, 16, 96, 64), predicate, 0);
 		using var strikesBitmap = strikesCorners is not null ? ImageUtils.PerspectiveUndistort(image, strikesCorners, InterpolationMode.NearestNeighbour, new(128, 64)) : null;
 
-		if (debugBitmap is not null) {
-			ImageUtils.DebugDrawPoints(debugBitmap, timerCorners);
-			debugBitmap.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Transparent }).DrawImage(timerBitmap, new Point(0, 256), 1));
+		if (debugImage is not null) {
+			ImageUtils.DebugDrawPoints(debugImage, timerCorners);
+			debugImage.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Transparent }).DrawImage(timerBitmap, new Point(0, 256), 1));
 			if (strikesBitmap is not null) {
-				ImageUtils.DebugDrawPoints(debugBitmap, strikesCorners!);
-				debugBitmap.Mutate(c => c.Brightness(1.5f).DrawImage(strikesBitmap, new Point(0, 384), 1));
+				ImageUtils.DebugDrawPoints(debugImage, strikesCorners!);
+				debugImage.Mutate(c => c.Brightness(1.5f).DrawImage(strikesBitmap, new Point(0, 384), 1));
 			}
 		}
 

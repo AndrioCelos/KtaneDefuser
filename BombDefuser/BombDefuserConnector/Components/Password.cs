@@ -7,7 +7,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Components;
-public class Password : ComponentProcessor<Password.ReadData> {
+public class Password : ComponentReader<Password.ReadData> {
 	public override string Name => "Password";
 	protected internal override bool UsesNeedyFrame => false;
 
@@ -60,7 +60,7 @@ public class Password : ComponentProcessor<Password.ReadData> {
 		return Math.Min(1, Math.Max(0, count / 200 - count2 / 100));
 	}
 
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
 		static Rectangle GetLetterBounds(PixelAccessor<Rgb24> a, int x) {
 			int top, bottom, left, right, misses;
 
@@ -121,11 +121,11 @@ public class Password : ComponentProcessor<Password.ReadData> {
 		}
 
 		var chars = new char[5];
-		var debugBitmap2 = debugBitmap;
+		var debugImage2 = debugImage;
 		image.ProcessPixelRows(a => {
 			for (var i = 0; i < 5; i++) {
 				var bounds = GetLetterBounds(a, 48 + 37 * i);
-				debugBitmap2?.Mutate(p => p.Draw(Color.Red, 1, bounds));
+				debugImage2?.Mutate(p => p.Draw(Color.Red, 1, bounds));
 
 				var charHeight = bounds.Height >= 32 ? 6 : 5;  // That pesky 'Q' making special cases again.
 				var charWidth = (int) Math.Round(bounds.Width / (bounds.Height / (double) charHeight));
@@ -137,10 +137,10 @@ public class Password : ComponentProcessor<Password.ReadData> {
 					for (var x = 0; x < charWidth; x++) {
 						var px = (int) Math.Round(bounds.X + pixelHeight * (x + 0.5));
 						if (r[px].G < 96) {
-							if (debugBitmap2 is not null) debugBitmap2[px, py] = Color.Red;
+							if (debugImage2 is not null) debugImage2[px, py] = Color.Red;
 							pattern[1 << (y * 5 + x)] = true;
 						} else
-							if (debugBitmap2 is not null) debugBitmap2[px, py] = Color.White;
+							if (debugImage2 is not null) debugImage2[px, py] = Color.White;
 					}
 				}
 				chars[i] = charPatterns[pattern];

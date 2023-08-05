@@ -52,10 +52,10 @@ public partial class ClassificationForm : Form {
 
 					var looksLikeANeedyModule = needyRating >= 0.5f;
 
-					foreach (var processor in comboBox1.Items.OfType<ComponentProcessor>()) {
-						if (processor.UsesNeedyFrame == looksLikeANeedyModule) {
-							var result = processor.IsModulePresent(bitmap);
-							probs[processor.Name] = result;
+					foreach (var reader in comboBox1.Items.OfType<ComponentReader>()) {
+						if (reader.UsesNeedyFrame == looksLikeANeedyModule) {
+							var result = reader.IsModulePresent(bitmap);
+							probs[reader.Name] = result;
 						}
 					}
 
@@ -64,12 +64,12 @@ public partial class ClassificationForm : Form {
 					s = $"Needy frame: {needyRating}\r\nClassified as: {max.Key}\r\n({string.Join(", ", sorted.Take(3).Select(e => $"{e.Key} [{e.Value:0.000}]"))})";
 				}
 			} else if (comboBox1.SelectedIndex == 1) {
-				var pixelCounts = WidgetProcessor.GetPixelCounts(bitmap, 0);
+				var pixelCounts = WidgetReader.GetPixelCounts(bitmap, 0);
 				var probs = new Dictionary<string, float>();
 
-				foreach (var processor in comboBox1.Items.OfType<WidgetProcessor>()) {
-					var result = Math.Max(0, processor.IsWidgetPresent(bitmap, 0, pixelCounts));
-					probs[processor.Name] = result;
+				foreach (var reader in comboBox1.Items.OfType<WidgetReader>()) {
+					var result = Math.Max(0, reader.IsWidgetPresent(bitmap, 0, pixelCounts));
+					probs[reader.Name] = result;
 				}
 
 				var sorted = probs.OrderByDescending(e => e.Value).ToList();
@@ -80,22 +80,22 @@ public partial class ClassificationForm : Form {
 				s = result.ToString();
 			} else {
 				using var bitmap2 = bitmap.Clone();
-				var debugBitmap = bitmap2;
+				var debugImage = bitmap2;
 				try {
 					switch (comboBox1.SelectedItem) {
-						case ComponentProcessor moduleProcessor:
-							var result = moduleProcessor.ProcessNonGeneric(bitmap, ref debugBitmap);
+						case ComponentReader componentReader:
+							var result = componentReader.ProcessNonGeneric(bitmap, ref debugImage);
 							s = result.ToString();
 							break;
-						case WidgetProcessor widgetProcessor:
-							result = widgetProcessor.ProcessNonGeneric(bitmap, 0, ref debugBitmap);
+						case WidgetReader widgetReader:
+							result = widgetReader.ProcessNonGeneric(bitmap, 0, ref debugImage);
 							s = result.ToString();
 							break;
 					}
-					pictureBox1.Image = debugBitmap?.ToWinFormsImage();
+					pictureBox1.Image = debugImage?.ToWinFormsImage();
 				} finally {
-					pictureBox1.Image = debugBitmap?.ToWinFormsImage();
-					debugBitmap?.Dispose();
+					pictureBox1.Image = debugImage?.ToWinFormsImage();
+					debugImage?.Dispose();
 				}
 			}
 		} catch (Exception ex) {
@@ -110,10 +110,10 @@ public partial class ClassificationForm : Form {
 	}
 
 	private void ClassificationForm_Load(object sender, EventArgs e) {
-		foreach (var type in typeof(ComponentProcessor).Assembly.GetTypes()) {
-			if (!type.IsAbstract && typeof(ComponentProcessor).IsAssignableFrom(type))
+		foreach (var type in typeof(ComponentReader).Assembly.GetTypes()) {
+			if (!type.IsAbstract && typeof(ComponentReader).IsAssignableFrom(type))
 				comboBox1.Items.Add(Activator.CreateInstance(type));
-			else if (!type.IsAbstract && typeof(WidgetProcessor).IsAssignableFrom(type))
+			else if (!type.IsAbstract && typeof(WidgetReader).IsAssignableFrom(type))
 				comboBox1.Items.Add(Activator.CreateInstance(type));
 		}
 	}

@@ -64,7 +64,7 @@ internal class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSay
 	private async Task<SimonColour> ReadLastColourAsync(Interrupt interrupt) {
 		var coloursSeen = 0;
 		while (true) {
-			var data = ReadCurrent(GetProcessor());
+			var data = ReadCurrent(GetReader());
 			if (data.Colour is null) {
 				await AimlTasks.Delay(0.125);
 				continue;
@@ -77,7 +77,7 @@ internal class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSay
 
 			while (true) {
 				await AimlTasks.Delay(0.125);
-				var data2 = ReadCurrent(GetProcessor());
+				var data2 = ReadCurrent(GetReader());
 				if (data2.Colour != data.Colour) break;
 			}
 		}

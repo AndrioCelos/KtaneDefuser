@@ -6,7 +6,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Widgets;
-public class PortPlate : WidgetProcessor<PortPlate.Ports> {
+public class PortPlate : WidgetReader<PortPlate.Ports> {
 	public override string Name => "Port Plate";
 
 	protected internal override float IsWidgetPresent(Image<Rgb24> image, LightsState lightsState, PixelCounts pixelCounts)
@@ -20,13 +20,13 @@ public class PortPlate : WidgetProcessor<PortPlate.Ports> {
 	private static bool IsDviRed(HsvColor hsv) => hsv.H is >= 345 or < 30 && hsv.S is >= 0.4f and < 0.75f && hsv.V is >= 0.25f and < 0.75f;
 	private static bool IsGreen(HsvColor hsv) => hsv.H is >= 120 and < 150 && hsv.S is >= 0.3f and < 0.6f && hsv.V is >= 0.5f and < 0.75f;
 
-	protected internal override Ports Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap) {
+	protected internal override Ports Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugImage) {
 		var corners = ImageUtils.FindCorners(image, new(8, 8, 240, 240), c => IsGrey(HsvColor.FromColor(c)), 12) ?? throw new ArgumentException("Can't find port plate corners");
 		var plateImage = ImageUtils.PerspectiveUndistort(image, corners, InterpolationMode.NearestNeighbour, new(256, 128));
-		if (debugBitmap is not null)
-			ImageUtils.DebugDrawPoints(debugBitmap, corners);
+		if (debugImage is not null)
+			ImageUtils.DebugDrawPoints(debugImage, corners);
 
-		debugBitmap?.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }).DrawImage(plateImage, new Point(0, 256), 1));
+		debugImage?.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }).DrawImage(plateImage, new Point(0, 256), 1));
 
 		int pinkCount = 0, tealCount = 0;
 		int redCountEdge = 0, redCountMiddle = 0, greenCount = 0, blackCount = 0;

@@ -4,7 +4,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserConnector.Components;
-public class Maze : ComponentProcessor<Maze.ReadData> {
+public class Maze : ComponentReader<Maze.ReadData> {
 	public override string Name => "Maze";
 	protected internal override bool UsesNeedyFrame => false;
 
@@ -24,7 +24,7 @@ public class Maze : ComponentProcessor<Maze.ReadData> {
 		return count / 828800f;
 	}
 
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
 		GridCell? start = null, goal = null, circle1 = null, circle2 = null;
 		image.ProcessPixelRows(a => {
 			for (var y = 0; y < 6; y++) {

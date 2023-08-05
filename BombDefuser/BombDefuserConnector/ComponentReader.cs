@@ -4,13 +4,13 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector;
-public abstract class ComponentProcessor {
+public abstract class ComponentReader {
 	public abstract string Name { get; }
 	protected internal abstract bool UsesNeedyFrame { get; }
 
 	protected internal abstract float IsModulePresent(Image<Rgb24> image);
 
-	protected internal abstract object ProcessNonGeneric(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap);
+	protected internal abstract object ProcessNonGeneric(Image<Rgb24> image, ref Image<Rgb24>? debugImage);
 
 	protected static int ReadStageIndicator(Image<Rgb24> image) {
 		var count = 0;
@@ -28,19 +28,19 @@ public abstract class ComponentProcessor {
 		return count;
 	}
 
-	protected static int? ReadNeedyTimer(Image<Rgb24> image, Image<Rgb24>? debugBitmap) {
+	protected static int? ReadNeedyTimer(Image<Rgb24> image, Image<Rgb24>? debugImage) {
 		var bezelCorners = ImageUtils.FindCorners(image, new(80, 16, 96, 64), c => HsvColor.FromColor(c) is HsvColor hsv && hsv.H <= 150 && hsv.S <= 0.25f && hsv.V is >= 0.3f and <= 0.75f, 6) ?? throw new ArgumentException("Can't find needy timer bezel corners");
-		if (debugBitmap != null) ImageUtils.DebugDrawPoints(debugBitmap, bezelCorners);
+		if (debugImage != null) ImageUtils.DebugDrawPoints(debugImage, bezelCorners);
 		var left = Math.Min(bezelCorners[0].X, bezelCorners[2].X);
 		var top = Math.Min(bezelCorners[0].Y, bezelCorners[1].Y);
 		var right = Math.Max(bezelCorners[1].X, bezelCorners[3].X) + 1;
 		var bottom = Math.Max(bezelCorners[2].Y, bezelCorners[3].Y) + 1;
 		var bezelRectangle = new Rectangle(left, top, right - left, bottom - top);
 		var displayCorners = ImageUtils.FindCorners(image, bezelRectangle, c => HsvColor.FromColor(c) is HsvColor hsv && hsv.H is >= 345 or <= 15 && hsv.V <= 0.2f, 6) ?? throw new ArgumentException("Can't find needy timer corners");
-		if (debugBitmap != null) ImageUtils.DebugDrawPoints(debugBitmap, displayCorners);
+		if (debugImage != null) ImageUtils.DebugDrawPoints(debugImage, displayCorners);
 
 		var displayImage = ImageUtils.PerspectiveUndistort(image, displayCorners, InterpolationMode.NearestNeighbour, new(128, 64));
-		debugBitmap?.Mutate(p => p.DrawImage(displayImage, 1));
+		debugImage?.Mutate(p => p.DrawImage(displayImage, 1));
 
 		bool checkRectangle(Image<Rgb24> image, Rectangle rectangle) {
 			for (var dy = 0; dy < rectangle.Height; dy++) {
@@ -86,9 +86,9 @@ public abstract class ComponentProcessor {
 	}
 }
 
-public abstract class ComponentProcessor<T> : ComponentProcessor where T : notnull {
-	protected internal abstract T Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap);
+public abstract class ComponentReader<T> : ComponentReader where T : notnull {
+	protected internal abstract T Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage);
 
-	protected internal override object ProcessNonGeneric(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap)
-		=> this.Process(image, ref debugBitmap);
+	protected internal override object ProcessNonGeneric(Image<Rgb24> image, ref Image<Rgb24>? debugImage)
+		=> this.Process(image, ref debugImage);
 }

@@ -122,9 +122,9 @@ internal partial class Simulation {
 							Message("No module is highlighted.");
 						else if (component is Module module1) {
 							this.focusState = FocusStates.Module;
-							Message($"{component.Processor.Name} [{module1.ID}] ({this.SelectedFace.X + 1}, {this.SelectedFace.Y + 1}) selected");
+							Message($"{component.Reader.Name} [{module1.ID}] ({this.SelectedFace.X + 1}, {this.SelectedFace.Y + 1}) selected");
 						} else
-							Message($"Can't select {component.Processor.Name}.");
+							Message($"Can't select {component.Reader.Name}.");
 						break;
 					case FocusStates.Module:
 						if (this.SelectedFace.SelectedComponent is Module module2) {
@@ -250,8 +250,8 @@ internal partial class Simulation {
 		}
 	}
 
-	public string? IdentifyComponent(Point point1) => this.GetComponent(point1)?.Processor.GetType().Name;
-	public string? IdentifyComponent(int face, int x, int y) => this.moduleFaces[face].Slots[y, x]?.Processor.GetType().Name;
+	public string? IdentifyComponent(Point point1) => this.GetComponent(point1)?.Reader.GetType().Name;
+	public string? IdentifyComponent(int face, int x, int y) => this.moduleFaces[face].Slots[y, x]?.Reader.GetType().Name;
 
 	public T ReadComponent<T>(Point point1) where T : notnull {
 		var component = this.GetComponent(point1) ?? throw new ArgumentException("Attempted to read an empty component slot.");
@@ -265,7 +265,7 @@ internal partial class Simulation {
 	}
 	public string ReadModule(string type, Point point1) {
 		var component = this.GetComponent(point1) ?? throw new ArgumentException("Attempt to read blank component");
-		return component.Processor.GetType().Name.Equals(type, StringComparison.OrdinalIgnoreCase)
+		return component.Reader.GetType().Name.Equals(type, StringComparison.OrdinalIgnoreCase)
 			? component.DetailsString
 			: throw new ArgumentException("Wrong type for specified component.");
 	}
@@ -291,7 +291,7 @@ internal partial class Simulation {
 		}
 	}
 
-	public string? IdentifyWidget(Point point1) => this.GetWidget(point1)?.Processor.GetType().Name;
+	public string? IdentifyWidget(Point point1) => this.GetWidget(point1)?.Reader.GetType().Name;
 
 	public T ReadWidget<T>(Point point1) where T : notnull {
 		var widget = this.GetWidget(point1) ?? throw new ArgumentException("Attempt to read blank widget.");
@@ -299,7 +299,7 @@ internal partial class Simulation {
 	}
 	public string ReadWidget(string type, Point point1) {
 		var widget = this.GetWidget(point1) ?? throw new ArgumentException("Attempt to read blank widget.");
-		return widget.Processor.GetType().Name.Equals(type, StringComparison.OrdinalIgnoreCase)
+		return widget.Reader.GetType().Name.Equals(type, StringComparison.OrdinalIgnoreCase)
 			? widget.DetailsString
 			: throw new ArgumentException("Wrong type for specified widget.");
 	}
@@ -383,9 +383,9 @@ internal partial class Simulation {
 	}
 
 	private abstract class BombComponent {
-		internal ComponentProcessor Processor { get; }
+		internal ComponentReader Reader { get; }
 		internal abstract string DetailsString { get; }
-		protected BombComponent(ComponentProcessor processor) => this.Processor = processor ?? throw new ArgumentNullException(nameof(processor));
+		protected BombComponent(ComponentReader reader) => this.Reader = reader ?? throw new ArgumentNullException(nameof(reader));
 	}
 
 	private abstract class Module : BombComponent {
@@ -400,7 +400,7 @@ internal partial class Simulation {
 		public int Y;
 		protected bool[,] SelectableGrid { get; }
 
-		public Module(ComponentProcessor processor, int selectableWidth, int selectableHeight) : base(processor) {
+		public Module(ComponentReader reader, int selectableWidth, int selectableHeight) : base(reader) {
 			NextID++;
 			this.ID = NextID;
 			this.ResetLightTimer.Elapsed += this.ResetLightTimer_Elapsed;
@@ -452,13 +452,13 @@ internal partial class Simulation {
 
 		public void Solve() {
 			if (this.LightState == ModuleLightState.Solved) return;
-			Message($"{this.Processor.Name} solved.");
+			Message($"{this.Reader.Name} solved.");
 			this.LightState = ModuleLightState.Solved;
 			this.ResetLightTimer.Stop();
 		}
 
 		public void StrikeFlash() {
-			Message($"{this.Processor.Name} strike.");
+			Message($"{this.Reader.Name} strike.");
 			if (this.LightState != ModuleLightState.Solved) {
 				this.LightState = ModuleLightState.Strike;
 				this.ResetLightTimer.Stop();
@@ -466,7 +466,7 @@ internal partial class Simulation {
 			}
 		}
 
-		public virtual void Interact() => Message($"Selected ({this.X}, {this.Y}) in {this.Processor.Name}");
+		public virtual void Interact() => Message($"Selected ({this.X}, {this.Y}) in {this.Reader.Name}");
 		public virtual void StopInteract() { }
 	}
 
@@ -474,8 +474,8 @@ internal partial class Simulation {
 		internal virtual TDetails Details { get; }
 		internal override string DetailsString => this.Details.ToString() ?? "";
 
-		protected Module(ComponentProcessor<TDetails> processor, int selectableWidth, int selectableHeight) : this(processor, default!, selectableWidth, selectableHeight) { }
-		public Module(ComponentProcessor<TDetails> processor, TDetails details, int selectableWidth, int selectableHeight) : base(processor, selectableWidth, selectableHeight) => this.Details = details;
+		protected Module(ComponentReader<TDetails> reader, int selectableWidth, int selectableHeight) : this(reader, default!, selectableWidth, selectableHeight) { }
+		public Module(ComponentReader<TDetails> reader, TDetails details, int selectableWidth, int selectableHeight) : base(reader, selectableWidth, selectableHeight) => this.Details = details;
 	}
 
 	private abstract class NeedyModule : Module {
@@ -493,7 +493,7 @@ internal partial class Simulation {
 		public TimeSpan RemainingTime => this.stopwatch is not null ? this.baseTime - this.stopwatch.Elapsed : TimeSpan.Zero;
 		public int? DisplayedTime => this.IsActive ? (int?) this.RemainingTime.TotalSeconds : null;
 
-		protected NeedyModule(ComponentProcessor processor, int selectableWidth, int selectableHeight) : base(processor, selectableWidth, selectableHeight)
+		protected NeedyModule(ComponentReader reader, int selectableWidth, int selectableHeight) : base(reader, selectableWidth, selectableHeight)
 			=> this.timer.Elapsed += this.ReactivateTimer_Elapsed;
 
 		public void Initialise(int faceNum, int x, int y) {
@@ -510,7 +510,7 @@ internal partial class Simulation {
 			this.timer.Interval = this.baseTime.TotalMilliseconds;
 			this.stopwatch.Restart();
 			this.IsActive = true;
-			Message($"{this.Processor.Name} activated with {this.baseTime} left.");
+			Message($"{this.Reader.Name} activated with {this.baseTime} left.");
 			this.OnActivate();
 			AimlVoice.Program.sendInput($"OOB DefuserSocketMessage NeedyStateChanged {this.faceNum} {this.x} {this.y} Running");
 		}
@@ -521,7 +521,7 @@ internal partial class Simulation {
 			if (!this.IsActive) return;
 			this.IsActive = false;
 			this.stopwatch.Stop();
-			Message($"{this.Processor.Name} deactivated with {this.RemainingTime} left.");
+			Message($"{this.Reader.Name} deactivated with {this.RemainingTime} left.");
 			if (this.AutoReset) {
 				timer.Interval = 30000;
 				AimlVoice.Program.sendInput($"OOB DefuserSocketMessage NeedyStateChanged {this.faceNum} {this.x} {this.y} Cooldown");
@@ -554,8 +554,8 @@ internal partial class Simulation {
 		internal virtual TDetails Details { get; }
 		internal override string DetailsString => this.Details.ToString() ?? "";
 
-		protected NeedyModule(ComponentProcessor<TDetails> processor, int selectableWidth, int selectableHeight) : this(processor, default!, selectableWidth, selectableHeight) { }
-		protected NeedyModule(ComponentProcessor<TDetails> processor, TDetails details, int selectableWidth, int selectableHeight) : base(processor, selectableWidth, selectableHeight) => this.Details = details;
+		protected NeedyModule(ComponentReader<TDetails> reader, int selectableWidth, int selectableHeight) : this(reader, default!, selectableWidth, selectableHeight) { }
+		protected NeedyModule(ComponentReader<TDetails> reader, TDetails details, int selectableWidth, int selectableHeight) : base(reader, selectableWidth, selectableHeight) => this.Details = details;
 	}
 
 	private class TimerComponent : BombComponent {
@@ -578,18 +578,18 @@ internal partial class Simulation {
 	}
 
 	private abstract class Widget {
-		internal WidgetProcessor Processor { get; }
+		internal WidgetReader Reader { get; }
 		internal abstract string DetailsString { get; }
 
-		protected Widget(WidgetProcessor processor) => this.Processor = processor ?? throw new ArgumentNullException(nameof(processor));
+		protected Widget(WidgetReader reader) => this.Reader = reader ?? throw new ArgumentNullException(nameof(reader));
 
-		internal static Widget<T> Create<T>(WidgetProcessor<T> processor, T details) where T : notnull => new(processor, details);
+		internal static Widget<T> Create<T>(WidgetReader<T> reader, T details) where T : notnull => new(reader, details);
 	}
 
 	private class Widget<T> : Widget where T : notnull {
 		internal T Details { get; }
 		internal override string DetailsString => this.Details.ToString() ?? "";
 
-		public Widget(WidgetProcessor<T> processor, T details) : base(processor) => this.Details = details;
+		public Widget(WidgetReader<T> reader, T details) : base(reader) => this.Details = details;
 	}
 }

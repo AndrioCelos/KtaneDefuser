@@ -7,7 +7,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Components;
-public class ComplicatedWires : ComponentProcessor<ComplicatedWires.ReadData> {
+public class ComplicatedWires : ComponentReader<ComplicatedWires.ReadData> {
 	public override string Name => "Complicated Wires";
 	protected internal override bool UsesNeedyFrame => false;
 
@@ -42,8 +42,8 @@ public class ComplicatedWires : ComponentProcessor<ComplicatedWires.ReadData> {
 		}
 		return numWires is >= 3 and <= 6 ? pixelScore * 1.5f / numPixels : 0;
 	}
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
-		debugBitmap?.Mutate(c => c.Brightness(0.5f));
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
+		debugImage?.Mutate(c => c.Brightness(0.5f));
 
 		WireFlags? currentFlags = null;
 		var inWire = 0;
@@ -58,7 +58,7 @@ public class ComplicatedWires : ComponentProcessor<ComplicatedWires.ReadData> {
 
 				if (colour != Colour.None) {
 					anyColours = true;
-					if (debugBitmap is not null) debugBitmap[x, y] = colour switch { Colour.White => Color.White, Colour.Red => Color.Red, Colour.Blue => Color.Blue, Colour.Highlight => Color.Orange, _ => default };
+					if (debugImage is not null) debugImage[x, y] = colour switch { Colour.White => Color.White, Colour.Red => Color.Red, Colour.Blue => Color.Blue, Colour.Highlight => Color.Orange, _ => default };
 					if (colour == Colour.Highlight) {
 						if (highlight < 0 && !currentFlags.HasValue)
 							highlight = wires.Count;
@@ -71,12 +71,12 @@ public class ComplicatedWires : ComponentProcessor<ComplicatedWires.ReadData> {
 							var ledPixel = image[x2, 34];
 							if (HsvColor.FromColor(image[x2, 34]).V >= 0.9f) {
 								currentFlags |= WireFlags.Light;
-								if (debugBitmap is not null) debugBitmap[x2, 34] = Color.Yellow;
+								if (debugImage is not null) debugImage[x2, 34] = Color.Yellow;
 							} else
-								if (debugBitmap is not null) debugBitmap[x2, 34] = Color.Blue;
+								if (debugImage is not null) debugImage[x2, 34] = Color.Blue;
 
 							var stickerRect = new Rectangle(slotNumber switch { 0 => 29, 1 => 63, 2 => 95, 3 => 131, 4 => 165, _ => 198 }, 208, 16, 10);
-							debugBitmap?.Mutate(c => c.Draw(Color.Lime, 1, stickerRect));
+							debugImage?.Mutate(c => c.Draw(Color.Lime, 1, stickerRect));
 							image.ProcessPixelRows(a => {
 								for (var y = stickerRect.Top; y < stickerRect.Bottom; y++) {
 									var row = a.GetRowSpan(y);

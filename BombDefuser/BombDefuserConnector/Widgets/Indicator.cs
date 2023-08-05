@@ -8,7 +8,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Widgets;
-public class Indicator : WidgetProcessor<Indicator.ReadData> {
+public class Indicator : WidgetReader<Indicator.ReadData> {
 	public override string Name => "Indicator";
 
 	private static readonly TextRecogniser textRecogniser = new(new(TextRecogniser.Fonts.OSTRICH_SANS_HEAVY, 48), 0, 255, new(128, 64),
@@ -22,13 +22,13 @@ public class Indicator : WidgetProcessor<Indicator.ReadData> {
 	private static bool IsLit(HsvColor hsv) => hsv.V >= 1;
 	private static bool IsUnlit(HsvColor hsv) => hsv.H >= 30 && hsv.S < 0.15f && hsv.V is >= 0.05f and < 0.2f;
 
-	protected internal override ReadData Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap) {
+	protected internal override ReadData Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugImage) {
 		var corners = ImageUtils.FindCorners(image, image.Bounds, c => IsRed(HsvColor.FromColor(c)), 12) ?? throw new ArgumentException("Can't find indicator corners");
 		var indicatorImage = ImageUtils.PerspectiveUndistort(image, corners, InterpolationMode.NearestNeighbour, new(256, 112));
-		if (debugBitmap is not null)
-			ImageUtils.DebugDrawPoints(debugBitmap, corners);
+		if (debugImage is not null)
+			ImageUtils.DebugDrawPoints(debugImage, corners);
 
-		debugBitmap?.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }).DrawImage(indicatorImage, new Point(0, 256), 1));
+		debugImage?.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }).DrawImage(indicatorImage, new Point(0, 256), 1));
 
 		bool ledIsOnRight, isLit;
 		var hsv = HsvColor.FromColor(indicatorImage[56, 56]);
@@ -55,7 +55,7 @@ public class Indicator : WidgetProcessor<Indicator.ReadData> {
 
 		var textBoundingBox = ImageUtils.FindEdges(indicatorImage, new(116, 28, 96, 56), c => c.B >= 128);
 		//indicatorImage.Mutate(c => c.Crop(textBoundingBox).Resize(128, 64, KnownResamplers.NearestNeighbor));
-		//debugBitmap?.Mutate(c => c.DrawImage(indicatorImage, new Point(0, 384), 1));
+		//debugImage?.Mutate(c => c.DrawImage(indicatorImage, new Point(0, 384), 1));
 
 		var label = textRecogniser.Recognise(indicatorImage, textBoundingBox);
 

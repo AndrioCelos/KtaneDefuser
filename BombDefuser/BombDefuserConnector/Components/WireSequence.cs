@@ -6,7 +6,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Components;
-public class WireSequence : ComponentProcessor<WireSequence.ReadData> {
+public class WireSequence : ComponentReader<WireSequence.ReadData> {
 	public override string Name => "Wire Sequence";
 	protected internal override bool UsesNeedyFrame => false;
 
@@ -42,7 +42,7 @@ public class WireSequence : ComponentProcessor<WireSequence.ReadData> {
 		return count / 5120f + count2 / 280f;
 	}
 
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
 		var textRects = new[] {
 			new Rectangle(24, 60, 32, 48),
 			new Rectangle(24, 100, 32, 48),
@@ -52,7 +52,7 @@ public class WireSequence : ComponentProcessor<WireSequence.ReadData> {
 		for (var i = 0; i < 3; i++) {
 			textRects[i] = ImageUtils.FindEdges(image, textRects[i], c => HsvColor.FromColor(c) is HsvColor hsv && hsv.V < 0.05f);
 			textRects[i].Inflate(1, 1);
-			debugBitmap?.Mutate(p => p.Draw(Color.Red, 1, textRects[i]));
+			debugImage?.Mutate(p => p.Draw(Color.Red, 1, textRects[i]));
 		}
 
 		var stagesCleared = ReadStageIndicator(image);

@@ -5,7 +5,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Components;
-public class Wires : ComponentProcessor<Wires.ReadData> {
+public class Wires : ComponentReader<Wires.ReadData> {
 	public override string Name => "Wires";
 	protected internal override bool UsesNeedyFrame => false;
 
@@ -47,16 +47,16 @@ public class Wires : ComponentProcessor<Wires.ReadData> {
 		return numWires is >= 3 and <= 6 ? wirePixelTotal / numWirePixels : 0;
 	}
 
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
-		debugBitmap?.Mutate(c => c.Brightness(0.5f));
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
+		debugImage?.Mutate(c => c.Brightness(0.5f));
 
 		var inWire = 0;
 		var added = false;
 		var colours = new List<Colour>();
 		for (var y = 32; y < 240; y++) {
 			var color = image[128, y];
-			if (debugBitmap is not null)
-				debugBitmap[128, y] = color;
+			if (debugImage is not null)
+				debugImage[128, y] = color;
 			var hsv = HsvColor.FromColor(color);
 			var isBacking = hsv.V is >= 0.45f and <= 0.85f && hsv.S <= 0.2f && (hsv.S == 0 || hsv.H is >= 180 and <= 270);
 			if (isBacking) {

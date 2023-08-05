@@ -66,12 +66,12 @@ public class BombDefuserAimlService : ISraixService {
 			case "identifymodule": {
 				var screenshotBitmap = cachedScreenshots[tokens[1]];
 				var points = new Point[] { new(int.Parse(tokens[2]), int.Parse(tokens[3])), new(int.Parse(tokens[4]), int.Parse(tokens[5])), new(int.Parse(tokens[6]), int.Parse(tokens[7])), new(int.Parse(tokens[8]), int.Parse(tokens[9])) };
-				return this.connector.GetComponentProcessor(screenshotBitmap, points)?.GetType().Name ?? "nil";
+				return this.connector.GetComponentReader(screenshotBitmap, points)?.GetType().Name ?? "nil";
 			}
 			case "identifywidget": {
 				var screenshotBitmap = cachedScreenshots[tokens[1]];
 				var points = new Point[] { new(int.Parse(tokens[2]), int.Parse(tokens[3])), new(int.Parse(tokens[4]), int.Parse(tokens[5])), new(int.Parse(tokens[6]), int.Parse(tokens[7])), new(int.Parse(tokens[8]), int.Parse(tokens[9])) };
-				return this.connector.GetWidgetProcessor(screenshotBitmap, points)?.GetType().Name ?? "nil";
+				return this.connector.GetWidgetReader(screenshotBitmap, points)?.GetType().Name ?? "nil";
 			}
 			case "getlightstate": {
 				var screenshotBitmap = cachedScreenshots[tokens[1]];
@@ -82,7 +82,7 @@ public class BombDefuserAimlService : ISraixService {
 				return this.connector.CheatRead(tokens);
 			}
 			case "getmodulename": {
-				return this.connector.CheatGetComponentProcessor(int.Parse(tokens[1]), int.Parse(tokens[2]), int.Parse(tokens[3]))?.GetType().Name ?? "nil";
+				return this.connector.CheatGetComponentReader(int.Parse(tokens[1]), int.Parse(tokens[2]), int.Parse(tokens[3]))?.GetType().Name ?? "nil";
 			}
 			default: {
 				var screenshotBitmap = cachedScreenshots[tokens[1]];

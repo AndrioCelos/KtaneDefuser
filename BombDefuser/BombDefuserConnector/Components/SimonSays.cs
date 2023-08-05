@@ -4,7 +4,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserConnector.Components;
-public class SimonSays : ComponentProcessor<SimonSays.ReadData> {
+public class SimonSays : ComponentReader<SimonSays.ReadData> {
 	public override string Name => "Simon Says";
 	protected internal override bool UsesNeedyFrame => false;
 
@@ -29,7 +29,7 @@ public class SimonSays : ComponentProcessor<SimonSays.ReadData> {
 		return count / 576f;
 	}
 
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
 		int red = 0, yellow = 0, green = 0, blue = 0;
 		image.ProcessPixelRows(a => {
 			for (var y = 20; y < 224; y++) {

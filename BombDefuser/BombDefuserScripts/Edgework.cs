@@ -5,7 +5,7 @@ namespace BombDefuserScripts;
 
 [AimlInterface]
 internal static class Edgework {
-	internal static void RegisterWidget(AimlAsyncContext context, WidgetProcessor? widget, Image<Rgb24> screenshot, Point[] polygon) {
+	internal static void RegisterWidget(AimlAsyncContext context, WidgetReader? widget, Image<Rgb24> screenshot, Point[] polygon) {
 		if (widget is null) return;
 
 		context.RequestProcess.Log(LogLevel.Info, $"Registering widget: {widget.Name}");
@@ -43,7 +43,7 @@ internal static class Edgework {
 			}
 		} else
 			polygons = Utils.topBottomWidgetPointsLists;
-		var widgets = polygons.Select(p => DefuserConnector.Instance.GetWidgetProcessor(screenshot, p)).ToList();
+		var widgets = polygons.Select(p => DefuserConnector.Instance.GetWidgetReader(screenshot, p)).ToList();
 		for (var i = 0; i < widgets.Count; i++) {
 			var widget = widgets[i];
 			RegisterWidget(context, widget, screenshot, polygons[i]);  // TODO: This assumes the vanilla bomb layout. It will need to be updated for other layouts.

@@ -108,10 +108,10 @@ internal static class Utils {
 
 			// Find which slot this input will select.
 			currentSlot.Y = slot.Y;
-			if (GameState.Current.SelectedFace[currentSlot]?.Processor is null or BombDefuserConnector.Components.Timer) {
+			if (GameState.Current.SelectedFace[currentSlot]?.Reader is null or BombDefuserConnector.Components.Timer) {
 				for (var d = 0; d < 2; d++) {
 					var x2 = currentSlot.X + (d == 0 ? -1 : 1);
-					if (x2 >= 0 && x2 < 3 && GameState.Current.SelectedFace[x2, currentSlot.Y]?.Processor is not (null or BombDefuserConnector.Components.Timer)) {
+					if (x2 >= 0 && x2 < 3 && GameState.Current.SelectedFace[x2, currentSlot.Y]?.Reader is not (null or BombDefuserConnector.Components.Timer)) {
 						currentSlot.X = x2;
 						break;
 					}
@@ -121,11 +121,11 @@ internal static class Utils {
 		// Move to the correct module within that row.
 		while (slot.X < currentSlot.X) {
 			builder.Append("left ");
-			do { currentSlot.X--; } while (GameState.Current.SelectedFace[currentSlot]?.Processor is null or BombDefuserConnector.Components.Timer);
+			do { currentSlot.X--; } while (GameState.Current.SelectedFace[currentSlot]?.Reader is null or BombDefuserConnector.Components.Timer);
 		}
 		while (slot.X > currentSlot.X) {
 			builder.Append("right ");
-			do { currentSlot.X++; } while (GameState.Current.SelectedFace[currentSlot]?.Processor is null or BombDefuserConnector.Components.Timer);
+			do { currentSlot.X++; } while (GameState.Current.SelectedFace[currentSlot]?.Reader is null or BombDefuserConnector.Components.Timer);
 		}
 		builder.Append('a');
 		context.SendInputs(builder.ToString());

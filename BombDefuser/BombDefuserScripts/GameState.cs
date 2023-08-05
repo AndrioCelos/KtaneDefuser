@@ -29,7 +29,7 @@ public class GameState {
 	internal FocusState FocusState { get; set; }
 	internal BombFace[] Faces { get; } = new BombFace[] { new(), new() };
 	internal List<ModuleState> Modules { get; } = new();
-	internal List<WidgetProcessor> Widgets { get; } = new();
+	internal List<WidgetReader> Widgets { get; } = new();
 
 	// Edgework
 	public int BatteryHolderCount { get; set; }
@@ -87,12 +87,12 @@ public enum PortTypes {
 
 public class ModuleState {
 	public ComponentSlot Slot { get; }
-	public ComponentProcessor Processor { get; }
+	public ComponentReader Reader { get; }
 	public ModuleScript? Script { get; }  // Will be null for the timer.
 
-	public ModuleState(ComponentSlot slot, ComponentProcessor processor, ModuleScript? script) {
+	public ModuleState(ComponentSlot slot, ComponentReader reader, ModuleScript? script) {
 		this.Slot = slot;
-		this.Processor = processor ?? throw new ArgumentNullException(nameof(processor));
+		this.Reader = reader ?? throw new ArgumentNullException(nameof(reader));
 		this.Script = script;
 	}
 }

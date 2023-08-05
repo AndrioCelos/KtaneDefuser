@@ -17,7 +17,7 @@ internal class Password : ModuleScript<BombDefuserConnector.Components.Password>
 		await this.MoveToDownButtonRowAsync(interrupt);
 		for (var i = 0; i < 6; i++) {
 			if (i > 0) await this.CycleColumnAsync(interrupt, column);
-			var data = ReadCurrent(GetProcessor());
+			var data = ReadCurrent(GetReader());
 			letters[i] = data.Display[column];
 		}
 		this.columns[column] = letters;
@@ -56,7 +56,7 @@ internal class Password : ModuleScript<BombDefuserConnector.Components.Password>
 	private async Task SubmitAsync(Interrupt interrupt, string word) {
 		await this.MoveToDownButtonRowAsync(interrupt);
 		for (var i = 0; i < 6; i++) {
-			var data = ReadCurrent(GetProcessor());
+			var data = ReadCurrent(GetReader());
 			interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"Password display: {new string(data.Display)}");
 			var anyMismatch = false;
 			for (var x = 0; x < 5; x++) {

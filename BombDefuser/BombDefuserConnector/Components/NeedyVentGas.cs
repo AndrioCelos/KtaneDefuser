@@ -4,7 +4,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Components;
-public class NeedyVentGas : ComponentProcessor<NeedyVentGas.ReadData> {
+public class NeedyVentGas : ComponentReader<NeedyVentGas.ReadData> {
 	public override string Name => "Needy Vent Gas";
 	protected internal override bool UsesNeedyFrame => true;
 
@@ -26,8 +26,8 @@ public class NeedyVentGas : ComponentProcessor<NeedyVentGas.ReadData> {
 		});
 		return count / 36000f;
 	}
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
-		var time = ReadNeedyTimer(image, debugBitmap);
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
+		var time = ReadNeedyTimer(image, debugImage);
 		if (time == null) return new(null, null);
 
 		int top = 0, bottom = 0;
@@ -62,7 +62,7 @@ public class NeedyVentGas : ComponentProcessor<NeedyVentGas.ReadData> {
 		bottom--;
 
 		var textRect = ImageUtils.FindEdges(image, new(64, top, 128, bottom - top), c => HsvColor.FromColor(c) is HsvColor hsv && hsv.H is >= 90 and <= 135 && hsv.V >= 0.5f);
-		debugBitmap?.Mutate(c => c.Draw(Color.Cyan, 1, textRect));
+		debugImage?.Mutate(c => c.Draw(Color.Cyan, 1, textRect));
 		return new(time, displayRecogniser.Recognise(image, textRect));
 	}
 

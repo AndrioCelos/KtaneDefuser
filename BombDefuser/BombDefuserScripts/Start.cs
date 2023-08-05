@@ -54,12 +54,12 @@ internal static class Start {
 	}
 
 	private static async Task RegisterComponentsAsync(AimlAsyncContext context, Image<Rgb24> screenshot) {
-		var components = Enumerable.Range(0, 6).Select(i => DefuserConnector.Instance.GetComponentProcessor(screenshot, Utils.GetPoints(new ComponentSlot(GameState.Current.SelectedFaceNum, i % 3, i / 3)))).ToList();
+		var components = Enumerable.Range(0, 6).Select(i => DefuserConnector.Instance.GetComponentReader(screenshot, Utils.GetPoints(new ComponentSlot(GameState.Current.SelectedFaceNum, i % 3, i / 3)))).ToList();
 		var needTimerRead = false;
 		var anyModules = false;
 		for (var i = 0; i < components.Count; i++) {
 			var component = components[i];
-			var actualComponent = DefuserConnector.Instance.CheatGetComponentProcessor(GameState.Current.SelectedFaceNum, i % 3, i / 3);
+			var actualComponent = DefuserConnector.Instance.CheatGetComponentReader(GameState.Current.SelectedFaceNum, i % 3, i / 3);
 			if (actualComponent != component && !(actualComponent is null && component is BombDefuserConnector.Components.Timer)) {
 				context.RequestProcess.Log(LogLevel.Warning, $"Wrong component at {GameState.Current.SelectedFaceNum} {i % 3} {i / 3} - identified: {component?.Name}; actual: {actualComponent?.Name}");
 				component = actualComponent;
@@ -80,7 +80,7 @@ internal static class Start {
 			await Timer.ReadTimerAsync(screenshot);
 	}
 
-	private static void RegisterComponent(AimlAsyncContext context, ComponentSlot slot, ComponentProcessor? component) {
+	private static void RegisterComponent(AimlAsyncContext context, ComponentSlot slot, ComponentReader? component) {
 		switch (component) {
 			case null:
 				break;

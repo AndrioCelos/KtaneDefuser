@@ -6,7 +6,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Components;
-public class Memory : ComponentProcessor<Memory.ReadData> {
+public class Memory : ComponentReader<Memory.ReadData> {
 	public override string Name => "Memory";
 	protected internal override bool UsesNeedyFrame => false;
 
@@ -50,22 +50,22 @@ public class Memory : ComponentProcessor<Memory.ReadData> {
 		return Math.Max(1 - (float) minDist / 50, 0) * 0.5f + Math.Max(0, count / 148 - count2 / 148) * 0.5f;
 	}
 
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
 		var displayBorderRect = ImageUtils.FindEdges(image, new(50, 40, 108, 80), c => c.R < 44 && c.G < 44 && c.B < 44);
 		displayBorderRect.Inflate(-4, -4);
 		var textRect = ImageUtils.FindEdges(image, displayBorderRect, c => c.G >= 192);
 
-		debugBitmap?.Mutate(c => c.Draw(Color.Red, 1, displayBorderRect).Draw(Color.Lime, 1, textRect));
+		debugImage?.Mutate(c => c.Draw(Color.Red, 1, displayBorderRect).Draw(Color.Lime, 1, textRect));
 		var displayText = displayRecogniser.Recognise(image, textRect);
 
 		var keypadRect = ImageUtils.FindEdges(image, new(20, 148, 164, 72), c => HsvColor.FromColor(c) is HsvColor hsv && hsv.H is >= 30 and <= 45 && hsv.S is >= 0.2f and <= 0.4f);
-		debugBitmap?.Mutate(c => c.Draw(Color.Yellow, 1, keypadRect));
+		debugImage?.Mutate(c => c.Draw(Color.Yellow, 1, keypadRect));
 		var keyLabels = new int[4];
 		for (int i = 0; i < 4; i++) {
 			var rect = new Rectangle(keypadRect.X + keypadRect.Width * i / 4, keypadRect.Y, keypadRect.Width / 4, keypadRect.Height);
 			rect = Rectangle.Inflate(rect, -2, -2);
 			rect = ImageUtils.FindEdges(image, rect, c => HsvColor.FromColor(c) is HsvColor hsv && hsv.H <= 60 && hsv.V < 0.25f);
-			debugBitmap?.Mutate(c => c.Draw(Color.Green, 1, rect));
+			debugImage?.Mutate(c => c.Draw(Color.Green, 1, rect));
 			keyLabels[i] = keyRecogniser.Recognise(image, rect)[0] - '0';
 		}
 

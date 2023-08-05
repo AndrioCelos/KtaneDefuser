@@ -2,7 +2,7 @@
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserConnector.Components;
-public class NeedyCapacitor : ComponentProcessor<NeedyCapacitor.ReadData> {
+public class NeedyCapacitor : ComponentReader<NeedyCapacitor.ReadData> {
 	public override string Name => "Needy Capacitor";
 	protected internal override bool UsesNeedyFrame => true;
 
@@ -26,9 +26,9 @@ public class NeedyCapacitor : ComponentProcessor<NeedyCapacitor.ReadData> {
 		});
 		return count / 6000f;
 	}
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap) {
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage) {
 		// Find the timer.
-		return new(ReadNeedyTimer(image, debugBitmap));
+		return new(ReadNeedyTimer(image, debugImage));
 	}
 
 	public record ReadData(int? Time);

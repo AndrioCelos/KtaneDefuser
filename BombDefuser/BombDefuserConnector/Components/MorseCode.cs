@@ -3,7 +3,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserConnector.Components;
-public class MorseCode : ComponentProcessor<MorseCode.ReadData> {
+public class MorseCode : ComponentReader<MorseCode.ReadData> {
 	public override string Name => "Morse Code";
 	protected internal override bool UsesNeedyFrame => false;
 
@@ -18,7 +18,7 @@ public class MorseCode : ComponentProcessor<MorseCode.ReadData> {
 		}
 		return Math.Min(count / 600, 1);
 	}
-	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugBitmap)
+	protected internal override ReadData Process(Image<Rgb24> image, ref Image<Rgb24>? debugImage)
 		=> new(image[89, 39].R >= 192);
 
 	public record ReadData(bool IsLightOn);

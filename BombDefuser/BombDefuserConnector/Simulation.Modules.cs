@@ -16,7 +16,7 @@ internal partial class Simulation {
 			private readonly bool[] isCut;
 			private readonly int shouldCut;
 
-			public Wires(int shouldCut, params Components.Wires.Colour[] wires) : base(DefuserConnector.GetComponentProcessor<Components.Wires>(), 1, wires.Length) {
+			public Wires(int shouldCut, params Components.Wires.Colour[] wires) : base(DefuserConnector.GetComponentReader<Components.Wires>(), 1, wires.Length) {
 				this.shouldCut = shouldCut;
 				this.wires = wires;
 				this.isCut = new bool[wires.Length];
@@ -53,7 +53,7 @@ internal partial class Simulation {
 				ShouldCut[(int) (WireFlags.Blue | WireFlags.Star | WireFlags.Light)] = true;
 			}
 
-			public ComplicatedWires(WireFlags[] wires) : base(DefuserConnector.GetComponentProcessor<Components.ComplicatedWires>(), wires.Length, 1) {
+			public ComplicatedWires(WireFlags[] wires) : base(DefuserConnector.GetComponentReader<Components.ComplicatedWires>(), wires.Length, 1) {
 				this.wires = wires;
 				this.isCut = new bool[wires.Length];
 			}
@@ -83,7 +83,7 @@ internal partial class Simulation {
 
 			internal override Components.Button.ReadData Details => new(this.colour, this.label, this.indicatorColour);
 
-			public Button(Components.Button.Colour colour, Components.Button.Label label) : base(DefuserConnector.GetComponentProcessor<Components.Button>(), 1, 1) {
+			public Button(Components.Button.Colour colour, Components.Button.Label label) : base(DefuserConnector.GetComponentReader<Components.Button>(), 1, 1) {
 				this.colour = colour;
 				this.label = label;
 				this.pressTimer.Elapsed += this.PressTimer_Elapsed;
@@ -129,7 +129,7 @@ internal partial class Simulation {
 			private readonly int[] correctOrder;
 			private readonly bool[] isPressed;
 
-			public Keypad(Components.Keypad.Symbol[] symbols, int[] correctOrder) : base(DefuserConnector.GetComponentProcessor<Components.Keypad>(), 2, 2) {
+			public Keypad(Components.Keypad.Symbol[] symbols, int[] correctOrder) : base(DefuserConnector.GetComponentReader<Components.Keypad>(), 2, 2) {
 				this.symbols = symbols;
 				this.correctOrder = correctOrder;
 				this.isPressed = new bool[symbols.Length];
@@ -162,7 +162,7 @@ internal partial class Simulation {
 			private readonly GridCell circle1;
 			private readonly GridCell circle2;
 
-			public Maze(GridCell start, GridCell goal, GridCell circle1, GridCell circle2) : base(DefuserConnector.GetComponentProcessor<Components.Maze>(), 3, 3) {
+			public Maze(GridCell start, GridCell goal, GridCell circle1, GridCell circle2) : base(DefuserConnector.GetComponentReader<Components.Maze>(), 3, 3) {
 				this.position = start;
 				this.goal = goal;
 				this.circle1 = circle1;
@@ -208,7 +208,7 @@ internal partial class Simulation {
 			private bool isAnimating;
 			private readonly Timer animationTimer = new(2900) { AutoReset = false };
 
-			public Memory() : base(DefuserConnector.GetComponentProcessor<Components.Memory>(), 4, 1) {
+			public Memory() : base(DefuserConnector.GetComponentReader<Components.Memory>(), 4, 1) {
 				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
 				this.SetKeysAndDisplay();
 			}
@@ -258,7 +258,7 @@ internal partial class Simulation {
 			private int selectedFrequency;
 			private static readonly string[] allFrequencies = new[] { "505", "515", "522", "532", "535", "542", "545", "552", "555", "565", "572", "575", "582", "592", "595", "600" };
 
-			public MorseCode() : base(DefuserConnector.GetComponentProcessor<Components.MorseCode>(), 2, 2) {
+			public MorseCode() : base(DefuserConnector.GetComponentReader<Components.MorseCode>(), 2, 2) {
 				this.SelectableGrid[1, 1] = false;
 				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
 				this.animationTimer.Start();
@@ -294,18 +294,18 @@ internal partial class Simulation {
 
 			internal override Components.NeedyCapacitor.ReadData Details => new(this.IsActive ? (int) this.RemainingTime.TotalSeconds : null);
 
-			public NeedyCapacitor() : base(DefuserConnector.GetComponentProcessor<Components.NeedyCapacitor>(), 1, 1) { }
+			public NeedyCapacitor() : base(DefuserConnector.GetComponentReader<Components.NeedyCapacitor>(), 1, 1) { }
 
 			protected override void OnActivate() { }
 
 			public override void Interact() {
-				Message($"{this.Processor.Name} pressed with {this.RemainingTime} left.");
+				Message($"{this.Reader.Name} pressed with {this.RemainingTime} left.");
 				this.pressStopwatch.Restart();
 			}
 
 			public override void StopInteract() {
 				this.AddTime(this.pressStopwatch.Elapsed * 6, TimeSpan.FromSeconds(45));
-				Message($"{this.Processor.Name} released with {this.RemainingTime} left.");
+				Message($"{this.Reader.Name} released with {this.RemainingTime} left.");
 			}
 		}
 
@@ -323,7 +323,7 @@ internal partial class Simulation {
 
 			internal override Components.NeedyKnob.ReadData Details => new(this.DisplayedTime, this.lights);
 
-			public NeedyKnob() : base(DefuserConnector.GetComponentProcessor<Components.NeedyKnob>(), 1, 1) { }
+			public NeedyKnob() : base(DefuserConnector.GetComponentReader<Components.NeedyKnob>(), 1, 1) { }
 
 			protected override void OnActivate() {
 				var state = states[this.nextStateIndex];
@@ -350,7 +350,7 @@ internal partial class Simulation {
 
 			internal override Components.NeedyVentGas.ReadData Details => new(this.DisplayedTime, this.DisplayedTime is not null ? messages[this.messageIndex] : null);
 
-			public NeedyVentGas() : base(DefuserConnector.GetComponentProcessor<Components.NeedyVentGas>(), 2, 1) { }
+			public NeedyVentGas() : base(DefuserConnector.GetComponentReader<Components.NeedyVentGas>(), 2, 1) { }
 
 			protected override void OnActivate() {
 				this.messageIndex ^= 1;
@@ -382,7 +382,7 @@ internal partial class Simulation {
 
 			internal override Components.Password.ReadData Details => new(this.columnPositions.Select((y, x) => this.columns[x, y]).ToArray());
 
-			public Password() : base(DefuserConnector.GetComponentProcessor<Components.Password>(), 5, 3) {
+			public Password() : base(DefuserConnector.GetComponentReader<Components.Password>(), 5, 3) {
 				this.SelectableGrid[2, 0] = false;
 				this.SelectableGrid[2, 1] = false;
 				this.SelectableGrid[2, 3] = false;
@@ -418,7 +418,7 @@ internal partial class Simulation {
 			private int inputProgress;
 			private int tick;
 
-			public SimonSays() : base(DefuserConnector.GetComponentProcessor<Components.SimonSays>(), 3, 3) {
+			public SimonSays() : base(DefuserConnector.GetComponentReader<Components.SimonSays>(), 3, 3) {
 				this.SelectableGrid[0, 0] = false;
 				this.SelectableGrid[0, 2] = false;
 				this.SelectableGrid[1, 1] = false;
@@ -480,7 +480,7 @@ internal partial class Simulation {
 			private static readonly string[] keyStrings = new[] { "READY", "FIRST", "NO", "BLANK", "NOTHING", "YES", "WHAT", "UHHH", "LEFT", "RIGHT", "MIDDLE", "OKAY", "WAIT", "PRESS",
 				"YOU", "YOU ARE", "YOUR", "YOU’RE", "UR", "U", "UH HUH", "UH UH", "WHAT?", "DONE", "NEXT", "HOLD", "SURE", "LIKE" };
 
-			public WhosOnFirst() : base(DefuserConnector.GetComponentProcessor<Components.WhosOnFirst>(), 2, 3) {
+			public WhosOnFirst() : base(DefuserConnector.GetComponentReader<Components.WhosOnFirst>(), 2, 3) {
 				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
 				this.SetKeysAndDisplay();
 			}
@@ -542,7 +542,7 @@ internal partial class Simulation {
 			private int readFailSimulation;
 			private readonly Timer animationTimer = new(1200) { AutoReset = false };
 
-			public WireSequence() : base(DefuserConnector.GetComponentProcessor<Components.WireSequence>(), 1, 5) {
+			public WireSequence() : base(DefuserConnector.GetComponentReader<Components.WireSequence>(), 1, 5) {
 				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
 				for (var i = 0; i < 12; i++) {
 					if (i % 4 != 0) {

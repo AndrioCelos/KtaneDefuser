@@ -16,25 +16,25 @@ public abstract class ModuleScript {
 	public int ModuleIndex { get; internal set; }
 	public NeedyState NeedyState { get; internal set; }
 
-	public static ModuleScript Create(ComponentProcessor processor) {
-		var processorType = processor.GetType();
-		if (!Scripts.TryGetValue(processorType, out var entry))
+	public static ModuleScript Create(ComponentReader reader) {
+		var readerType = reader.GetType();
+		if (!Scripts.TryGetValue(readerType, out var entry))
 			return new UnknownModuleScript();
 
 		var (scriptType, topic) = entry;
 		if (!CreateMethodCache.TryGetValue(scriptType, out var method)) {
-			method = CreateMethodBase.MakeGenericMethod(scriptType, processorType);
+			method = CreateMethodBase.MakeGenericMethod(scriptType, readerType);
 			CreateMethodCache[scriptType] = method;
 		}
-		return (ModuleScript) method.Invoke(null, new object[] { processor, topic })!;
+		return (ModuleScript) method.Invoke(null, new object[] { reader, topic })!;
 	}
 
-	private static TScript CreateInternal<TScript, TProcessor>(TProcessor processor, string topic) where TScript : ModuleScript<TProcessor>, new() where TProcessor : ComponentProcessor
-		=> new() { processor = processor, topic = topic };
+	private static TScript CreateInternal<TScript, TReader>(TReader reader, string topic) where TScript : ModuleScript<TReader>, new() where TReader : ComponentReader
+		=> new() { reader = reader, topic = topic };
 
-	protected static T ReadCurrent<T>(ComponentProcessor<T> processor) where T : notnull {
+	protected static T ReadCurrent<T>(ComponentReader<T> reader) where T : notnull {
 		var ss = DefuserConnector.Instance.TakeScreenshot();
-		return DefuserConnector.Instance.ReadComponent(ss, processor, Utils.CurrentModulePoints);
+		return DefuserConnector.Instance.ReadComponent(ss, reader, Utils.CurrentModulePoints);
 	}
 
 	protected internal virtual void Initialise(AimlAsyncContext context) { }
@@ -43,11 +43,11 @@ public abstract class ModuleScript {
 	protected internal virtual void NeedyStateChanged(AimlAsyncContext context, NeedyState newState) { }
 }
 
-public abstract class ModuleScript<TProcessor> : ModuleScript where TProcessor : ComponentProcessor {
-	internal TProcessor? processor;
-	protected TProcessor Processor => processor ?? throw new InvalidOperationException("Script not yet initialised");
+public abstract class ModuleScript<TReader> : ModuleScript where TReader : ComponentReader {
+	internal TReader? reader;
+	protected TReader Reader => reader ?? throw new InvalidOperationException("Script not yet initialised");
 
-	protected static TProcessor GetProcessor() => DefuserConnector.GetComponentProcessor<TProcessor>();
+	protected static TReader GetReader() => DefuserConnector.GetComponentReader<TReader>();
 }
 
 internal class UnknownModuleScript : ModuleScript {

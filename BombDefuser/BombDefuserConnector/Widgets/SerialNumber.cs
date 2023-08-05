@@ -9,7 +9,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Widgets;
-public class SerialNumber : WidgetProcessor<string> {
+public class SerialNumber : WidgetReader<string> {
 	public override string Name => "SerialNumber";
 
 	private static readonly Font FONT;
@@ -43,8 +43,8 @@ public class SerialNumber : WidgetProcessor<string> {
 
 	private static bool IsBlack(HsvColor hsv) => hsv.H < 180 && hsv.S < 0.2f && hsv.V <= 0.2f;
 
-	protected internal override string Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugBitmap) {
-		debugBitmap?.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }));
+	protected internal override string Process(Image<Rgb24> image, LightsState lightsState, ref Image<Rgb24>? debugImage) {
+		debugImage?.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }));
 
 		// Find the text bounding box.
 		var textBB = ImageUtils.FindEdges(image, image.Bounds, c => IsBlack(HsvColor.FromColor(c)));
@@ -69,7 +69,7 @@ public class SerialNumber : WidgetProcessor<string> {
 			throw new InvalidOperationException("Can't find the serial number heading");
 		});
 
-		debugBitmap?.Mutate(c => c.Draw(isUpsideDown!.Value ? Color.Yellow : Color.Lime, 1, textBB));
+		debugImage?.Mutate(c => c.Draw(isUpsideDown!.Value ? Color.Yellow : Color.Lime, 1, textBB));
 
 		var charImages = new List<Image<Rgb24>>();
 		var lastX = 0;
@@ -103,9 +103,9 @@ public class SerialNumber : WidgetProcessor<string> {
 			}
 		}
 
-		if (debugBitmap != null) {
+		if (debugImage != null) {
 			for (var i = 0; i < charImages.Count; i++) {
-				debugBitmap?.Mutate(c => c.DrawImage(charImages[i], new Point(64 * i, 256), 1));
+				debugImage?.Mutate(c => c.DrawImage(charImages[i], new Point(64 * i, 256), 1));
 			}
 		}
 		if (charImages.Count != 6) throw new ArgumentException("Found wrong number of characters");
@@ -146,7 +146,7 @@ public class SerialNumber : WidgetProcessor<string> {
 					});
 					if (bottom < 64) {
 						charImages[i].Mutate(c => c.Crop(64, bottom).Resize(64, 64, KnownResamplers.NearestNeighbor));
-						debugBitmap?.Mutate(c => c.DrawImage(charImages[i], new Point(64 * i, 256), 1));
+						debugImage?.Mutate(c => c.DrawImage(charImages[i], new Point(64 * i, 256), 1));
 					}
 				}
 				continue;
