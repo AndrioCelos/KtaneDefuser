@@ -183,6 +183,16 @@ namespace BombDefuserConnector.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
+        internal static byte[] KeypadAT {
+            get {
+                object obj = ResourceManager.GetObject("KeypadAT", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
         internal static byte[] KeypadBalloon {
             get {
                 object obj = ResourceManager.GetObject("KeypadBalloon", resourceCulture);
@@ -366,16 +376,6 @@ namespace BombDefuserConnector.Properties {
         internal static byte[] KeypadPumpkin {
             get {
                 object obj = ResourceManager.GetObject("KeypadPumpkin", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] KeypadPyramid {
-            get {
-                object obj = ResourceManager.GetObject("KeypadPyramid", resourceCulture);
                 return ((byte[])(obj));
             }
         }

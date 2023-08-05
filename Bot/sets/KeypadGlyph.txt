@@ -1,4 +1,4 @@
-# Glyph names are from http://www.bombmanual.com/
+# Glyph names are from https://www.bombmanual.com/
 
 Copyright
 FilledStar

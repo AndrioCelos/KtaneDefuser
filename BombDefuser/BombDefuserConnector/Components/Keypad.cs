@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using BombDefuserConnector.Properties;
 using SixLabors.ImageSharp;
@@ -12,6 +11,7 @@ namespace BombDefuserConnector.Components;
 public class Keypad : ComponentProcessor<Keypad.ReadData> {
 	private static readonly (Image<L8> image, Symbol symbol)[] ReferenceSymbols = new[] {
 		(LoadSampleImage(Resources.KeypadAe), Symbol.Ae),
+		(LoadSampleImage(Resources.KeypadAT), Symbol.AT),
 		(LoadSampleImage(Resources.KeypadBalloon), Symbol.Balloon),
 		(LoadSampleImage(Resources.KeypadBT), Symbol.BT),
 		(LoadSampleImage(Resources.KeypadCircle), Symbol.Circle),
@@ -31,7 +31,6 @@ public class Keypad : ComponentProcessor<Keypad.ReadData> {
 		(LoadSampleImage(Resources.KeypadOmega), Symbol.Omega),
 		(LoadSampleImage(Resources.KeypadParagraph), Symbol.Paragraph),
 		(LoadSampleImage(Resources.KeypadPumpkin), Symbol.Pumpkin),
-		(LoadSampleImage(Resources.KeypadPyramid), Symbol.Pyramid),
 		(LoadSampleImage(Resources.KeypadQuestionMark), Symbol.QuestionMark),
 		(LoadSampleImage(Resources.KeypadRightC), Symbol.RightC),
 		(LoadSampleImage(Resources.KeypadSix), Symbol.Six),
@@ -272,7 +271,7 @@ public class Keypad : ComponentProcessor<Keypad.ReadData> {
 		Omega,
 		Paragraph,
 		Pumpkin,
-		Pyramid,
+		AT,
 		QuestionMark,
 		RightC,
 		Six,

@@ -154,6 +154,9 @@
   <data name="KeypadAe" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Keypad\KeypadAe.bmp;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="KeypadAT" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Keypad\KeypadAT.bmp;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="KeypadBalloon" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Keypad\KeypadBalloon.bmp;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
@@ -210,9 +213,6 @@
   </data>
   <data name="KeypadPumpkin" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Keypad\KeypadPumpkin.bmp;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="KeypadPyramid" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Keypad\KeypadPyramid.bmp;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="KeypadQuestionMark" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Keypad\KeypadQuestionMark.bmp;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>

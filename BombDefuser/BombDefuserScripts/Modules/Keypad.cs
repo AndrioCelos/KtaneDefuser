@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using static BombDefuserConnector.Components.Keypad;
 
 namespace BombDefuserScripts.Modules;
@@ -17,7 +17,7 @@ internal class Keypad : ModuleScript<BombDefuserConnector.Components.Keypad> {
 		{ Symbol.Teepee      , "tent" },
 		{ Symbol.Six         , "flat-topped six" },
 		{ Symbol.SquigglyN   , "lightning bolt" },
-		{ Symbol.Pyramid     , "pyramid" },
+		{ Symbol.AT          , "pyramid" },
 		{ Symbol.Ae          , "a e" },
 		{ Symbol.MeltedThree , "melted three" },
 		{ Symbol.Euro        , "backward E" },
