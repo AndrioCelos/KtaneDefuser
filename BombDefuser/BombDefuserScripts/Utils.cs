@@ -55,6 +55,7 @@ internal static class Utils {
 	}
 
 	public static int ParseOrdinal(string ordinal) => (int) Enum.Parse<Ordinal>(ordinal, true);
+	public static string ToOrdinal(int n) => $"{n}{(n % 10) switch { 1 => "st", 2 => "nd", 3 => "rd", _ => "th" }}";
 
 	internal static async Task SelectFaceAsync(AimlAsyncContext context, int face, SelectFaceAlignMode alignMode) {
 		if (GameState.Current.SelectedFaceNum == face) return;  // The requested side is already selected; do nothing.

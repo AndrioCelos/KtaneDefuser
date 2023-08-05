@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection.Metadata.Ecma335;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
@@ -57,66 +58,114 @@ public class WireSequence : ComponentProcessor<WireSequence.ReadData> {
 		var stagesCleared = ReadStageIndicator(image);
 		var number = numberRecogniser.Recognise(image, textRects[0]);
 
+		static bool isSelectionHighlight(HsvColor hsv) => hsv.H <= 30 && hsv.S >= 0.75f && hsv.V >= 0.5f;
 		// TODO: It turns out that telling the selection highlight apart from a red wire is hard.
 		// This will use a fairly strict condition to check for the selection highlight, so it will sometimes fail to match.
 		// It will be necessary to look at the module multiple times until the selection highlight opacity is high enough.
-		static bool isSelectionHighlight(HsvColor hsv) => hsv.H is >= 5 and <= 15 && hsv.S >= 0.93f && hsv.V >= 0.9f;
-		static int? getSelectionHighlight(Image<Rgb24> image, Rectangle textRect) {
+		static bool isSelectionHighlightStrict(HsvColor hsv) => hsv.H is >= 5 and <= 15 && hsv.S >= 0.93f && hsv.V >= 0.9f;
+		static (int x, bool isStrictMatch)? getSelectionHighlight(Image<Rgb24> image, Rectangle textRect) {
 			var x = textRect.Right;
 			while (true) {
 				for (var y = textRect.Top; y < textRect.Bottom; y++) {
 					var hsv = HsvColor.FromColor(image[x, y]);
 					if (isSelectionHighlight(hsv))
-						return x;
+						return (x, isSelectionHighlightStrict(hsv));
 					if (hsv.H is >= 180 and <= 240 && hsv.S is >= 0.05f and <= 0.15f && hsv.V is >= 0.2f and <= 0.4f)
 						return null;
 				}
 				x++;
 			}
 		}
-		static WireColour getHighlightedWireColour(Image<Rgb24> image, Rectangle textRect, int x) {
-			for (; x < 80; x++) {
+		static WireColour? getWireColour(Image<Rgb24> image, Rectangle textRect, int x, bool isHighlighted) {
+			for (; x < 76; x++) {
 				for (var y = textRect.Top; y < textRect.Bottom; y++) {
 					var hsv = HsvColor.FromColor(image[x, y]);
 					if (hsv.V <= 0.05f)
 						return WireColour.Black;
 					if (hsv.H is >= 210 and <= 240 && hsv.S is >= 0.5f && hsv.V >= 0.4f)
 						return WireColour.Blue;
-					// No explicit check for a red wire until we can find a way to not get a false positive from the selection highlight.
+					// No explicit check for a red wire in the highlighted slot until we can find a way to not get a false positive from the selection highlight.
 					// We know there must be a wire in this slot to highlight, so assume the wire is red if we don't find a blue or black pixel.
-				}
-			}
-			return WireColour.Red;
-		}
-
-		// For now, we can only read the highlighted wire.
-		for (var i = 0; i < 3; i++) {
-			// This is selected if we see a red (selection highlight) pixel to the left of a grey (socket) pixel.
-			var r = getSelectionHighlight(image, textRects[i]);
-			if (r is not null) {
-				var x = r.Value;
-				var colour = getHighlightedWireColour(image, textRects[i], x);
-
-				for (x = 160; x >= 128; x--) {
-					for (var y = textRects[0].Top; y < textRects[2].Bottom; y++) {
-						var hsv = HsvColor.FromColor(image[x, y]);
-						if (isSelectionHighlight(hsv)) {
-							var to = y < (textRects[0].Bottom + textRects[1].Top) / 2 ? 'A'
-								: y < (textRects[1].Bottom + textRects[2].Top) / 2 ? 'B'
-								: 'C';
-							return new(stagesCleared, int.Parse(number), new(colour, i, to));
+					if (!isHighlighted && isSelectionHighlight(hsv)) {
+						if (y is >= 106 and < 144) {
+							// An extra check to make sure this is a red wire and not a selection highlight crossing over the full search area from the top or bottom wire.
+							// Red pixels shouldn't extend upward or downward out of the search area.
+							// Also use a narrower search area for the middle slot.
+							if (x >= 72) continue;
+							int y2;
+							if (y < 124) {
+								for (y2 = y; y2 >= textRect.Top; y2--) {
+									if (!isSelectionHighlight(HsvColor.FromColor(image[x, y2]))) break;
+								}
+								if (y2 < textRect.Top) continue;
+							} else {
+								for (y2 = y; y2 < textRect.Bottom; y2++) {
+									if (!isSelectionHighlight(HsvColor.FromColor(image[x, y2]))) break;
+								}
+								if (y2 >= textRect.Bottom) continue;
+							}
 						}
+						return WireColour.Red;
 					}
 				}
-				throw new ArgumentException("Can't find the end terminal of the highlighted wire.");
+			}
+			return null;
+		}
+
+		// Find out whether either of the buttons is highlighted.
+		var highlightedButton = 0;
+		for (var y = 8; y < 32; y++) {
+			if (isSelectionHighlight(HsvColor.FromColor(image[106, y]))) {
+				highlightedButton = -1;
+				break;
+			}
+		}
+		if (highlightedButton == 0) {
+			for (var y = 240; y >= 216; y--) {
+				if (isSelectionHighlight(HsvColor.FromColor(image[106, y]))) {
+					highlightedButton = 1;
+					break;
+				}
 			}
 		}
 
-		return new(stagesCleared, int.Parse(number), null);
+		// For now, we can only fully read the highlighted wire.
+		var colours = new WireColour?[3];
+		HighlightedWireData? highlightedWire = null;
+		for (var i = 0; i < 3; i++) {
+			// This is highlighted if we see a red (selection highlight) pixel to the left of a grey (socket) pixel.
+			var r = highlightedButton == 0 ? getSelectionHighlight(image, textRects[i]) : null;
+			if (r is not null) {
+				var (x, isStrictMatch) = r.Value;
+				colours[i] = getWireColour(image, textRects[i], x, true) ?? WireColour.Red;
+
+				if (isStrictMatch) {
+					for (x = 160; x >= 128; x--) {
+						for (var y = textRects[0].Top; y < textRects[2].Bottom; y++) {
+							var hsv = HsvColor.FromColor(image[x, y]);
+							if (isSelectionHighlightStrict(hsv)) {
+								var to = y < (textRects[0].Bottom + textRects[1].Top) / 2 ? 'A'
+									: y < (textRects[1].Bottom + textRects[2].Top) / 2 ? 'B'
+									: 'C';
+								highlightedWire = new(i, to);
+								break;
+							}
+						}
+						if (highlightedWire is not null) break;
+					}
+					if (highlightedWire is null) throw new ArgumentException("Can't find the end terminal of the highlighted wire.");
+				}
+			} else
+				colours[i] = getWireColour(image, textRects[i], textRects[i].Right, false);
+		}
+
+		return new(stagesCleared, int.Parse(number), colours, highlightedButton, highlightedWire);
 	}
 
-	public record ReadData(int StagesCleared, int CurrentPageFirstWireNum, SelectedWireData? SelectedWire);
-	public record SelectedWireData(WireColour Colour, int From, char To);
+	public record ReadData(int StagesCleared, int CurrentPageFirstWireNum, WireColour?[] WireColours, int HighlightedButton, HighlightedWireData? HighlightedWire) {
+		public override string ToString() => $"ReadData {{ StagesCleared = {this.StagesCleared}, CurrentPageFirstWireNum = {this.CurrentPageFirstWireNum}, WireColours = [ {string.Join(", ", this.WireColours)} ], HighlightedButton = {this.HighlightedButton}, HighlightedWireData = {this.HighlightedWire} }}";
+	}
+	public record HighlightedWireData(int From, char To);
 
 	public enum WireColour {
 		Red,

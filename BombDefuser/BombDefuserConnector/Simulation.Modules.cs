@@ -1,4 +1,4 @@
-﻿using BombDefuserConnector.DataTypes;
+using BombDefuserConnector.DataTypes;
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -532,6 +532,96 @@ internal partial class Simulation {
 						this.Solve();
 					else
 						this.StartAnimation();
+				}
+			}
+		}
+
+		public class WireSequence : Module<Components.WireSequence.ReadData> {
+			private record struct WireData(Components.WireSequence.WireColour Colour, char To);
+
+			internal override Components.WireSequence.ReadData Details {
+				get {
+					this.readFailSimulation--;
+					if (this.readFailSimulation < 0) this.readFailSimulation = 3;
+					return !this.isAnimating
+						? new(this.stagesCleared, 1 + this.currentPage * 3, this.wires.Skip(this.stagesCleared * 3).Take(3).Select(w => w?.Colour).ToArray(), this.Y switch { 0 => -1, 4 => 1, _ => 0 },
+							this.readFailSimulation == 0 && this.Y is >= 1 and <= 3 && this.wires[this.Y - 1 + this.currentPage * 3] is WireData wire ? new(this.Y - 1, wire.To) : null)
+						: throw new InvalidOperationException("Tried to read module while animating");
+				}
+			}
+
+			private readonly WireData?[] wires = new WireData?[12];
+			private readonly bool[] shouldCut = new bool[12];
+			private readonly bool[] isCut = new bool[12];
+			private int currentPage;
+			private int stagesCleared;
+			private bool isAnimating;
+			private int readFailSimulation;
+			private readonly Timer animationTimer = new(1200) { AutoReset = false };
+
+			public WireSequence() : base(BombDefuserAimlService.GetComponentProcessor<Components.WireSequence>(), 1, 5) {
+				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
+				for (var i = 0; i < 12; i++) {
+					if (i % 4 != 0) {
+						var colour = (Components.WireSequence.WireColour) (i / 2 % 3);
+						this.wires[i] = new(colour, (char) ('A' + i % 3));
+						shouldCut[i] = colour == Components.WireSequence.WireColour.Blue;
+					}
+				}
+				this.UpdateSelectable();
+			}
+
+			private void UpdateSelectable() {
+				for (var y = 0; y < 3; y++)
+					this.SelectableGrid[y + 1, 0] = currentPage < 4 ? wires[y + currentPage * 3] is not null : false;
+			}
+
+			private void AnimationTimer_Elapsed(object? sender, ElapsedEventArgs e) {
+				this.UpdateSelectable();
+				this.isAnimating = false;
+			}
+
+			private void StartAnimation() {
+				this.isAnimating = true;
+				this.animationTimer.Start();
+			}
+
+			public override void Interact() {
+				if (this.LightState == ModuleLightState.Solved) return;
+				if (this.isAnimating) throw new InvalidOperationException("Wire Sequence interacted during animation");
+				switch (this.Y) {
+					case 0:
+						if (this.currentPage == 0) throw new InvalidOperationException("Tried to move up from the first page");
+						this.currentPage--;
+						Message($"Moving to page {this.currentPage + 1}.");
+						this.StartAnimation();
+						break;
+					case 4:
+						if (this.currentPage == this.stagesCleared) {
+							if (Enumerable.Range(this.currentPage * 3, 3).Any(i => shouldCut[i] && !isCut[i]))
+								this.StrikeFlash();
+							else {
+								this.currentPage++;
+								this.stagesCleared++;
+								if (this.currentPage == 4)
+									this.Solve();
+								Message($"Moving to page {this.currentPage + 1}.");
+								this.StartAnimation();
+							}
+						} else {
+							this.currentPage++;
+							Message($"Moving to page {this.currentPage + 1}.");
+							this.StartAnimation();
+						}
+						break;
+					default:
+						if (this.isCut[this.currentPage * 3 + this.Y - 1]) return;
+						Message($"Cut wire {this.currentPage * 3 + this.Y}.");
+						this.isCut[this.currentPage * 3 + this.Y - 1] = true;
+						if (!this.shouldCut[this.currentPage * 3 + this.Y - 1])
+							this.StrikeFlash();
+						break;
+						
 				}
 			}
 		}

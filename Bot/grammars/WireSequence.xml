@@ -1,0 +1,12 @@
+<grammar version='1.0' xml:lang='en-gb' root='root' xmlns='http://www.w3.org/2001/06/grammar'>
+	<rule id='root'>
+		<one-of>
+			<item><ruleref uri='bomb.xml'/></item>
+			<item> cut </item>
+			<item> don't cut </item>
+			<item> do not cut </item>
+			<item> skip </item>
+			<item> next </item>
+		</one-of>
+	</rule>
+</grammar>
