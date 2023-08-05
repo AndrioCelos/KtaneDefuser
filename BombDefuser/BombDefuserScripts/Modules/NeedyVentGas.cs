@@ -14,7 +14,7 @@ internal class NeedyVentGas : ModuleScript<BombDefuserConnector.Components.Needy
 		using var interrupt = await Interrupt.EnterAsync(context);
 		context = interrupt.Context;
 		await Utils.SelectModuleAsync(context, this.ModuleIndex);
-		await AimlTasks.Delay(0.5);
+		await AimlTasks.Delay(0.75);
 
 		var data = ReadCurrent(Reader);
 		if (data.Message != null)

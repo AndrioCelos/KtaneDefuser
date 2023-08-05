@@ -6,7 +6,7 @@ internal class Interrupt : IDisposable {
 	private static Queue<(TaskCompletionSource<Interrupt> taskSource, AimlAsyncContext context)> interruptQueue = new();
 
 	public bool IsDisposed { get; private set; }
-	
+
 	public AimlAsyncContext Context { get; }
 
 	private Interrupt(AimlAsyncContext context) => this.Context = context ?? throw new ArgumentNullException(nameof(context));
