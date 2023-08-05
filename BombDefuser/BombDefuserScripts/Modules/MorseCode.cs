@@ -68,7 +68,7 @@ internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCod
 		{ "600", 15 }
 	};
 
-	private int highlight;
+	private int highlight;  // For this script, 0 => down button, 1 => right button, 2 => submit button
 	private int selectedFrequency;
 
 	[AimlCategory("read")]
@@ -164,19 +164,20 @@ internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCod
 		using var interrupt = MorseCode.interrupt ?? await Interrupt.EnterAsync(context);
 		var builder = new StringBuilder();
 		if (frequency < this.selectedFrequency) {
-			if (this.highlight != 0) {
-				builder.Append("left ");
-				this.highlight = 0;
+			switch (this.highlight) {
+				case 1: builder.Append("left "); break;
+				case 2: builder.Append("up "); break;
 			}
+			this.highlight = 0;
 			do {
 				builder.Append("a ");
 				this.selectedFrequency--;
 			} while (frequency < this.selectedFrequency);
 		}
 		if (frequency > this.selectedFrequency) {
-			if (this.highlight != 2) {
+			if (this.highlight != 1) {
 				builder.Append("right ");
-				this.highlight = 2;
+				this.highlight = 1;
 			}
 			do {
 				builder.Append("a ");

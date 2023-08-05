@@ -1,4 +1,4 @@
-using BombDefuserConnector.DataTypes;
+﻿using BombDefuserConnector.DataTypes;
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -264,10 +264,8 @@ internal partial class Simulation {
 			private int selectedFrequency;
 			private static readonly string[] allFrequencies = new[] { "505", "515", "522", "532", "535", "542", "545", "552", "555", "565", "572", "575", "582", "592", "595", "600" };
 
-			public MorseCode() : base(BombDefuserAimlService.GetComponentProcessor<Components.MorseCode>(), 3, 2) {
-				this.SelectableGrid[0, 1] = false;
-				this.SelectableGrid[1, 0] = false;
-				this.SelectableGrid[1, 2] = false;
+			public MorseCode() : base(BombDefuserAimlService.GetComponentProcessor<Components.MorseCode>(), 2, 2) {
+				this.SelectableGrid[1, 1] = false;
 				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
 				this.animationTimer.Start();
 			}
@@ -279,24 +277,20 @@ internal partial class Simulation {
 			}
 
 			public override void Interact() {
-				switch (this.X) {
-					case 0:
-						if (this.selectedFrequency == 0) throw new InvalidOperationException("Pointer went out of bounds.");
-						this.selectedFrequency--;
-						break;
-					case 2:
-						if (this.selectedFrequency == 15) throw new InvalidOperationException("Pointer went out of bounds.");
-						this.selectedFrequency++;
-						break;
-					case 1:
-						Message($"3.{allFrequencies[this.selectedFrequency]} MHz was submitted.");
-						if (this.selectedFrequency == 9) {
-							this.Solve();
-							this.animationTimer.Stop();
-							this.lightOn = false;
-						} else
-							this.StrikeFlash();
-						break;
+				if (this.Y == 1) {
+					Message($"3.{allFrequencies[this.selectedFrequency]} MHz was submitted.");
+					if (this.selectedFrequency == 9) {
+						this.Solve();
+						this.animationTimer.Stop();
+						this.lightOn = false;
+					} else
+						this.StrikeFlash();
+				} else if (this.X == 0) {
+					if (this.selectedFrequency == 0) throw new InvalidOperationException("Pointer went out of bounds.");
+					this.selectedFrequency--;
+				} else {
+					if (this.selectedFrequency == 15) throw new InvalidOperationException("Pointer went out of bounds.");
+					this.selectedFrequency++;
 				}
 			}
 		}

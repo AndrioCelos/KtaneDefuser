@@ -96,10 +96,11 @@ internal class WireSequence : ModuleScript<BombDefuserConnector.Components.WireS
 		await this.ContinuePageAsync(interrupt);
 	}
 
-	[AimlCategory("cut")]
+	[AimlCategory("cut ^")]
 	internal static Task Cut(AimlAsyncContext context) => GameState.Current.CurrentScript<WireSequence>().ActionAsync(context, true);
 
-	[AimlCategory("do not cut")]
+	[AimlCategory("don't cut ^")]
+	[AimlCategory("do not cut ^")]
 	[AimlCategory("skip")]
 	[AimlCategory("next")]
 	internal static Task DoNotCut(AimlAsyncContext context) => GameState.Current.CurrentScript<WireSequence>().ActionAsync(context, false);

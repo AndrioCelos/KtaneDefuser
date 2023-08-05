@@ -91,7 +91,7 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 		}
 	}
 
-	[AimlCategory("cut")]
+	[AimlCategory("cut ^")]
 	internal static async Task Cut(AimlAsyncContext context) {
 		var script = GameState.Current.CurrentScript<ComplicatedWires>();
 		if (script.currentFlags == null) return;
@@ -99,7 +99,8 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 		await script.FindWiresToCut(context, true);
 	}
 
-	[AimlCategory("do not cut")]
+	[AimlCategory("don't cut ^")]
+	[AimlCategory("do not cut ^")]
 	[AimlCategory("skip")]
 	[AimlCategory("next")]
 	internal static async Task DoNotCut(AimlAsyncContext context) {
