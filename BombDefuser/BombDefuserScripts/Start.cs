@@ -11,7 +11,6 @@ internal static class Start {
 
 	[AimlCategory("OOB DefuserSocketMessage Lights *"), EditorBrowsable(EditorBrowsableState.Never)]
 	public static async Task Lights(AimlAsyncContext context, bool on) {
-		context.Reply(on.ToString());
 		if (on && waitingForLights) {
 			waitingForLights = false;
 			await GameStartAsync(context);
