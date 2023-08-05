@@ -1,9 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Timers;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserConnector;
 internal partial class Simulation {
@@ -20,6 +21,8 @@ internal partial class Simulation {
 	private readonly WidgetFace[] widgetFaces = new WidgetFace[4];
 	private bool isAlarmClockOn;
 
+	internal static Image<Rgb24> DummyScreenshot { get; } = new(1, 1);
+
 	private ComponentFace SelectedFace => this.moduleFaces[this.selectedFaceNum];
 
 	public Simulation() {
@@ -34,10 +37,10 @@ internal partial class Simulation {
 			{ null, null, null },
 			{ null, null, null }
 		});
-		this.widgetFaces[0] = new(new Widget?[] { Widget.Create(new Widgets.SerialNumber(), "AB3DE6"), null, null, null });
-		this.widgetFaces[1] = new(new Widget?[] { Widget.Create(new Widgets.Indicator(), new(false, "BOB")), Widget.Create(new Widgets.Indicator(), new(true, "FRQ")), null, null });
-		this.widgetFaces[2] = new(new Widget?[] { Widget.Create(new Widgets.BatteryHolder(), 2), null, null, null, null, null });
-		this.widgetFaces[3] = new(new Widget?[] { Widget.Create(new Widgets.PortPlate(), new Widgets.PortPlate.Ports(Widgets.PortPlate.PortType.Parallel | Widgets.PortPlate.PortType.Serial)), Widget.Create(new Widgets.PortPlate(), new Widgets.PortPlate.Ports(0)), null, null, null, null });
+		this.widgetFaces[0] = new(new[] { Widget.Create(new Widgets.SerialNumber(), "AB3DE6"), null, null, null });
+		this.widgetFaces[1] = new(new[] { Widget.Create(new Widgets.Indicator(), new(false, "BOB")), Widget.Create(new Widgets.Indicator(), new(true, "FRQ")), null, null });
+		this.widgetFaces[2] = new(new[] { Widget.Create(new Widgets.BatteryHolder(), 2), null, null, null, null, null });
+		this.widgetFaces[3] = new(new[] { Widget.Create(new Widgets.PortPlate(), new Widgets.PortPlate.Ports(Widgets.PortPlate.PortType.Parallel | Widgets.PortPlate.PortType.Serial)), Widget.Create(new Widgets.PortPlate(), new Widgets.PortPlate.Ports(0)), null, null, null, null });
 		Message("Simulation initialised.");
 
 		for (var i = 0; i < this.moduleFaces.Length; i++) {
@@ -46,7 +49,7 @@ internal partial class Simulation {
 					if (this.moduleFaces[i].Slots[y, x] is Module module) {
 						module.InitialiseHighlight();
 						if (module is NeedyModule needyModule)
-							needyModule.Initialise(i, y, x);
+							needyModule.Initialise(i, x, y);
 					}
 				}
 			}
@@ -106,7 +109,7 @@ internal partial class Simulation {
 						Message($"{this.focusState} selected");
 						break;
 					case FocusStates.AlarmClock:
-						SetAlarmClock(!isAlarmClockOn);
+						this.SetAlarmClock(!isAlarmClockOn);
 						break;
 					case FocusStates.Bomb:
 						if ((int) this.currentFace % 2 != 0) {
@@ -225,13 +228,6 @@ internal partial class Simulation {
 		}
 	}
 
-	internal void SimulateScreenshot(string token) {
-		Task.Run(async () => {
-			await Task.Delay(50);
-			AimlVoice.Program.sendInput($"OOB ScreenshotReady {token} {Guid.NewGuid():N}");
-		});
-	}
-
 	private void FindNearestModule() {
 		if (this.SelectedFace.SelectedComponent is Module) return;
 		for (var d = 1; d <= 2; d++) {
@@ -254,47 +250,40 @@ internal partial class Simulation {
 		}
 	}
 
-	public string? IdentifyComponent(int x1, int y1) => this.GetComponent(x1, y1)?.Processor.GetType().Name;
-	public string? IdentifyComponent(int face, int x, int y) => this.moduleFaces[face - 1].Slots[y - 1, x - 1]?.Processor.GetType().Name;
+	public string? IdentifyComponent(Point point1) => this.GetComponent(point1)?.Processor.GetType().Name;
+	public string? IdentifyComponent(int face, int x, int y) => this.moduleFaces[face].Slots[y, x]?.Processor.GetType().Name;
 
-	public T ReadComponent<T>(ComponentProcessor<T> processor, int x1, int y1) where T : notnull {
-		var component = this.GetComponent(x1, y1) ?? throw new ArgumentException("Attempted to read an empty component slot.");
-		if (processor is Components.Timer) {
-			return component is TimerComponent timerComponent && timerComponent.Details is T t
-				? t
-				: throw new ArgumentException("Wrong type for specified component.");
-		}
-		if (component.Processor.GetType() != processor.GetType())
-			throw new ArgumentException("Wrong type for specified component.");
-		return component switch {
-			Module<T> module => module.Details,
-			NeedyModule<T> needyModule => needyModule.Details,
-			_ => throw new ArgumentException("Attempt to read something that isn't a module")
-		};
+	public T ReadComponent<T>(Point point1) where T : notnull {
+		var component = this.GetComponent(point1) ?? throw new ArgumentException("Attempted to read an empty component slot.");
+		return component is TimerComponent timerComponent
+			? timerComponent.Details is T t ? t : throw new ArgumentException("Wrong type for specified component.")
+			: component switch {
+				Module<T> module => module.Details,
+				NeedyModule<T> needyModule => needyModule.Details,
+				_ => throw new ArgumentException("Wrong type for specified component")
+			};
 	}
-	public string ReadModule(string type, int x1, int y1) {
-		var component = this.GetComponent(x1, y1);
-		if (component is null)
-			throw new ArgumentException("Attempt to read blank component");
-		if (!component.Processor.GetType().Name.Equals(type, StringComparison.InvariantCultureIgnoreCase))
-			throw new ArgumentException("Wrong type for specified component.");
-		return component.DetailsString;
+	public string ReadModule(string type, Point point1) {
+		var component = this.GetComponent(point1) ?? throw new ArgumentException("Attempt to read blank component");
+		return component.Processor.GetType().Name.Equals(type, StringComparison.OrdinalIgnoreCase)
+			? component.DetailsString
+			: throw new ArgumentException("Wrong type for specified component.");
 	}
 
-	public ModuleLightState GetLightState(int x1, int y1) => this.GetComponent(x1, y1) is Module module && module is not NeedyModule ? module.LightState : ModuleLightState.Off;
+	public ModuleLightState GetLightState(Point point1) => this.GetComponent(point1) is Module module && module is not NeedyModule ? module.LightState : ModuleLightState.Off;
 
-	private BombComponent? GetComponent(int x1, int y1) {
+	private BombComponent? GetComponent(Point point1) {
 		switch (this.focusState) {
 			case FocusStates.Bomb: {
 				var face = this.currentFace switch { BombFaces.Face1 => this.moduleFaces[0], BombFaces.Face2 => this.moduleFaces[1], _ => throw new InvalidOperationException($"Can't identify modules from face {this.currentFace}.") };
-				var slotX = x1 switch { 558 or 572 => 0, 848 or 852 => 1, 1127 or 1134 => 2, _ => throw new ArgumentException($"Unknown x coordinate: {x1}") };
-				var slotY = y1 switch { 291 or 292 => 0, 558 => 1, _ => throw new ArgumentException($"Unknown y coordinate: {y1}") };
+				var slotX = point1.X switch { 558 or 572 => 0, 848 or 852 => 1, 1127 or 1134 => 2, _ => throw new ArgumentException($"Unknown x coordinate: {point1.X}") };
+				var slotY = point1.Y switch { 291 or 292 => 0, 558 => 1, _ => throw new ArgumentException($"Unknown y coordinate: {point1.Y}") };
 				return face.Slots[slotY, slotX];
 			}
 			case FocusStates.Module: {
 				var face = this.SelectedFace;
-				var slotDX = x1 switch { <= 220 => -2, <= 535 => -1, <= 840 => 0, <= 1164 => 1, _ => 2 };
-				var slotDY = y1 switch { <= 102 => -1, <= 393 => 0, _ => 1 };
+				var slotDX = point1.X switch { <= 220 => -2, <= 535 => -1, <= 840 => 0, <= 1164 => 1, _ => 2 };
+				var slotDY = point1.Y switch { <= 102 => -1, <= 393 => 0, _ => 1 };
 				return face.Slots[face.Y + slotDY, face.X + slotDX];
 			}
 			default:
@@ -302,37 +291,31 @@ internal partial class Simulation {
 		}
 	}
 
-	public string? IdentifyWidget(int x1, int y1) => this.GetWidget(x1, y1)?.Processor.GetType().Name;
+	public string? IdentifyWidget(Point point1) => this.GetWidget(point1)?.Processor.GetType().Name;
 
-	public T ReadWidget<T>(WidgetProcessor<T> processor, int x1, int y1) where T : notnull {
-		var widget = this.GetWidget(x1, y1);
-		if (widget is null)
-			throw new ArgumentException("Attempt to read blank widget.");
-		if (widget is not Widget<T> widget2)
-			throw new ArgumentException("Wrong type for specified widget.");
-		return widget2.Details;
+	public T ReadWidget<T>(Point point1) where T : notnull {
+		var widget = this.GetWidget(point1) ?? throw new ArgumentException("Attempt to read blank widget.");
+		return widget is Widget<T> widget2 ? widget2.Details : throw new ArgumentException("Wrong type for specified widget.");
 	}
-	public string ReadWidget(string type, int x1, int y1) {
-		var widget = this.GetWidget(x1, y1);
-		if (widget is null)
-			throw new ArgumentException("Attempt to read blank widget.");
-		if (!widget.Processor.GetType().Name.Equals(type, StringComparison.InvariantCultureIgnoreCase))
-			throw new ArgumentException("Wrong type for specified widget.");
-		return widget.DetailsString;
+	public string ReadWidget(string type, Point point1) {
+		var widget = this.GetWidget(point1) ?? throw new ArgumentException("Attempt to read blank widget.");
+		return widget.Processor.GetType().Name.Equals(type, StringComparison.OrdinalIgnoreCase)
+			? widget.DetailsString
+			: throw new ArgumentException("Wrong type for specified widget.");
 	}
 
-	private Widget? GetWidget(int x1, int y1) {
+	private Widget? GetWidget(Point point1) {
 		switch (this.focusState) {
 			case FocusStates.Bomb: {
 				var face = this.currentFace switch { BombFaces.Side1 => this.widgetFaces[0], BombFaces.Side2 => this.widgetFaces[1], _ => this.ry switch { < -0.5f => this.widgetFaces[2], >= 0.5f => this.widgetFaces[3], _ => throw new InvalidOperationException($"Can't identify widgets from face {this.currentFace}.") } };
 				int slot;
 				if (face.Slots.Length == 4) {
-					var slotX = x1 switch { < 900 => 0, _ => 1 };
-					var slotY = y1 switch { 465 => 0, 772 => 1, _ => throw new ArgumentException($"Unknown y coordinate: {y1}") };
+					var slotX = point1.X switch { < 900 => 0, _ => 1 };
+					var slotY = point1.Y switch { 465 => 0, 772 => 1, _ => throw new ArgumentException($"Unknown y coordinate: {point1.Y}") };
 					slot = slotY * 2 + slotX;
 				} else {
-					var slotX = x1 switch { <= 588 => 0, <= 824 => 1, _ => 2 };
-					var slotY = y1 switch { 430 => 0, 566 => 1, _ => throw new ArgumentException($"Unknown y coordinate: {y1}") };
+					var slotX = point1.X switch { <= 588 => 0, <= 824 => 1, _ => 2 };
+					var slotY = point1.Y switch { 430 => 0, 566 => 1, _ => throw new ArgumentException($"Unknown y coordinate: {point1.Y}") };
 					slot = slotY * 3 + slotX;
 				}
 				return face.Slots[slot];
@@ -343,15 +326,13 @@ internal partial class Simulation {
 	}
 
 	public void Solve() {
-		if (this.SelectedFace.SelectedComponent is Module module) {
+		if (this.SelectedFace.SelectedComponent is Module module)
 			module.Solve();
-		}
 	}
 
 	public void Strike() {
-		if (this.SelectedFace.SelectedComponent is Module module) {
+		if (this.SelectedFace.SelectedComponent is Module module)
 			module.StrikeFlash();
-		}
 	}
 
 	internal void SetAlarmClock(bool value) {
@@ -420,7 +401,7 @@ internal partial class Simulation {
 		protected bool[,] SelectableGrid { get; }
 
 		public Module(ComponentProcessor processor, int selectableWidth, int selectableHeight) : base(processor) {
-			++NextID;
+			NextID++;
 			this.ID = NextID;
 			this.ResetLightTimer.Elapsed += this.ResetLightTimer_Elapsed;
 			this.SelectableGrid = new bool[selectableHeight, selectableWidth];
@@ -485,9 +466,7 @@ internal partial class Simulation {
 			}
 		}
 
-		public virtual void Interact() {
-			Message($"Selected ({this.X}, {this.Y}) in {this.Processor.Name}");
-		}
+		public virtual void Interact() => Message($"Selected ({this.X}, {this.Y}) in {this.Processor.Name}");
 		public virtual void StopInteract() { }
 	}
 
@@ -514,9 +493,8 @@ internal partial class Simulation {
 		public TimeSpan RemainingTime => this.stopwatch is not null ? this.baseTime - this.stopwatch.Elapsed : TimeSpan.Zero;
 		public int? DisplayedTime => this.IsActive ? (int?) this.RemainingTime.TotalSeconds : null;
 
-		protected NeedyModule(ComponentProcessor processor, int selectableWidth, int selectableHeight) : base(processor, selectableWidth, selectableHeight) {
-			this.timer.Elapsed += this.ReactivateTimer_Elapsed;
-		}
+		protected NeedyModule(ComponentProcessor processor, int selectableWidth, int selectableHeight) : base(processor, selectableWidth, selectableHeight)
+			=> this.timer.Elapsed += this.ReactivateTimer_Elapsed;
 
 		public void Initialise(int faceNum, int x, int y) {
 			this.faceNum = faceNum;

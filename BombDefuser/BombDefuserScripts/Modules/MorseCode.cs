@@ -118,13 +118,13 @@ internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCod
 		MorseCode.interrupt = null;
 	}
 
-	private static async Task<bool> IsLightOnAsync() => (await ReadCurrentAsync(GetProcessor())).IsLightOn;
+	private static bool IsLightOn() => ReadCurrent(GetProcessor()).IsLightOn;
 	private static Task<bool> WaitForStateAsync(Interrupt interrupt, bool state) => WaitForStateAsync(interrupt, state, int.MaxValue);
 	private static async Task<bool> WaitForStateAsync(Interrupt interrupt, bool state, int limit) {
 		var count = 0;
 		do {
 			await AimlTasks.Delay(0.075);
-			if (interrupt.IsDisposed || await IsLightOnAsync() == state) {
+			if (interrupt.IsDisposed || IsLightOn() == state) {
 				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Awaited state {state} reached after {count}");
 				return true;
 			}
@@ -184,9 +184,9 @@ internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCod
 				this.selectedFrequency++;
 			} while (frequency > this.selectedFrequency);
 		}
-		if (this.highlight != 1) {
+		if (this.highlight != 2) {
 			builder.Append("down ");
-			this.highlight = 1;
+			this.highlight = 2;
 		}
 		builder.Append('a');
 		await interrupt.SubmitAsync(builder.ToString());

@@ -32,9 +32,9 @@ public abstract class ModuleScript {
 	private static TScript CreateInternal<TScript, TProcessor>(TProcessor processor, string topic) where TScript : ModuleScript<TProcessor>, new() where TProcessor : ComponentProcessor
 		=> new() { processor = processor, topic = topic };
 
-	protected static async Task<T> ReadCurrentAsync<T>(ComponentProcessor<T> processor) where T : notnull {
-		var ss = await AimlTasks.TakeScreenshotAsync();
-		return BombDefuserAimlService.Instance.ReadComponent(ss, processor, Utils.CurrentModulePoints);
+	protected static T ReadCurrent<T>(ComponentProcessor<T> processor) where T : notnull {
+		var ss = DefuserConnector.Instance.TakeScreenshot();
+		return DefuserConnector.Instance.ReadComponent(ss, processor, Utils.CurrentModulePoints);
 	}
 
 	protected internal virtual void Initialise(AimlAsyncContext context) { }
@@ -47,7 +47,7 @@ public abstract class ModuleScript<TProcessor> : ModuleScript where TProcessor :
 	internal TProcessor? processor;
 	protected TProcessor Processor => processor ?? throw new InvalidOperationException("Script not yet initialised");
 
-	protected static TProcessor GetProcessor() => BombDefuserAimlService.GetComponentProcessor<TProcessor>();
+	protected static TProcessor GetProcessor() => DefuserConnector.GetComponentProcessor<TProcessor>();
 }
 
 internal class UnknownModuleScript : ModuleScript {

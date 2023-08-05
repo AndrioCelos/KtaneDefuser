@@ -18,8 +18,8 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 
 		using var interrupt = await this.PrepareToReadAsync(context);
 		if (interrupt is not null) context = interrupt.Context;
-		var ss = await AimlTasks.TakeScreenshotAsync();
-		var data = BombDefuserAimlService.Instance.ReadComponent(ss, GetProcessor(), Utils.GetPoints(GameState.Current.Modules[this.ModuleIndex].Slot));
+		var ss = DefuserConnector.Instance.TakeScreenshot();
+		var data = DefuserConnector.Instance.ReadComponent(ss, GetProcessor(), Utils.GetPoints(GameState.Current.Modules[this.ModuleIndex].Slot));
 		var counts = new Counts();
 		for (var i = 0; i < 12; i++) {
 			if (data.Lights[i]) {

@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using static BombDefuserConnector.Components.Keypad;
 
 namespace BombDefuserScripts.Modules;
@@ -43,8 +43,8 @@ internal class Keypad : ModuleScript<BombDefuserConnector.Components.Keypad> {
 	private int highlight;
 
 	[AimlCategory("read")]
-	internal static async Task Read(AimlAsyncContext context) {
-		var data = await ReadCurrentAsync(GetProcessor());
+	internal static void Read(AimlAsyncContext context) {
+		var data = ReadCurrent(GetProcessor());
 		GameState.Current.CurrentScript<Keypad>().symbols = data.Symbols;
 		context.Reply(string.Join(", ", from s in data.Symbols select SymbolDescriptions[s]));
 	}

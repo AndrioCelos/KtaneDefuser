@@ -6,8 +6,8 @@ internal class Button : ModuleScript<BombDefuserConnector.Components.Button> {
 	private static Interrupt? interrupt;
 
 	[AimlCategory("read")]
-	internal static async Task Read(AimlAsyncContext context) {
-		var data = await ReadCurrentAsync(GetProcessor());
+	internal static void Read(AimlAsyncContext context) {
+		var data = ReadCurrent(GetProcessor());
 		if (data.IndicatorColour != null)
 			context.Reply($"The light is {data.IndicatorColour}.");
 		else
@@ -22,7 +22,7 @@ internal class Button : ModuleScript<BombDefuserConnector.Components.Button> {
 		interrupt = await Interrupt.EnterAsync(context);
 		interrupt.Context.SendInputs("a:hold");
 		await AimlTasks.Delay(1);
-		await Read(interrupt.Context);
+		Read(interrupt.Context);
 	}
 
 	[AimlCategory("release on <set>number</set>")]

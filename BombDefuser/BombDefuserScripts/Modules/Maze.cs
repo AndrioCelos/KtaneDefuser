@@ -8,8 +8,8 @@ internal class Maze : ModuleScript<BombDefuserConnector.Components.Maze> {
 	private Direction highlight;
 
 	[AimlCategory("read")]
-	internal static async Task Read(AimlAsyncContext context) {
-		var data = await ReadCurrentAsync(GetProcessor());
+	internal static void Read(AimlAsyncContext context) {
+		var data = ReadCurrent(GetProcessor());
 		context.Reply(data.Circle2 is GridCell cell
 			? $"Markings at {NATO.Speak(data.Circle1.ToString())} and {NATO.Speak(cell.ToString())}. Starting at {NATO.Speak(data.Start.ToString())}. The goal is {NATO.Speak(data.Goal.ToString())}."
 			: $"Marking at {NATO.Speak(data.Circle1.ToString())}. Starting at {NATO.Speak(data.Start.ToString())}. The goal is {NATO.Speak(data.Goal.ToString())}.");

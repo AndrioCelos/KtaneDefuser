@@ -3,7 +3,7 @@ using AimlCSharpInterface;
 
 namespace BombDefuserScripts;
 internal static class Utils {
-	public static Point[] CurrentModulePoints { get; } = new Point[] { new(835, 390), new(1118, 390), new(832, 677), new(1124, 677) };
+	public static Point[] CurrentModulePoints { get; } = new Point[] { new( 836,  390), new(1120,  390), new( 832,  678), new(1124,  678) };
 	private static readonly Point[][] modulePointsLists = new[] {
 		new Point[] { new(220, 100), new(496, 100), new(193, 359), new(479, 359) },
 		new Point[] { new(535, 100), new(806, 101), new(522, 359), new(801, 360) },
@@ -63,8 +63,8 @@ internal static class Utils {
 		if (alignMode == SelectFaceAlignMode.CheckWidgets) {
 			await AimlTasks.Delay(0.375);
 			context.SendInputs("rx:0");
-			var screenshot = await AimlTasks.TakeScreenshotAsync();
-			Edgework.RegisterWidgets(context, true, screenshot);
+			var ss = DefuserConnector.Instance.TakeScreenshot();
+			Edgework.RegisterWidgets(context, true, ss);
 			context.SendInputs("rx:1");
 			await AimlTasks.Delay(0.125);
 		} else

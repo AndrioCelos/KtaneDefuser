@@ -5,21 +5,18 @@ namespace BombDefuserScripts.Modules;
 internal class Memory : ModuleScript<BombDefuserConnector.Components.Memory> {
 	public override string IndefiniteDescription => "Memory";
 
-	private int stagesCleared;
 	private int[] keyLabels = new int[4];
 	private int highlight;
 
-	protected internal override void ModuleSelected(AimlAsyncContext context) {
-		_ = this.Read(context);
-	}
+	protected internal override void ModuleSelected(AimlAsyncContext context) => this.Read(context);
 
 	private async Task WaitRead(AimlAsyncContext context) {
 		await AimlTasks.Delay(3);
-		await this.Read(context);
+		this.Read(context);
 	}
 
-	private async Task Read(AimlAsyncContext context) {
-		var data = await ReadCurrentAsync(GetProcessor());
+	private void Read(AimlAsyncContext context) {
+		var data = ReadCurrent(GetProcessor());
 		this.keyLabels = data.Keys;
 		context.Reply(data.Display.ToString());
 	}

@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Timers;
-using static BombDefuserConnector.Components.ComplicatedWires;
+using WireFlags = BombDefuserConnector.Components.ComplicatedWires.WireFlags;
 
 namespace BombDefuserConnector;
 internal partial class Simulation {
@@ -13,10 +13,10 @@ internal partial class Simulation {
 			internal override Components.Wires.ReadData Details => new(this.wires);
 
 			private readonly Components.Wires.Colour[] wires;
-			private bool[] isCut;
-			private int shouldCut;
+			private readonly bool[] isCut;
+			private readonly int shouldCut;
 
-			public Wires(int shouldCut, params Components.Wires.Colour[] wires) : base(BombDefuserAimlService.GetComponentProcessor<Components.Wires>(), 1, wires.Length) {
+			public Wires(int shouldCut, params Components.Wires.Colour[] wires) : base(DefuserConnector.GetComponentProcessor<Components.Wires>(), 1, wires.Length) {
 				this.shouldCut = shouldCut;
 				this.wires = wires;
 				this.isCut = new bool[wires.Length];
@@ -43,7 +43,7 @@ internal partial class Simulation {
 
 			public static bool[] ShouldCut = new bool[16];
 			private readonly WireFlags[] wires;
-			private bool[] isCut;
+			private readonly bool[] isCut;
 
 			static ComplicatedWires() {
 				ShouldCut[(int) WireFlags.None] = true;
@@ -53,7 +53,7 @@ internal partial class Simulation {
 				ShouldCut[(int) (WireFlags.Blue | WireFlags.Star | WireFlags.Light)] = true;
 			}
 
-			public ComplicatedWires(WireFlags[] wires) : base(BombDefuserAimlService.GetComponentProcessor<Components.ComplicatedWires>(), wires.Length, 1) {
+			public ComplicatedWires(WireFlags[] wires) : base(DefuserConnector.GetComponentProcessor<Components.ComplicatedWires>(), wires.Length, 1) {
 				this.wires = wires;
 				this.isCut = new bool[wires.Length];
 			}
@@ -83,36 +83,30 @@ internal partial class Simulation {
 
 			internal override Components.Button.ReadData Details => new(this.colour, this.label, this.indicatorColour);
 
-			public Button(Components.Button.Colour colour, Components.Button.Label label) : base(BombDefuserAimlService.GetComponentProcessor<Components.Button>(), 1, 1) {
+			public Button(Components.Button.Colour colour, Components.Button.Label label) : base(DefuserConnector.GetComponentProcessor<Components.Button>(), 1, 1) {
 				this.colour = colour;
 				this.label = label;
 				this.pressTimer.Elapsed += this.PressTimer_Elapsed;
 			}
 
-			public override void Interact() {
-				this.pressTimer.Start();
-			}
+			public override void Interact() => this.pressTimer.Start();
 			public override void StopInteract() {
 				bool correct;
 				this.pressTimer.Stop();
-				if (indicatorColour is not null) {
+				if (this.indicatorColour is not null) {
 					var elapsed = TimerComponent.Instance.Elapsed;
 					var time = elapsed.Ticks;
 					Message($"Button released at {elapsed.TotalSeconds}");
-					if (time >= Stopwatch.Frequency * 60) {
-						correct =
-							(time / (Stopwatch.Frequency * 600) % 10 == correctDigit)
-							|| (time / (Stopwatch.Frequency * 60) % 10 == correctDigit)
-							|| (time / (Stopwatch.Frequency * 10) % 10 == correctDigit)
-							|| (time / Stopwatch.Frequency % 10 == correctDigit);
-					} else {
-						correct =
-							(time / (Stopwatch.Frequency * 10) % 10 == correctDigit)
-							|| (time / Stopwatch.Frequency % 10 == correctDigit)
-							|| (time / (Stopwatch.Frequency / 10) % 10 == correctDigit)
-							|| (time / (Stopwatch.Frequency / 100) % 10 == correctDigit);
-					}
-					indicatorColour = null;
+					correct = time >= Stopwatch.Frequency * 60
+						? (time / (Stopwatch.Frequency * 600) % 10 == this.correctDigit)
+							|| (time / (Stopwatch.Frequency * 60) % 10 == this.correctDigit)
+							|| (time / (Stopwatch.Frequency * 10) % 10 == this.correctDigit)
+							|| (time / Stopwatch.Frequency % 10 == this.correctDigit)
+						: (time / (Stopwatch.Frequency * 10) % 10 == this.correctDigit)
+							|| (time / Stopwatch.Frequency % 10 == this.correctDigit)
+							|| (time / (Stopwatch.Frequency / 10) % 10 == this.correctDigit)
+							|| (time / (Stopwatch.Frequency / 100) % 10 == this.correctDigit);
+					this.indicatorColour = null;
 				} else {
 					Message("Button tapped");
 					correct = false;
@@ -135,7 +129,7 @@ internal partial class Simulation {
 			private readonly int[] correctOrder;
 			private readonly bool[] isPressed;
 
-			public Keypad(Components.Keypad.Symbol[] symbols, int[] correctOrder) : base(BombDefuserAimlService.GetComponentProcessor<Components.Keypad>(), 2, 2) {
+			public Keypad(Components.Keypad.Symbol[] symbols, int[] correctOrder) : base(DefuserConnector.GetComponentProcessor<Components.Keypad>(), 2, 2) {
 				this.symbols = symbols;
 				this.correctOrder = correctOrder;
 				this.isPressed = new bool[symbols.Length];
@@ -168,7 +162,7 @@ internal partial class Simulation {
 			private readonly GridCell circle1;
 			private readonly GridCell circle2;
 
-			public Maze(GridCell start, GridCell goal, GridCell circle1, GridCell circle2) : base(BombDefuserAimlService.GetComponentProcessor<Components.Maze>(), 3, 3) {
+			public Maze(GridCell start, GridCell goal, GridCell circle1, GridCell circle2) : base(DefuserConnector.GetComponentProcessor<Components.Maze>(), 3, 3) {
 				this.position = start;
 				this.goal = goal;
 				this.circle1 = circle1;
@@ -186,7 +180,7 @@ internal partial class Simulation {
 					2 => Direction.Down,
 					_ => this.X == 0 ? Direction.Left : Direction.Right
 				};
-				var newPosition = position;
+				var newPosition = this.position;
 				switch (direction) {
 					case Direction.Up: newPosition.Y--; break;
 					case Direction.Right: newPosition.X++; break;
@@ -214,7 +208,7 @@ internal partial class Simulation {
 			private bool isAnimating;
 			private readonly Timer animationTimer = new(2900) { AutoReset = false };
 
-			public Memory() : base(BombDefuserAimlService.GetComponentProcessor<Components.Memory>(), 4, 1) {
+			public Memory() : base(DefuserConnector.GetComponentProcessor<Components.Memory>(), 4, 1) {
 				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
 				this.SetKeysAndDisplay();
 			}
@@ -226,7 +220,7 @@ internal partial class Simulation {
 
 			private void SetKeysAndDisplay() {
 				for (var i = 0; i < 4; i++)
-					this.keyDigits[i] = (i + stagesCleared) % 4 + 1;
+					this.keyDigits[i] = (i + this.stagesCleared) % 4 + 1;
 				this.display = this.keyDigits[0];
 			}
 
@@ -264,7 +258,7 @@ internal partial class Simulation {
 			private int selectedFrequency;
 			private static readonly string[] allFrequencies = new[] { "505", "515", "522", "532", "535", "542", "545", "552", "555", "565", "572", "575", "582", "592", "595", "600" };
 
-			public MorseCode() : base(BombDefuserAimlService.GetComponentProcessor<Components.MorseCode>(), 2, 2) {
+			public MorseCode() : base(DefuserConnector.GetComponentProcessor<Components.MorseCode>(), 2, 2) {
 				this.SelectableGrid[1, 1] = false;
 				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
 				this.animationTimer.Start();
@@ -300,17 +294,17 @@ internal partial class Simulation {
 
 			internal override Components.NeedyCapacitor.ReadData Details => new(this.IsActive ? (int) this.RemainingTime.TotalSeconds : null);
 
-			public NeedyCapacitor() : base(BombDefuserAimlService.GetComponentProcessor<Components.NeedyCapacitor>(), 1, 1) { }
+			public NeedyCapacitor() : base(DefuserConnector.GetComponentProcessor<Components.NeedyCapacitor>(), 1, 1) { }
 
 			protected override void OnActivate() { }
 
 			public override void Interact() {
 				Message($"{this.Processor.Name} pressed with {this.RemainingTime} left.");
-				pressStopwatch.Restart();
+				this.pressStopwatch.Restart();
 			}
 
 			public override void StopInteract() {
-				this.AddTime(pressStopwatch.Elapsed * 6, TimeSpan.FromSeconds(45));
+				this.AddTime(this.pressStopwatch.Elapsed * 6, TimeSpan.FromSeconds(45));
 				Message($"{this.Processor.Name} released with {this.RemainingTime} left.");
 			}
 		}
@@ -329,13 +323,13 @@ internal partial class Simulation {
 
 			internal override Components.NeedyKnob.ReadData Details => new(this.DisplayedTime, this.lights);
 
-			public NeedyKnob() : base(BombDefuserAimlService.GetComponentProcessor<Components.NeedyKnob>(), 1, 1) { }
+			public NeedyKnob() : base(DefuserConnector.GetComponentProcessor<Components.NeedyKnob>(), 1, 1) { }
 
 			protected override void OnActivate() {
-				var state = states[nextStateIndex];
-				nextStateIndex = (nextStateIndex + 1) % states.Length;
+				var state = states[this.nextStateIndex];
+				this.nextStateIndex = (this.nextStateIndex + 1) % states.Length;
 				this.lights = state.lights;
-				correctPosition = state.correctPosition;
+				this.correctPosition = state.correctPosition;
 			}
 
 			public override void Interact() {
@@ -356,7 +350,7 @@ internal partial class Simulation {
 
 			internal override Components.NeedyVentGas.ReadData Details => new(this.DisplayedTime, this.DisplayedTime is not null ? messages[this.messageIndex] : null);
 
-			public NeedyVentGas() : base(BombDefuserAimlService.GetComponentProcessor<Components.NeedyVentGas>(), 2, 1) { }
+			public NeedyVentGas() : base(DefuserConnector.GetComponentProcessor<Components.NeedyVentGas>(), 2, 1) { }
 
 			protected override void OnActivate() {
 				this.messageIndex ^= 1;
@@ -373,9 +367,7 @@ internal partial class Simulation {
 				}
 			}
 
-			public override void OnTimerExpired() {
-				this.StrikeFlash();
-			}
+			public override void OnTimerExpired() => this.StrikeFlash();
 		}
 
 		public class Password : Module<Components.Password.ReadData> {
@@ -388,9 +380,9 @@ internal partial class Simulation {
 			};
 			private readonly int[] columnPositions = new int[5];
 
-			internal override Components.Password.ReadData Details => new(columnPositions.Select((y, x) => columns[x, y]).ToArray());
+			internal override Components.Password.ReadData Details => new(this.columnPositions.Select((y, x) => this.columns[x, y]).ToArray());
 
-			public Password() : base(BombDefuserAimlService.GetComponentProcessor<Components.Password>(), 5, 3) {
+			public Password() : base(DefuserConnector.GetComponentProcessor<Components.Password>(), 5, 3) {
 				this.SelectableGrid[2, 0] = false;
 				this.SelectableGrid[2, 1] = false;
 				this.SelectableGrid[2, 3] = false;
@@ -426,7 +418,7 @@ internal partial class Simulation {
 			private int inputProgress;
 			private int tick;
 
-			public SimonSays() : base(BombDefuserAimlService.GetComponentProcessor<Components.SimonSays>(), 3, 3) {
+			public SimonSays() : base(DefuserConnector.GetComponentProcessor<Components.SimonSays>(), 3, 3) {
 				this.SelectableGrid[0, 0] = false;
 				this.SelectableGrid[0, 2] = false;
 				this.SelectableGrid[1, 1] = false;
@@ -437,17 +429,14 @@ internal partial class Simulation {
 			}
 
 			private void Timer_Elapsed(object? sender, ElapsedEventArgs e) {
-				if (tick >= 0) {
-					inputProgress = 0;
-					if (tick % 3 == 2)
-						litColour = null;
-					else
-						litColour = (SimonColour) (tick / 3);
-				} else if (tick is -18 or -4)
-					litColour = null;
-				tick++;
-				if (tick >= (stagesCleared + 1) * 3)
-					tick = -20;
+				if (this.tick >= 0) {
+					this.inputProgress = 0;
+					this.litColour = this.tick % 3 == 2 ? null : (SimonColour) (this.tick / 3);
+				} else if (this.tick is -18 or -4)
+					this.litColour = null;
+				this.tick++;
+				if (this.tick >= (this.stagesCleared + 1) * 3)
+					this.tick = -20;
 			}
 
 			public override void Interact() {
@@ -491,7 +480,7 @@ internal partial class Simulation {
 			private static readonly string[] keyStrings = new[] { "READY", "FIRST", "NO", "BLANK", "NOTHING", "YES", "WHAT", "UHHH", "LEFT", "RIGHT", "MIDDLE", "OKAY", "WAIT", "PRESS",
 				"YOU", "YOU ARE", "YOUR", "YOU’RE", "UR", "U", "UH HUH", "UH UH", "WHAT?", "DONE", "NEXT", "HOLD", "SURE", "LIKE" };
 
-			public WhosOnFirst() : base(BombDefuserAimlService.GetComponentProcessor<Components.WhosOnFirst>(), 2, 3) {
+			public WhosOnFirst() : base(DefuserConnector.GetComponentProcessor<Components.WhosOnFirst>(), 2, 3) {
 				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
 				this.SetKeysAndDisplay();
 			}
@@ -553,13 +542,13 @@ internal partial class Simulation {
 			private int readFailSimulation;
 			private readonly Timer animationTimer = new(1200) { AutoReset = false };
 
-			public WireSequence() : base(BombDefuserAimlService.GetComponentProcessor<Components.WireSequence>(), 1, 5) {
+			public WireSequence() : base(DefuserConnector.GetComponentProcessor<Components.WireSequence>(), 1, 5) {
 				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
 				for (var i = 0; i < 12; i++) {
 					if (i % 4 != 0) {
 						var colour = (Components.WireSequence.WireColour) (i / 2 % 3);
 						this.wires[i] = new(colour, (char) ('A' + i % 3));
-						shouldCut[i] = colour == Components.WireSequence.WireColour.Blue;
+						this.shouldCut[i] = colour == Components.WireSequence.WireColour.Blue;
 					}
 				}
 				this.UpdateSelectable();
@@ -567,7 +556,7 @@ internal partial class Simulation {
 
 			private void UpdateSelectable() {
 				for (var y = 0; y < 3; y++)
-					this.SelectableGrid[y + 1, 0] = currentPage < 4 ? wires[y + currentPage * 3] is not null : false;
+					this.SelectableGrid[y + 1, 0] = this.currentPage < 4 && this.wires[y + this.currentPage * 3] is not null;
 			}
 
 			private void AnimationTimer_Elapsed(object? sender, ElapsedEventArgs e) {
@@ -592,7 +581,7 @@ internal partial class Simulation {
 						break;
 					case 4:
 						if (this.currentPage == this.stagesCleared) {
-							if (Enumerable.Range(this.currentPage * 3, 3).Any(i => shouldCut[i] && !isCut[i]))
+							if (Enumerable.Range(this.currentPage * 3, 3).Any(i => this.shouldCut[i] && !this.isCut[i]))
 								this.StrikeFlash();
 							else {
 								this.currentPage++;

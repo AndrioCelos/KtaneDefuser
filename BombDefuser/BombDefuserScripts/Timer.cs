@@ -1,13 +1,12 @@
 ﻿namespace BombDefuserScripts;
-[AimlInterface]
 internal static class Timer {
-	internal static async Task ReadTimerAsync(string screenshot) {
+	internal static async Task ReadTimerAsync(Image<Rgb24> screenshot) {
 		if (GameState.Current.TimerSlot is null) throw new InvalidOperationException("Don't know where the timer is.");
 		var polygon = Utils.GetPoints(GameState.Current.TimerSlot.Value);
 		int? lastSeconds = null;
 		// Keep watching the timer until it ticks over to get sub-second precision.
 		while (true) {
-			var data = BombDefuserAimlService.Instance.ReadComponent(screenshot, BombDefuserAimlService.TimerProcessor, polygon);
+			var data = DefuserConnector.Instance.ReadComponent(screenshot, DefuserConnector.TimerProcessor, polygon);
 			GameState.Current.GameMode = data.GameMode;
 			if (lastSeconds is not null && data.Time != lastSeconds.Value) {
 				GameState.Current.TimerBaseTime = data.GameMode is BombDefuserConnector.Components.Timer.GameMode.Zen or BombDefuserConnector.Components.Timer.GameMode.Training
@@ -18,7 +17,7 @@ internal static class Timer {
 			}
 			lastSeconds = data.Time;
 			await AimlTasks.Delay(0.1);
-			screenshot = await AimlTasks.TakeScreenshotAsync();
+			screenshot = DefuserConnector.Instance.TakeScreenshot();
 		}
 	}
 

@@ -7,23 +7,19 @@ internal static class Start {
 	private static bool waitingForLights;
 
 	[AimlCategory("OOB DefuserSocketMessage NewBomb *"), EditorBrowsable(EditorBrowsableState.Never)]
-	public static void NewBomb() {
-		waitingForLights = true;
-	}
+	public static void NewBomb() => waitingForLights = true;
 
 	[AimlCategory("OOB DefuserSocketMessage Lights *"), EditorBrowsable(EditorBrowsableState.Never)]
 	public static async Task Lights(AimlAsyncContext context, bool on) {
+		context.Reply(on.ToString());
 		if (on && waitingForLights) {
 			waitingForLights = false;
 			await GameStartAsync(context);
 		}
 	}
 
-
 	[AimlCategory("test start")]
-	public static async Task TestCategory(AimlAsyncContext context) {
-		await GameStartAsync(context);
-	}
+	public static async Task TestCategory(AimlAsyncContext context) => await GameStartAsync(context);
 
 	internal static async Task GameStartAsync(AimlAsyncContext context) {
 		// 0. Clear previous game variables.
@@ -31,41 +27,41 @@ internal static class Start {
 		// 1. Pick up the bomb.
 		context.SendInputs("a");
 		await AimlTasks.Delay(1);
-		// 2. Take a screenshot.
-		var screenshot = await AimlTasks.TakeScreenshotAsync();
-		// 3. Identify components on the bomb. Turn the bomb around.
-		await RegisterComponentsAsync(context, screenshot);
+		// 2. Identify components on the bomb.
+		var ss = DefuserConnector.Instance.TakeScreenshot();
+		await RegisterComponentsAsync(context, ss);
+		// 3. Turn the bomb around and identify widgets on the side.
 		await Utils.SelectFaceAsync(context, 1, SelectFaceAlignMode.CheckWidgets);
-		// 4. Identify widgets on this side.
-		// 5. Take a screenshot. Repeat steps 3-4 for the other faces, then turn the bomb to the bottom face.
-		screenshot = await AimlTasks.TakeScreenshotAsync();
-		await RegisterComponentsAsync(context, screenshot);
+		// 4. Repeat steps 2-3 for the other faces.
+		ss = DefuserConnector.Instance.TakeScreenshot();
+		await RegisterComponentsAsync(context, ss);
 		await Utils.SelectFaceAsync(context, 0, SelectFaceAlignMode.CheckWidgets);
+		// 5. Turn the bomb to the bottom face.
 		context.SendInputs("ry:-0.875");
 		await AimlTasks.Delay(0.5);
-		// 6. Take a screenshot.
-		screenshot = await AimlTasks.TakeScreenshotAsync();
-		// 7. Identify widgets on the bottom face. Turn the bomb to the top face.
-		Edgework.RegisterWidgets(context, false, screenshot);
+		// 6. Identify widgets on the bottom face.
+		ss = DefuserConnector.Instance.TakeScreenshot();
+		Edgework.RegisterWidgets(context, false, ss);
+		// 7. Turn the bomb to the top face.
 		context.SendInputs("ry:1");
 		await AimlTasks.Delay(0.5);
-		// 8. Take a screenshot.
-		screenshot = await AimlTasks.TakeScreenshotAsync();
-		// 9. Identify widgets on the top face. Reset the bomb tilt.
-		Edgework.RegisterWidgets(context, false, screenshot);
+		// 8. Identify widgets on the top face.
+		ss = DefuserConnector.Instance.TakeScreenshot();
+		Edgework.RegisterWidgets(context, false, ss);
+		// 9. Reset the bomb tilt.
 		context.SendInputs("ry:0");
 		context.Reply("Ready.");
 	}
 
-	private static async Task RegisterComponentsAsync(AimlAsyncContext context, string screenshot) {
-		var components = Enumerable.Range(0, 6).Select(i => BombDefuserAimlService.Instance.GetComponentProcessor(screenshot, Utils.GetPoints(new ComponentSlot(GameState.Current.SelectedFaceNum, i % 3, i / 3)))).ToList();
+	private static async Task RegisterComponentsAsync(AimlAsyncContext context, Image<Rgb24> screenshot) {
+		var components = Enumerable.Range(0, 6).Select(i => DefuserConnector.Instance.GetComponentProcessor(screenshot, Utils.GetPoints(new ComponentSlot(GameState.Current.SelectedFaceNum, i % 3, i / 3)))).ToList();
 		var needTimerRead = false;
 		var anyModules = false;
 		for (var i = 0; i < components.Count; i++) {
 			var component = components[i];
-			var actualComponent = BombDefuserAimlService.Instance.CheatGetComponentProcessor(GameState.Current.SelectedFaceNum + 1, i % 3 + 1, i / 3 + 1);
+			var actualComponent = DefuserConnector.Instance.CheatGetComponentProcessor(GameState.Current.SelectedFaceNum, i % 3, i / 3);
 			if (actualComponent != component && !(actualComponent is null && component is BombDefuserConnector.Components.Timer)) {
-				context.RequestProcess.Log(LogLevel.Warning, $"Wrong component at {GameState.Current.SelectedFaceNum + 1} {i % 3 + 1}, {i / 3 + 1} - identified: {component?.Name}; actual: {actualComponent?.Name}");
+				context.RequestProcess.Log(LogLevel.Warning, $"Wrong component at {GameState.Current.SelectedFaceNum} {i % 3} {i / 3} - identified: {component?.Name}; actual: {actualComponent?.Name}");
 				component = actualComponent;
 			}
 

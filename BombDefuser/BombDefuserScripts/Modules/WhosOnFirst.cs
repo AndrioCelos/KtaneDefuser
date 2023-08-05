@@ -10,17 +10,15 @@ internal class WhosOnFirst : ModuleScript<BombDefuserConnector.Components.WhosOn
 	private Phrase[] keyLabels = new Phrase[6];
 	private int highlight;
 
-	protected internal override void ModuleSelected(AimlAsyncContext context) {
-		_ = this.Read(context);
-	}
+	protected internal override void ModuleSelected(AimlAsyncContext context) => this.Read(context);
 
 	private async Task WaitRead(AimlAsyncContext context) {
 		await AimlTasks.Delay(4);
-		await this.Read(context);
+		this.Read(context);
 	}
 
-	private async Task Read(AimlAsyncContext context) {
-		var data = await ReadCurrentAsync(GetProcessor());
+	private void Read(AimlAsyncContext context) {
+		var data = ReadCurrent(GetProcessor());
 		this.keyLabels = data.Keys.Select(s => AimlInterface.TryParseSetEnum<Phrase>(s.Replace('’', '\''), out var p) ? p : throw new ArgumentException("Unknown button label")).ToArray();
 		if (data.Display == "")
 			context.Reply("The display is literally empty.");
@@ -125,7 +123,7 @@ internal class WhosOnFirst : ModuleScript<BombDefuserConnector.Components.WhosOn
 		Phrase.UR => "<oob><speak><s>U R letters</s></speak><alt>'UR'</alt></oob>",
 		Phrase.WAIT => "<oob><speak><s>wait</s></speak><alt>'WAIT'</alt></oob>",
 		Phrase.WHAT => "<oob><speak><s>what no question</s></speak><alt>'WHAT'</alt></oob>",
-		Phrase.WHATQ => "<oob><speak><s>what question mark</s></speak><alt>'WHATQ'</alt></oob>",
+		Phrase.WHATQ => "<oob><speak><s>what question mark</s></speak><alt>'WHAT?'</alt></oob>",
 		Phrase.YES => "<oob><speak><s>yes</s></speak><alt>'YES'</alt></oob>",
 		Phrase.YOU => "<oob><speak><s>word you</s></speak><alt>'YOU'</alt></oob>",
 		Phrase.YOU_ARE => "<oob><speak><s>you are words</s></speak><alt>'YOU ARE'</alt></oob>",
@@ -148,6 +146,7 @@ internal class WhosOnFirst : ModuleScript<BombDefuserConnector.Components.WhosOn
 		DONE,
 		FIRST,
 		HOLD,
+		[AimlSetItem("hold on")]
 		HOLD_ON,
 		[AimlSetItem("lead"), AimlSetItem("lead guitar"), AimlSetItem("l e a d"), AimlSetItem("lead a"), AimlSetItem("lead alfa"), AimlSetItem("lead alpha"), AimlSetItem("led a"), AimlSetItem("led alfa"), AimlSetItem("led alpha")]
 		LEAD,

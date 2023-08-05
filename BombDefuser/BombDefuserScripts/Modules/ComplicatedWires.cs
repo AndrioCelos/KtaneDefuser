@@ -15,7 +15,7 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 
 	[AimlCategory("read")]
 	internal static async void Read(AimlAsyncContext context) {
-		var data = await ReadCurrentAsync(GetProcessor());
+		var data = ReadCurrent(GetProcessor());
 		context.RequestProcess.Log(Aiml.LogLevel.Info, $"Complicated wires: [{string.Join("] [", data.Wires)}]");
 		var module = GameState.Current.SelectedModule!;
 		var script = GameState.Current.CurrentScript<ComplicatedWires>();

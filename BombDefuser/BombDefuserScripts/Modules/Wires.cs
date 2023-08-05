@@ -9,8 +9,8 @@ internal class Wires : ModuleScript<BombDefuserConnector.Components.Wires> {
 	private int highlight;
 
 	[AimlCategory("read")]
-	internal static async void Read(AimlAsyncContext context) {
-		var data = await ReadCurrentAsync(GetProcessor());
+	internal static void Read(AimlAsyncContext context) {
+		var data = ReadCurrent(GetProcessor());
 		GameState.Current.CurrentScript<Wires>().wireCount = data.Colours.Length;
 		context.Reply($"{data.Colours.Length} wires: {string.Join(", ", data.Colours)}. <reply>cut the [nth] wire</reply>");
 	}
