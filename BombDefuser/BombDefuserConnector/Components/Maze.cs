@@ -28,9 +28,9 @@ public class Maze : ComponentProcessor<Maze.ReadData> {
 		GridCell? start = null, goal = null, circle1 = null, circle2 = null;
 		image.ProcessPixelRows(a => {
 			for (var y = 0; y < 6; y++) {
-				var row = a.GetRowSpan(72 + 23 * y);
+				var row = a.GetRowSpan(76 + 23 * y);
 				for (var x = 0; x < 6; x++) {
-					var p = row[58 + 23 * x];
+					var p = row[60 + 23 * x];
 					if (p.R >= 128) {
 						if (p.G >= 128) {
 							if (start is not null) throw new ArgumentException("Found more than one start location.");

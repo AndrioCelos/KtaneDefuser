@@ -58,7 +58,7 @@ public class WireSequence : ComponentProcessor<WireSequence.ReadData> {
 		var stagesCleared = ReadStageIndicator(image);
 		var number = numberRecogniser.Recognise(image, textRects[0]);
 
-		static bool isSelectionHighlight(HsvColor hsv) => hsv.H <= 30 && hsv.S >= 0.75f && hsv.V >= 0.5f;
+		static bool isSelectionHighlight(HsvColor hsv) => hsv.H <= 20 && hsv.S >= 0.65f && hsv.V >= 0.5f;
 		// TODO: It turns out that telling the selection highlight apart from a red wire is hard.
 		// This will use a fairly strict condition to check for the selection highlight, so it will sometimes fail to match.
 		// It will be necessary to look at the module multiple times until the selection highlight opacity is high enough.

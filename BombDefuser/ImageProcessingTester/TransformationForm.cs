@@ -200,14 +200,14 @@ public partial class TransformationForm : Form {
 		}
 	}
 
-	private Preset[] sidePresets = Enumerable.Range(1, 4).Select(i => new Preset($"Side widget {i}", new Point[4])).ToArray();
+	private readonly Preset[] sidePresets = Enumerable.Range(1, 4).Select(i => new Preset($"Side widget {i}", new Point[4])).ToArray();
 
 	private void TransformationForm_Load(object sender, EventArgs e) {
-		presetBox.Items.Add(new Preset("Focus", new Point[] { new( 835,  390), new(1118,  390), new( 832,  677), new(1124,  677) }));
+		presetBox.Items.Add(new Preset("Focus", new Point[] { new( 836,  390), new(1120,  390), new( 832,  678), new(1124,  678) }));
 
-		presetBox.Items.Add(new Preset("Module 1", new Point[] { new( 572,  291), new( 821,  291), new( 559,  534), new( 816,  534) }));
-		presetBox.Items.Add(new Preset("Module 2", new Point[] { new( 852,  291), new(1096,  291), new( 848,  534), new(1101,  534) }));
-		presetBox.Items.Add(new Preset("Module 3", new Point[] { new(1127,  292), new(1369,  292), new(1134,  533), new(1383,  533) }));
+		presetBox.Items.Add(new Preset("Module 1", new Point[] { new( 572,  291), new( 821,  291), new( 560,  534), new( 817,  534) }));
+		presetBox.Items.Add(new Preset("Module 2", new Point[] { new( 852,  291), new(1096,  291), new( 849,  534), new(1102,  534) }));
+		presetBox.Items.Add(new Preset("Module 3", new Point[] { new(1127,  292), new(1369,  292), new(1134,  533), new(1382,  533) }));
 		presetBox.Items.Add(new Preset("Module 4", new Point[] { new( 558,  558), new( 816,  558), new( 544,  822), new( 811,  822) }));
 		presetBox.Items.Add(new Preset("Module 5", new Point[] { new( 848,  558), new(1099,  558), new( 845,  821), new(1106,  821) }));
 		presetBox.Items.Add(new Preset("Module 6", new Point[] { new(1134,  558), new(1385,  558), new(1141,  821), new(1400,  821) }));

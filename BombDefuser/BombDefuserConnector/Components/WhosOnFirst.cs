@@ -9,7 +9,7 @@ public class WhosOnFirst : ComponentProcessor<WhosOnFirst.ReadData> {
 	public override string Name => "Who's on First";
 	protected internal override bool UsesNeedyFrame => false;
 
-	private static readonly TextRecogniser displayRecogniser = new(new(TextRecogniser.Fonts.CABIN_MEDIUM, 24), 88, 255, new(128, 64),
+	private static readonly TextRecogniser displayRecogniser = new(new(TextRecogniser.Fonts.CABIN_MEDIUM, 24), 88, 255, new(256, 64),
 		"YES", "FIRST", "DISPLAY", "OKAY", "SAYS", "NOTHING", "BLANK", "NO", "LED", "LEAD", "READ", "RED", "REED", "LEED",
 		"HOLD ON", "YOU", "YOU ARE", "YOUR", "YOU'RE", "UR", "THERE", "THEY'RE", "THEIR", "THEY ARE", "SEE", "C", "CEE");
 	private static readonly TextRecogniser keyRecogniser = new(new(TextRecogniser.Fonts.OSTRICH_SANS_HEAVY, 24), 160, 44, new(128, 64),
@@ -19,7 +19,7 @@ public class WhosOnFirst : ComponentProcessor<WhosOnFirst.ReadData> {
 	protected internal override float IsModulePresent(Image<Rgb24> image) {
 		// Who's on First: look for the display and keys
 		var referenceColour = new Rgb24(71, 91, 104);
-		var referenceColour2 = new Rgb24(170, 150, 120);
+		var referenceColour2 = new Rgb24(200, 154, 140);
 		var referenceColour3 = new Rgb24(51, 46, 37);
 		var count = 0f;
 		var count2 = 0f;
@@ -27,7 +27,7 @@ public class WhosOnFirst : ComponentProcessor<WhosOnFirst.ReadData> {
 		for (var x = 48; x < 144; x++) {
 			var pixel = image[x, 48];
 			var dist = Math.Abs(pixel.R - referenceColour.R) + Math.Abs(pixel.G - referenceColour.G) + Math.Abs(pixel.B - referenceColour.B);
-			count += Math.Max(0, 1 - dist / 40f);
+			count += Math.Max(0, 1 - dist * dist / 1000f);
 		}
 
 		for (var y = 96; y < 224; y += 4) {
@@ -36,7 +36,7 @@ public class WhosOnFirst : ComponentProcessor<WhosOnFirst.ReadData> {
 				var dist = pixel.R < 64
 					? Math.Abs(pixel.R - referenceColour3.R) + Math.Abs(pixel.G - referenceColour3.G) + Math.Abs(pixel.B - referenceColour3.B)
 					: Math.Abs(pixel.R - referenceColour2.R) + Math.Abs(pixel.G - referenceColour2.G) + Math.Abs(pixel.B - referenceColour2.B);
-				count2 += Math.Max(0, 1 - dist / 80f);
+				count2 += Math.Max(0, 1 - dist * dist / 10000f);
 			}
 		}
 
