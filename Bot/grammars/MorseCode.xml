@@ -1,0 +1,18 @@
+<grammar version='1.0' xml:lang='en-gb' root='root' xmlns='http://www.w3.org/2001/06/grammar'>
+	<rule id='root'>
+		<one-of>
+			<item><ruleref uri='bomb.xml'/></item>
+			<item> read </item>
+			<item>
+				<item repeat='0-1'>
+					<one-of>
+						<item> transmit at </item>
+						<item> respond at </item>
+						<item> submit </item>
+					</one-of>
+				</item>
+				<item repeat='3'><ruleref uri='bomb.xml#digit'/></item>
+			</item>
+		</one-of>
+	</rule>
+</grammar>

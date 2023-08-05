@@ -1,0 +1,13 @@
+<grammar version='1.0' xml:lang='en-gb' root='root' xmlns='http://www.w3.org/2001/06/grammar'>
+	<rule id='root'>
+		<one-of>
+			<item><ruleref uri='bomb.xml'/></item>
+			<item> read </item>
+			<item> cut <item repeat='0-1'> the wire </item></item>
+			<item> don't cut <item repeat='0-1'> the wire </item></item>
+			<item> do not cut <item repeat='0-1'> the wire </item></item>
+			<item> skip </item>
+			<item> next </item>
+		</one-of>
+	</rule>
+</grammar>
