@@ -9,7 +9,7 @@ internal class Maze : ModuleScript<BombDefuserConnector.Components.Maze> {
 
 	[AimlCategory("read")]
 	internal static void Read(AimlAsyncContext context) {
-		var data = ReadCurrent(GetReader());
+		var data = ReadCurrent(Reader);
 		context.Reply(data.Circle2 is GridCell cell
 			? $"Markings at {NATO.Speak(data.Circle1.ToString())} and {NATO.Speak(cell.ToString())}. Starting at {NATO.Speak(data.Start.ToString())}. The goal is {NATO.Speak(data.Goal.ToString())}."
 			: $"Marking at {NATO.Speak(data.Circle1.ToString())}. Starting at {NATO.Speak(data.Start.ToString())}. The goal is {NATO.Speak(data.Goal.ToString())}.");

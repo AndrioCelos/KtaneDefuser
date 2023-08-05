@@ -66,7 +66,7 @@ internal class WireSequence : ModuleScript<BombDefuserConnector.Components.WireS
 	}
 
 	private async Task<ReadData> ReadAsync(Interrupt interrupt) {
-		var data = ReadCurrent(GetReader());
+		var data = ReadCurrent(Reader);
 		interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"Highlighted button: {data.HighlightedButton}; wires: {string.Join(", ", data.WireColours)}");
 		currentPageColours = data.WireColours;
 		switch (data.HighlightedButton) {
@@ -78,7 +78,7 @@ internal class WireSequence : ModuleScript<BombDefuserConnector.Components.WireS
 					// Keep looking at the module until that condition is met.
 					interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"Reading highlighted wire...");
 					await AimlTasks.Delay(0.05);
-					data = ReadCurrent(GetReader());
+					data = ReadCurrent(Reader);
 				}
 				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"Highlighted wire: {data.HighlightedWire}");
 				this.highlight = data.HighlightedWire.From;

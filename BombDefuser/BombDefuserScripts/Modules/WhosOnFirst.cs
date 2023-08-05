@@ -18,7 +18,7 @@ internal class WhosOnFirst : ModuleScript<BombDefuserConnector.Components.WhosOn
 	}
 
 	private void Read(AimlAsyncContext context) {
-		var data = ReadCurrent(GetReader());
+		var data = ReadCurrent(Reader);
 		this.keyLabels = data.Keys.Select(s => AimlInterface.TryParseSetEnum<Phrase>(s.Replace('’', '\''), out var p) ? p : throw new ArgumentException("Unknown button label")).ToArray();
 		if (data.Display == "")
 			context.Reply("The display is literally empty.");

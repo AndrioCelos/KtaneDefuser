@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -250,8 +250,8 @@ internal partial class Simulation {
 		}
 	}
 
-	public string? IdentifyComponent(Point point1) => this.GetComponent(point1)?.Reader.GetType().Name;
-	public string? IdentifyComponent(int face, int x, int y) => this.moduleFaces[face].Slots[y, x]?.Reader.GetType().Name;
+	public ComponentReader? GetComponentReader(Point point1) => this.GetComponent(point1)?.Reader;
+	public ComponentReader? GetComponentReader(int face, int x, int y) => this.moduleFaces[face].Slots[y, x]?.Reader;
 
 	public T ReadComponent<T>(Point point1) where T : notnull {
 		var component = this.GetComponent(point1) ?? throw new ArgumentException("Attempted to read an empty component slot.");
@@ -291,7 +291,7 @@ internal partial class Simulation {
 		}
 	}
 
-	public string? IdentifyWidget(Point point1) => this.GetWidget(point1)?.Reader.GetType().Name;
+	public WidgetReader? GetWidgetReader(Point point1) => this.GetWidget(point1)?.Reader;
 
 	public T ReadWidget<T>(Point point1) where T : notnull {
 		var widget = this.GetWidget(point1) ?? throw new ArgumentException("Attempt to read blank widget.");

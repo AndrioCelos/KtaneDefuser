@@ -44,7 +44,7 @@ internal class Keypad : ModuleScript<BombDefuserConnector.Components.Keypad> {
 
 	[AimlCategory("read")]
 	internal static void Read(AimlAsyncContext context) {
-		var data = ReadCurrent(GetReader());
+		var data = ReadCurrent(Reader);
 		GameState.Current.CurrentScript<Keypad>().symbols = data.Symbols;
 		context.Reply(string.Join(", ", from s in data.Symbols select SymbolDescriptions[s]));
 	}

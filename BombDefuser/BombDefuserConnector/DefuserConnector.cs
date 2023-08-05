@@ -12,12 +12,10 @@ using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector;
 public class DefuserConnector {
-	private static readonly List<ComponentReader> componentReaders
-		= typeof(ComponentReader).Assembly.GetTypes().Where(typeof(ComponentReader).IsAssignableFrom).Where(t => !t.IsAbstract)
-		.Select(t => (ComponentReader) Activator.CreateInstance(t)!).ToList();
-	private static readonly List<WidgetReader> widgetReaders
-		= typeof(WidgetReader).Assembly.GetTypes().Where(typeof(WidgetReader).IsAssignableFrom).Where(t => !t.IsAbstract)
-		.Select(t => (WidgetReader) Activator.CreateInstance(t)!).ToList();
+	private static readonly Dictionary<Type, ComponentReader> componentReaders
+		= (from t in typeof(ComponentReader).Assembly.GetTypes() where !t.IsAbstract && typeof(ComponentReader).IsAssignableFrom(t) select t).ToDictionary(t => t, t => (ComponentReader) Activator.CreateInstance(t)!);
+	private static readonly Dictionary<Type, WidgetReader> widgetReaders
+		= (from t in typeof(WidgetReader).Assembly.GetTypes() where !t.IsAbstract && typeof(WidgetReader).IsAssignableFrom(t) select t).ToDictionary(t => t, t => (WidgetReader) Activator.CreateInstance(t)!);
 
 	private TcpClient? tcpClient;
 	private readonly byte[] writeBuffer = new byte[1024];
@@ -35,7 +33,7 @@ public class DefuserConnector {
 
 	private const int PORT = 8086;
 
-	static DefuserConnector() => TimerReader = componentReaders.OfType<Components.Timer>().First();
+	static DefuserConnector() => TimerReader = GetComponentReader<Components.Timer>();
 
 	public DefuserConnector() => instance ??= this;
 
@@ -188,11 +186,11 @@ public class DefuserConnector {
 			? this.simulation.GetLightState(points[0])
 			: ImageUtils.GetLightState(screenshotBitmap, points);
 
-	public static T GetComponentReader<T>() where T : ComponentReader => componentReaders.OfType<T>().First();
+	public static T GetComponentReader<T>() where T : ComponentReader => (T) componentReaders[typeof(T)];
 
 	public ComponentReader? GetComponentReader(Image<Rgb24> screenshotBitmap, IReadOnlyList<Point> points) {
 		if (this.simulation is not null)
-			return this.simulation.IdentifyComponent(points[0]) is string s ? componentReaders.First(p => p.GetType().Name == s) : null;
+			return this.simulation.GetComponentReader(points[0]);
 
 		var bitmap = ImageUtils.PerspectiveUndistort(screenshotBitmap,
 			points,
@@ -205,7 +203,7 @@ public class DefuserConnector {
 		var looksLikeANeedyModule = needyRating >= 0.5f;
 
 		var ratings = new List<(ComponentReader reader, float rating)>();
-		foreach (var reader in componentReaders) {
+		foreach (var reader in componentReaders.Values) {
 			if (reader.UsesNeedyFrame == looksLikeANeedyModule)
 				ratings.Add((reader, reader.IsModulePresent(bitmap)));
 		}
@@ -216,19 +214,19 @@ public class DefuserConnector {
 
 	public ComponentReader? CheatGetComponentReader(int face, int x, int y) {
 		if (this.simulation is not null)
-			return this.simulation.IdentifyComponent(face, x, y) is string s ? componentReaders.First(p => p.GetType().Name == s) : null;
+			return this.simulation.GetComponentReader(face, x, y);
 
 		if (this.tcpClient == null)
 			throw new InvalidOperationException("Socket not connected");
 		this.readTaskSource = new();
 		this.SendMessage($"getmodulename {face} {x} {y}");
 		var name = this.readTaskSource.Task.Result;
-		return componentReaders.FirstOrDefault(p => p.GetType().Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+		return !string.IsNullOrEmpty(name) && typeof(ComponentReader).Assembly.GetType($"{nameof(BombDefuserConnector)}.{nameof(Components)}.{name}") is Type t ? componentReaders[t] : null;
 	}
 
 	public WidgetReader? GetWidgetReader(Image<Rgb24> screenshotBitmap, IReadOnlyList<Point> points) {
 		if (this.simulation is not null)
-			return this.simulation.IdentifyWidget(points[0]) is string s ? widgetReaders.First(p => p.GetType().Name == s) : null;
+			return this.simulation.GetWidgetReader(points[0]);
 
 		var bitmap = ImageUtils.PerspectiveUndistort(screenshotBitmap,
 			points,
@@ -236,7 +234,7 @@ public class DefuserConnector {
 		var pixelCounts = WidgetReader.GetPixelCounts(bitmap, 0);
 
 		var ratings = new List<(WidgetReader reader, float rating)>();
-		foreach (var reader in widgetReaders) {
+		foreach (var reader in widgetReaders.Values) {
 			ratings.Add((reader, reader.IsWidgetPresent(bitmap, 0, pixelCounts)));
 		}
 		ratings.Sort((e1, e2) => e2.rating.CompareTo(e1.rating));
@@ -278,10 +276,10 @@ public class DefuserConnector {
 
 	internal string? Read(string readerName, Image<Rgb24> screenshot, Point[] points) {
 		if (this.simulation is not null)
-			return componentReaders.Any(p => p.GetType().Name.Equals(readerName, StringComparison.OrdinalIgnoreCase))
-				? this.simulation.ReadModule(readerName, points[0])
-				: widgetReaders.Any(p => p.GetType().Name.Equals(readerName, StringComparison.OrdinalIgnoreCase))
-				? this.simulation.ReadWidget(readerName, points[0])
+			return typeof(ComponentReader).Assembly.GetType($"{nameof(BombDefuserConnector)}.{nameof(Components)}.{readerName}", false, true) is Type t
+				? this.simulation.ReadModule(t.Name, points[0])
+				: typeof(WidgetReader).Assembly.GetType($"{nameof(BombDefuserConnector)}.{nameof(Widgets)}.{readerName}", false, true) is Type t2
+				? this.simulation.ReadWidget(t2.Name, points[0])
 				: throw new ArgumentException($"No such command, module or widget is known: {readerName}");
 
 		var image = ImageUtils.PerspectiveUndistort(screenshot, points, InterpolationMode.NearestNeighbour);
@@ -290,13 +288,13 @@ public class DefuserConnector {
 		SaveDebugImage(image, readerName);
 #endif
 
-		var componentReader = componentReaders.FirstOrDefault(p => p.GetType().Name.Equals(readerName, StringComparison.OrdinalIgnoreCase));
-		if (componentReader is not null)
-			return componentReader.ProcessNonGeneric(image, ref debugImage)?.ToString();
+		var type = typeof(ComponentReader).Assembly.GetType($"{nameof(BombDefuserConnector)}.{nameof(Components)}.{readerName}");
+		if (type is not null)
+			return componentReaders[type].ProcessNonGeneric(image, ref debugImage)?.ToString();
 
-		var widgetReader = widgetReaders.FirstOrDefault(p => p.GetType().Name.Equals(readerName, StringComparison.OrdinalIgnoreCase));
-		if (widgetReader is not null)
-			return widgetReader.ProcessNonGeneric(image, 0, ref debugImage)?.ToString();
+		type = typeof(WidgetReader).Assembly.GetType($"{nameof(BombDefuserConnector)}.{nameof(Widgets)}.{readerName}");
+		if (type is not null)
+			return widgetReaders[type].ProcessNonGeneric(image, 0, ref debugImage)?.ToString();
 
 		throw new ArgumentException($"No such command, component or widget is known: {readerName}");
 	}

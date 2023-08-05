@@ -7,7 +7,7 @@ internal class Button : ModuleScript<BombDefuserConnector.Components.Button> {
 
 	[AimlCategory("read")]
 	internal static void Read(AimlAsyncContext context) {
-		var data = ReadCurrent(GetReader());
+		var data = ReadCurrent(Reader);
 		if (data.IndicatorColour != null)
 			context.Reply($"The light is {data.IndicatorColour}.");
 		else

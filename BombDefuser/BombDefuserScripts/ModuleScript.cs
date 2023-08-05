@@ -26,11 +26,11 @@ public abstract class ModuleScript {
 			method = CreateMethodBase.MakeGenericMethod(scriptType, readerType);
 			CreateMethodCache[scriptType] = method;
 		}
-		return (ModuleScript) method.Invoke(null, new object[] { reader, topic })!;
+		return (ModuleScript) method.Invoke(null, new object[] { topic })!;
 	}
 
-	private static TScript CreateInternal<TScript, TReader>(TReader reader, string topic) where TScript : ModuleScript<TReader>, new() where TReader : ComponentReader
-		=> new() { reader = reader, topic = topic };
+	private static TScript CreateInternal<TScript, TReader>(string topic) where TScript : ModuleScript<TReader>, new() where TReader : ComponentReader
+		=> new() { topic = topic };
 
 	protected static T ReadCurrent<T>(ComponentReader<T> reader) where T : notnull {
 		var ss = DefuserConnector.Instance.TakeScreenshot();
@@ -44,10 +44,7 @@ public abstract class ModuleScript {
 }
 
 public abstract class ModuleScript<TReader> : ModuleScript where TReader : ComponentReader {
-	internal TReader? reader;
-	protected TReader Reader => reader ?? throw new InvalidOperationException("Script not yet initialised");
-
-	protected static TReader GetReader() => DefuserConnector.GetComponentReader<TReader>();
+	protected static TReader Reader => DefuserConnector.GetComponentReader<TReader>();
 }
 
 internal class UnknownModuleScript : ModuleScript {
