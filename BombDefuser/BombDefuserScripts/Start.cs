@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 using Aiml;
 
@@ -43,6 +43,7 @@ internal static class Start {
 			await RegisterComponentsAsync(context, ss);
 		await Utils.SelectFaceAsync(interrupt, 0, SelectFaceAlignMode.CheckWidgets);
 		// 5. Turn the bomb to the bottom face.
+		GameState.Current.LookingAtSide = true;
 		interrupt.SendInputs("ry:-0.875");
 		await AimlTasks.Delay(0.5);
 		// 6. Identify widgets on the bottom face.
@@ -56,6 +57,7 @@ internal static class Start {
 			Edgework.RegisterWidgets(context, false, ss);
 		// 9. Reset the bomb tilt.
 		interrupt.SendInputs("ry:0");
+		GameState.Current.LookingAtSide = false;
 		context.Reply("Ready.");
 	}
 

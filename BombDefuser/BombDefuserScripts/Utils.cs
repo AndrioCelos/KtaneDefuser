@@ -59,6 +59,7 @@ internal static class Utils {
 
 	internal static async Task SelectFaceAsync(Interrupt interrupt, int face, SelectFaceAlignMode alignMode) {
 		if (GameState.Current.SelectedFaceNum == face) return;  // The requested side is already selected; do nothing.
+		GameState.Current.LookingAtSide = true;
 		interrupt.SendInputs("rx:1");
 		if (alignMode == SelectFaceAlignMode.CheckWidgets) {
 			await AimlTasks.Delay(0.375);
@@ -87,6 +88,7 @@ internal static class Utils {
 				await AimlTasks.Delay(1.5);
 			}
 		}
+		GameState.Current.LookingAtSide = false;
 	}
 
 	internal static async Task SelectModuleAsync(Interrupt interrupt, int moduleNum, bool waitForFocus) {
@@ -136,7 +138,7 @@ internal static class Utils {
 		GameState.Current.FocusState = FocusState.Module;
 	}
 
-	internal static bool CanReadModuleImmediately(int moduleIndex) => GameState.Current.Modules[moduleIndex].Slot.Face == GameState.Current.SelectedFaceNum;
+	internal static bool CanReadModuleImmediately(int moduleIndex) => !GameState.Current.LookingAtSide && GameState.Current.Modules[moduleIndex].Slot.Face == GameState.Current.SelectedFaceNum;
 }
 
 [AimlSet]

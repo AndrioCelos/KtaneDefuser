@@ -16,6 +16,8 @@ public class GameState {
 	public int SelectedFaceNum { get; set; }
 	/// <summary>Returns a <see cref="BombFace"/> instance representing the currently-selected bomb face.</summary>
 	public BombFace SelectedFace => this.Faces[this.SelectedFaceNum];
+	/// <summary>Whether we are looking at a side of the bomb at the start of the game.</summary>
+	public bool LookingAtSide { get; set; }
 	/// <summary>The currently-selected module number, or <see langword="null"/> if no module is selected.</summary>
 	public int? SelectedModuleNum { get; set; }
 	/// <summary>Returns a <see cref="ModuleState"/> instance representing the currently-selected module, or <see langword="null"/> if no module is selected.</summary>
