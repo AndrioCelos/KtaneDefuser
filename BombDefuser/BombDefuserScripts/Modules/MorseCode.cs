@@ -81,49 +81,56 @@ internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCod
 	}
 
 	private async Task ReadAsync(AimlAsyncContext context, CancellationToken cancellationToken) {
-		using var interrupt = await this.ModuleInterruptAsync(context);
-		MorseCode.interrupt = interrupt;
+		var interrupt = await this.ModuleInterruptAsync(context);
+		try {
+			MorseCode.interrupt = interrupt;
 
-		// Wait for a space between letters.
-		interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Waiting for letter space");
-		while (true) {
-			await WaitForStateAsync(interrupt, false, cancellationToken);
-			var continuedLetter = await WaitForStateAsync(interrupt, true, DASH_THRESHOLD, cancellationToken);
-			if (!continuedLetter) break;
-		}
-		interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Letter space found");
-
-		for (var lettersRead = 0; lettersRead < 5; lettersRead++) {
-			// We've just seen a space between letters. Find out whether it is a space between words.
-			interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Waiting for next letter");
-			var continuedWord = await WaitForStateAsync(interrupt, true, WORD_SPACE_THRESHOLD - DASH_THRESHOLD, cancellationToken);
-			if (cancellationToken.IsCancellationRequested) return;
-			if (!continuedWord && !interrupt.IsDisposed) {
-				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Word start");
-				interrupt.Context.Reply("Word start.");
-				await WaitForStateAsync(interrupt, true, cancellationToken);
-			}
-			interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Next letter started");
-
-			var currentLetter = new MorseLetter();
+			// Wait for a space between letters.
+			interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Waiting for letter space");
 			while (true) {
-				var isDot = await WaitForStateAsync(interrupt, false, DASH_THRESHOLD, cancellationToken);
-				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] {(isDot ? "Dot" : "Dash")}");
-				currentLetter.Add(isDot ? MorseElement.Dot : MorseElement.Dash);
-				if (!isDot) await WaitForStateAsync(interrupt, false, cancellationToken);
+				await WaitForStateAsync(interrupt, false, cancellationToken);
 				var continuedLetter = await WaitForStateAsync(interrupt, true, DASH_THRESHOLD, cancellationToken);
 				if (!continuedLetter) break;
 			}
-			if (cancellationToken.IsCancellationRequested || interrupt.IsDisposed) return;
 			interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Letter space found");
 
-			if (decodeMorse.TryGetValue(currentLetter, out var c)) {
-				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Decoded letter: {c}");
-				interrupt.Context.Reply(NATO.Speak(c.ToString()));
-			} else
-				interrupt.Context.Reply(string.Join(' ', currentLetter));
+			for (var lettersRead = 0; lettersRead < 5; lettersRead++) {
+				// We've just seen a space between letters. Find out whether it is a space between words.
+				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Waiting for next letter");
+				var continuedWord = await WaitForStateAsync(interrupt, true, WORD_SPACE_THRESHOLD - DASH_THRESHOLD, cancellationToken);
+				if (cancellationToken.IsCancellationRequested) return;
+				if (!continuedWord && !interrupt.IsDisposed) {
+					interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Word start");
+					interrupt.Context.Reply("Word start.");
+					await WaitForStateAsync(interrupt, true, cancellationToken);
+				}
+				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Next letter started");
+
+				var currentLetter = new MorseLetter();
+				while (true) {
+					var isDot = await WaitForStateAsync(interrupt, false, DASH_THRESHOLD, cancellationToken);
+					interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] {(isDot ? "Dot" : "Dash")}");
+					currentLetter.Add(isDot ? MorseElement.Dot : MorseElement.Dash);
+					if (!isDot) await WaitForStateAsync(interrupt, false, cancellationToken);
+					var continuedLetter = await WaitForStateAsync(interrupt, true, DASH_THRESHOLD, cancellationToken);
+					if (!continuedLetter) break;
+				}
+				if (cancellationToken.IsCancellationRequested || interrupt.IsDisposed) return;
+				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Letter space found");
+
+				if (decodeMorse.TryGetValue(currentLetter, out var c)) {
+					interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Decoded letter: {c}");
+					interrupt.Context.Reply(NATO.Speak(c.ToString()));
+				} else
+					interrupt.Context.Reply(string.Join(' ', currentLetter));
+			}
+		} finally {
+			// Only dispose the interrupt if we're not ending due to a cancellation signal, as that indicates we're keeping the interrupt to submit an answer.
+			if (!cancellationToken.IsCancellationRequested) {
+				interrupt.Dispose();
+				MorseCode.interrupt = null;
+			}
 		}
-		MorseCode.interrupt = null;
 	}
 
 	private static Task<bool> WaitForStateAsync(Interrupt interrupt, bool state, CancellationToken token) => WaitForStateAsync(interrupt, state, int.MaxValue, token);
