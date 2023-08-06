@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using Aiml;
 
@@ -107,8 +107,12 @@ internal static class Start {
 				if (script.PriorityCategory != PriorityCategory.None)
 					context.Reply($"<oob><queue/></oob> Module {script.ModuleIndex + 1} is {script.IndefiniteDescription}.");
 				script.Initialise(context);
-				if (GameState.Current.UnknownNeedyStates.TryGetValue(slot, out var state)) {
+				NeedyState state;
+				lock (GameState.Current.UnknownNeedyStates) {
+					GameState.Current.UnknownNeedyStates.TryGetValue(slot, out state);
 					GameState.Current.UnknownNeedyStates.Remove(slot);
+				}
+				if (state != 0) {
 					script.NeedyState = state;
 					script.NeedyStateChanged(context, state);
 				}

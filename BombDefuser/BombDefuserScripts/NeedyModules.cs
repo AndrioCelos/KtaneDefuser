@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using Aiml;
 
 namespace BombDefuserScripts;
 [AimlInterface]
@@ -11,7 +12,8 @@ internal class NeedyModules {
 			script.NeedyStateChanged(context, newState);
 		} else {
 			// This is a module we haven't seen yet; deal with it when we've seen what it is and initialised the script.
-			GameState.Current.UnknownNeedyStates[new(faceNum, x, y)] = newState;
+			lock (GameState.Current.UnknownNeedyStates)
+				GameState.Current.UnknownNeedyStates[new(faceNum, x, y)] = newState;
 		}
 	}
 }

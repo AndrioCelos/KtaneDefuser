@@ -60,7 +60,8 @@ public class DefuserConnector {
 				switch (messageType) {
 					case MessageType.Event:
 						await stream.ReadExactlyAsync(this.readBuffer, 0, length);
-						_ = Task.Run(() => AimlVoice.Program.sendInput($"OOB DefuserSocketMessage {Encoding.UTF8.GetString(this.readBuffer, 0, length)}"));
+						var message = Encoding.UTF8.GetString(this.readBuffer, 0, length);
+						_ = Task.Run(() => AimlVoice.Program.sendInput($"OOB DefuserSocketMessage {message}"));
 						break;
 					case MessageType.Image: {
 						if (this.screenshotTaskSource is null) break;
