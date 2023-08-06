@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Aiml;
 
 namespace BombDefuserScripts.Modules;
 
@@ -9,37 +10,38 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 
 	private Counts? counts;
 	private Direction direction;
+	private bool isHandled;
 
 	private static readonly Dictionary<Counts, Direction> correctDirections = new();
-	private static NeedyKnob? currentKnob;
 
 	protected internal override async void NeedyStateChanged(AimlAsyncContext context, NeedyState newState) {
-		if (newState != NeedyState.Running) return;
-
-		using var interrupt = await this.PrepareToReadAsync(context);
-		if (interrupt is not null) context = interrupt.Context;
-		using var ss = DefuserConnector.Instance.TakeScreenshot();
-		var data = DefuserConnector.Instance.ReadComponent(ss, Reader, Utils.GetPoints(GameState.Current.Modules[this.ModuleIndex].Slot));
-		var counts = new Counts();
-		for (var i = 0; i < 12; i++) {
-			if (data.Lights[i]) {
-				if (i % 6 < 3) counts.Left++;
-				else counts.Right++;
+		if (newState == NeedyState.Running) { 
+			using var interrupt = await this.PrepareToReadAsync(context);
+			if (interrupt is not null) context = interrupt.Context;
+			using var ss = DefuserConnector.Instance.TakeScreenshot();
+			var data = DefuserConnector.Instance.ReadComponent(ss, Reader, Utils.GetPoints(GameState.Current.Modules[this.ModuleIndex].Slot));
+			var counts = new Counts();
+			for (var i = 0; i < 12; i++) {
+				if (data.Lights[i]) {
+					if (i % 6 < 3) counts.Left++;
+					else counts.Right++;
+				}
 			}
-		}
-		context.RequestProcess.Log(Aiml.LogLevel.Info, $"Knob ({this.ModuleIndex}) activated: {counts}");
-		context.RequestProcess.Log(Aiml.LogLevel.Info, $"Knob:{string.Join(null, from i in Enumerable.Range(0, 6) select data.Lights[i] ? " *" : " .")}");
-		context.RequestProcess.Log(Aiml.LogLevel.Info, $"Knob:{string.Join(null, from i in Enumerable.Range(0, 6) select data.Lights[6 + i] ? " *" : " .")}");
-		if (correctDirections.TryGetValue(counts, out var correctPosition)) {
-			if (this.direction != correctPosition) {
-				using var interrupt2 = interrupt ?? await this.ModuleInterruptAsync(context);
-				await this.TurnAsync(interrupt2, correctPosition);
-			}
-		} else {
+			context.RequestProcess.Log(LogLevel.Info, $"Knob ({this.ModuleIndex + 1}) activated: {counts}");
+			context.RequestProcess.Log(LogLevel.Info, $"Knob:{string.Join(null, from i in Enumerable.Range(0, 6) select data.Lights[i] ? " *" : " .")}");
+			context.RequestProcess.Log(LogLevel.Info, $"Knob:{string.Join(null, from i in Enumerable.Range(0, 6) select data.Lights[6 + i] ? " *" : " .")}");
 			this.counts = counts;
-			currentKnob = this;
-			context.Reply($"<oob><queue/></oob> Knob {this.ModuleIndex + 1} is active. Counts: {counts.Left}, {counts.Right}.");
-		}
+			if (correctDirections.TryGetValue(counts, out var correctPosition)) {
+				if (this.direction != correctPosition) {
+					using var interrupt2 = interrupt ?? await this.ModuleInterruptAsync(context);
+					await this.TurnAsync(interrupt2, correctPosition);
+				}
+			} else {
+				this.isHandled = false;
+				context.Reply($"<oob><queue/></oob> Knob {this.ModuleIndex + 1} is active. Counts: {counts.Left}, {counts.Right}.");
+			}
+		} else
+			this.counts = null;
 	}
 
 	private async Task<Interrupt?> PrepareToReadAsync(AimlAsyncContext context) {
@@ -49,13 +51,15 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 	}
 
 	private async Task HandleInputAsync(AimlAsyncContext context, Direction direction) {
-		if (counts is null) {
+		if (this.counts is null) {
 			context.Reply("It is not active.");
 			return;
 		}
+		context.Reply("Roger.");
 		correctDirections[counts.Value] = direction;
+		this.isHandled = true;
 		if (this.direction != direction) {
-			using var interrupt = await this.ModuleInterruptAsync(context);
+			using var interrupt = await this.ModuleInterruptAsync(context, false);
 			await this.TurnAsync(interrupt, direction);
 		}
 	}
@@ -77,14 +81,25 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 	[AimlCategory("<set>KnobDirection</set> position", Topic = "*")]
 	[AimlCategory("knob is <set>KnobDirection</set>", Topic = "*")]
 	internal static Task Read(AimlAsyncContext context, Direction direction) {
+		var anyKnobs = false; NeedyKnob? currentKnob = null;
+		foreach (var m in GameState.Current.Modules) {
+			if (m.Script is NeedyKnob knob) {
+				anyKnobs = true;
+				if (knob.NeedyState == NeedyState.Running && !knob.isHandled) {
+					if (currentKnob is null)
+						currentKnob = knob;
+					else {
+						context.Reply("Please specify the number of the Knob.");
+						return Task.CompletedTask;
+					}
+				}
+			}
+		}
 		if (currentKnob is null) {
-			context.Reply("It is not active.");
+			context.Reply(anyKnobs ? "It is not active." : "There does not seem to be a Knob.");
 			return Task.CompletedTask;
 		}
-		context.Reply("Roger.");
-		var task = currentKnob.HandleInputAsync(context, direction);
-		currentKnob = null;
-		return task;
+		return currentKnob.HandleInputAsync(context, direction);
 	}
 
 	[AimlCategory("knob <set>number</set> is <set>Direction</set>", Topic = "*")]
@@ -93,7 +108,6 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 			context.Reply("That is not a Knob.");
 			return Task.CompletedTask;
 		}
-		context.Reply("Roger.");
 		return knobScript.HandleInputAsync(context, direction);
 	}
 
