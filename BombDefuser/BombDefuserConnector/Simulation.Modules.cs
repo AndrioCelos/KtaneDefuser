@@ -292,6 +292,7 @@ internal partial class Simulation {
 		public class NeedyCapacitor : NeedyModule<Components.NeedyCapacitor.ReadData> {
 			private readonly Stopwatch pressStopwatch = new();
 
+			public override bool AutoReset => false;
 			internal override Components.NeedyCapacitor.ReadData Details => new(this.IsActive ? (int) this.RemainingTime.TotalSeconds : null);
 
 			public NeedyCapacitor() : base(DefuserConnector.GetComponentReader<Components.NeedyCapacitor>(), 1, 1) { }
@@ -300,11 +301,13 @@ internal partial class Simulation {
 
 			public override void Interact() {
 				Message($"{this.Reader.Name} pressed with {this.RemainingTime} left.");
+				this.Timer.Stop();
 				this.pressStopwatch.Restart();
 			}
 
 			public override void StopInteract() {
 				this.AddTime(this.pressStopwatch.Elapsed * 6, TimeSpan.FromSeconds(45));
+				this.Timer.Start();
 				Message($"{this.Reader.Name} released with {this.RemainingTime} left.");
 			}
 		}

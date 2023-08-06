@@ -484,7 +484,6 @@ internal partial class Simulation {
 		private int y;
 		private TimeSpan baseTime;
 		private readonly Stopwatch stopwatch = new();
-		private readonly Timer timer = new() { AutoReset = false };
 
 		public virtual TimeSpan StartingTime => TimeSpan.FromSeconds(45);
 		public virtual bool AutoReset => true;
@@ -492,22 +491,23 @@ internal partial class Simulation {
 		public bool IsActive { get; private set; }
 		public TimeSpan RemainingTime => this.stopwatch is not null ? this.baseTime - this.stopwatch.Elapsed : TimeSpan.Zero;
 		public int? DisplayedTime => this.IsActive ? (int?) this.RemainingTime.TotalSeconds : null;
+		protected Timer Timer { get; } = new() { AutoReset = false };
 
 		protected NeedyModule(ComponentReader reader, int selectableWidth, int selectableHeight) : base(reader, selectableWidth, selectableHeight)
-			=> this.timer.Elapsed += this.ReactivateTimer_Elapsed;
+			=> this.Timer.Elapsed += this.ReactivateTimer_Elapsed;
 
 		public void Initialise(int faceNum, int x, int y) {
 			this.faceNum = faceNum;
 			this.x = x;
 			this.y = y;
 			AimlVoice.Program.sendInput($"OOB DefuserSocketMessage NeedyStateChanged {this.faceNum} {this.x} {this.y} AwaitingActivation");
-			this.timer.Interval = 10000;
-			this.timer.Start();
+			this.Timer.Interval = 10000;
+			this.Timer.Start();
 		}
 
 		public void Activate() {
 			this.baseTime = this.StartingTime;
-			this.timer.Interval = this.baseTime.TotalMilliseconds;
+			this.Timer.Interval = this.baseTime.TotalMilliseconds;
 			this.stopwatch.Restart();
 			this.IsActive = true;
 			Message($"{this.Reader.Name} activated with {this.baseTime} left.");
@@ -523,10 +523,10 @@ internal partial class Simulation {
 			this.stopwatch.Stop();
 			Message($"{this.Reader.Name} deactivated with {this.RemainingTime} left.");
 			if (this.AutoReset) {
-				timer.Interval = 30000;
+				this.Timer.Interval = 30000;
 				AimlVoice.Program.sendInput($"OOB DefuserSocketMessage NeedyStateChanged {this.faceNum} {this.x} {this.y} Cooldown");
 			} else {
-				this.timer.Stop();
+				this.Timer.Stop();
 				AimlVoice.Program.sendInput($"OOB DefuserSocketMessage NeedyStateChanged {this.faceNum} {this.x} {this.y} Terminated");
 			}
 		}
