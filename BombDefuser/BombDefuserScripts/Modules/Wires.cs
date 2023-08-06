@@ -9,10 +9,11 @@ internal class Wires : ModuleScript<BombDefuserConnector.Components.Wires> {
 	private int highlight;
 
 	[AimlCategory("read")]
-	internal static void Read(AimlAsyncContext context) {
-		var data = ReadCurrent(Reader);
+	internal static async Task Read(AimlAsyncContext context) {
+		using var interrupt = await CurrentModuleInterruptAsync(context);
+		var data = interrupt.Read(Reader);
 		GameState.Current.CurrentScript<Wires>().wireCount = data.Colours.Length;
-		context.Reply($"{data.Colours.Length} wires: {string.Join(", ", data.Colours)}. <reply>cut the [nth] wire</reply>");
+		interrupt.Context.Reply($"{data.Colours.Length} wires: {string.Join(", ", data.Colours)}. <reply>cut the [nth] wire</reply>");
 	}
 
 	[AimlCategory("cut wire *")]
@@ -29,7 +30,8 @@ internal class Wires : ModuleScript<BombDefuserConnector.Components.Wires> {
 			script.highlight--;
 		}
 		builder.Append('a');
-		await Interrupt.SubmitAsync(context, builder.ToString());
+		using var interrupt = await CurrentModuleInterruptAsync(context);
+		await interrupt.SubmitAsync(builder.ToString());
 	}
 
 	[AimlCategory("cut the <set>ordinal</set> wire")]

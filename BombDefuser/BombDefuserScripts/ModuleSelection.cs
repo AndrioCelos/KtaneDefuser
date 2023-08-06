@@ -22,8 +22,7 @@ internal static class ModuleSelection {
 		// If we aren't in another interrupt, select this module. (If we are, Interrupt.Exit will select this module afterward if it is still the current module.)
 		if (Interrupt.EnableInterrupts) {
 			using var interrupt = await Interrupt.EnterAsync(context);
-			await Utils.SelectModuleAsync(interrupt, GameState.Current.CurrentModuleNum.Value);
-			await AimlTasks.Delay(0.75);
+			await Utils.SelectModuleAsync(interrupt, GameState.Current.CurrentModuleNum.Value, true);
 			script.ModuleSelected(context);
 		}
 	}

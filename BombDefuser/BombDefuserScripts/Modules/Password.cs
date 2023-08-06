@@ -11,13 +11,13 @@ internal class Password : ModuleScript<BombDefuserConnector.Components.Password>
 	private readonly int[] columnPositions = new int[5];
 
 	private async Task ReadColumn(AimlAsyncContext context, int column) {
-		using var interrupt = await Interrupt.EnterAsync(context);
+		using var interrupt = await this.ModuleInterruptAsync(context);
 		var builder = new StringBuilder();
 		var letters = new char[6];
 		await this.MoveToDownButtonRowAsync(interrupt);
 		for (var i = 0; i < 6; i++) {
 			if (i > 0) await this.CycleColumnAsync(interrupt, column);
-			var data = ReadCurrent(Reader);
+			var data = interrupt.Read(Reader);
 			letters[i] = data.Display[column];
 		}
 		this.columns[column] = letters;
@@ -56,7 +56,7 @@ internal class Password : ModuleScript<BombDefuserConnector.Components.Password>
 	private async Task SubmitAsync(Interrupt interrupt, string word) {
 		await this.MoveToDownButtonRowAsync(interrupt);
 		for (var i = 0; i < 6; i++) {
-			var data = ReadCurrent(Reader);
+			var data = interrupt.Read(Reader);
 			interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"Password display: {new string(data.Display)}");
 			var anyMismatch = false;
 			for (var x = 0; x < 5; x++) {
@@ -100,7 +100,7 @@ internal class Password : ModuleScript<BombDefuserConnector.Components.Password>
 	[AimlCategory("the password is *")]
 	public static async Task Submit(AimlAsyncContext context, string word) {
 		var script = GameState.Current.CurrentScript<Password>();
-		using var interrupt = await Interrupt.EnterAsync(context);
+		using var interrupt = await CurrentModuleInterruptAsync(context);
 		await script.SubmitAsync(interrupt, word);
 	}
 
@@ -110,7 +110,7 @@ internal class Password : ModuleScript<BombDefuserConnector.Components.Password>
 	[AimlCategory("the password is <set>NATO</set> <set>NATO</set> <set>NATO</set> <set>NATO</set> <set>NATO</set>")]
 	public static async Task SubmitNato(AimlAsyncContext context, string nato1, string nato2, string nato3, string nato4, string nato5) {
 		var script = GameState.Current.CurrentScript<Password>();
-		using var interrupt = await Interrupt.EnterAsync(context);
+		using var interrupt = await CurrentModuleInterruptAsync(context);
 		await script.SubmitAsync(interrupt, $"{NATO.DecodeChar(nato1)}{NATO.DecodeChar(nato2)}{NATO.DecodeChar(nato3)}{NATO.DecodeChar(nato4)}{NATO.DecodeChar(nato5)}");
 	}
 }

@@ -5,20 +5,29 @@ namespace BombDefuserScripts.Modules;
 internal class Memory : ModuleScript<BombDefuserConnector.Components.Memory> {
 	public override string IndefiniteDescription => "Memory";
 
+	private bool readyToRead;
 	private int[] keyLabels = new int[4];
 	private int highlight;
 
-	protected internal override void ModuleSelected(AimlAsyncContext context) => this.Read(context);
+	protected internal override void Started(AimlAsyncContext context) => this.readyToRead = true;
 
-	private async Task WaitRead(AimlAsyncContext context) {
-		await AimlTasks.Delay(3);
-		this.Read(context);
+	protected internal override async void ModuleSelected(AimlAsyncContext context) {
+		if (this.readyToRead) {
+			this.readyToRead = false;
+			using var interrupt = await this.ModuleInterruptAsync(context);
+			this.Read(interrupt);
+		}
 	}
 
-	private void Read(AimlAsyncContext context) {
-		var data = ReadCurrent(Reader);
+	private async Task WaitRead(Interrupt interrupt) {
+		await AimlTasks.Delay(3);
+		this.Read(interrupt);
+	}
+
+	private void Read(Interrupt interrupt) {
+		var data = interrupt.Read(Reader);
 		this.keyLabels = data.Keys;
-		context.Reply(data.Display.ToString());
+		interrupt.Context.Reply(data.Display.ToString());
 	}
 
 	[AimlCategory("position <set>number</set>")]
@@ -59,13 +68,13 @@ internal class Memory : ModuleScript<BombDefuserConnector.Components.Memory> {
 			builder.Append("right ");
 		}
 		builder.Append('a');
-		using var interrupt = await Interrupt.EnterAsync(context);
+		using var interrupt = await this.ModuleInterruptAsync(context);
 		this.highlight = highlight;
 		var result = await interrupt.SubmitAsync(builder.ToString());
 		if (result != ModuleLightState.Solved) {
 			if (result == ModuleLightState.Off)
 				interrupt.Context.Reply(fromLabel ? $"The position was {index + 1}." : $"The label was {this.keyLabels[index]}.");
-			_ = this.WaitRead(interrupt.Context);
+			await this.WaitRead(interrupt);
 		}
 	}
 }

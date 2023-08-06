@@ -6,23 +6,28 @@ internal class Button : ModuleScript<BombDefuserConnector.Components.Button> {
 	private static Interrupt? interrupt;
 
 	[AimlCategory("read")]
-	internal static void Read(AimlAsyncContext context) {
-		var data = ReadCurrent(Reader);
+	internal static async Task Read(AimlAsyncContext context) {
+		using var interrupt = await CurrentModuleInterruptAsync(context);
+		var data = interrupt.Read(Reader);
 		if (data.IndicatorColour != null)
-			context.Reply($"The light is {data.IndicatorColour}.");
+			interrupt.Context.Reply($"The light is {data.IndicatorColour}.");
 		else
-			context.Reply($"The button is {data.Colour} and reads '{data.Label}'.");
+			interrupt.Context.Reply($"The button is {data.Colour} and reads '{data.Label}'.");
 	}
 
 	[AimlCategory("tap")]
-	internal static async Task Tap(AimlAsyncContext context) => await Interrupt.SubmitAsync(context, "a");
+	internal static async Task Tap(AimlAsyncContext context) {
+		using var interrupt = await CurrentModuleInterruptAsync(context);
+		await interrupt.SubmitAsync("a");
+	}
 
 	[AimlCategory("hold")]
 	internal static async Task Hold(AimlAsyncContext context) {
-		interrupt = await Interrupt.EnterAsync(context);
+		interrupt = await CurrentModuleInterruptAsync(context);
 		interrupt.SendInputs("a:hold");
 		await AimlTasks.Delay(1);
-		Read(interrupt.Context);
+		var data = interrupt.Read(Reader);
+		interrupt.Context.Reply($"The light is {data.IndicatorColour}.");
 	}
 
 	[AimlCategory("release on <set>number</set>")]

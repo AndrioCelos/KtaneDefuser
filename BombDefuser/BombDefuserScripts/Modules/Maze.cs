@@ -8,9 +8,10 @@ internal class Maze : ModuleScript<BombDefuserConnector.Components.Maze> {
 	private Direction highlight;
 
 	[AimlCategory("read")]
-	internal static void Read(AimlAsyncContext context) {
-		var data = ReadCurrent(Reader);
-		context.Reply(data.Circle2 is GridCell cell
+	internal static async Task Read(AimlAsyncContext context) {
+		using var interrupt = await CurrentModuleInterruptAsync(context);
+		var data = interrupt.Read(Reader);
+		interrupt.Context.Reply(data.Circle2 is GridCell cell
 			? $"Markings at {NATO.Speak(data.Circle1.ToString())} and {NATO.Speak(cell.ToString())}. Starting at {NATO.Speak(data.Start.ToString())}. The goal is {NATO.Speak(data.Goal.ToString())}."
 			: $"Marking at {NATO.Speak(data.Circle1.ToString())}. Starting at {NATO.Speak(data.Start.ToString())}. The goal is {NATO.Speak(data.Goal.ToString())}.");
 	}
@@ -56,6 +57,7 @@ internal class Maze : ModuleScript<BombDefuserConnector.Components.Maze> {
 				builder.Append("a ");
 		}
 		this.highlight = currentHighlight;
-		await Interrupt.SubmitAsync(context, builder.ToString());
+		using var interrupt = await this.ModuleInterruptAsync(context);
+		await interrupt.SubmitAsync(builder.ToString());
 	}
 }

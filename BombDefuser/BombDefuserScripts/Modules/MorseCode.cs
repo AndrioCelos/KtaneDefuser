@@ -74,7 +74,7 @@ internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCod
 	[AimlCategory("read")]
 	internal static async Task Read(AimlAsyncContext context) {
 		context.Reply($"Stand by.");
-		using var interrupt = await Interrupt.EnterAsync(context);
+		using var interrupt = await CurrentModuleInterruptAsync(context);
 		MorseCode.interrupt = interrupt;
 
 		// Wait for a space between letters.
@@ -118,13 +118,13 @@ internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCod
 		MorseCode.interrupt = null;
 	}
 
-	private static bool IsLightOn() => ReadCurrent(Reader).IsLightOn;
+	private static bool IsLightOn(Interrupt interrupt) => interrupt.Read(Reader).IsLightOn;
 	private static Task<bool> WaitForStateAsync(Interrupt interrupt, bool state) => WaitForStateAsync(interrupt, state, int.MaxValue);
 	private static async Task<bool> WaitForStateAsync(Interrupt interrupt, bool state, int limit) {
 		var count = 0;
 		do {
 			await AimlTasks.Delay(0.075);
-			if (interrupt.IsDisposed || IsLightOn() == state) {
+			if (interrupt.IsDisposed || IsLightOn(interrupt) == state) {
 				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Awaited state {state} reached after {count}");
 				return true;
 			}
@@ -161,7 +161,7 @@ internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCod
 	}
 
 	internal async Task Submit(AimlAsyncContext context, int frequency) {
-		using var interrupt = MorseCode.interrupt ?? await Interrupt.EnterAsync(context);
+		using var interrupt = MorseCode.interrupt ?? await this.ModuleInterruptAsync(context);
 		var builder = new StringBuilder();
 		if (frequency < this.selectedFrequency) {
 			switch (this.highlight) {

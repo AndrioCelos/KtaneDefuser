@@ -11,12 +11,10 @@ internal class NeedyVentGas : ModuleScript<BombDefuserConnector.Components.Needy
 	protected internal override async void NeedyStateChanged(AimlAsyncContext context, NeedyState newState) {
 		if (newState != NeedyState.Running) return;
 		await AimlTasks.Delay(25);
-		using var interrupt = await Interrupt.EnterAsync(context);
+		using var interrupt = await this.ModuleInterruptAsync(context);
 		context = interrupt.Context;
-		await Utils.SelectModuleAsync(interrupt, this.ModuleIndex);
-		await AimlTasks.Delay(0.75);
 
-		var data = ReadCurrent(Reader);
+		var data = interrupt.Read(Reader);
 		if (data.Message != null)
 			await this.PressButtonAsync(interrupt, data.Message[0] == 'D' ? 1 : 0);
 	}

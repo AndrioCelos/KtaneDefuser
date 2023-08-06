@@ -89,7 +89,7 @@ internal static class Utils {
 		}
 	}
 
-	internal static async Task SelectModuleAsync(Interrupt interrupt, int moduleNum) {
+	internal static async Task SelectModuleAsync(Interrupt interrupt, int moduleNum, bool waitForFocus) {
 		if (GameState.Current.SelectedModuleNum == moduleNum)
 			return;  // The requested module is already selected.
 		var builder = new StringBuilder();
@@ -128,7 +128,8 @@ internal static class Utils {
 			do { currentSlot.X++; } while (GameState.Current.SelectedFace[currentSlot]?.Reader is null or BombDefuserConnector.Components.Timer);
 		}
 		builder.Append('a');
-		interrupt.SendInputs(builder.ToString());
+		await interrupt.SendInputsAsync(builder.ToString());
+		if (waitForFocus) await AimlTasks.Delay(0.75);
 
 		GameState.Current.SelectedFace.SelectedSlot = slot;
 		GameState.Current.SelectedModuleNum = moduleNum;

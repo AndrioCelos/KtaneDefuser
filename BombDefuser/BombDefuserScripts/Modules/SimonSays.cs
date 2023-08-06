@@ -8,18 +8,24 @@ internal class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSay
 
 	private static readonly SimonColour?[] buttonMap = new SimonColour?[4];
 
+	private bool readyToRead;
 	private SimonColour highlight = SimonColour.Blue;
 	private int stagesCleared;
 	private readonly List<SimonColour> pattern = new(5);
 	private SimonColour? currentColour;
 
+	protected internal override void Started(AimlAsyncContext context) => this.readyToRead = true;
+
 	protected internal override async void ModuleSelected(AimlAsyncContext context) {
-		using var interrupt = await Interrupt.EnterAsync(context);
-		if (this.pattern.Count == 0) {
-			var colour = await this.ReadLastColourAsync(interrupt);
-			pattern.Add(colour);
+		if (this.readyToRead) {
+			this.readyToRead = false;
+			using var interrupt = await this.ModuleInterruptAsync(context);
+			if (this.pattern.Count == 0) {
+				var colour = await this.ReadLastColourAsync(interrupt);
+				pattern.Add(colour);
+			}
+			await this.LoopAsync(interrupt);
 		}
-		await this.LoopAsync(interrupt);
 	}
 
 	private async Task LoopAsync(Interrupt interrupt) {
@@ -64,7 +70,7 @@ internal class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSay
 	private async Task<SimonColour> ReadLastColourAsync(Interrupt interrupt) {
 		var coloursSeen = 0;
 		while (true) {
-			var data = ReadCurrent(Reader);
+			var data = interrupt.Read(Reader);
 			if (data.Colour is null) {
 				await AimlTasks.Delay(0.125);
 				continue;
@@ -77,7 +83,7 @@ internal class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSay
 
 			while (true) {
 				await AimlTasks.Delay(0.125);
-				var data2 = ReadCurrent(Reader);
+				var data2 = interrupt.Read(Reader);
 				if (data2.Colour != data.Colour) break;
 			}
 		}
@@ -89,7 +95,7 @@ internal class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSay
 		if (script.currentColour is not SimonColour currentColour) return;
 		buttonMap[(int) currentColour] = Enum.Parse<SimonColour>(colour, true);
 		script.currentColour = null;
-		using var interrupt = await Interrupt.EnterAsync(context);
+		using var interrupt = await CurrentModuleInterruptAsync(context);
 		await script.LoopAsync(interrupt);
 	}
 }

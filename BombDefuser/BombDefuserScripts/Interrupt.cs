@@ -32,8 +32,7 @@ public class Interrupt : IDisposable {
 			if (GameState.Current.CurrentModuleNum != GameState.Current.SelectedModuleNum && GameState.Current.CurrentModuleNum is not null) {
 				// Re-select the module that was interrupted, or the new current module if it changed.
 				var interrupt = new Interrupt(context);
-				await Utils.SelectModuleAsync(interrupt, GameState.Current.CurrentModuleNum!.Value);
-				await AimlTasks.Delay(0.75);
+				await Utils.SelectModuleAsync(interrupt, GameState.Current.CurrentModuleNum!.Value, true);
 				// Perhaps another interrupt occurred during this.
 				lock (interruptQueue) {
 					interruptQueue.TryDequeue(out queuedTaskSource);
@@ -49,9 +48,10 @@ public class Interrupt : IDisposable {
 		}
 	}
 
-	public static async Task<ModuleLightState> SubmitAsync(AimlAsyncContext context, string inputs) {
-		using var interrupt = await EnterAsync(context);
-		return await interrupt.SubmitAsync(inputs);
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "This operation requires an Interrupt instance to avoid desyncs.")]
+	public T Read<T>(ComponentReader<T> reader) where T : notnull {
+		using var ss = DefuserConnector.Instance.TakeScreenshot();
+		return DefuserConnector.Instance.ReadComponent(ss, reader, Utils.CurrentModulePoints);
 	}
 
 	public async Task<ModuleLightState> SubmitAsync(string inputs) {

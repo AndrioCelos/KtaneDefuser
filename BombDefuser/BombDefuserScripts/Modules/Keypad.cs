@@ -9,7 +9,7 @@ internal class Keypad : ModuleScript<BombDefuserConnector.Components.Keypad> {
 		{ Symbol.FilledStar  , "filled star" },
 		{ Symbol.HollowStar  , "hollow star" },
 		{ Symbol.SmileyFace  , "smiley face" },
-		{ Symbol.DoubleK     , "double Ks" },
+		{ Symbol.DoubleK     , "double K" },
 		{ Symbol.Omega       , "Omega" },
 		{ Symbol.SquidKnife  , "squid with a knife" },
 		{ Symbol.Pumpkin     , "pumpkin" },
@@ -43,10 +43,11 @@ internal class Keypad : ModuleScript<BombDefuserConnector.Components.Keypad> {
 	private int highlight;
 
 	[AimlCategory("read")]
-	internal static void Read(AimlAsyncContext context) {
-		var data = ReadCurrent(Reader);
+	internal static async Task Read(AimlAsyncContext context) {
+		using var interrupt = await CurrentModuleInterruptAsync(context);
+		var data = interrupt.Read(Reader);
 		GameState.Current.CurrentScript<Keypad>().symbols = data.Symbols;
-		context.Reply(string.Join(", ", from s in data.Symbols select SymbolDescriptions[s]));
+		interrupt.Context.Reply(string.Join(", ", from s in data.Symbols select SymbolDescriptions[s]));
 	}
 
 	[AimlCategory("press *")]

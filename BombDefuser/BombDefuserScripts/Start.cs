@@ -9,7 +9,7 @@ internal static class Start {
 	private static Stopwatch? startDelayStopwatch;
 
 	[AimlCategory("OOB DefuserSocketMessage NewBomb *"), EditorBrowsable(EditorBrowsableState.Never)]
-	public static async void NewBomb(AimlAsyncContext context) {
+	public static void NewBomb() {
 		// 0. Clear previous game variables.
 		GameState.Current = new();
 		waitingForLights = true;

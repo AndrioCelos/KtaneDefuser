@@ -7,24 +7,33 @@ namespace BombDefuserScripts.Modules;
 internal class WhosOnFirst : ModuleScript<BombDefuserConnector.Components.WhosOnFirst> {
 	public override string IndefiniteDescription => "Who's on First";
 
+	private bool readyToRead;
 	private Phrase[] keyLabels = new Phrase[6];
 	private int highlight;
 
-	protected internal override void ModuleSelected(AimlAsyncContext context) => this.Read(context);
+	protected internal override void Started(AimlAsyncContext context) => this.readyToRead = true;
 
-	private async Task WaitRead(AimlAsyncContext context) {
-		await AimlTasks.Delay(4);
-		this.Read(context);
+	protected internal override async void ModuleSelected(AimlAsyncContext context) {
+		if (this.readyToRead) {
+			this.readyToRead = false;
+			using var interrupt = await this.ModuleInterruptAsync(context);
+			this.Read(interrupt);
+		}
 	}
 
-	private void Read(AimlAsyncContext context) {
-		var data = ReadCurrent(Reader);
+	private async Task WaitRead(Interrupt interrupt) {
+		await AimlTasks.Delay(3);
+		this.Read(interrupt);
+	}
+
+	private void Read(Interrupt interrupt) {
+		var data = interrupt.Read(Reader);
 		this.keyLabels = data.Keys.Select(s => AimlInterface.TryParseSetEnum<Phrase>(s.Replace('’', '\''), out var p) ? p : throw new ArgumentException("Unknown button label")).ToArray();
 		if (data.Display == "")
-			context.Reply("The display is literally empty.");
+			interrupt.Context.Reply("The display is literally empty.");
 		else
-			context.Reply($"The display reads {PronouncePhrase(AimlInterface.TryParseSetEnum<Phrase>(data.Display.Replace('’', '\''), out var p) ? p : throw new ArgumentException("Unknown display"))}.");
-		context.Reply("<reply>top left</reply><reply>top right</reply><reply>middle left</reply><reply>middle right</reply><reply>bottom left</reply><reply>bottom right</reply>");
+			interrupt.Context.Reply($"The display reads {PronouncePhrase(AimlInterface.TryParseSetEnum<Phrase>(data.Display.Replace('’', '\''), out var p) ? p : throw new ArgumentException("Unknown display"))}.");
+		interrupt.Context.Reply("<reply>top left</reply><reply>top right</reply><reply>middle left</reply><reply>middle right</reply><reply>bottom left</reply><reply>bottom right</reply>");
 	}
 
 	public void ReadButton(AimlAsyncContext context, int keyIndex) {
@@ -78,9 +87,9 @@ internal class WhosOnFirst : ModuleScript<BombDefuserConnector.Components.WhosOn
 		}
 		builder.Append('a');
 		this.highlight = highlight;
-		using var interrupt = await Interrupt.EnterAsync(context);
+		using var interrupt = await this.ModuleInterruptAsync(context);
 		var result = await interrupt.SubmitAsync(builder.ToString());
-		if (result != ModuleLightState.Solved) await this.WaitRead(interrupt.Context);
+		if (result != ModuleLightState.Solved) await this.WaitRead(interrupt);
 	}
 
 	private static string PronouncePhrase(Phrase phrase) => phrase switch {
@@ -183,6 +192,7 @@ internal class WhosOnFirst : ModuleScript<BombDefuserConnector.Components.WhosOn
 		THEY_RE,
 		[AimlSetItem("they are"), AimlSetItem("they are no apostrophe"), AimlSetItem("they are words"), AimlSetItem("they are two words"), AimlSetItem("theyare")]
 		THEY_ARE,
+		[AimlSetItem("letter u"), AimlSetItem("u letter"), AimlSetItem("letter uniform"), AimlSetItem("uniform letter")]
 		U,
 		[AimlSetItem("uh huh"), AimlSetItem("uh huh positive"), AimlSetItem("uhhuh"), AimlSetItem("uh huh 5 letters"), AimlSetItem("uh huh five letters")]
 		UH_HUH,

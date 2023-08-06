@@ -32,11 +32,6 @@ public abstract class ModuleScript {
 	private static TScript CreateInternal<TScript, TReader>(string topic) where TScript : ModuleScript<TReader>, new() where TReader : ComponentReader
 		=> new() { topic = topic };
 
-	protected static T ReadCurrent<T>(ComponentReader<T> reader) where T : notnull {
-		using var ss = DefuserConnector.Instance.TakeScreenshot();
-		return DefuserConnector.Instance.ReadComponent(ss, reader, Utils.CurrentModulePoints);
-	}
-
 	/// <summary>Called when the script is initialised at the start of the game.</summary>
 	protected internal virtual void Initialise(AimlAsyncContext context) { }
 	/// <summary>Called when the expert has chosen to work on this module.</summary>
@@ -49,6 +44,16 @@ public abstract class ModuleScript {
 	protected internal virtual void ModuleDeselected(AimlAsyncContext context) { }
 	/// <summary>Called when the state of the needy module has changed.</summary>
 	protected internal virtual void NeedyStateChanged(AimlAsyncContext context, NeedyState newState) { }
+
+	protected static Task<Interrupt> CurrentModuleInterruptAsync(AimlAsyncContext context) => (GameState.Current.CurrentModule ?? throw new InvalidOperationException("No current module")).Script.ModuleInterruptAsync(context, true);
+	protected static Task<Interrupt> CurrentModuleInterruptAsync(AimlAsyncContext context, bool waitForFocus) => (GameState.Current.CurrentModule ?? throw new InvalidOperationException("No current module")).Script.ModuleInterruptAsync(context, true);
+
+	protected Task<Interrupt> ModuleInterruptAsync(AimlAsyncContext context) => this.ModuleInterruptAsync(context, true);
+	protected async Task<Interrupt> ModuleInterruptAsync(AimlAsyncContext context, bool waitForFocus) {
+		var interrupt = await Interrupt.EnterAsync(context);
+		await Utils.SelectModuleAsync(interrupt, this.ModuleIndex, waitForFocus);
+		return interrupt;
+	}
 }
 
 public abstract class ModuleScript<TReader> : ModuleScript where TReader : ComponentReader {

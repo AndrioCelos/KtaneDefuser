@@ -140,6 +140,10 @@
 		<template>DoubleK</template>
 	</category>
 	<category>
+		<pattern>GetKeypadGlyphName2 double Ks ^</pattern>
+		<template>DoubleK</template>
+	</category>
+	<category>
 		<pattern>GetKeypadGlyphName2 butterfly</pattern>
 		<template>DoubleK</template>
 	</category>

@@ -6,17 +6,26 @@ namespace BombDefuserScripts.Modules;
 internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.ComplicatedWires> {
 	public override string IndefiniteDescription => "Complicated Wires";
 
+	private bool readyToRead;
 	private static readonly bool?[] shouldCut = new bool?[16];
 	private (WireFlags flags, bool isCut)[]? wires;
 	private WireFlags? currentFlags;
 	private int highlight;
 
-	protected internal override void ModuleSelected(AimlAsyncContext context) => Read(context);
+	protected internal override void Started(AimlAsyncContext context) => this.readyToRead = true;
+
+	protected internal override async void ModuleSelected(AimlAsyncContext context) {
+		if (this.readyToRead) {
+			this.readyToRead = false;
+			await Read(context);
+		}
+	}
 
 	[AimlCategory("read")]
-	internal static async void Read(AimlAsyncContext context) {
-		var data = ReadCurrent(Reader);
-		context.RequestProcess.Log(Aiml.LogLevel.Info, $"Complicated wires: [{string.Join("] [", data.Wires)}]");
+	internal static async Task Read(AimlAsyncContext context) {
+		using var interrupt = await CurrentModuleInterruptAsync(context);
+		var data = interrupt.Read(Reader);
+		interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"Complicated wires: [{string.Join("] [", data.Wires)}]");
 		var module = GameState.Current.SelectedModule!;
 		var script = GameState.Current.CurrentScript<ComplicatedWires>();
 		script.wires ??= (from w in data.Wires select (w, false)).ToArray();
