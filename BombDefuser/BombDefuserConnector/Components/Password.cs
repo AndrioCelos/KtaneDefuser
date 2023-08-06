@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Data;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
@@ -65,10 +66,10 @@ public class Password : ComponentReader<Password.ReadData> {
 			int top, bottom, left, right, misses;
 
 			misses = 0;
-			for (top = 122; top >= 92; top--) {
+			for (top = 55; top >= 0; top--) {
 				var r = a.GetRowSpan(top);
 				misses++;
-				for (var dx = -12; dx < 12; dx++) {
+				for (var dx = -24; dx < 24; dx++) {
 					if (r[x + dx] is Rgba32 p && p.G < 96 && p.B < 24) {
 						misses = 0;
 						break;
@@ -79,10 +80,10 @@ public class Password : ComponentReader<Password.ReadData> {
 			top += 4;
 
 			misses = 0;
-			for (bottom = 122; bottom < 152; bottom++) {
+			for (bottom = 55; bottom < 110; bottom++) {
 				var r = a.GetRowSpan(bottom);
 				misses++;
-				for (var dx = -12; dx < 12; dx++) {
+				for (var dx = -24; dx < 24; dx++) {
 					if (r[x + dx] is Rgba32 p && p.G < 96 && p.B < 24) {
 						misses = 0;
 						break;
@@ -96,7 +97,7 @@ public class Password : ComponentReader<Password.ReadData> {
 			for (left = x; ; left--) {
 				misses++;
 				for (var y = top; y < bottom; y++) {
-					if (a.GetRowSpan(y)[left] is Rgba32 p && p.G < 96 && p.B < 24) {
+					if (left >= 0 && a.GetRowSpan(y)[left] is Rgba32 p && p.G < 96 && p.B < 24) {
 						misses = 0;
 						break;
 					}
@@ -108,7 +109,7 @@ public class Password : ComponentReader<Password.ReadData> {
 			for (right = x; ; right++) {
 				misses++;
 				for (var y = top; y < bottom; y++) {
-					if (a.GetRowSpan(y)[right] is Rgba32 p && p.G < 96 && p.B < 24) {
+					if (right < a.Width && a.GetRowSpan(y)[right] is Rgba32 p && p.G < 96 && p.B < 24) {
 						misses = 0;
 						break;
 					}
@@ -120,22 +121,30 @@ public class Password : ComponentReader<Password.ReadData> {
 			return new(left, top, right - left, bottom - top);
 		}
 
+		var displayCorners = ImageUtils.FindCorners(image, new(16, 64, 224, 128), c => HsvColor.FromColor(c) is HsvColor hsv && hsv.H is >= 75 and < 120 && hsv.S >= 0.8f && hsv.V >= 0.5f, 12) ?? throw new ArgumentException("Can't find the display");
+		using var displayImage = ImageUtils.PerspectiveUndistort(image, displayCorners, InterpolationMode.NearestNeighbour, new(256, 110));
+		if (debugImage is not null) {
+			debugImage.Mutate(c => c.DrawImage(displayImage, 1));
+			ImageUtils.DebugDrawPoints(debugImage, displayCorners);
+		}
+
 		var chars = new char[5];
 		var debugImage2 = debugImage;
-		image.ProcessPixelRows(a => {
+		displayImage.ProcessPixelRows(a => {
 			for (var i = 0; i < 5; i++) {
-				var bounds = GetLetterBounds(a, 48 + 37 * i);
+				var bounds = GetLetterBounds(a, 24 + 51 * i);
 				debugImage2?.Mutate(p => p.Draw(Color.Red, 1, bounds));
 
-				var charHeight = bounds.Height >= 32 ? 6 : 5;  // That pesky 'Q' making special cases again.
+				var charHeight = bounds.Height >= 45 ? 6 : 5;  // That pesky 'Q' making special cases again.
 				var charWidth = (int) Math.Round(bounds.Width / (bounds.Height / (double) charHeight));
 				var pixelHeight = (double) bounds.Height / charHeight;
+				var baseX = (bounds.Width - pixelHeight * (charWidth - 1)) / 2;
 				var pattern = new BitVector32();
 				for (var y = 0; y < charHeight; y++) {
 					var py = (int) Math.Round(bounds.Y + pixelHeight * (y + 0.5));
 					var r = a.GetRowSpan(py);
 					for (var x = 0; x < charWidth; x++) {
-						var px = (int) Math.Round(bounds.X + pixelHeight * (x + 0.5));
+						var px = (int) Math.Round(bounds.X + baseX + pixelHeight * x);
 						if (r[px].G < 96) {
 							if (debugImage2 is not null) debugImage2[px, py] = Color.Red;
 							pattern[1 << (y * 5 + x)] = true;

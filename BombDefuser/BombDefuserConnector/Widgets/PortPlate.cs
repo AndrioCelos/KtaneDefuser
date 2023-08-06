@@ -14,7 +14,7 @@ public class PortPlate : WidgetReader<PortPlate.Ports> {
 		=> Math.Max(0, pixelCounts.Grey - 4096) / 8192f;
 
 	private static bool IsGrey(HsvColor hsv) => (hsv.S < 0.08f && hsv.V < 0.5f) || (hsv.H < 120 && hsv.S < 0.12f && hsv.V >= 0.8f);  // Also include the pale cream bezel on RJ-45 ports.
-	private static bool IsPink(HsvColor hsv) => hsv.H >= 330 && hsv.S is >= 0.4f and < 0.6f && hsv.V >= 0.8f;
+	private static bool IsPink(HsvColor hsv) => hsv.H >= 330 && hsv.S is >= 0.4f and < 0.6f && hsv.V >= 0.65f;
 	private static bool IsTeal(HsvColor hsv) => hsv.H is >= 180 and < 210 && hsv.S is >= 0.4f and < 0.7f && hsv.V >= 0.4f;
 	private static bool IsRcaRed(HsvColor hsv) => hsv.H < 15 && hsv.S >= 0.75f && hsv.V >= 0.25f;
 	private static bool IsDviRed(HsvColor hsv) => hsv.H is >= 345 or < 30 && hsv.S is >= 0.4f and < 0.75f && hsv.V is >= 0.25f and < 0.75f;
@@ -51,7 +51,7 @@ public class PortPlate : WidgetReader<PortPlate.Ports> {
 		});
 
 		var ports = (PortType) 0;
-		if (pinkCount >= 600) ports |= PortType.Parallel;
+		if (pinkCount >= 1200) ports |= PortType.Parallel;
 		if (tealCount >= 300) ports |= PortType.Serial;
 		if (redCountEdge >= 200) ports |= PortType.StereoRCA;
 		if (pinkCount < 600 && redCountMiddle >= 1000) ports |= PortType.DviD;

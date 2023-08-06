@@ -64,8 +64,8 @@ internal static class Edgework {
 		if (GameState.Current.PortPlates.Count > 0) {
 			var emptyPlates = GameState.Current.PortPlates.Count(p => p == 0);
 			var emptyPlatesDesc = emptyPlates switch { 0 => "", 1 => "; an empty port plate", _ => $"{emptyPlates} empty port plates" };
-			var list = string.Join("; ", from p in GameState.Current.PortPlates select string.Join(' ', from t in GetPortTypes(p) select t switch { PortTypes.DviD => "DVI/D", PortTypes.PS2 => "PS-2", PortTypes.RJ45 => "RJ/45", PortTypes.StereoRCA => "Stereo RCA", _ => t.ToString() }));
-			ports = $"Ports: {list}{emptyPlatesDesc}";
+			var list = string.Join("; ", from p in GameState.Current.PortPlates where p != 0 select $"plate: {string.Join(' ', from t in GetPortTypes(p) select t switch { PortTypes.DviD => "DVI", PortTypes.PS2 => "PS2", PortTypes.RJ45 => "RJ45", PortTypes.StereoRCA => "RCA", _ => t.ToString() })}");
+			ports = $"Ports: {list}{emptyPlatesDesc}.";
 		} else
 			ports = "No ports.";
 		var serial = NATO.Speak(GameState.Current.SerialNumber);

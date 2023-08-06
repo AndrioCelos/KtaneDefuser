@@ -484,31 +484,31 @@
 
 	<category>
 		<pattern>GetKeypadGlyphName2 ^ psi ^</pattern>
-		<template>Pitchfork</template>
+		<template>Trident</template>
 	</category>
 	<category>
 		<pattern>GetKeypadGlyphName2 ^ pitchfork ^</pattern>
-		<template>Pitchfork</template>
+		<template>Trident</template>
 	</category>
 	<category>
 		<pattern>GetKeypadGlyphName2 ^ menorah ^</pattern>
-		<template>Pitchfork</template>
+		<template>Trident</template>
 	</category>
 	<category>
 		<pattern>GetKeypadGlyphName2 ^ trident ^</pattern>
-		<template>Pitchfork</template>
+		<template>Trident</template>
 	</category>
 	<category>
 		<pattern>GetKeypadGlyphName2 ^ candelabrum ^</pattern>
-		<template>Pitchfork</template>
+		<template>Trident</template>
 	</category>
 	<category>
 		<pattern>GetKeypadGlyphName2 ^ Jewish candle ^</pattern>
-		<template>Pitchfork</template>
+		<template>Trident</template>
 	</category>
 	<category>
 		<pattern>GetKeypadGlyphName2 ^ Jewish candles ^</pattern>
-		<template>Pitchfork</template>
+		<template>Trident</template>
 	</category>
 
 	<category>

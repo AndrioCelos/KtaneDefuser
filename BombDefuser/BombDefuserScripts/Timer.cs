@@ -1,6 +1,6 @@
 ﻿namespace BombDefuserScripts;
 internal static class Timer {
-	internal static async Task ReadTimerAsync(Image<Rgba32> screenshot) {
+	internal static async Task ReadTimerAsync(Image<Rgba32> screenshot, bool timerHasNotStartedYet) {
 		if (GameState.Current.TimerSlot is null) throw new InvalidOperationException("Don't know where the timer is.");
 		var polygon = Utils.GetPoints(GameState.Current.TimerSlot.Value);
 		int? lastSeconds = null;
@@ -9,10 +9,16 @@ internal static class Timer {
 			var data = DefuserConnector.Instance.ReadComponent(screenshot, DefuserConnector.TimerReader, polygon);
 			screenshot.Dispose();
 			GameState.Current.GameMode = data.GameMode;
+			if (timerHasNotStartedYet) {  // TimerBaseTime is now the time as of 2 seconds before the timer starts.
+				GameState.Current.TimerBaseTime = data.GameMode is BombDefuserConnector.Components.Timer.GameMode.Zen or BombDefuserConnector.Components.Timer.GameMode.Training
+					? TimeSpan.FromSeconds(data.Time - 2)
+					: TimeSpan.FromSeconds(data.Time + 2);
+				return;
+			}
 			if (lastSeconds is not null && data.Time != lastSeconds.Value) {
 				GameState.Current.TimerBaseTime = data.GameMode is BombDefuserConnector.Components.Timer.GameMode.Zen or BombDefuserConnector.Components.Timer.GameMode.Training
 					? TimeSpan.FromSeconds(data.Time) - TimeSpan.FromMilliseconds(50)
-					: TimeSpan.FromSeconds(lastSeconds.Value) + TimeSpan.FromMilliseconds(50);
+					: TimeSpan.FromSeconds(data.Time + 1) + TimeSpan.FromMilliseconds(50);
 				GameState.Current.TimerStopwatch.Restart();
 				return;
 			}
@@ -28,18 +34,10 @@ internal static class Timer {
 		if (time.Minutes > 0 ? (time.Minutes % 10 == digit || time.Minutes / 10 == digit) : digit == 0) return;
 
 		// Find out how long to wait for.
-		TimeSpan timeSpan;
-		if (GameState.Current.GameMode is BombDefuserConnector.Components.Timer.GameMode.Zen or BombDefuserConnector.Components.Timer.GameMode.Training) {
-			if (digit < time.Seconds % 10)
-				timeSpan = TimeSpan.FromTicks((digit + 10) * TimeSpan.TicksPerSecond + TimeSpan.TicksPerSecond / 2 - time.Ticks % (TimeSpan.TicksPerSecond * 10));
-			else
-				timeSpan = TimeSpan.FromTicks(digit * TimeSpan.TicksPerSecond + TimeSpan.TicksPerSecond / 2 - time.Ticks % (TimeSpan.TicksPerSecond * 10));
-		} else {
-			if (digit > time.Seconds % 10)
-				timeSpan = TimeSpan.FromTicks(time.Ticks % (TimeSpan.TicksPerSecond * 10) + 10 * TimeSpan.TicksPerSecond - digit * TimeSpan.TicksPerSecond + TimeSpan.TicksPerSecond / 2);
-			else
-				timeSpan = TimeSpan.FromTicks(time.Ticks % (TimeSpan.TicksPerSecond * 10) - digit * TimeSpan.TicksPerSecond + TimeSpan.TicksPerSecond / 2);
-		}
+		var timeSpan = GameState.Current.GameMode is BombDefuserConnector.Components.Timer.GameMode.Zen or BombDefuserConnector.Components.Timer.GameMode.Training
+			? TimeSpan.FromTicks(digit * TimeSpan.TicksPerSecond + TimeSpan.TicksPerSecond / 2 - time.Ticks % (TimeSpan.TicksPerSecond * 10))
+			: TimeSpan.FromTicks(time.Ticks % (TimeSpan.TicksPerSecond * 10) - digit * TimeSpan.TicksPerSecond - TimeSpan.TicksPerSecond / 2);
+		if (timeSpan < TimeSpan.Zero) timeSpan += TimeSpan.FromSeconds(10);
 		await AimlTasks.Delay(timeSpan);
 	}
 }

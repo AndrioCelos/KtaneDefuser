@@ -26,30 +26,47 @@ public class Maze : ComponentReader<Maze.ReadData> {
 
 	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
 		GridCell? start = null, goal = null, circle1 = null, circle2 = null;
+		var debugImage2 = debugImage;
 		image.ProcessPixelRows(a => {
 			for (var y = 0; y < 6; y++) {
 				var row = a.GetRowSpan(76 + 23 * y);
 				for (var x = 0; x < 6; x++) {
 					var p = row[60 + 23 * x];
+					if (debugImage2 is not null) debugImage2[x, y] = Color.Blue;
 					if (p.R >= 128) {
 						if (p.G >= 128) {
+							if (debugImage2 is not null) debugImage2[x, y] = Color.White;
 							if (start is not null) throw new ArgumentException("Found more than one start location.");
 							start = new(x, y);
 						} else {
+							if (debugImage2 is not null) debugImage2[x, y] = Color.Red;
 							if (goal is not null) throw new ArgumentException("Found more than one goal location.");
 							goal = new(x, y);
 						}
 					}
-					var foundLeft = false;
+					// Look left for a marking.
+					var found = false;
 					for (var dx = 0; dx < 8; dx++) {
-						if (row[44 + 23 * x + dx].G >= 96) {
-							foundLeft = true;
+						if (row[60 - 16 + 23 * x + dx].G >= 96) {
+							found = true;
 							break;
 						}
 					}
-					if (!foundLeft) continue;
+					if (!found) continue;
+					// Look right for a marking.
+					found = false;
 					for (var dx = 0; dx < 8; dx++) {
-						if (row[64 + 23 * x + dx].G >= 96) {
+						if (row[60 + 8 + 23 * x + dx].G >= 96) {
+							found = true;
+							break;
+						}
+					}
+					if (!found) continue;
+					// Look up for a marking.
+					var row2 = a.GetRowSpan(65 + 23 * y);
+					for (var dx = 0; dx < 8; dx++) {
+						if (row2[60 - 4 + 23 * x + dx].G >= 96) {
+							if (debugImage2 is not null) debugImage2[x + 1, y] = Color.Green;
 							if (circle1 is null)
 								circle1 = new(x, y);
 							else if (circle2 is null)

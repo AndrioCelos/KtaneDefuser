@@ -36,18 +36,18 @@ public class NeedyKnob : ComponentReader<NeedyKnob.ReadData> {
 	// TODO: These rectangles were chosen with respect to viewing angles that can be seen on the vanilla bomb.
 	// It should be fine with larger bombs, but should be tested.
 	private static readonly Rectangle[] rectangles = new Rectangle[] {
-		new(58, 169, 8, 8),
-		new(73, 191, 8, 8),
-		new(96, 206, 8, 8),
-		new(148, 206, 8, 8),
-		new(171, 191, 8, 8),
-		new(185, 169, 8, 8),
-		new(40, 178, 8, 8),
-		new(59, 206, 8, 8),
-		new(88, 226, 8, 8),
-		new(156, 226, 8, 8),
-		new(185, 206, 8, 8),
-		new(203, 178, 8, 8)
+		new( 57, 168, 10, 10),
+		new( 72, 190, 10, 10),
+		new( 95, 205, 10, 10),
+		new(147, 205, 10, 10),
+		new(170, 190, 10, 10),
+		new(184, 168, 10, 10),
+		new( 39, 177, 10, 10),
+		new( 58, 205, 10, 10),
+		new( 87, 225, 10, 10),
+		new(155, 225, 10, 10),
+		new(184, 205, 10, 10),
+		new(202, 177, 10, 10)
 	};
 	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
 		var time = ReadNeedyTimer(image, debugImage);

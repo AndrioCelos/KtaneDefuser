@@ -13,7 +13,7 @@ internal static class ModuleSelection {
 			return;
 		}
 		GameState.Current.CurrentModule?.Script.Stopped(context);
-		GameState.Current.CurrentModuleNum = number;
+		GameState.Current.CurrentModuleNum = index;
 		var script = GameState.Current.CurrentModule!.Script;
 		context.RequestProcess.Log(Aiml.LogLevel.Info, $"Selected module {number} ({GameState.Current.CurrentModule.Reader.Name})");
 		context.RequestProcess.User.Topic = script.Topic;

@@ -17,6 +17,7 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 		if (newState != NeedyState.Running) return;
 
 		using var interrupt = await this.PrepareToReadAsync(context);
+		await AimlTasks.Delay(1);  // Wait for an interaction punch or selection to finish.
 		if (interrupt is not null) context = interrupt.Context;
 		using var ss = DefuserConnector.Instance.TakeScreenshot();
 		var data = DefuserConnector.Instance.ReadComponent(ss, Reader, Utils.GetPoints(GameState.Current.Modules[this.ModuleIndex].Slot));
@@ -46,7 +47,6 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 		if (Utils.CanReadModuleImmediately(this.ModuleIndex)) return null;
 		var interrupt = await Interrupt.EnterAsync(context);
 		await Utils.SelectModuleAsync(interrupt, this.ModuleIndex);
-		await AimlTasks.Delay(0.5);
 		return interrupt;
 	}
 

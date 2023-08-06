@@ -1,18 +1,25 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics;
 using Aiml;
 
 namespace BombDefuserScripts;
 [AimlInterface]
 internal static class Start {
 	private static bool waitingForLights;
+	private static Stopwatch? startDelayStopwatch;
 
 	[AimlCategory("OOB DefuserSocketMessage NewBomb *"), EditorBrowsable(EditorBrowsableState.Never)]
-	public static void NewBomb() => waitingForLights = true;
+	public static async void NewBomb(AimlAsyncContext context) {
+		// 0. Clear previous game variables.
+		GameState.Current = new();
+		waitingForLights = true;
+	}
 
 	[AimlCategory("OOB DefuserSocketMessage Lights *"), EditorBrowsable(EditorBrowsableState.Never)]
 	public static async Task Lights(AimlAsyncContext context, bool on) {
 		if (on && waitingForLights) {
 			waitingForLights = false;
+			startDelayStopwatch = Stopwatch.StartNew();
 			await GameStartAsync(context);
 		}
 	}
@@ -21,12 +28,11 @@ internal static class Start {
 	public static async Task TestCategory(AimlAsyncContext context) => await GameStartAsync(context);
 
 	internal static async Task GameStartAsync(AimlAsyncContext context) {
-		// 0. Clear previous game variables.
-		GameState.Current = new();
-		// 1. Pick up the bomb.
+		// 1. Pick up the bomb
+		GameState.Current.TimerStopwatch.Restart();
 		using var interrupt = await Interrupt.EnterAsync(context);
 		interrupt.SendInputs("a");
-		await AimlTasks.Delay(1);
+		await AimlTasks.Delay(1);  // Wait for modules to initialise.
 		// 2. Identify components on the bomb.
 		using (var ss = DefuserConnector.Instance.TakeScreenshot())
 			await RegisterComponentsAsync(context, ss);
@@ -76,8 +82,10 @@ internal static class Start {
 			// If we saw the timer but don't already know the bomb time, read it now.
 			needTimerRead |= component is BombDefuserConnector.Components.Timer;
 		}
-		if (needTimerRead)
-			await Timer.ReadTimerAsync(screenshot);
+		if (needTimerRead) {
+			await Timer.ReadTimerAsync(screenshot, startDelayStopwatch is not null && startDelayStopwatch.Elapsed < TimeSpan.FromSeconds(2));
+			startDelayStopwatch = null;
+		}
 	}
 
 	private static void RegisterComponent(AimlAsyncContext context, ComponentSlot slot, ComponentReader? component) {

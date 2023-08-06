@@ -62,7 +62,7 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 		// TODO: It turns out that telling the selection highlight apart from a red wire is hard.
 		// This will use a fairly strict condition to check for the selection highlight, so it will sometimes fail to match.
 		// It will be necessary to look at the module multiple times until the selection highlight opacity is high enough.
-		static bool isSelectionHighlightStrict(HsvColor hsv) => hsv.H is >= 5 and <= 15 && hsv.S >= 0.93f && hsv.V >= 0.9f;
+		static bool isSelectionHighlightStrict(HsvColor hsv) => hsv.H is >= 5 and <= 15 && hsv.S >= 0.95f && hsv.V >= 0.9f;
 		static (int x, bool isStrictMatch)? getSelectionHighlight(Image<Rgba32> image, Rectangle textRect) {
 			var x = textRect.Right;
 			while (true) {

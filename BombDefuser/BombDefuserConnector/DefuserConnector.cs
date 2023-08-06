@@ -60,7 +60,7 @@ public class DefuserConnector {
 				switch (messageType) {
 					case MessageType.Event:
 						await stream.ReadExactlyAsync(this.readBuffer, 0, length);
-						AimlVoice.Program.sendInput($"OOB DefuserSocketMessage {Encoding.UTF8.GetString(this.readBuffer, 0, length)}");
+						_ = Task.Run(() => AimlVoice.Program.sendInput($"OOB DefuserSocketMessage {Encoding.UTF8.GetString(this.readBuffer, 0, length)}"));
 						break;
 					case MessageType.Image: {
 						if (this.screenshotTaskSource is null) break;
@@ -220,7 +220,7 @@ public class DefuserConnector {
 		this.readTaskSource = new();
 		this.SendMessage($"getmodulename {face} {x} {y}");
 		var name = this.readTaskSource.Task.Result;
-		return !string.IsNullOrEmpty(name) && typeof(ComponentReader).Assembly.GetType($"{nameof(BombDefuserConnector)}.{nameof(Components)}.{name}") is Type t ? componentReaders[t] : null;
+		return !string.IsNullOrEmpty(name) && typeof(ComponentReader).Assembly.GetType($"{nameof(BombDefuserConnector)}.{nameof(Components)}.{name}", false, true) is Type t ? componentReaders[t] : null;
 	}
 
 	public WidgetReader? GetWidgetReader(Image<Rgba32> screenshotBitmap, IReadOnlyList<Point> points) {

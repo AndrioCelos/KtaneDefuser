@@ -9,8 +9,6 @@ public class Interrupt : IDisposable {
 
 	private Interrupt(AimlAsyncContext context) => this.Context = context ?? throw new ArgumentNullException(nameof(context));
 
-	~Interrupt() => this.Dispose();
-
 	public static Task<Interrupt> EnterAsync(AimlAsyncContext context) {
 		lock (interruptQueue) {
 			if (EnableInterrupts) {
