@@ -7,10 +7,7 @@
 
 	<category>
 		<pattern>OOB DefuserSocketConnected</pattern>
-		<template>
-			Connected.
-			<condition name='simulation' value='true'><srai>test start</srai></condition>
-		</template>
+		<template><condition name='simulation' value='true'><srai>test start</srai></condition></template>
 	</category>
 
 	<category>
