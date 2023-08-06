@@ -1,9 +1,7 @@
 ﻿namespace BombDefuserScripts;
-internal class Interrupt : IDisposable {
-	public static bool IsModuleSubmitInProgress { get; set; }
+public class Interrupt : IDisposable {
 	public static bool EnableInterrupts { get; set; } = true;
-	public static int? InterruptedModuleNum { get; set; }
-	private static Queue<(TaskCompletionSource<Interrupt> taskSource, AimlAsyncContext context)> interruptQueue = new();
+	private static readonly Queue<TaskCompletionSource<Interrupt>> interruptQueue = new();
 
 	public bool IsDisposed { get; private set; }
 
@@ -11,36 +9,43 @@ internal class Interrupt : IDisposable {
 
 	private Interrupt(AimlAsyncContext context) => this.Context = context ?? throw new ArgumentNullException(nameof(context));
 
+	~Interrupt() => this.Dispose();
+
 	public static Task<Interrupt> EnterAsync(AimlAsyncContext context) {
-		if (EnableInterrupts) {
-			EnableInterrupts = false;
-			InterruptedModuleNum = GameState.Current.SelectedModuleNum;
-			return Task.FromResult(new Interrupt(context));
+		lock (interruptQueue) {
+			if (EnableInterrupts) {
+				EnableInterrupts = false;
+				return Task.FromResult(new Interrupt(context));
+			}
+			var taskSource = new TaskCompletionSource<Interrupt>();
+			interruptQueue.Enqueue(taskSource);
+			return taskSource.Task;
 		}
-		var taskSource = new TaskCompletionSource<Interrupt>();
-		interruptQueue.Enqueue((taskSource, context));
-		return taskSource.Task;
 	}
 
-	public static async void Exit(AimlAsyncContext context) {
-		IsModuleSubmitInProgress = false;
-		if (interruptQueue.TryDequeue(out var entry)) {
-			entry.taskSource.SetResult(new(context));
+	private static async void Exit(AimlAsyncContext context) {
+		TaskCompletionSource<Interrupt>? queuedTaskSource;
+		lock (interruptQueue) {
+			interruptQueue.TryDequeue(out queuedTaskSource);
+		}
+		if (queuedTaskSource is not null) {
+			queuedTaskSource.SetResult(new(context));
 		} else {
-			if (GameState.Current.SelectedModuleNum != InterruptedModuleNum) {
-				// Re-select the bomb or module that was interrupted.
-				if (InterruptedModuleNum is null) {
-					context.SendInputs("b");
-					GameState.Current.SelectedModuleNum = null;
-					GameState.Current.FocusState = FocusState.Bomb;
-				} else
-					await Utils.SelectModuleAsync(context, InterruptedModuleNum!.Value);
-				await AimlTasks.Delay(0.5);
+			if (GameState.Current.CurrentModuleNum != GameState.Current.SelectedModuleNum && GameState.Current.CurrentModuleNum is not null) {
+				// Re-select the module that was interrupted, or the new current module if it changed.
+				var interrupt = new Interrupt(context);
+				await Utils.SelectModuleAsync(interrupt, GameState.Current.CurrentModuleNum!.Value);
+				await AimlTasks.Delay(0.75);
 				// Perhaps another interrupt occurred during this.
-				if (interruptQueue.TryDequeue(out entry))
-					entry.taskSource.SetResult(new(context));
-				else
+				lock (interruptQueue) {
+					interruptQueue.TryDequeue(out queuedTaskSource);
+				}
+				if (queuedTaskSource is not null)
+					queuedTaskSource.SetResult(interrupt);
+				else {
 					EnableInterrupts = true;
+					GameState.Current.CurrentModule!.Script.ModuleSelected(context);
+				}
 			} else
 				EnableInterrupts = true;
 		}
@@ -54,7 +59,7 @@ internal class Interrupt : IDisposable {
 	public async Task<ModuleLightState> SubmitAsync(string inputs) {
 		if (this.IsDisposed) throw new ObjectDisposedException(nameof(Interrupt));
 		var context = AimlAsyncContext.Current ?? throw new InvalidOperationException("No current request");
-		await context.SendInputsAsync(inputs);
+		await this.SendInputsAsync(inputs);
 		await AimlTasks.Delay(0.5);  // Wait for the interaction punch to end.
 		using var ss = DefuserConnector.Instance.TakeScreenshot();
 		var result = DefuserConnector.Instance.GetModuleLightState(ss, Utils.CurrentModulePoints);
@@ -71,6 +76,7 @@ internal class Interrupt : IDisposable {
 		if (!this.IsDisposed) {
 			this.IsDisposed = true;
 			Exit(AimlAsyncContext.Current ?? throw new InvalidOperationException("No current request"));
+			GC.SuppressFinalize(this);
 		}
 	}
 }

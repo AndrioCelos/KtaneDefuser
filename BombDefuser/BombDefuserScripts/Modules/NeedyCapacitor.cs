@@ -15,11 +15,11 @@ internal class NeedyCapacitor : ModuleScript<BombDefuserConnector.Components.Nee
 			using var interrupt = await Interrupt.EnterAsync(context);
 			context = interrupt.Context;
 			context.Reply("Discharging the capacitor.");
-			await Utils.SelectModuleAsync(context, this.ModuleIndex);
-			context.SendInputs("a:hold");
+			await Utils.SelectModuleAsync(interrupt, this.ModuleIndex);
+			interrupt.SendInputs("a:hold");
 			var elapsed = stopwatch.Elapsed;
 			await AimlTasks.Delay(TimeSpan.FromTicks(elapsed.Ticks / 5 + TimeSpan.TicksPerSecond / 2));
-			context.SendInputs("a:release");
+			interrupt.SendInputs("a:release");
 			stopwatch.Restart();
 		}
 	}

@@ -45,7 +45,7 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 	private async Task<Interrupt?> PrepareToReadAsync(AimlAsyncContext context) {
 		if (Utils.CanReadModuleImmediately(this.ModuleIndex)) return null;
 		var interrupt = await Interrupt.EnterAsync(context);
-		await Utils.SelectModuleAsync(interrupt.Context, this.ModuleIndex);
+		await Utils.SelectModuleAsync(interrupt, this.ModuleIndex);
 		await AimlTasks.Delay(0.5);
 		return interrupt;
 	}
@@ -69,8 +69,8 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 		for (; d > 0; d--)
 			builder.Append("a ");
 		this.direction = direction;
-		await Utils.SelectModuleAsync(interrupt.Context, this.ModuleIndex);
-		await interrupt.Context.SendInputsAsync(builder.ToString());
+		await Utils.SelectModuleAsync(interrupt, this.ModuleIndex);
+		await interrupt.SendInputsAsync(builder.ToString());
 	}
 
 	[AimlCategory("<set>KnobDirection</set>", That = "Counts *", Topic = "*")]

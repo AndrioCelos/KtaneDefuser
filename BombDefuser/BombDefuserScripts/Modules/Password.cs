@@ -36,7 +36,7 @@ internal class Password : ModuleScript<BombDefuserConnector.Components.Password>
 				break;
 		}
 		this.highlightY = 1;
-		await interrupt.Context.SendInputsAsync(builder.ToString());
+		await interrupt.SendInputsAsync(builder.ToString());
 	}
 
 	private async Task CycleColumnAsync(Interrupt interrupt, int column) {
@@ -50,7 +50,7 @@ internal class Password : ModuleScript<BombDefuserConnector.Components.Password>
 			this.highlightX++;
 		}
 		builder.Append('a');
-		await interrupt.Context.SendInputsAsync(builder.ToString());
+		await interrupt.SendInputsAsync(builder.ToString());
 	}
 
 	private async Task SubmitAsync(Interrupt interrupt, string word) {

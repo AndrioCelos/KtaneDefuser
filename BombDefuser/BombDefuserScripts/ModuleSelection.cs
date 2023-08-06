@@ -12,13 +12,19 @@ internal static class ModuleSelection {
 			context.Reply("There do not seem to be that many modules.");
 			return;
 		}
-		var module = GameState.Current.Modules[index];
-		var script = module.Script!;
-		context.Reply($"<oob><queue/><setgrammar>{script.Topic}</setgrammar></oob> Module {number} is {script.IndefiniteDescription}.");
-		await Utils.SelectModuleAsync(context, index);
+		GameState.Current.CurrentModule?.Script.Stopped(context);
+		GameState.Current.CurrentModuleNum = number;
+		var script = GameState.Current.CurrentModule!.Script;
+		context.RequestProcess.Log(Aiml.LogLevel.Info, $"Selected module {number} ({GameState.Current.CurrentModule.Reader.Name})");
 		context.RequestProcess.User.Topic = script.Topic;
-		script.Entering(context);
-		await AimlTasks.Delay(0.75);
-		script.ModuleSelected(context);
+		context.Reply($"<oob><queue/><setgrammar>{script.Topic}</setgrammar></oob> Module {number} is {script.IndefiniteDescription}.");
+		script.Started(context);
+		// If we aren't in another interrupt, select this module. (If we are, Interrupt.Exit will select this module afterward if it is still the current module.)
+		if (Interrupt.EnableInterrupts) {
+			using var interrupt = await Interrupt.EnterAsync(context);
+			await Utils.SelectModuleAsync(interrupt, GameState.Current.CurrentModuleNum.Value);
+			await AimlTasks.Delay(0.75);
+			script.ModuleSelected(context);
+		}
 	}
 }

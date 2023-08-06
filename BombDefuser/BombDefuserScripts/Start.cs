@@ -24,31 +24,32 @@ internal static class Start {
 		// 0. Clear previous game variables.
 		GameState.Current = new();
 		// 1. Pick up the bomb.
-		context.SendInputs("a");
+		using var interrupt = await Interrupt.EnterAsync(context);
+		interrupt.SendInputs("a");
 		await AimlTasks.Delay(1);
 		// 2. Identify components on the bomb.
 		using (var ss = DefuserConnector.Instance.TakeScreenshot())
 			await RegisterComponentsAsync(context, ss);
 		// 3. Turn the bomb around and identify widgets on the side.
-		await Utils.SelectFaceAsync(context, 1, SelectFaceAlignMode.CheckWidgets);
+		await Utils.SelectFaceAsync(interrupt, 1, SelectFaceAlignMode.CheckWidgets);
 		// 4. Repeat steps 2-3 for the other faces.
 		using (var ss = DefuserConnector.Instance.TakeScreenshot())
 			await RegisterComponentsAsync(context, ss);
-		await Utils.SelectFaceAsync(context, 0, SelectFaceAlignMode.CheckWidgets);
+		await Utils.SelectFaceAsync(interrupt, 0, SelectFaceAlignMode.CheckWidgets);
 		// 5. Turn the bomb to the bottom face.
-		context.SendInputs("ry:-0.875");
+		interrupt.SendInputs("ry:-0.875");
 		await AimlTasks.Delay(0.5);
 		// 6. Identify widgets on the bottom face.
 		using (var ss = DefuserConnector.Instance.TakeScreenshot())
 			Edgework.RegisterWidgets(context, false, ss);
 		// 7. Turn the bomb to the top face.
-		context.SendInputs("ry:1");
+		interrupt.SendInputs("ry:1");
 		await AimlTasks.Delay(0.5);
 		// 8. Identify widgets on the top face.
 		using (var ss = DefuserConnector.Instance.TakeScreenshot())
 			Edgework.RegisterWidgets(context, false, ss);
 		// 9. Reset the bomb tilt.
-		context.SendInputs("ry:0");
+		interrupt.SendInputs("ry:0");
 		context.Reply("Ready.");
 	}
 
@@ -84,7 +85,6 @@ internal static class Start {
 			case null:
 				break;
 			case BombDefuserConnector.Components.Timer:
-				GameState.Current.Faces[slot.Face][slot] = new(slot, component, null);
 				GameState.Current.TimerSlot = slot;
 				context.RequestProcess.Log(LogLevel.Info, $"Registering timer @ {slot}");
 				break;
@@ -98,6 +98,12 @@ internal static class Start {
 				context.RequestProcess.Log(LogLevel.Info, $"Registering module {script.ModuleIndex + 1}: {component.Name} @ {slot}");
 				if (script.PriorityCategory != PriorityCategory.None)
 					context.Reply($"<oob><queue/></oob> Module {script.ModuleIndex + 1} is {script.IndefiniteDescription}.");
+				script.Initialise(context);
+				if (GameState.Current.UnknownNeedyStates.TryGetValue(slot, out var state)) {
+					GameState.Current.UnknownNeedyStates.Remove(slot);
+					script.NeedyState = state;
+					script.NeedyStateChanged(context, state);
+				}
 				break;
 		}
 	}

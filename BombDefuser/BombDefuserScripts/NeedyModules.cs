@@ -6,8 +6,12 @@ internal class NeedyModules {
 	[AimlCategory("OOB DefuserSocketMessage NeedyStateChanged * * * *"), EditorBrowsable(EditorBrowsableState.Never)]
 	public static void NeedyStateChange(AimlAsyncContext context, int faceNum, int x, int y, NeedyState newState) {
 		var module = GameState.Current.Faces[faceNum][x, y];
-		if (module?.Script is not ModuleScript script) return;
-		script.NeedyState = newState;
-		script.NeedyStateChanged(context, newState);
+		if (module?.Script is ModuleScript script) {
+			script.NeedyState = newState;
+			script.NeedyStateChanged(context, newState);
+		} else {
+			// This is a module we haven't seen yet; deal with it when we've seen what it is and initialised the script.
+			GameState.Current.UnknownNeedyStates[new(faceNum, x, y)] = newState;
+		}
 	}
 }

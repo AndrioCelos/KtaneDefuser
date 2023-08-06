@@ -24,8 +24,9 @@ public partial class ClassificationForm : Form {
 	}
 
 	private void button2_Click(object sender, EventArgs e) {
-		if (Clipboard.ContainsImage()) {
-			screenBitmap = Clipboard.GetImage()!.ToImage<Rgba32>();
+		var image = Clipboard.GetImage();
+		if (image is not null) {
+			this.screenBitmap = image.ToImage<Rgba32>();
 			pictureBox1.Image = screenBitmap.ToWinFormsImage();
 			comboBox1_SelectedIndexChanged(sender, EventArgs.Empty);
 		} else

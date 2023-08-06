@@ -14,7 +14,7 @@ internal class WireSequence : ModuleScript<BombDefuserConnector.Components.WireS
 		using var interrupt = await Interrupt.EnterAsync(context);
 		// The highlight starts on the previous button, so move down first.
 		if (this.highlight == -1) {
-			await interrupt.Context.SendInputsAsync("down");
+			await interrupt.SendInputsAsync("down");
 			this.highlight = -2;
 		}
 		await this.ContinuePageAsync(interrupt);
@@ -58,7 +58,7 @@ internal class WireSequence : ModuleScript<BombDefuserConnector.Components.WireS
 						builder.Append("up ");
 					}
 					this.highlight = i;
-					await interrupt.Context.SendInputsAsync(builder.ToString());
+					await interrupt.SendInputsAsync(builder.ToString());
 					await this.ContinuePageAsync(interrupt);
 				}
 				break;
@@ -92,7 +92,7 @@ internal class WireSequence : ModuleScript<BombDefuserConnector.Components.WireS
 		if (cut)
 			await interrupt.SubmitAsync("a down");
 		else
-			await interrupt.Context.SendInputsAsync("down");
+			await interrupt.SendInputsAsync("down");
 		do { this.highlight++; } while (this.highlight < 3 && this.currentPageColours[this.highlight] is null);
 		await this.ContinuePageAsync(interrupt);
 	}

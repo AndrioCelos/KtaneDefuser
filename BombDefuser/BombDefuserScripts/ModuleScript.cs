@@ -37,13 +37,22 @@ public abstract class ModuleScript {
 		return DefuserConnector.Instance.ReadComponent(ss, reader, Utils.CurrentModulePoints);
 	}
 
+	/// <summary>Called when the script is initialised at the start of the game.</summary>
 	protected internal virtual void Initialise(AimlAsyncContext context) { }
-	protected internal virtual void Entering(AimlAsyncContext context) { }
+	/// <summary>Called when the expert has chosen to work on this module.</summary>
+	protected internal virtual void Started(AimlAsyncContext context) { }
+	/// <summary>Called when the expert has ceased to work on this module.</summary>
+	protected internal virtual void Stopped(AimlAsyncContext context) { }
+	/// <summary>Called when the module has been fully selected and focused in-game.</summary>
 	protected internal virtual void ModuleSelected(AimlAsyncContext context) { }
+	/// <summary>Called when the module has been deselected in-game.</summary>
+	protected internal virtual void ModuleDeselected(AimlAsyncContext context) { }
+	/// <summary>Called when the state of the needy module has changed.</summary>
 	protected internal virtual void NeedyStateChanged(AimlAsyncContext context, NeedyState newState) { }
 }
 
 public abstract class ModuleScript<TReader> : ModuleScript where TReader : ComponentReader {
+	/// <summary>Returns the <see cref="ComponentReader"/> instance matching this module type.</summary>
 	protected static TReader Reader => DefuserConnector.GetComponentReader<TReader>();
 }
 

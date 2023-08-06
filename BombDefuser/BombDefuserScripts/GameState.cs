@@ -2,29 +2,32 @@
 
 namespace BombDefuserScripts;
 public class GameState {
-	private int? selectedModuleNum;
-
 	public static GameState Current { get; set; } = new();
 
+	/// <summary>Indicates whether we are waiting for the lights to turn on at the start of the game.</summary>
 	public bool WaitingForLights { get; set; }
+	/// <summary>The location of the timer, or <see langword="null"/> if it is unknown.</summary>
 	public ComponentSlot? TimerSlot { get; set; }
+	/// <summary>The time on the timer at the moment the <see cref="TimerStopwatch"/> was started.</summary>
 	public TimeSpan TimerBaseTime { get; set; } = TimeSpan.Zero;
+	/// <summary>A <see cref="Stopwatch"/> that keeps track of the bomb time.</summary>
 	public Stopwatch TimerStopwatch { get; set; } = Stopwatch.StartNew();
+	/// <summary>The index of the currently-selected bomb face.</summary>
 	public int SelectedFaceNum { get; set; }
+	/// <summary>Returns a <see cref="BombFace"/> instance representing the currently-selected bomb face.</summary>
 	public BombFace SelectedFace => this.Faces[this.SelectedFaceNum];
-	public int? SelectedModuleNum {
-		get => selectedModuleNum;
-		set {
-			if (value == selectedModuleNum) return;
-			if (selectedModuleNum != null)
-				this.ModuleDeselected?.Invoke(null, EventArgs.Empty);
-			selectedModuleNum = value;
-			if (value != null)
-				this.ModuleSelected?.Invoke(null, EventArgs.Empty);
-		}
-	}
+	/// <summary>The currently-selected module number, or <see langword="null"/> if no module is selected.</summary>
+	public int? SelectedModuleNum { get; set; }
+	/// <summary>Returns a <see cref="ModuleState"/> instance representing the currently-selected module, or <see langword="null"/> if no module is selected.</summary>
 	public ModuleState? SelectedModule => this.SelectedModuleNum is not null ? this.Modules[this.SelectedModuleNum.Value] : null;
-	public T CurrentScript<T>() where T : ModuleScript => this.SelectedModule?.Script as T ?? throw new InvalidOperationException("Specified script is not in progress.");
+
+	/// <summary>The number of the module we're currently discussing with the expert, or <see langword="null"/> if no module is in progress.</summary>
+	public int? CurrentModuleNum { get; set; }
+	/// <summary>Returns a <see cref="ModuleState"/> instance representing the module we're discussing with the expert, or <see langword="null"/> if no module is in progress.</summary>
+	public ModuleState? CurrentModule => this.CurrentModuleNum is not null ? this.Modules[this.CurrentModuleNum.Value] : null;
+	/// <summary>Returns a <see cref="ModuleScript{TReader}"/> instance of the specified type for the module we're currently discussing with the expert.</summary>
+	/// <exception cref="InvalidOperationException">The specified script type is not in progress.</exception>
+	public T CurrentScript<T>() where T : ModuleScript => this.CurrentModule?.Script as T ?? throw new InvalidOperationException("Specified script is not in progress.");
 
 	internal FocusState FocusState { get; set; }
 	internal BombFace[] Faces { get; } = new BombFace[] { new(), new() };
@@ -57,12 +60,12 @@ public class GameState {
 
 	public BombDefuserConnector.Components.Timer.GameMode GameMode { get; set; }
 
-	public event EventHandler? ModuleDeselected;
-	public event EventHandler? ModuleSelected;
-
+	/// <summary>Returns the current bomb time.</summary>
 	public TimeSpan Time => this.GameMode is BombDefuserConnector.Components.Timer.GameMode.Zen or BombDefuserConnector.Components.Timer.GameMode.Training
 		? this.TimerBaseTime + this.TimerStopwatch.Elapsed
 		: this.TimerBaseTime - this.TimerStopwatch.Elapsed;
+
+	public readonly Dictionary<ComponentSlot, NeedyState> UnknownNeedyStates = new();
 }
 
 public struct IndicatorData {
@@ -86,11 +89,14 @@ public enum PortTypes {
 }
 
 public class ModuleState {
+	/// <summary>The slot that this module is in.</summary>
 	public ComponentSlot Slot { get; }
+	/// <summary>The <see cref="ComponentReader"/> instance corresponding to the module type.</summary>
 	public ComponentReader Reader { get; }
-	public ModuleScript? Script { get; }  // Will be null for the timer.
+	/// <summary>A <see cref="ModuleScript"/> instance handling this module.</summary>
+	public ModuleScript Script { get; }  // Will be null for the timer.
 
-	public ModuleState(ComponentSlot slot, ComponentReader reader, ModuleScript? script) {
+	public ModuleState(ComponentSlot slot, ComponentReader reader, ModuleScript script) {
 		this.Slot = slot;
 		this.Reader = reader ?? throw new ArgumentNullException(nameof(reader));
 		this.Script = script;
@@ -98,7 +104,7 @@ public class ModuleState {
 }
 
 public class BombFace {
-	public bool HasModules;
+	public bool HasModules { get; set; }
 	public ComponentSlot SelectedSlot;
 
 	private readonly ModuleState?[,] slots = new ModuleState?[3, 2];

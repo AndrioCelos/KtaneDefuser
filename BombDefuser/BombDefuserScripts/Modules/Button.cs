@@ -20,7 +20,7 @@ internal class Button : ModuleScript<BombDefuserConnector.Components.Button> {
 	[AimlCategory("hold")]
 	internal static async Task Hold(AimlAsyncContext context) {
 		interrupt = await Interrupt.EnterAsync(context);
-		interrupt.Context.SendInputs("a:hold");
+		interrupt.SendInputs("a:hold");
 		await AimlTasks.Delay(1);
 		Read(interrupt.Context);
 	}

@@ -8,6 +8,6 @@ public static class AimlTasks {
 	public static AimlTask Delay(TimeSpan timeSpan) => timer.CallAsync(timeSpan.TotalSeconds);
 	public static AimlTask Delay(object seconds) => timer.CallAsync(seconds);
 	public static AimlTask SendInputsAsync(string inputs) => sendInputs.CallAsync(inputs);
-	public static AimlTask SendInputsAsync(this AimlAsyncContext context, string inputs) => sendInputs.CallAsync(inputs);
-	public static void SendInputs(this AimlAsyncContext context, string inputs) => context.Reply($"<oob><sendinputs>{inputs}</sendinputs></oob>");
+	public static AimlTask SendInputsAsync(this Interrupt interrupt, string inputs) => sendInputs.CallAsync(inputs);
+	public static void SendInputs(this Interrupt interrupt, string inputs) => interrupt.Context.Reply($"<oob><sendinputs>{inputs}</sendinputs></oob>");
 }

@@ -10,6 +10,7 @@ public partial class ColourRangeForm : Form {
 	}
 
 	public void RecalculateAverage() {
+		if (originalImage is null) return;
 		long r = 0, g = 0, b = 0, a = 0;
 		for (int y = 0; y < originalImage.Height; y++) {
 			for (int x = 0; x < originalImage.Width; x++) {
@@ -33,8 +34,7 @@ public partial class ColourRangeForm : Form {
 	}
 
 	public void Redraw() {
-		if (originalImage == null)
-			return;
+		if (originalImage is null) return;
 		var bitmap = new Bitmap(originalImage);
 		if (comboBox1.SelectedIndex == 1) {
 			for (int y = 0; y < bitmap.Height; y++) {
@@ -98,8 +98,9 @@ public partial class ColourRangeForm : Form {
 	}
 
 	private void button2_Click(object sender, EventArgs e) {
-		if (Clipboard.ContainsImage()) {
-			originalImage = new Bitmap(Clipboard.GetImage());
+		var image = Clipboard.GetImage();
+		if (image is not null) {
+			this.originalImage = new Bitmap(image);
 			RecalculateAverage();
 			Redraw();
 		}
