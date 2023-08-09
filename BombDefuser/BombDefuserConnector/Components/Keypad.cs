@@ -97,121 +97,47 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 
 		var keysBitmap = ImageUtils.PerspectiveUndistort(image, keypadCorners, InterpolationMode.Bilinear, new(256, 256));
 
-		var keyRectangles = new Rectangle[] { new(0, 0, 128, 128), new(128, 0, 128, 128), new(0, 128, 128, 128), new(128, 128, 128, 128) };
+		var keyRectangles = new Rectangle[] { new(8, 16, 112, 96), new(136, 16, 112, 96), new(8, 144, 112, 96), new(136, 144, 112, 96) };
 
 		// Find the symbol bounding boxes.
 		for (var i = 0; i < 4; i++) {
-			// Find approximately the nearest dark pixel to the centre.
-			var startPoint = new Point(i % 2 == 0 ? 64 : 192, i / 2 == 0 ? 80 : 208);
+			var rect = keyRectangles[i];
 
-			var d = Size.Empty;
-			var quadrant = -1;
-			while (true) {
-				var p = startPoint + d;
-				if (p.X is >= 0 and < 256 && p.Y is >= 0 and < 256 &&
-					HsvColor.FromColor(keysBitmap[startPoint.X + d.Width, startPoint.Y + d.Height]).V < 0.5f)
-					break;
-
-				if (d == Size.Empty)
-					d.Height--;
-				switch (quadrant) {
-					case 0:
-						d.Width++;
-						d.Height++;
-						if (d.Height == 0) quadrant = 1;
-						break;
-					case 1:
-						d.Width--;
-						d.Height++;
-						if (d.Width == 0) quadrant = 2;
-						break;
-					case 2:
-						d.Width--;
-						d.Height--;
-						if (d.Height == 0) quadrant = 3;
-						break;
-					case 3:
-						d.Width++;
-						d.Height--;
-						if (d.Width == 0) goto default;
-						break;
-					default:
-						d.Height--;
-						quadrant = 0;
-						break;
+			// Skip over the light and key shadows.
+			keysBitmap.ProcessPixelRows(a => {
+				while (true) {
+					var r = a.GetRowSpan(rect.Y);
+					if (HsvColor.FromColor(r[(rect.Left + rect.Right) / 2]).V >= 0.5f) break;
+					rect.Y++;
+					rect.Height--;
 				}
-			}
-
-			startPoint += d;
-			var bbox = new Rectangle(startPoint, Size.Empty);
-			bbox.Inflate(5, 5);
-
-			// Find the symbol bounding box.
-			var clearLines = 0;
-			var edge = 0;
-			while (clearLines < 32) {
-				if (edge < 2) {
-					var y = edge == 0 ? bbox.Top : bbox.Bottom;
+				rect.Y += 2;
+				rect.Height -= 2;
+				while (true) {
+					var r = a.GetRowSpan(rect.Bottom - 1);
+					if (HsvColor.FromColor(r[(rect.Left + rect.Right) / 2]) is HsvColor hsv && hsv.V >= 0.5f && hsv.S < 0.5f) break;
+					rect.Height--;
+				}
+				rect.Height -= 2;
+				while (true) {
 					var found = false;
-					for (var dx = 0; dx < bbox.Width; dx++) {
-						if (HsvColor.FromColor(keysBitmap[bbox.X + dx, y]).V < 0.5f) {
+					for (var y = rect.Top; y < rect.Bottom; y++) {
+						var hsv = HsvColor.FromColor(a.GetRowSpan(y)[rect.Right - 1]);
+						if (hsv.V < 0.5f || hsv.S >= 0.5f) {
 							found = true;
 							break;
 						}
 					}
-					if (found && edge == 0) {
-						// Try to filter out the LED; it consists of about 32 black pixels all in a row and 4 other dark pixels.
-						int blackCount = 0, blackInARowCount = 0, darkCount = 0;
-						var lastWasBlack = false;
-						for (var dx = 0; dx < bbox.Width; dx++) {
-							var hsv = HsvColor.FromColor(keysBitmap[bbox.X + dx, y]);
-							if (hsv.V < 0.2f) {
-								if (!lastWasBlack) {
-									lastWasBlack = true;
-									blackInARowCount = 0;
-								}
-								darkCount++;
-								blackCount++;
-								blackInARowCount++;
-							} else if (hsv.V < 0.5f) {
-								darkCount++;
-								lastWasBlack = false;
-							} else {
-								lastWasBlack = false;
-							}
-						}
-						if (blackCount is >= 30 and <= 40 && blackInARowCount == blackCount && darkCount is >= 35 and <= 50)
-							found = false;
-					}
-					if (found) {
-						clearLines = 0;
-						if (edge == 0) bbox.Y--;
-						bbox.Height++;
-					} else clearLines++;
-				} else {
-					var x = edge == 2 ? bbox.Left : bbox.Right;
-					var found = false;
-					for (var dy = 0; dy < bbox.Height; dy++) {
-						if (HsvColor.FromColor(keysBitmap[x, bbox.Y + dy]).V < 0.5f) {
-							found = true;
-							break;
-						}
-					}
-					if (found) {
-						clearLines = 0;
-						if (edge == 2) bbox.X--;
-						bbox.Width++;
-					} else clearLines++;
+					if (!found) break;
+					rect.Width--;
 				}
-				edge = (edge + 1) % 4;
-				if (clearLines != 0 && clearLines % 4 == 0)
-					bbox.Inflate(1, 1);
-			}
+				rect.Width -= 2;
+			});
 
-			//bbox.Inflate(-4, -4);
-			if (bbox.X < 0) bbox.X = 0;
-			if (bbox.Y < 0) bbox.Y = 0;
-			keyRectangles[i] = bbox;
+			rect = ImageUtils.FindEdges(keysBitmap, rect, c => HsvColor.FromColor(c).V < 0.5f);
+			rect.Inflate(6, 6);
+
+			keyRectangles[i] = rect;
 		}
 
 		if (debugImage is not null) {

@@ -99,6 +99,7 @@ public class SerialNumber : WidgetReader<string> {
 				if (isUpsideDown == true)
 					charImage.Mutate(c => c.Rotate(RotateMode.Rotate180));
 				charImages.Add(charImage);
+				if (charImages.Count == 6) break;
 				charStart = null;
 			}
 		}
@@ -108,7 +109,7 @@ public class SerialNumber : WidgetReader<string> {
 				debugImage?.Mutate(c => c.DrawImage(charImages[i], new Point(64 * i, 256), 1));
 			}
 		}
-		if (charImages.Count != 6) throw new ArgumentException("Found wrong number of characters");
+		if (charImages.Count < 6) throw new ArgumentException("Found wrong number of characters");
 
 		for (var attempt = 0; ; attempt++) {
 			var chars = new char[6];
