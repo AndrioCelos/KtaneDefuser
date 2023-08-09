@@ -186,7 +186,7 @@ public class DefuserConnector : IDisposable {
 	[Obsolete($"String input commands are being replaced with {nameof(IInputAction)}.")]
 	public void SendInputs(string inputs) {
 		if (this.simulation is not null)
-			this.simulation.SendInputs(inputs);
+			throw new NotImplementedException();
 		else {
 			try {
 				this.SendMessage(new LegacyCommandMessage($"input {inputs}"));
@@ -196,9 +196,14 @@ public class DefuserConnector : IDisposable {
 		}
 	}
 	/// <summary>Sends the specified controller inputs to the game.</summary>
-	public void SendInputs(params IInputAction[] actions) => this.SendMessage(new InputCommandMessage(actions));
+	public void SendInputs(params IInputAction[] actions) => this.SendInputs((IEnumerable<IInputAction>) actions);
 	/// <summary>Sends the specified controller inputs to the game.</summary>
-	public void SendInputs(IEnumerable<IInputAction> actions) => this.SendMessage(new InputCommandMessage(actions));
+	public void SendInputs(IEnumerable<IInputAction> actions) {
+		if (this.simulation is not null)
+			this.simulation.SendInputs(actions);
+		else
+			this.SendMessage(new InputCommandMessage(actions));
+	}
 
 	/// <summary>If in a simulation, solves the current module.</summary>
 	public void CheatSolve() {
@@ -311,7 +316,7 @@ public class DefuserConnector : IDisposable {
 		return ratings[0].rating >= 0.25f ? ratings[0].reader : null;
 	}
 
-	/// <summary>Reads module data from the module in the specified polygon using the specified <see cref="ComponentReader"/>.</summary>
+	/// <summary>Reads component data from the module in the specified polygon using the specified <see cref="ComponentReader"/>.</summary>
 	public T ReadComponent<T>(Image<Rgba32> screenshot, ComponentReader<T> reader, IReadOnlyList<Point> polygon) where T : notnull {
 		if (this.simulation is not null)
 			return this.simulation.ReadComponent<T>(polygon[0]);

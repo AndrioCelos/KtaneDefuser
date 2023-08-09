@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -8,6 +8,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserConnector;
+/// <summary>Provides a simulation of a Keep Talking and Nobody Explodes game, for testing without the real game.</summary>
 internal partial class Simulation {
 	private int roomX;
 	private readonly Timer rxTimer = new(187.5);
@@ -16,7 +17,7 @@ internal partial class Simulation {
 	private FocusStates focusState;
 	private int selectedFaceNum;
 	private BombFaces currentFace;
-	private readonly Queue<string> actionQueue = new();
+	private readonly Queue<IInputAction> actionQueue = new();
 	private readonly Timer queueTimer = new(1000 / 6);
 	private readonly ComponentFace[] moduleFaces = new ComponentFace[2];
 	private readonly WidgetFace[] widgetFaces = new WidgetFace[4];
@@ -75,6 +76,7 @@ internal partial class Simulation {
 		}
 	}
 
+	/// <summary>Writes the specified message to the console with a colour and prefix.</summary>
 	private static void Message(string s) {
 		Console.ForegroundColor = ConsoleColor.Cyan;
 		Console.WriteLine($"Simulation: {s}");
@@ -88,147 +90,152 @@ internal partial class Simulation {
 			this.queueTimer.Stop();
 			return;
 		}
-		var tokens2 = action.Split(':');
-		switch (tokens2[0].ToLowerInvariant()) {
-			case "callback":
-				AimlVoice.Program.sendInput($"OOB DefuserCallback {(tokens2.Length > 1 ? tokens2[1] : "nil")}");
+		switch (action) {
+			case CallbackAction callbackAction:
+				AimlVoice.Program.sendInput($"OOB DefuserCallback {callbackAction.Token:N}");
 				break;
-			case "rx":
-				var v = float.Parse(tokens2[1]);
-				if (v > 0)
-					this.rxTimer.Start();
-				else
-					this.rxTimer.Stop();
-				break;
-			case "ry":
-				this.ry = float.Parse(tokens2[1]);
-				break;
-			case "a":
-				switch (this.focusState) {
-					case FocusStates.Room:
-						this.focusState = this.roomX == -1 ? FocusStates.AlarmClock : FocusStates.Bomb;
-						Message($"{this.focusState} selected");
+			case AxisAction axisAction:
+				switch (axisAction.Axis) {
+					case Axis.RightStickX:
+						if (axisAction.Value > 0)
+							this.rxTimer.Start();
+						else
+							this.rxTimer.Stop();
 						break;
-					case FocusStates.AlarmClock:
-						this.SetAlarmClock(!isAlarmClockOn);
+					case Axis.RightStickY:
+						this.ry = axisAction.Value;
 						break;
-					case FocusStates.Bomb:
-						if ((int) this.currentFace % 2 != 0) {
-							this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
-							this.rxBetweenFaces = false;
-							Message($"Aligned the bomb to {this.currentFace}");
+				}
+				break;
+			case ButtonAction buttonAction:
+				switch (buttonAction.Button) {
+					case Button.A:
+						switch (this.focusState) {
+							case FocusStates.Room:
+								this.focusState = this.roomX == -1 ? FocusStates.AlarmClock : FocusStates.Bomb;
+								Message($"{this.focusState} selected");
+								break;
+							case FocusStates.AlarmClock:
+								this.SetAlarmClock(!isAlarmClockOn);
+								break;
+							case FocusStates.Bomb:
+								if ((int) this.currentFace % 2 != 0) {
+									this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
+									this.rxBetweenFaces = false;
+									Message($"Aligned the bomb to {this.currentFace}");
+								}
+								var component = this.SelectedFace.SelectedComponent;
+								if (component == null)
+									Message("No module is highlighted.");
+								else if (component is Module module1) {
+									this.focusState = FocusStates.Module;
+									Message($"{component.Reader.Name} [{module1.ID}] ({this.SelectedFace.X + 1}, {this.SelectedFace.Y + 1}) selected");
+								} else
+									Message($"Can't select {component.Reader.Name}.");
+								break;
+							case FocusStates.Module:
+								if (this.SelectedFace.SelectedComponent is Module module2) {
+									switch (buttonAction.Action) {
+										case ButtonActionType.Hold:
+											module2.Interact();
+											break;
+										case ButtonActionType.Release:
+											module2.StopInteract();
+											break;
+										default:
+											module2.Interact();
+											module2.StopInteract();
+											break;
+									}
+								}
+								break;
 						}
-						var component = this.SelectedFace.SelectedComponent;
-						if (component == null)
-							Message("No module is highlighted.");
-						else if (component is Module module1) {
-							this.focusState = FocusStates.Module;
-							Message($"{component.Reader.Name} [{module1.ID}] ({this.SelectedFace.X + 1}, {this.SelectedFace.Y + 1}) selected");
-						} else
-							Message($"Can't select {component.Reader.Name}.");
 						break;
-					case FocusStates.Module:
-						if (this.SelectedFace.SelectedComponent is Module module2) {
-							switch (tokens2.ElementAtOrDefault(1)) {
-								case "hold":
-									module2.Interact();
-									break;
-								case "release":
-									module2.StopInteract();
-									break;
-								default:
-									module2.Interact();
-									module2.StopInteract();
-									break;
-							}
+					case Button.B:
+						switch (this.focusState) {
+							case FocusStates.AlarmClock:
+							case FocusStates.Bomb:
+								if ((int) this.currentFace % 2 != 0) {
+									this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
+									this.rxBetweenFaces = false;
+									Message($"Aligned the bomb to {this.currentFace}");
+								}
+								this.focusState = FocusStates.Room;
+								if ((int) this.currentFace % 2 != 0) {
+									this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
+									this.rxBetweenFaces = false;
+									Message($"Aligned the bomb to {this.currentFace}");
+								}
+								Message("Returned to room");
+								break;
+							case FocusStates.Module:
+								this.focusState = FocusStates.Bomb;
+								Message("Returned to bomb");
+								break;
+						}
+						break;
+					case Button.Left:
+						switch (this.focusState) {
+							case FocusStates.Room:
+								if (this.roomX == 0) this.roomX = -1;
+								break;
+							case FocusStates.Bomb:
+								do {
+									this.SelectedFace.X--;
+								} while (this.SelectedFace.SelectedComponent is not Module);
+								break;
+							case FocusStates.Module:
+								if (this.SelectedFace.SelectedComponent is Module module)
+									module.MoveHighlight(DataTypes.Direction.Left);
+								break;
+						}
+						break;
+					case Button.Right:
+						switch (this.focusState) {
+							case FocusStates.Room:
+								if (this.roomX == -1) this.roomX = 0;
+								break;
+							case FocusStates.Bomb:
+								do {
+									this.SelectedFace.X++;
+								} while (this.SelectedFace.SelectedComponent is not Module);
+								break;
+							case FocusStates.Module:
+								if (this.SelectedFace.SelectedComponent is Module module)
+									module.MoveHighlight(DataTypes.Direction.Right);
+								break;
+						}
+						break;
+					case Button.Up:
+						switch (this.focusState) {
+							case FocusStates.Bomb:
+								this.SelectedFace.Y--;
+								this.FindNearestModule();
+								break;
+							case FocusStates.Module:
+								if (this.SelectedFace.SelectedComponent is Module module)
+									module.MoveHighlight(DataTypes.Direction.Up);
+								break;
+						}
+						break;
+					case Button.Down:
+						switch (this.focusState) {
+							case FocusStates.Bomb:
+								this.SelectedFace.Y++;
+								this.FindNearestModule();
+								break;
+							case FocusStates.Module:
+								if (this.SelectedFace.SelectedComponent is Module module)
+									module.MoveHighlight(DataTypes.Direction.Down);
+								break;
 						}
 						break;
 				}
 				break;
-			case "b":
-				switch (this.focusState) {
-					case FocusStates.AlarmClock:
-					case FocusStates.Bomb:
-						if ((int) this.currentFace % 2 != 0) {
-							this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
-							this.rxBetweenFaces = false;
-							Message($"Aligned the bomb to {this.currentFace}");
-						}
-						this.focusState = FocusStates.Room;
-						if ((int) this.currentFace % 2 != 0) {
-							this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
-							this.rxBetweenFaces = false;
-							Message($"Aligned the bomb to {this.currentFace}");
-						}
-						Message("Returned to room");
-						break;
-					case FocusStates.Module:
-						this.focusState = FocusStates.Bomb;
-						Message("Returned to bomb");
-						break;
-				}
-				break;
-			case "left":
-				switch (this.focusState) {
-					case FocusStates.Room:
-						if (this.roomX == 0) this.roomX = -1;
-						break;
-					case FocusStates.Bomb:
-						do {
-							this.SelectedFace.X--;
-						} while (this.SelectedFace.SelectedComponent is not Module);
-						break;
-					case FocusStates.Module:
-						if (this.SelectedFace.SelectedComponent is Module module)
-							module.MoveHighlight(DataTypes.Direction.Left);
-						break;
-				}
-				break;
-			case "right":
-				switch (this.focusState) {
-					case FocusStates.Room:
-						if (this.roomX == -1) this.roomX = 0;
-						break;
-					case FocusStates.Bomb:
-						do {
-							this.SelectedFace.X++;
-						} while (this.SelectedFace.SelectedComponent is not Module);
-						break;
-					case FocusStates.Module:
-						if (this.SelectedFace.SelectedComponent is Module module)
-							module.MoveHighlight(DataTypes.Direction.Right);
-						break;
-				}
-				break;
-			case "up":
-				switch (this.focusState) {
-					case FocusStates.Bomb:
-						this.SelectedFace.Y--;
-						this.FindNearestModule();
-						break;
-					case FocusStates.Module:
-						if (this.SelectedFace.SelectedComponent is Module module)
-							module.MoveHighlight(DataTypes.Direction.Up);
-						break;
-				}
-				break;
-			case "down":
-				switch (this.focusState) {
-					case FocusStates.Bomb:
-						this.SelectedFace.Y++;
-						this.FindNearestModule();
-						break;
-					case FocusStates.Module:
-						if (this.SelectedFace.SelectedComponent is Module module)
-							module.MoveHighlight(DataTypes.Direction.Down);
-						break;
-				}
-				break;
-			default:
-				throw new InvalidOperationException($"Invalid control instruction: {tokens2[0]}");
 		}
 	}
 
+	/// <summary>Handles moving the selection to the correct module after changing rows.</summary>
 	private void FindNearestModule() {
 		if (this.SelectedFace.SelectedComponent is Module) return;
 		for (var d = 1; d <= 2; d++) {
@@ -242,18 +249,22 @@ internal partial class Simulation {
 		}
 	}
 
-	public void SendInputs(string inputs) {
-		foreach (var token in inputs.Split(new[] { ' ', '+', ',' }, StringSplitOptions.RemoveEmptyEntries))
-			this.actionQueue.Enqueue(token);
+	/// <summary>Simulates the specified controller input actions.</summary>
+	public void SendInputs(IEnumerable<IInputAction> actions) {
+		foreach (var action in actions)
+			this.actionQueue.Enqueue(action);
 		if (!this.queueTimer.Enabled) {
 			this.queueTimer.Start();
 			this.PopInputQueue();
 		}
 	}
 
+	/// <summary>Returns the <see cref="ComponentReader"/> instance that handles the component at the specified point.</summary>
 	public ComponentReader? GetComponentReader(Point point1) => this.GetComponent(point1)?.Reader;
+	/// <summary>Returns the <see cref="ComponentReader"/> instance that handles the component in the specified slot.</summary>
 	public ComponentReader? GetComponentReader(Slot slot) => this.moduleFaces[slot.Face].Slots[slot.Y, slot.X]?.Reader;
 
+	/// <summary>Reads component data of the specified type from the component at the specified point.</summary>
 	public T ReadComponent<T>(Point point1) where T : notnull {
 		var component = this.GetComponent(point1) ?? throw new ArgumentException("Attempted to read an empty component slot.");
 		return component is TimerComponent timerComponent
@@ -264,6 +275,7 @@ internal partial class Simulation {
 				_ => throw new ArgumentException("Wrong type for specified component")
 			};
 	}
+	[Obsolete("This method is being replaced with the generic overload.")]
 	public string ReadModule(string type, Point point1) {
 		var component = this.GetComponent(point1) ?? throw new ArgumentException("Attempt to read blank component");
 		return component.Reader.GetType().Name.Equals(type, StringComparison.OrdinalIgnoreCase)
@@ -271,6 +283,7 @@ internal partial class Simulation {
 			: throw new ArgumentException("Wrong type for specified component.");
 	}
 
+	/// <summary>Returns the light state of the module at the specified point.</summary>
 	public ModuleLightState GetLightState(Point point1) => this.GetComponent(point1) is Module module && module is not NeedyModule ? module.LightState : ModuleLightState.Off;
 
 	private BombComponent? GetComponent(Point point1) {
@@ -292,12 +305,15 @@ internal partial class Simulation {
 		}
 	}
 
+	/// <summary>Returns the <see cref="WidgetReader"/> instance that handles the widget at the specified point.</summary>
 	public WidgetReader? GetWidgetReader(Point point1) => this.GetWidget(point1)?.Reader;
 
+	/// <summary>Reads widget data of the specified type from the widget at the specified point.</summary>
 	public T ReadWidget<T>(Point point1) where T : notnull {
 		var widget = this.GetWidget(point1) ?? throw new ArgumentException("Attempt to read blank widget.");
 		return widget is Widget<T> widget2 ? widget2.Details : throw new ArgumentException("Wrong type for specified widget.");
 	}
+	[Obsolete("This method is being replaced with the generic overload.")]
 	public string ReadWidget(string type, Point point1) {
 		var widget = this.GetWidget(point1) ?? throw new ArgumentException("Attempt to read blank widget.");
 		return widget.Reader.GetType().Name.Equals(type, StringComparison.OrdinalIgnoreCase)
@@ -326,16 +342,19 @@ internal partial class Simulation {
 		}
 	}
 
+	/// <summary>Disarms the selected module.</summary>
 	public void Solve() {
 		if (this.SelectedFace.SelectedComponent is Module module)
 			module.Solve();
 	}
 
+	/// <summary>Triggers a strike on the selected module.</summary>
 	public void Strike() {
 		if (this.SelectedFace.SelectedComponent is Module module)
 			module.StrikeFlash();
 	}
 
+	/// <summary>Triggers the alarm clock.</summary>
 	internal void SetAlarmClock(bool value) {
 		Message($"Turned alarm clock {(value ? "on" : "off")}");
 		isAlarmClockOn = value;
