@@ -63,11 +63,11 @@ internal static class Start {
 	}
 
 	private static async Task RegisterComponentsAsync(AimlAsyncContext context, Image<Rgba32> screenshot) {
-		var components = Enumerable.Range(0, 6).Select(i => DefuserConnector.Instance.GetComponentReader(screenshot, Utils.GetPoints(new(0, GameState.Current.SelectedFaceNum, i % 3, i / 3)))).ToList();
 		var needTimerRead = false;
 		var anyModules = false;
-		for (var i = 0; i < components.Count; i++) {
-			var component = components[i];
+		for (var i = 0; i < 6; i++) {
+			var points = Utils.GetPoints(new(0, GameState.Current.SelectedFaceNum, i % 3, i / 3));
+			var component = DefuserConnector.Instance.GetComponentReader(screenshot, points);
 			var slot = new Slot(0, GameState.Current.SelectedFaceNum, i % 3, i / 3);
 			var actualComponent = DefuserConnector.Instance.CheatGetComponentReader(slot);
 			if (actualComponent != component && !(actualComponent is null && component is BombDefuserConnector.Components.Timer)) {
@@ -80,7 +80,14 @@ internal static class Start {
 				anyModules = true;
 				GameState.Current.Faces[GameState.Current.SelectedFaceNum].SelectedSlot = slot;
 			}
-			RegisterComponent(context, slot, component);  // TODO: This assumes the vanilla bomb layout. It will need to be updated for other layouts.
+			var module = RegisterComponent(context, slot, component);  // TODO: This assumes the vanilla bomb layout. It will need to be updated for other layouts.
+			if (module is not null) {
+				var lightsState = DefuserConnector.Instance.GetModuleLightState(screenshot, points);
+				if (lightsState == ModuleLightState.Solved) {
+					context.RequestProcess.Log(LogLevel.Info, $"Module {module.Script.ModuleIndex + 1} is solved.");
+					module.IsSolved = true;
+				}
+			}
 
 			// If we saw the timer but don't already know the bomb time, read it now.
 			needTimerRead |= component is BombDefuserConnector.Components.Timer;
@@ -91,14 +98,14 @@ internal static class Start {
 		}
 	}
 
-	private static void RegisterComponent(AimlAsyncContext context, Slot slot, ComponentReader? component) {
+	private static ModuleState? RegisterComponent(AimlAsyncContext context, Slot slot, ComponentReader? component) {
 		switch (component) {
 			case null:
-				break;
+				return null;
 			case BombDefuserConnector.Components.Timer:
 				GameState.Current.TimerSlot = slot;
 				context.RequestProcess.Log(LogLevel.Info, $"Registering timer @ {slot}");
-				break;
+				return null;
 			default:
 				var script = ModuleScript.Create(component);
 				script.ModuleIndex = GameState.Current.Modules.Count;
@@ -119,7 +126,7 @@ internal static class Start {
 					script.NeedyState = state;
 					script.NeedyStateChanged(context, state);
 				}
-				break;
+				return module;
 		}
 	}
 }

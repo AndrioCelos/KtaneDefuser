@@ -27,6 +27,8 @@ public class GameState {
 	public int? CurrentModuleNum { get; set; }
 	/// <summary>Returns a <see cref="ModuleState"/> instance representing the module we're discussing with the expert, or <see langword="null"/> if no module is in progress.</summary>
 	public ModuleState? CurrentModule => this.CurrentModuleNum is not null ? this.Modules[this.CurrentModuleNum.Value] : null;
+	/// <summary>A queue of module numbers that will be handled after the current one.</summary>
+	public Queue<int> NextModuleNums { get; } = new();
 	/// <summary>Returns a <see cref="ModuleScript{TReader}"/> instance of the specified type for the module we're currently discussing with the expert.</summary>
 	/// <exception cref="InvalidOperationException">The specified script type is not in progress.</exception>
 	public T CurrentScript<T>() where T : ModuleScript => this.CurrentModule?.Script as T ?? throw new InvalidOperationException("Specified script is not in progress.");
@@ -93,15 +95,20 @@ public enum PortTypes {
 public class ModuleState {
 	/// <summary>The slot that this module is in.</summary>
 	public Slot Slot { get; }
+	/// <summary>A <see cref="ModuleType"/> value indicating the type of module.</summary>
+	public ModuleType Type { get; }
 	/// <summary>The <see cref="ComponentReader"/> instance corresponding to the module type.</summary>
 	public ComponentReader Reader { get; }
 	/// <summary>A <see cref="ModuleScript"/> instance handling this module.</summary>
-	public ModuleScript Script { get; }  // Will be null for the timer.
+	public ModuleScript Script { get; }
+	/// <summary>Whether the module is solved.</summary>
+	public bool IsSolved { get; set; }
 
 	public ModuleState(Slot slot, ComponentReader reader, ModuleScript script) {
 		this.Slot = slot;
 		this.Reader = reader ?? throw new ArgumentNullException(nameof(reader));
 		this.Script = script;
+		this.Type = Enum.Parse<ModuleType>(script.GetType().Name);
 	}
 }
 

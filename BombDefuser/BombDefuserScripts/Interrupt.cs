@@ -69,7 +69,13 @@ public class Interrupt : IDisposable {
 		using var ss = DefuserConnector.Instance.TakeScreenshot();
 		var result = DefuserConnector.Instance.GetModuleLightState(ss, Utils.CurrentModulePoints);
 		switch (result) {
-			case ModuleLightState.Solved: context.Reply("Module complete."); break;
+			case ModuleLightState.Solved:
+				if (GameState.Current.CurrentModule is ModuleState module && !module.IsSolved) {
+					context.RequestProcess.Log(Aiml.LogLevel.Info, $"Module {GameState.Current.CurrentModuleNum + 1} is solved.");
+					module.IsSolved = true;
+				}
+				context.Reply("Module complete.");
+				break;
 			case ModuleLightState.Strike: context.Reply("Strike."); break;
 		}
 		return result;

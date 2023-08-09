@@ -1,61 +1,21 @@
 <grammar version='1.0' xml:lang='en-gb' root='root' xmlns='http://www.w3.org/2001/06/grammar'>
 	<rule id='root' scope='public'>
 		<one-of>
-			<item> veemo </item>
-
 			<item><ruleref uri='#selectModule'/></item>
 			<item><ruleref uri='#globalModuleCommand'/></item>
 			<item> say again </item>
-			<item> serial number </item>
 			<item> edgework </item>
-			<item> bomb time </item>
-			<item> how much time
-				<item repeat='0-1'><one-of><item> remains </item><item> is left </item><item> do we have </item></one-of></item>
-			</item>
-			<item>
-				<one-of><item> stop </item><item> no </item><item> disable</item>
-					<item> start </item><item> restore </item><item> resume </item><item> enable </item></one-of>
-				module
-				<one-of><item> notifications </item><item> warnings </item><item> announcements </item></one-of>
-			</item>
 		</one-of>
 	</rule>
 	<rule id='globalModuleCommand'>
 		<one-of>
 			<item>
-				knob <ruleref uri='#number2'/> is
+				knob <item repeat='0-1'><ruleref uri='#number2'/></item> is
 				<one-of>
 					<item> up </item>
 					<item> right </item>
 					<item> down </item>
 					<item> left </item>
-				</one-of>
-			</item>
-			<item> turn the keys </item>
-			<item> rotary phone <ruleref uri='#number2'/> is <item repeat='3'><ruleref uri='#digit'/></item></item>
-			<!--<item><item repeat='0-1'> Souvenir answer is </item><ruleref uri='souvenir.xml#answer'/></item>-->
-			<item>
-				<item repeat='0-1'>
-					HTTP <item repeat='0-1'> Response </item><item repeat='0-1'>
-					<ruleref uri='#number2'/></item> is
-				</item>
-				<item repeat='3'><ruleref uri='#digit'/></item>
-			</item>
-			<item>
-				<item repeat='0-1'> the </item>
-				Swan <item repeat='0-1'><ruleref uri='#number'/></item> is
-				<one-of>
-					<item> DHARMA </item>
-					<item> HATCH </item>
-					<item> SWAN with no A </item>
-					<item> SWAN no A </item>
-					<item> DHARMA with no H </item>
-					<item> DHARMA no H </item>
-					<item> SWAN </item>
-					<item> HITCH </item>
-					<item> HATCH with no A </item>
-					<item> HATCH no A </item>
-					<item> 77 </item>
 				</one-of>
 			</item>
 		</one-of>
@@ -66,23 +26,38 @@
 			<item> first module </item>
 			<item> next module </item>
 			<item>
-				<one-of>
-					<item>
-						<one-of>
-							<item> is there </item>
-							<item> do you have </item>
-							<item> do we have </item>
-						</one-of>
-						<item repeat='0-1'><one-of><item> a </item><item> an </item></one-of></item>
-					</item>
-					<item>
-						select
-						<item repeat='0-1'><one-of><item> a </item><item> an </item><item> the </item></one-of></item>
-					</item>
-				</one-of>
+				<item>
+					select
+					<item repeat='0-1'><one-of><item> a </item><item> an </item><item> the </item></one-of></item>
+				</item>
 				<ruleref uri='#module'/>
 			</item>
 			<item> vanilla modules </item>
+		</one-of>
+	</rule>
+	<rule id='module' scope='public'>
+		<one-of>
+			<item> Button </item>
+			<item> The Button </item>
+			<item> Complicated Wires </item>
+			<item> Keypad </item>
+			<item> Maze </item>
+			<item> Memory </item>
+			<item> Morse Code </item>
+			<item> Needy Capacitor </item>
+			<item> Capacitor </item>
+			<item> Capacitor Discharge </item>
+			<item> Needy Knob </item>
+			<item> Knob </item>
+			<item> Needy Vent Gas </item>
+			<item> Vent Gas </item>
+			<item> Venting Gas </item>
+			<item> Password </item>
+			<item> Simon </item>
+			<item> Simon Says </item>
+			<item> Who's on First </item>
+			<item> Wires </item>
+			<item> Wire Sequence </item>
 		</one-of>
 	</rule>
 	<rule id='colour' scope='public'>
@@ -338,139 +313,5 @@
 		<item> eighteenth </item>
 		<item> nineteenth </item>
 		<item> twentieth </item>
-	</rule>
-	<rule id='module' scope='public'>
-		<one-of>
-			<item> Button </item>
-			<item> The Button </item>
-			<item> Capacitor </item>
-			<item> Capacitor Discharge </item>
-			<item> Complicated Wires </item>
-			<item> Keypad </item>
-			<item> Knob </item>
-			<item> Maze </item>
-			<item> Memory </item>
-			<item> Morse Code </item>
-			<item> Password </item>
-			<item> Simon Says </item>
-			<item> Vent Gas </item>
-			<item> Venting Gas </item>
-			<item> Who's on First </item>
-			<item> Wires </item>
-			<item> Wire Sequence </item>
-
-			<item> Colour Flash </item>
-			<item> Piano </item>
-			<item> Piano Keys </item>
-			<item> Semaphore </item>
-			<item> Math </item>
-			<item> Emoji Math </item>
-			<item> Lights Out </item>
-			<item> Switches </item>
-			<item> Two Bits </item>
-			<item> Word Scramble </item>
-			<item> Anagrams </item>
-			<item> Combination Lock </item>
-			<item> Square Button </item>
-			<item> Simon States </item>
-			<item> Round Keypad </item>
-			<item> Listening </item>
-			<item> Foreign Exchange Rates </item>
-			<item> Answering Questions </item>
-			<item> Orientation Cube </item>
-			<item> Morsematics </item>
-			<item> Connection Check </item>
-			<item> Letter Keys </item>
-			<item> Forget Me Not </item>
-			<item> Rotary Phone </item>
-			<item> Astrology </item>
-			<item> Logic </item>
-			<item> Crazy Talk </item>
-			<item> Adventure Game </item>
-			<item> Turn The Keys </item>
-			<item> Turn The Key </item>
-			<item> Mystic Square </item>
-			<item> Plumbing </item>
-			<item> Cruel Piano Keys </item>
-			<item> Safety Safe </item>
-			<item> Tetris </item>
-			<item> Cryptography </item>
-			<item> Chess </item>
-			<item> Mouse In The Maze </item>
-			<item> 3D Maze </item>
-			<item> Silly Slots </item>
-			<item> Number Pad </item>
-			<item> Probing </item>
-			<item> Resistors </item>
-			<item> Skewed Slots </item>
-			<item> Caesar Cipher </item>
-			<item> Perspective Pegs </item>
-			<item> Microcontroller </item>
-			<item> Murder </item>
-			<item> Gamepad </item>
-			<item> The Gamepad </item>
-			<item> Tic Tac Toe </item>
-			<item> Who's That Monsplode </item>
-			<item> Monsplode, Fight </item>
-			<item> Shape Shift </item>
-			<item> Follow the Leader </item>
-			<item> Friendship </item>
-			<item> Bulb </item>
-			<item> The Bulb </item>
-			<item> Alphabet </item>
-			<item> Blind Alley </item>
-			<item> Sea Shells </item>
-			<item> English Test </item>
-			<item> Rock Paper Scissors Lizard Spock </item>
-			<item> Hexamaze </item>
-			<item> Bitmaps </item>
-			<item> Colored Squares </item>
-			<item> Adjacent Letters </item>
-			<item> Third Base </item>
-			<item> Souvenir </item>
-			<item> Word Search </item>
-			<item> Broken Buttons </item>
-			<item> Simon Screams </item>
-			<item> Laundry </item>
-			<item> Modules Against Humanity </item>
-			<item> Complicated Buttons </item>
-			<item> Battleship </item>
-			<item> Text Field </item>
-			<item> Symbolic Password </item>
-			<item> Wire Placement </item>
-			<item> Double Oh </item>
-			<item> Cheap Checkout </item>
-			<item> Coordinates </item>
-			<item> Light Cycle </item>
-			<item> HTTP Response </item>
-			<item> Rhythms </item>
-			<item> Color Math </item>
-			<item> Only Connect </item>
-			<item> Neutralization </item>
-			<item> Web Design </item>
-			<item> Chord Qualities </item>
-			<item> Creation </item>
-			<item> Rubik's Cube </item>
-			<item> FizzBuzz </item>
-			<item> The Clock </item>
-			<item> LED Encryption </item>
-			<item> Edgework </item>
-			<item> Bitwise Operations </item>
-			<item> Fast Math </item>
-			<item> Minesweeper </item>
-			<item> Zoo </item>
-			<item> Binary LEDs </item>
-			<item> Boolean Venn Diagram </item>
-			<item> P of O </item>
-			<item> Point of Order </item>
-			<item> Ice Cream </item>
-			<item> Hex To Decimal </item>
-			<item> Screw </item>
-			<item> The Screw </item>
-			<item> Yahtzee </item>
-			<item> Monsplode Trading Cards </item>
-			<item> Swan </item>
-			<item> The Swan </item>
-		</one-of>
 	</rule>
 </grammar>
