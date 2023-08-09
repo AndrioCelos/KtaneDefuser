@@ -9,12 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="ClassificationForm.cs~RF2df71a6b.TMP" />
-    <None Remove="ColourRangeForm.cs~RF25d067d6.TMP" />
-    <None Remove="TransformationForm.cs~RFfb412cb.TMP" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\BombDefuserConnector\BombDefuserConnector.csproj" />
   </ItemGroup>
 

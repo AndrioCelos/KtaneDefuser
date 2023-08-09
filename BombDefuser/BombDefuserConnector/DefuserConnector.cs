@@ -248,7 +248,7 @@ public class DefuserConnector : IDisposable {
 			return null;
 
 		var needyRating = ImageUtils.CheckForNeedyFrame(bitmap);
-		var looksLikeANeedyModule = needyRating >= 0.5f;
+		var looksLikeANeedyModule = needyRating >= 0.8f;
 
 		var ratings = new List<(ComponentReader reader, float rating)>();
 		foreach (var reader in componentReaders.Values) {
