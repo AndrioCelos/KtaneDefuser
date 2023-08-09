@@ -29,7 +29,7 @@ internal class Maze : ModuleScript<BombDefuserConnector.Components.Maze> {
 		=> GameState.Current.CurrentScript<Maze>().ProcessInputAsync(context, s);
 
 	private async Task ProcessInputAsync(AimlAsyncContext context, string s) {
-		var builder = new StringBuilder();
+		var buttons = new List<Button>();
 		var tokens = s.Split((char[]?) null, StringSplitOptions.RemoveEmptyEntries);
 		var currentHighlight = this.highlight;
 		for (var i =  0; i < tokens.Length; i++) {
@@ -49,15 +49,14 @@ internal class Maze : ModuleScript<BombDefuserConnector.Components.Maze> {
 				count = 1;
 
 			if (direction != currentHighlight) {
-				builder.Append(direction);
-				builder.Append(' ');
+				buttons.Add(direction switch { Direction.Up => Button.Up, Direction.Right => Button.Right, Direction.Down => Button.Down, _ => Button.Left });
 				currentHighlight = direction;
 			}
 			for (; count > 0; count--)
-				builder.Append("a ");
+				buttons.Add(Button.A);
 		}
 		this.highlight = currentHighlight;
 		using var interrupt = await this.ModuleInterruptAsync(context);
-		await interrupt.SubmitAsync(builder.ToString());
+		await interrupt.SubmitAsync(buttons);
 	}
 }

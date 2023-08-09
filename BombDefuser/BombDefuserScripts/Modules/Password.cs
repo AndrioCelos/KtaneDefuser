@@ -26,31 +26,29 @@ internal class Password : ModuleScript<BombDefuserConnector.Components.Password>
 	}
 
 	private async Task MoveToDownButtonRowAsync(Interrupt interrupt) {
-		var builder = new StringBuilder();
 		switch (this.highlightY) {
 			case 0:
-				builder.Append("down ");
+				await interrupt.SendInputsAsync(Button.Down);
 				break;
 			case 2:
-				builder.Append("up ");
+				await interrupt.SendInputsAsync(Button.Up);
 				break;
 		}
 		this.highlightY = 1;
-		await interrupt.SendInputsAsync(builder.ToString());
 	}
 
 	private async Task CycleColumnAsync(Interrupt interrupt, int column) {
-		var builder = new StringBuilder();
+		var buttons = new List<Button>();
 		while (column < this.highlightX) {
-			builder.Append("left ");
+			buttons.Add(Button.Left);
 			this.highlightX--;
 		}
 		while (column > this.highlightX) {
-			builder.Append("right ");
+			buttons.Add(Button.Right);
 			this.highlightX++;
 		}
-		builder.Append('a');
-		await interrupt.SendInputsAsync(builder.ToString());
+		buttons.Add(Button.A);
+		await interrupt.SendInputsAsync(buttons);
 	}
 
 	private async Task SubmitAsync(Interrupt interrupt, string word) {
@@ -70,7 +68,7 @@ internal class Password : ModuleScript<BombDefuserConnector.Components.Password>
 			if (!anyMismatch) {
 				this.highlightX = 2;
 				this.highlightY = 2;
-				await interrupt.SubmitAsync("down a");
+				await interrupt.SubmitAsync(Button.Down, Button.A);
 				return;
 			}
 		}

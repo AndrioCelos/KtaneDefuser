@@ -19,7 +19,7 @@ internal class WireSequence : ModuleScript<BombDefuserConnector.Components.WireS
 			using var interrupt = await this.ModuleInterruptAsync(context);
 			// The highlight starts on the previous button, so move down first.
 			if (this.highlight == -1) {
-				await interrupt.SendInputsAsync("down");
+				await interrupt.SendInputsAsync(Button.Down);
 				this.highlight = -2;
 			}
 			await this.ContinuePageAsync(interrupt);
@@ -45,13 +45,13 @@ internal class WireSequence : ModuleScript<BombDefuserConnector.Components.WireS
 	}
 
 	private async Task MoveToNextPageAsync(Interrupt interrupt) {
-		var result = await interrupt.SubmitAsync("a");
+		var result = await interrupt.SubmitAsync(Button.A);
 		switch (result) {
 			case ModuleLightState.Solved:
 			case ModuleLightState.Strike:
 				return;
 			default:
-				await AimlTasks.Delay(2);
+				await Delay(2);
 				await this.ReadAsync(interrupt);
 				var i = Array.FindIndex(this.currentPageColours, c => c is not null);
 				if (i < 0) {
@@ -59,12 +59,8 @@ internal class WireSequence : ModuleScript<BombDefuserConnector.Components.WireS
 					await this.MoveToNextPageAsync(interrupt);
 				} else {
 					// Highlight the first wire and read it.
-					var builder = new StringBuilder();
-					for (var n = this.currentPageColours.Count(c => c is not null); n > 0; n--) {
-						builder.Append("up ");
-					}
 					this.highlight = i;
-					await interrupt.SendInputsAsync(builder.ToString());
+					await interrupt.SendInputsAsync(Enumerable.Repeat(Button.Up, this.currentPageColours.Count(c => c is not null)));
 					await this.ContinuePageAsync(interrupt);
 				}
 				break;
@@ -83,7 +79,7 @@ internal class WireSequence : ModuleScript<BombDefuserConnector.Components.WireS
 					// Currently we are only able to read the highlighted wire, and only when the selection highlight is within a strict range of intensities.
 					// Keep looking at the module until that condition is met.
 					interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"Reading highlighted wire...");
-					await AimlTasks.Delay(0.05);
+					await Delay(0.05);
 					data = interrupt.Read(Reader);
 				}
 				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"Highlighted wire: {data.HighlightedWire}");
@@ -96,9 +92,9 @@ internal class WireSequence : ModuleScript<BombDefuserConnector.Components.WireS
 	private async Task ActionAsync(AimlAsyncContext context, bool cut) {
 		using var interrupt = await this.ModuleInterruptAsync(context);
 		if (cut)
-			await interrupt.SubmitAsync("a down");
+			await interrupt.SubmitAsync(Button.A, Button.Down);
 		else
-			await interrupt.SendInputsAsync("down");
+			await interrupt.SendInputsAsync(Button.Down);
 		do { this.highlight++; } while (this.highlight < 3 && this.currentPageColours[this.highlight] is null);
 		await this.ContinuePageAsync(interrupt);
 	}

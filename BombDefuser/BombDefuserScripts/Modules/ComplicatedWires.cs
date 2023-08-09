@@ -60,24 +60,24 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 			if (toCut.Count > 0) {
 				using var interrupt = await Interrupt.EnterAsync(context);
 				context = interrupt.Context;
-				var builder = new StringBuilder();
+				var buttons = new List<Button>();
 				for (var i = 0; i < toCut.Count; i++) {
 					var wireIndex = toCut[i];
 					context.RequestProcess.Log(Aiml.LogLevel.Info, $"Cutting wire {wireIndex + 1}");
 					while (this.highlight < wireIndex) {
-						builder.Append("right ");
+						buttons.Add(Button.Right);
 						this.highlight++;
 					}
 					while (this.highlight > wireIndex) {
-						builder.Append("left ");
+						buttons.Add(Button.Left);
 						this.highlight--;
 					}
-					builder.Append("a ");
+					buttons.Add(Button.A);
 					this.wires[wireIndex].isCut = true;
 					if ((fromUserInput && i == 0) || i + 1 >= toCut.Count) {
 						// Check whether this was a strike or solve. If in response to the user saying to cut a wire, check after the first wire. Otherwise, only check after all wires for speed.
-						var result = await interrupt.SubmitAsync(builder.ToString());
-						builder.Clear();
+						var result = await interrupt.SubmitAsync(buttons);
+						buttons.Clear();
 						if (result == ModuleLightState.Strike) {
 							shouldCut[(int) this.wires[wireIndex].flags] = false;
 							break;

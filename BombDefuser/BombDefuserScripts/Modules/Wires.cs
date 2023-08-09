@@ -19,19 +19,19 @@ internal class Wires : ModuleScript<BombDefuserConnector.Components.Wires> {
 	[AimlCategory("cut wire *")]
 	internal static async Task CutWire(AimlAsyncContext context, int wireNum) {
 		wireNum--;
-		var builder = new StringBuilder();
+		var buttons = new List<Button>();
 		var script = GameState.Current.CurrentScript<Wires>();
 		while (script.highlight < wireNum) {
-			builder.Append("down ");
+			buttons.Add(Button.Down);
 			script.highlight++;
 		}
 		while (script.highlight > wireNum) {
-			builder.Append("up ");
+			buttons.Add(Button.Up);
 			script.highlight--;
 		}
-		builder.Append('a');
+		buttons.Add(Button.A);
 		using var interrupt = await CurrentModuleInterruptAsync(context);
-		await interrupt.SubmitAsync(builder.ToString());
+		await interrupt.SubmitAsync(buttons);
 	}
 
 	[AimlCategory("cut the <set>ordinal</set> wire")]

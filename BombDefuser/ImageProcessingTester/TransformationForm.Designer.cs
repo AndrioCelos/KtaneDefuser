@@ -318,7 +318,6 @@ partial class TransformationForm {
 		this.Name = "TransformationForm";
 		this.Text = "Transformation";
 		this.Load += this.TransformationForm_Load;
-		this.PreviewKeyDown += this.TransformationForm_PreviewKeyDown;
 		((System.ComponentModel.ISupportInitialize) screenshotPictureBox).EndInit();
 		((System.ComponentModel.ISupportInitialize) pictureBox1).EndInit();
 		splitContainer.Panel1.ResumeLayout(false);

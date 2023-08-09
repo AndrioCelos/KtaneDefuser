@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using Aiml;
+using BombDefuserConnectorApi;
 
 namespace BombDefuserScripts;
 [AimlInterface]
@@ -8,14 +9,14 @@ internal static class Start {
 	private static bool waitingForLights;
 	private static Stopwatch? startDelayStopwatch;
 
-	[AimlCategory("OOB DefuserSocketMessage NewBomb *"), EditorBrowsable(EditorBrowsableState.Never)]
+	[AimlCategory("OOB NewBomb *"), EditorBrowsable(EditorBrowsableState.Never)]
 	public static void NewBomb() {
 		// 0. Clear previous game variables.
 		GameState.Current = new();
 		waitingForLights = true;
 	}
 
-	[AimlCategory("OOB DefuserSocketMessage Lights *"), EditorBrowsable(EditorBrowsableState.Never)]
+	[AimlCategory("OOB LightsChange *"), EditorBrowsable(EditorBrowsableState.Never)]
 	public static async Task Lights(AimlAsyncContext context, bool on) {
 		if (on && waitingForLights) {
 			waitingForLights = false;
@@ -31,8 +32,8 @@ internal static class Start {
 		// 1. Pick up the bomb
 		GameState.Current.TimerStopwatch.Restart();
 		using var interrupt = await Interrupt.EnterAsync(context);
-		interrupt.SendInputs("a");
-		await AimlTasks.Delay(1);  // Wait for modules to initialise.
+		interrupt.SendInputs(Button.A);
+		await Delay(1);  // Wait for modules to initialise.
 		// 2. Identify components on the bomb.
 		using (var ss = DefuserConnector.Instance.TakeScreenshot())
 			await RegisterComponentsAsync(context, ss);
@@ -44,36 +45,36 @@ internal static class Start {
 		await Utils.SelectFaceAsync(interrupt, 0, SelectFaceAlignMode.CheckWidgets);
 		// 5. Turn the bomb to the bottom face.
 		GameState.Current.LookingAtSide = true;
-		interrupt.SendInputs("ry:-0.875");
-		await AimlTasks.Delay(0.5);
+		interrupt.SendInputs(new AxisAction(Axis.RightStickY, -0.875f));
+		await Delay(0.5);
 		// 6. Identify widgets on the bottom face.
 		using (var ss = DefuserConnector.Instance.TakeScreenshot())
 			Edgework.RegisterWidgets(context, false, ss);
 		// 7. Turn the bomb to the top face.
-		interrupt.SendInputs("ry:1");
-		await AimlTasks.Delay(0.5);
+		interrupt.SendInputs(new AxisAction(Axis.RightStickY, 1));
+		await Delay(0.5);
 		// 8. Identify widgets on the top face.
 		using (var ss = DefuserConnector.Instance.TakeScreenshot())
 			Edgework.RegisterWidgets(context, false, ss);
 		// 9. Reset the bomb tilt.
-		interrupt.SendInputs("ry:0");
+		interrupt.SendInputs(new AxisAction(Axis.RightStickY, 0));
 		GameState.Current.LookingAtSide = false;
 		context.Reply("Ready.");
 	}
 
 	private static async Task RegisterComponentsAsync(AimlAsyncContext context, Image<Rgba32> screenshot) {
-		var components = Enumerable.Range(0, 6).Select(i => DefuserConnector.Instance.GetComponentReader(screenshot, Utils.GetPoints(new ComponentSlot(GameState.Current.SelectedFaceNum, i % 3, i / 3)))).ToList();
+		var components = Enumerable.Range(0, 6).Select(i => DefuserConnector.Instance.GetComponentReader(screenshot, Utils.GetPoints(new(0, GameState.Current.SelectedFaceNum, i % 3, i / 3)))).ToList();
 		var needTimerRead = false;
 		var anyModules = false;
 		for (var i = 0; i < components.Count; i++) {
 			var component = components[i];
-			var actualComponent = DefuserConnector.Instance.CheatGetComponentReader(GameState.Current.SelectedFaceNum, i % 3, i / 3);
+			var slot = new Slot(0, GameState.Current.SelectedFaceNum, i % 3, i / 3);
+			var actualComponent = DefuserConnector.Instance.CheatGetComponentReader(slot);
 			if (actualComponent != component && !(actualComponent is null && component is BombDefuserConnector.Components.Timer)) {
 				context.RequestProcess.Log(LogLevel.Warning, $"Wrong component at {GameState.Current.SelectedFaceNum} {i % 3} {i / 3} - identified: {component?.Name}; actual: {actualComponent?.Name}");
 				component = actualComponent;
 			}
 
-			var slot = new ComponentSlot(GameState.Current.SelectedFaceNum, i % 3, i / 3);
 			if (!anyModules && component is not (null or BombDefuserConnector.Components.Timer)) {
 				// Set the initially selected slot on each side to be the first one with a module in it.
 				anyModules = true;
@@ -90,7 +91,7 @@ internal static class Start {
 		}
 	}
 
-	private static void RegisterComponent(AimlAsyncContext context, ComponentSlot slot, ComponentReader? component) {
+	private static void RegisterComponent(AimlAsyncContext context, Slot slot, ComponentReader? component) {
 		switch (component) {
 			case null:
 				break;

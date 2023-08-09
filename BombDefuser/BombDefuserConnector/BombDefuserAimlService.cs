@@ -14,6 +14,7 @@ public class BombDefuserAimlService : ISraixService {
 	private static readonly Queue<string> cachedScreenshotIds = new();
 
 	public BombDefuserAimlService() {
+		this.connector.EnableCallbacks();
 		AimlVoice.Program.OobHandlers["takescreenshot"] = this.OobAction(async (c, e) => {
 			var token = e.Attributes["token"]?.Value ?? e.GetElementsByTagName("token").Cast<XmlNode>().FirstOrDefault()?.InnerText ?? "nil";
 			var image = await c.TakeScreenshotAsync();
@@ -79,10 +80,10 @@ public class BombDefuserAimlService : ISraixService {
 				return this.connector.GetModuleLightState(screenshotBitmap, points).ToString();
 			}
 			case "read": {
-				return this.connector.CheatRead(tokens);
+				return this.connector.CheatRead(new(int.Parse(tokens[1]), int.Parse(tokens[2]), int.Parse(tokens[3]), int.Parse(tokens[4])), tokens.Skip(5).ToArray()) ?? "nil";
 			}
 			case "getmodulename": {
-				return this.connector.CheatGetComponentReader(int.Parse(tokens[1]), int.Parse(tokens[2]), int.Parse(tokens[3]))?.GetType().Name ?? "nil";
+				return this.connector.CheatGetComponentReader(new(int.Parse(tokens[1]), int.Parse(tokens[2]), int.Parse(tokens[3]), int.Parse(tokens[4])))?.GetType().Name ?? "nil";
 			}
 			default: {
 				var screenshotBitmap = cachedScreenshots[tokens[1]];

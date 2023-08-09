@@ -7,7 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageProcessingTester", "Im
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BombDefuserConnector", "BombDefuserConnector\BombDefuserConnector.csproj", "{EF617D28-FAD7-4F88-BB26-F7A0BB50D2D2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BombDefuserScripts", "BombDefuserScripts\BombDefuserScripts.csproj", "{D45B3EA8-0CFE-4FCB-8FD5-6277E2BBFFEB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BombDefuserScripts", "BombDefuserScripts\BombDefuserScripts.csproj", "{D45B3EA8-0CFE-4FCB-8FD5-6277E2BBFFEB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BombDefuserConnectorApi", "BombDefuserConnectorApi\BombDefuserConnectorApi.csproj", "{174639AF-080A-4DAF-AEE7-C3AEB803C4F0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{D45B3EA8-0CFE-4FCB-8FD5-6277E2BBFFEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D45B3EA8-0CFE-4FCB-8FD5-6277E2BBFFEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D45B3EA8-0CFE-4FCB-8FD5-6277E2BBFFEB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{174639AF-080A-4DAF-AEE7-C3AEB803C4F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{174639AF-080A-4DAF-AEE7-C3AEB803C4F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{174639AF-080A-4DAF-AEE7-C3AEB803C4F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{174639AF-080A-4DAF-AEE7-C3AEB803C4F0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

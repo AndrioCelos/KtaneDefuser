@@ -65,14 +65,11 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 	}
 
 	private async Task TurnAsync(Interrupt interrupt, Direction direction) {
-		var builder = new StringBuilder();
-		var d = direction - this.direction;
-		if (d < 0) d += 4;
-		for (; d > 0; d--)
-			builder.Append("a ");
+		var presses = direction - this.direction;
+		if (presses < 0) presses += 4;
 		this.direction = direction;
 		await Utils.SelectModuleAsync(interrupt, this.ModuleIndex, false);
-		await interrupt.SendInputsAsync(builder.ToString());
+		await interrupt.SendInputsAsync(Enumerable.Repeat(Button.A, presses));
 	}
 
 	[AimlCategory("<set>KnobDirection</set>", That = "Counts *", Topic = "*")]

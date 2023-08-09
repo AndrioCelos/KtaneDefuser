@@ -20,7 +20,7 @@ internal class Memory : ModuleScript<BombDefuserConnector.Components.Memory> {
 	}
 
 	private async Task WaitRead(Interrupt interrupt) {
-		await AimlTasks.Delay(3);
+		await Delay(3);
 		this.Read(interrupt);
 	}
 
@@ -57,20 +57,20 @@ internal class Memory : ModuleScript<BombDefuserConnector.Components.Memory> {
 	}
 
 	private async Task PressButtonAsync(AimlAsyncContext context, int index, bool fromLabel) {
-		var builder = new StringBuilder();
+		var buttons = new List<Button>();
 		var highlight = this.highlight;
 		while (highlight > index) {
 			highlight--;
-			builder.Append("left ");
+			buttons.Add(Button.Left);
 		}
 		while (highlight < index) {
 			highlight++;
-			builder.Append("right ");
+			buttons.Add(Button.Right);
 		}
-		builder.Append('a');
+		buttons.Add(Button.A);
 		using var interrupt = await this.ModuleInterruptAsync(context);
 		this.highlight = highlight;
-		var result = await interrupt.SubmitAsync(builder.ToString());
+		var result = await interrupt.SubmitAsync(buttons);
 		if (result != ModuleLightState.Solved) {
 			if (result == ModuleLightState.Off)
 				interrupt.Context.Reply(fromLabel ? $"The position was {index + 1}." : $"The label was {this.keyLabels[index]}.");

@@ -29,7 +29,7 @@ internal class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSay
 	}
 
 	private async Task LoopAsync(Interrupt interrupt) {
-		var builder = new StringBuilder();
+		var buttons = new List<Button>();
 		while (true) {
 			var highlight = this.highlight;
 			foreach (var patternColour in this.pattern) {
@@ -41,17 +41,17 @@ internal class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSay
 				}
 				if (highlight != correctColour) {
 					highlight = correctColour.Value;
-					builder.Append(correctColour switch {
-						SimonColour.Red => "left ",
-						SimonColour.Yellow => "right ",
-						SimonColour.Green => "down ",
-						_ => "up "
+					buttons.Add(correctColour switch {
+						SimonColour.Red => Button.Left,
+						SimonColour.Yellow => Button.Right,
+						SimonColour.Green => Button.Down,
+						_ => Button.Up
 					});
 				}
-				builder.Append("a ");
+				buttons.Add(Button.A);
 			}
 			this.highlight = highlight;
-			var result = await interrupt.SubmitAsync(builder.ToString());
+			var result = await interrupt.SubmitAsync(buttons);
 			if (result == ModuleLightState.Strike) {
 				// A strike invalidates the whole mapping.
 				Array.Clear(buttonMap);
@@ -59,11 +59,11 @@ internal class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSay
 				this.stagesCleared++;
 				if (result == ModuleLightState.Solved) return;
 
-				await AimlTasks.Delay(1);
+				await Delay(1);
 				var colour = await this.ReadLastColourAsync(interrupt);
 				pattern.Add(colour);
 			}
-			builder.Clear();
+			buttons.Clear();
 		}
 	}
 
@@ -72,7 +72,7 @@ internal class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSay
 		while (true) {
 			var data = interrupt.Read(Reader);
 			if (data.Colour is null) {
-				await AimlTasks.Delay(0.125);
+				await Delay(0.125);
 				continue;
 			}
 			if (coloursSeen >= this.stagesCleared) {
@@ -82,7 +82,7 @@ internal class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSay
 			coloursSeen++;
 
 			while (true) {
-				await AimlTasks.Delay(0.125);
+				await Delay(0.125);
 				var data2 = interrupt.Read(Reader);
 				if (data2.Colour != data.Colour) break;
 			}

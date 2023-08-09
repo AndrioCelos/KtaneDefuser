@@ -138,7 +138,7 @@ internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCod
 		if (token.IsCancellationRequested) return false;
 		var count = 0;
 		do {
-			await AimlTasks.Delay(0.075);
+			await Delay(0.075);
 			if (token.IsCancellationRequested) return false;
 			if (interrupt.IsDisposed || interrupt.Read(Reader).IsLightOn == state) {
 				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Awaited state {state} reached after {count}");
@@ -181,34 +181,35 @@ internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCod
 		cancellationTokenSource?.Dispose();
 		cancellationTokenSource = null;
 		using var interrupt = MorseCode.interrupt ?? await this.ModuleInterruptAsync(context);
-		var builder = new StringBuilder();
+		interrupt.Context = context;
+		var buttons = new List<Button>();
 		if (frequency < this.selectedFrequency) {
 			switch (this.highlight) {
-				case 1: builder.Append("left "); break;
-				case 2: builder.Append("up "); break;
+				case 1: buttons.Add(Button.Left); break;
+				case 2: buttons.Add(Button.Up); break;
 			}
 			this.highlight = 0;
 			do {
-				builder.Append("a ");
+				buttons.Add(Button.A);
 				this.selectedFrequency--;
 			} while (frequency < this.selectedFrequency);
 		}
 		if (frequency > this.selectedFrequency) {
 			if (this.highlight != 1) {
-				builder.Append("right ");
+				buttons.Add(Button.Right);
 				this.highlight = 1;
 			}
 			do {
-				builder.Append("a ");
+				buttons.Add(Button.A);
 				this.selectedFrequency++;
 			} while (frequency > this.selectedFrequency);
 		}
 		if (this.highlight != 2) {
-			builder.Append("down ");
+			buttons.Add(Button.Down);
 			this.highlight = 2;
 		}
-		builder.Append('a');
-		await interrupt.SubmitAsync(builder.ToString());
+		buttons.Add(Button.A);
+		await interrupt.SubmitAsync(buttons);
 	}
 
 	internal struct MorseLetter : IEquatable<MorseLetter>, IEnumerable<MorseElement> {

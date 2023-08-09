@@ -23,7 +23,7 @@ internal static class Timer {
 				return;
 			}
 			lastSeconds = data.Time;
-			await AimlTasks.Delay(0.1);
+			await Delay(0.1);
 			screenshot = DefuserConnector.Instance.TakeScreenshot();
 		}
 	}
@@ -38,6 +38,6 @@ internal static class Timer {
 			? TimeSpan.FromTicks(digit * TimeSpan.TicksPerSecond + TimeSpan.TicksPerSecond / 2 - time.Ticks % (TimeSpan.TicksPerSecond * 10))
 			: TimeSpan.FromTicks(time.Ticks % (TimeSpan.TicksPerSecond * 10) - digit * TimeSpan.TicksPerSecond - TimeSpan.TicksPerSecond / 2);
 		if (timeSpan < TimeSpan.Zero) timeSpan += TimeSpan.FromSeconds(10);
-		await AimlTasks.Delay(timeSpan);
+		await Delay(timeSpan);
 	}
 }

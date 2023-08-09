@@ -22,7 +22,7 @@ internal class WhosOnFirst : ModuleScript<BombDefuserConnector.Components.WhosOn
 	}
 
 	private async Task WaitRead(Interrupt interrupt) {
-		await AimlTasks.Delay(3);
+		await Delay(3);
 		this.Read(interrupt);
 	}
 
@@ -68,27 +68,27 @@ internal class WhosOnFirst : ModuleScript<BombDefuserConnector.Components.WhosOn
 	}
 
 	private async Task PressButtonAsync(AimlAsyncContext context, int index) {
-		var builder = new StringBuilder();
+		var buttons = new List<Button>();
 		var highlight = this.highlight;
 		if (highlight % 2 == 0 && index % 2 == 1) {
 			highlight++;
-			builder.Append("right ");
+			buttons.Add(Button.Right);
 		} else if (highlight % 2 == 1 && index % 2 == 0) {
 			highlight--;
-			builder.Append("left ");
+			buttons.Add(Button.Left);
 		}
 		while (highlight < index) {
 			highlight += 2;
-			builder.Append("down ");
+			buttons.Add(Button.Down);
 		}
 		while (highlight > index) {
 			highlight -= 2;
-			builder.Append("up ");
+			buttons.Add(Button.Up);
 		}
-		builder.Append('a');
+		buttons.Add(Button.A);
 		this.highlight = highlight;
 		using var interrupt = await this.ModuleInterruptAsync(context);
-		var result = await interrupt.SubmitAsync(builder.ToString());
+		var result = await interrupt.SubmitAsync(buttons);
 		if (result != ModuleLightState.Solved) await this.WaitRead(interrupt);
 	}
 

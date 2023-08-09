@@ -10,7 +10,7 @@ internal class NeedyVentGas : ModuleScript<BombDefuserConnector.Components.Needy
 
 	protected internal override async void NeedyStateChanged(AimlAsyncContext context, NeedyState newState) {
 		if (newState != NeedyState.Running) return;
-		await AimlTasks.Delay(25);
+		await Delay(25);
 		using var interrupt = await this.ModuleInterruptAsync(context);
 		context = interrupt.Context;
 
@@ -20,12 +20,12 @@ internal class NeedyVentGas : ModuleScript<BombDefuserConnector.Components.Needy
 	}
 
 	private async Task PressButtonAsync(Interrupt interrupt, int x) {
-		var builder = new StringBuilder();
+		var buttons = new List<Button>();
 		if (x != this.highlight) {
-			builder.Append(x == 0 ? "left " : "right ");
+			buttons.Add(x == 0 ? Button.Left : Button.Right);
 			this.highlight = x;
 		}
-		builder.Append('a');
-		await interrupt.SendInputsAsync(builder.ToString());
+		buttons.Add(Button.A);
+		await interrupt.SendInputsAsync(buttons);
 	}
 }

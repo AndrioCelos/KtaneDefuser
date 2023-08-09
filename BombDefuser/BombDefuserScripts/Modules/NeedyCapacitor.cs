@@ -11,14 +11,14 @@ internal class NeedyCapacitor : ModuleScript<BombDefuserConnector.Components.Nee
 		if (newState != NeedyState.Running) return;
 		var stopwatch = Stopwatch.StartNew();
 		while (this.NeedyState == NeedyState.Running) {
-			await AimlTasks.Delay(25);
+			await Delay(25);
 			using var interrupt = await this.ModuleInterruptAsync(context, false);
 			context = interrupt.Context;
 			context.Reply("Discharging the capacitor.");
-			interrupt.SendInputs("a:hold");
+			interrupt.SendInputs(new ButtonAction(Button.A, ButtonActionType.Hold));
 			var elapsed = stopwatch.Elapsed;
-			await AimlTasks.Delay(TimeSpan.FromTicks(elapsed.Ticks / 5 + TimeSpan.TicksPerSecond / 2));
-			interrupt.SendInputs("a:release");
+			await Delay(TimeSpan.FromTicks(elapsed.Ticks / 5 + TimeSpan.TicksPerSecond / 2));
+			interrupt.SendInputs(new ButtonAction(Button.A, ButtonActionType.Release));
 			stopwatch.Restart();
 		}
 	}

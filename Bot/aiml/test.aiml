@@ -1,20 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <aiml version='2.1'>
 	<category>
-		<pattern>test input *</pattern>
-		<template>
-			<oob><sendinputs><star/></sendinputs></oob>
-		</template>
-	</category>
-
-	<category>
-		<pattern>test read *</pattern>
-		<template>
-			<sraix service='BombDefuserAimlService'>read <star/></sraix>
-		</template>
-	</category>
-
-	<category>
 		<pattern>test triggeralarmclock</pattern>
 		<template><oob><triggeralarmclock/></oob></template>
 	</category>

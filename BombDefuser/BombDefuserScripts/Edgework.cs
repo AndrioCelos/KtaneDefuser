@@ -1,4 +1,5 @@
-﻿using Aiml;
+﻿using System.ComponentModel;
+using Aiml;
 using BombDefuserConnector.Widgets;
 
 namespace BombDefuserScripts;
@@ -50,7 +51,7 @@ internal static class Edgework {
 		}
 	}
 
-	[AimlCategory("edgework")]
+	[AimlCategory("edgework"), EditorBrowsable(EditorBrowsableState.Never)]
 	internal static void EdgeworkRequest(AimlAsyncContext context) {
 		var batteries = GameState.Current.BatteryCount switch {
 			0 => "No batteries.",

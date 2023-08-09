@@ -51,16 +51,16 @@ internal class Keypad : ModuleScript<BombDefuserConnector.Components.Keypad> {
 	}
 
 	[AimlCategory("press *")]
-	internal static async Task Press(AimlAsyncContext context, string buttons) {
+	internal static async Task Press(AimlAsyncContext context, string keys) {
 		var script = GameState.Current.CurrentScript<Keypad>();
 		var symbols = GameState.Current.CurrentScript<Keypad>().symbols;
 		if (symbols == null) {
 			context.Reply("We need to read the module first.");
 			return;
 		}
-		var presses = new List<(string inputs, int index)>();
+		var presses = new List<(IEnumerable<Button> inputs, int index)>();
 		var cursorIndex = script.highlight;
-		var descriptions = buttons.Split(" then ", StringSplitOptions.TrimEntries);
+		var descriptions = keys.Split(" then ", StringSplitOptions.TrimEntries);
 		foreach (var desc in descriptions) {
 			var symbol = Enum.Parse<Symbol>(context.RequestProcess.Srai($"GetKeypadGlyphName {desc}"), true);
 			var index = Array.IndexOf(symbols, symbol);
@@ -68,17 +68,17 @@ internal class Keypad : ModuleScript<BombDefuserConnector.Components.Keypad> {
 				context.Reply($"{SymbolDescriptions[symbol]} is not on the keypad.");
 				return;
 			}
-			var builder = new StringBuilder();
+			var buttons = new List<Button>();
 			if (index / 2 < cursorIndex / 2)
-				builder.Append("up ");
+				buttons.Add(Button.Up);
 			else if (index / 2 > cursorIndex / 2)
-				builder.Append("down ");
+				buttons.Add(Button.Down);
 			if (index % 2 < cursorIndex % 2)
-				builder.Append("left ");
+				buttons.Add(Button.Left);
 			else if (index % 2 > cursorIndex % 2)
-				builder.Append("right ");
-			builder.Append('a');
-			presses.Add((builder.ToString(), index));
+				buttons.Add(Button.Right);
+			buttons.Add(Button.A);
+			presses.Add((buttons, index));
 			cursorIndex = index;
 		}
 		using var interrupt = await Interrupt.EnterAsync(context);

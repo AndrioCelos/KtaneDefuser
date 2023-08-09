@@ -1,28 +1,29 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using BombDefuserConnectorApi;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector;
-public class DefuserConnector {
+public class DefuserConnector : IDisposable {
 	private static readonly Dictionary<Type, ComponentReader> componentReaders
 		= (from t in typeof(ComponentReader).Assembly.GetTypes() where !t.IsAbstract && typeof(ComponentReader).IsAssignableFrom(t) select t).ToDictionary(t => t, t => (ComponentReader) Activator.CreateInstance(t)!);
 	private static readonly Dictionary<Type, WidgetReader> widgetReaders
 		= (from t in typeof(WidgetReader).Assembly.GetTypes() where !t.IsAbstract && typeof(WidgetReader).IsAssignableFrom(t) select t).ToDictionary(t => t, t => (WidgetReader) Activator.CreateInstance(t)!);
 
-	private TcpClient? tcpClient;
-	private readonly byte[] writeBuffer = new byte[1024];
-	private readonly byte[] readBuffer = new byte[14745612];
+	private (TcpClient tcpClient, DefuserMessageReader reader, DefuserMessageWriter writer)? connection;
 
 	private TaskCompletionSource<Image<Rgba32>>? screenshotTaskSource;
-	private TaskCompletionSource<string>? readTaskSource;
+	private TaskCompletionSource<string?>? readTaskSource;
+	private readonly BlockingCollection<string> aimlNotificationQueue = new();
 	private Simulation? simulation;
 
 	private static DefuserConnector? instance;
@@ -30,78 +31,123 @@ public class DefuserConnector {
 	public static Components.Timer TimerReader { get; }
 
 	public bool IsConnected { get; private set; }
+	public bool CallbacksEnabled { get; private set; }
 
 	private const int PORT = 8086;
 
 	static DefuserConnector() => TimerReader = GetComponentReader<Components.Timer>();
 
-	public DefuserConnector() => instance ??= this;
+	public DefuserConnector() {
+		instance ??= this;
+	}
+
+	~DefuserConnector() => this.Dispose();
+
+	public void Dispose() {
+		this.connection?.tcpClient.Dispose();
+		GC.SuppressFinalize(this);
+	}
+
+	public void EnableCallbacks() {
+		this.CallbacksEnabled = true;
+		var thread = new Thread(this.RunCallbackThread) { IsBackground = true, Name = $"{nameof(DefuserConnector)} callback thread" };
+		thread.Start();
+	}
+
+	private void RunCallbackThread() {
+		while (true) {
+			var s = this.aimlNotificationQueue.Take();
+			AimlVoice.Program.sendInput(s);
+		}
+	}
 
 	public async Task ConnectAsync(bool simulation) {
 		if (this.IsConnected) throw new InvalidOperationException("Cannot connect while already connected.");
 		if (simulation) {
 			this.simulation = new();
 		} else {
-			this.tcpClient = new TcpClient();
-			await this.tcpClient.ConnectAsync(new IPEndPoint(IPAddress.Loopback, PORT));
-			_ = this.ReadLoopAsync();
+			var tcpClient = new TcpClient();
+			await tcpClient.ConnectAsync(new IPEndPoint(IPAddress.Loopback, PORT));
+			var stream = tcpClient.GetStream();
+			var reader = new DefuserMessageReader(stream, 14745612);
+			reader.Disconnected += this.Reader_Disconnected;
+			reader.MessageReceived += this.Reader_MessageReceived;
+			this.connection = (tcpClient, reader, new(stream, new byte[1024]));
 		}
 		this.IsConnected = true;
 	}
 
-	private async Task ReadLoopAsync() {
-		if (this.tcpClient == null) return;
-		var stream = this.tcpClient.GetStream();
-		try {
-			while (true) {
-				await stream.ReadExactlyAsync(this.readBuffer, 0, 5);
-				var messageType = (MessageType)this.readBuffer[0];
-				var length = BitConverter.ToInt32(this.readBuffer, 1);
-				switch (messageType) {
-					case MessageType.Event:
-						await stream.ReadExactlyAsync(this.readBuffer, 0, length);
-						var message = Encoding.UTF8.GetString(this.readBuffer, 0, length);
-						_ = Task.Run(() => AimlVoice.Program.sendInput($"OOB DefuserSocketMessage {message}"));
-						break;
-					case MessageType.Image: {
-						if (this.screenshotTaskSource is null) break;
-						await stream.ReadExactlyAsync(this.readBuffer, 0, length);
-						var w = BitConverter.ToInt32(this.readBuffer, 0);
-						var h = BitConverter.ToInt32(this.readBuffer, 4);
-						var image = Image.LoadPixelData<Rgba32>(this.readBuffer.AsSpan()[8..length], w, h);
-						image.Mutate(c => c.Flip(FlipMode.Vertical));
+	private void Reader_Disconnected(object? sender, DisconnectedEventArgs e) => this.SendAimlNotification($"OOB DefuserSocketError {e.Exception?.Message ?? "nil"}");
+	private void Reader_MessageReceived(object? sender, DefuserMessageEventArgs e) {
+		switch (e.Message) {
+			case LegacyEventMessage legacyEventMessage:
+				this.SendAimlNotification($"OOB DefuserSocketMessage {legacyEventMessage.Event}");
+				break;
+			case ScreenshotResponseMessage screenshotResponseMessage:
+				if (this.screenshotTaskSource is null) break;
+				var image = Image.LoadPixelData<Rgba32>(screenshotResponseMessage.Data.AsSpan(8, screenshotResponseMessage.PixelDataLength), screenshotResponseMessage.Width, screenshotResponseMessage.Height);
+				image.Mutate(c => c.Flip(FlipMode.Vertical));
 #if DEBUG
-						SaveDebugImage(image, "Screenshot");
+				SaveDebugImage(image, "Screenshot");
 #endif
-						this.screenshotTaskSource.SetResult(image);
-						break;
-					}
-					case MessageType.ReadResponse:
-						await stream.ReadExactlyAsync(this.readBuffer, 0, length);
-						this.readTaskSource?.SetResult(Encoding.UTF8.GetString(this.readBuffer, 0, length));
-						break;
-					case MessageType.ReadError:
-						await stream.ReadExactlyAsync(this.readBuffer, 0, length);
-						this.readTaskSource?.SetException(new Exception($"Read failed: {Encoding.UTF8.GetString(this.readBuffer, 0, length)}"));
-						break;
-					case MessageType.InputCallback:
-						await stream.ReadExactlyAsync(this.readBuffer, 0, length);
-						_ = Task.Run(() => AimlVoice.Program.sendInput($"OOB DefuserCallback {Encoding.UTF8.GetString(this.readBuffer, 0, length)}"));
-						break;
-				}
-			}
-		} catch (Exception ex) {
-			AimlVoice.Program.sendInput($"OOB DefuserSocketError {ex.Message}");
+				this.screenshotTaskSource.SetResult(image);
+				break;
+			case CheatReadResponseMessage cheatReadResponseMessage:
+				this.readTaskSource?.SetResult(cheatReadResponseMessage.Data);
+				break;
+			case CheatReadErrorMessage cheatReadErrorMessage:
+				this.readTaskSource?.SetException(new Exception($"Read failed: {cheatReadErrorMessage.Message}"));
+				break;
+			case LegacyInputCallbackMessage legacyInputCallbackMessage:
+				this.SendAimlNotification($"OOB DefuserCallback {legacyInputCallbackMessage.Token}");
+				break;
+			case InputCallbackMessage inputCallbackMessage:
+				this.SendAimlNotification($"OOB DefuserCallback {inputCallbackMessage.Token:N}");
+				break;
+			case CheatGetModuleTypeResponseMessage cheatGetModuleTypeResponseMessage:
+				this.readTaskSource?.SetResult(cheatGetModuleTypeResponseMessage.ModuleType);
+				break;
+			case CheatGetModuleTypeErrorMessage cheatGetModuleTypeErrorMessage:
+				this.readTaskSource?.SetException(new Exception($"Read failed: {cheatGetModuleTypeErrorMessage.Message}"));
+				break;
+			case GameStartMessage gameStartMessage:
+				this.SendAimlNotification($"OOB GameStart");
+				break;
+			case GameEndMessage gameEndMessage:
+				this.SendAimlNotification($"OOB GameEnd");
+				break;
+			case NewBombMessage newBombMessage:
+				this.SendAimlNotification($"OOB NewBomb {newBombMessage.NumStrikes} {newBombMessage.NumSolvableModules} {newBombMessage.NumNeedyModules} {Math.Floor(newBombMessage.Time.TotalSeconds)}");
+				break;
+			case StrikeMessage strikeMessage:
+				this.SendAimlNotification($"OOB Strike {strikeMessage.Slot.Bomb} {strikeMessage.Slot.Face} {strikeMessage.Slot.X} {strikeMessage.Slot.Y}");
+				break;
+			case AlarmClockChangeMessage alarmClockChangeMessage:
+				this.SendAimlNotification($"OOB AlarmClockChange {alarmClockChangeMessage.On}");
+				break;
+			case LightsStateChangeMessage lightsStateChangeMessage:
+				this.SendAimlNotification($"OOB LightsChange {lightsStateChangeMessage.On}");
+				break;
+			case NeedyStateChangeMessage needyStateChangeMessage:
+				this.SendAimlNotification($"OOB NeedyStateChange {needyStateChangeMessage.Slot.Bomb} {needyStateChangeMessage.Slot.Face} {needyStateChangeMessage.Slot.X} {needyStateChangeMessage.Slot.Y} {needyStateChangeMessage.State}");
+				break;
+			case BombExplodeMessage bombExplodeMessage:
+				this.SendAimlNotification($"OOB BombExplode");
+				break;
+			case BombDefuseMessage bombDefuseMessage:
+				this.SendAimlNotification($"OOB BombDefuse {bombDefuseMessage.Bomb}");
+				break;
 		}
 	}
 
-	internal void SendMessage(string message) {
-		if (this.tcpClient == null)
-			throw new InvalidOperationException("Socket not connected");
-		var length = Encoding.UTF8.GetBytes(message, 0, message.Length, this.writeBuffer, 5);
-		this.writeBuffer[0] = 1;
-		Array.Copy(BitConverter.GetBytes(length), 0, this.writeBuffer, 1, 4);
-		this.tcpClient.GetStream().Write(this.writeBuffer, 0, length + 5);
+	private void SendAimlNotification(string message) {
+		if (this.CallbacksEnabled)
+			this.aimlNotificationQueue.Add(message);
+	}
+
+	private void SendMessage(IDefuserMessage message) {
+		if (this.connection is null) throw new InvalidOperationException("Not connected.");
+		this.connection.Value.writer.Write(message);
 	}
 
 #if DEBUG
@@ -119,7 +165,7 @@ public class DefuserConnector {
 		if (this.screenshotTaskSource is not null) throw new InvalidOperationException("Already taking a screenshot.");
 		try {
 			this.screenshotTaskSource = new();
-			this.SendMessage("screenshot");
+			this.SendMessage(new ScreenshotCommandMessage());
 			return await this.screenshotTaskSource.Task;
 		} finally {
 			this.screenshotTaskSource = null;
@@ -131,12 +177,14 @@ public class DefuserConnector {
 			this.simulation.SendInputs(inputs);
 		else {
 			try {
-				this.SendMessage($"input {inputs}");
+				this.SendMessage(new LegacyCommandMessage($"input {inputs}"));
 			} catch (Exception ex) {
 				AimlVoice.Program.sendInput($"OOB DefuserSocketError {ex.Message}");
 			}
 		}
 	}
+	public void SendInputs(params IInputAction[] actions) => this.SendMessage(new InputCommandMessage(actions));
+	public void SendInputs(IEnumerable<IInputAction> actions) => this.SendMessage(new InputCommandMessage(actions));
 
 	public void CheatSolve() {
 		if (this.simulation is null)
@@ -212,14 +260,12 @@ public class DefuserConnector {
 		return ratings[0].reader;
 	}
 
-	public ComponentReader? CheatGetComponentReader(int face, int x, int y) {
+	public ComponentReader? CheatGetComponentReader(Slot slot) {
 		if (this.simulation is not null)
-			return this.simulation.GetComponentReader(face, x, y);
+			return this.simulation.GetComponentReader(slot);
 
-		if (this.tcpClient == null)
-			throw new InvalidOperationException("Socket not connected");
 		this.readTaskSource = new();
-		this.SendMessage($"getmodulename {face} {x} {y}");
+		this.SendMessage(new CheatGetModuleTypeCommandMessage(slot));
 		var name = this.readTaskSource.Task.Result;
 		return !string.IsNullOrEmpty(name) && typeof(ComponentReader).Assembly.GetType($"{nameof(BombDefuserConnector)}.{nameof(Components)}.{name}", false, true) is Type t ? componentReaders[t] : null;
 	}
@@ -263,14 +309,12 @@ public class DefuserConnector {
 		return reader.Process(image, 0, ref debugImage);
 	}
 
-	public string CheatRead(string[] tokens) {
+	public string? CheatRead(Slot slot, params string[] members) {
 		if (this.simulation is not null)
 			throw new NotImplementedException();
 
-		if (this.tcpClient == null)
-			throw new InvalidOperationException("Socket not connected");
 		this.readTaskSource = new();
-		this.SendMessage($"read {string.Join(' ', tokens.Skip(1))}");
+		this.SendMessage(new CheatReadCommandMessage(slot, members));
 		return this.readTaskSource.Task.Result;
 	}
 
@@ -297,14 +341,5 @@ public class DefuserConnector {
 			return widgetReaders[type].ProcessNonGeneric(image, 0, ref debugImage)?.ToString();
 
 		throw new ArgumentException($"No such command, component or widget is known: {readerName}");
-	}
-
-	public enum MessageType {
-		Command,
-		Event,
-		Image,
-		ReadResponse,
-		ReadError,
-		InputCallback
 	}
 }

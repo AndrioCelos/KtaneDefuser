@@ -287,39 +287,21 @@ public partial class TransformationForm : Form {
 		}
 	}
 
-	private void getFromGameButton_Click(object sender, EventArgs e) {
+	private async void getFromGameButton_Click(object sender, EventArgs e) {
 		networkBuffer ??= new byte[14745612];
 
-		using var tcpClient = new TcpClient();
-		tcpClient.Connect(new IPEndPoint(IPAddress.Loopback, 8086));
-		var stream = tcpClient.GetStream();
-		var length = Encoding.UTF8.GetBytes("screenshot", 0, 10, networkBuffer, 5);
-		networkBuffer[0] = 1;
-		Array.Copy(BitConverter.GetBytes(length), 0, networkBuffer, 1, 4);
-		stream.Write(networkBuffer, 0, length + 5);
-
-		while (true) {
-			stream.ReadExactly(networkBuffer, 0, 5);
-			length = BitConverter.ToInt32(networkBuffer, 1);
-			if (networkBuffer[0] == 2) {
-				// Image message.
-				stream.ReadExactly(networkBuffer, 0, length);
-				var w = BitConverter.ToInt32(networkBuffer, 0);
-				var h = BitConverter.ToInt32(networkBuffer, 4);
-				using var image = Image.LoadPixelData<Rgba32>(networkBuffer.AsSpan()[8..length], w, h);
-				screenImage = image.CloneAs<Rgba32>();
-				screenImage.Mutate(c => c.Flip(FlipMode.Vertical));
-				screenBitmap = screenImage.ToWinFormsImage();
-				points[1].X = Math.Min(points[1].X, screenImage.Width);
-				points[2].Y = Math.Min(points[2].Y, screenImage.Height);
-				points[3].X = Math.Min(points[3].X, screenImage.Width);
-				points[3].Y = Math.Min(points[3].Y, screenImage.Height);
-				screenshotPanel_Resize(this, e);
-				RecalculateSideWidgetPresets();
-				RedrawTransformedImage();
-				return;
-			}
-		}
+		using var connector = new DefuserConnector();
+		await connector.ConnectAsync(false);
+		var image = await connector.TakeScreenshotAsync();
+		screenImage = image;
+		screenBitmap = screenImage.ToWinFormsImage();
+		points[1].X = Math.Min(points[1].X, screenImage.Width);
+		points[2].Y = Math.Min(points[2].Y, screenImage.Height);
+		points[3].X = Math.Min(points[3].X, screenImage.Width);
+		points[3].Y = Math.Min(points[3].Y, screenImage.Height);
+		screenshotPanel_Resize(this, e);
+		RecalculateSideWidgetPresets();
+		RedrawTransformedImage();
 	}
 
 	private void screenshotSaveButton_Click(object sender, EventArgs e) {
@@ -337,13 +319,6 @@ public partial class TransformationForm : Form {
 			5 => new SixLabors.ImageSharp.Formats.Tiff.TiffEncoder(),
 			_ => new SixLabors.ImageSharp.Formats.Webp.WebpEncoder()
 		});
-	}
-
-	private void TransformationForm_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e) {
-	}
-
-	private void screenshotPictureBox_Click(object sender, EventArgs e) {
-
 	}
 
 	private void presetBox_KeyDown(object sender, KeyEventArgs e) {

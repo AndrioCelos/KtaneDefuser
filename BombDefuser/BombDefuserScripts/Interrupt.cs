@@ -5,7 +5,11 @@ public class Interrupt : IDisposable {
 
 	public bool IsDisposed { get; private set; }
 
-	public AimlAsyncContext Context { get; }
+	/// <summary>
+	/// Returns or sets the current <see cref="AimlAsyncContext"/> of this interrupt. When initialised, this will be the context in which the interrupt was entered.
+	/// It may be set in scripts like The Button which handle user input during an interrupt, to continue it in a new <see cref="AimlAsyncContext"/>.
+	/// </summary>
+	public AimlAsyncContext Context { get; set; }
 
 	private Interrupt(AimlAsyncContext context) => this.Context = context ?? throw new ArgumentNullException(nameof(context));
 
@@ -48,17 +52,20 @@ public class Interrupt : IDisposable {
 		}
 	}
 
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "This operation requires an Interrupt instance to avoid desyncs.")]
 	public T Read<T>(ComponentReader<T> reader) where T : notnull {
+		if (this.IsDisposed) throw new ObjectDisposedException(nameof(Interrupt));
 		using var ss = DefuserConnector.Instance.TakeScreenshot();
 		return DefuserConnector.Instance.ReadComponent(ss, reader, Utils.CurrentModulePoints);
 	}
 
-	public async Task<ModuleLightState> SubmitAsync(string inputs) {
+	public Task<ModuleLightState> SubmitAsync(params Button[] buttons) => this.SubmitAsync(from b in buttons select new ButtonAction(b));
+	public Task<ModuleLightState> SubmitAsync(IEnumerable<Button> buttons) => this.SubmitAsync(from b in buttons select new ButtonAction(b));
+	public Task<ModuleLightState> SubmitAsync(params IInputAction[] actions) => this.SubmitAsync((IEnumerable<IInputAction>) actions);
+	public async Task<ModuleLightState> SubmitAsync(IEnumerable<IInputAction> actions) {
 		if (this.IsDisposed) throw new ObjectDisposedException(nameof(Interrupt));
 		var context = AimlAsyncContext.Current ?? throw new InvalidOperationException("No current request");
-		await this.SendInputsAsync(inputs);
-		await AimlTasks.Delay(0.5);  // Wait for the interaction punch to end.
+		await this.SendInputsAsync(actions);
+		await Delay(0.5);  // Wait for the interaction punch to end.
 		using var ss = DefuserConnector.Instance.TakeScreenshot();
 		var result = DefuserConnector.Instance.GetModuleLightState(ss, Utils.CurrentModulePoints);
 		switch (result) {

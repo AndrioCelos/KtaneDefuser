@@ -7,7 +7,7 @@ public class GameState {
 	/// <summary>Indicates whether we are waiting for the lights to turn on at the start of the game.</summary>
 	public bool WaitingForLights { get; set; }
 	/// <summary>The location of the timer, or <see langword="null"/> if it is unknown.</summary>
-	public ComponentSlot? TimerSlot { get; set; }
+	public Slot? TimerSlot { get; set; }
 	/// <summary>The time on the timer at the moment the <see cref="TimerStopwatch"/> was started.</summary>
 	public TimeSpan TimerBaseTime { get; set; } = TimeSpan.Zero;
 	/// <summary>A <see cref="Stopwatch"/> that keeps track of the bomb time.</summary>
@@ -67,7 +67,7 @@ public class GameState {
 		? this.TimerBaseTime + this.TimerStopwatch.Elapsed
 		: this.TimerBaseTime - this.TimerStopwatch.Elapsed;
 
-	public readonly Dictionary<ComponentSlot, NeedyState> UnknownNeedyStates = new();
+	public readonly Dictionary<Slot, NeedyState> UnknownNeedyStates = new();
 }
 
 public struct IndicatorData {
@@ -92,13 +92,13 @@ public enum PortTypes {
 
 public class ModuleState {
 	/// <summary>The slot that this module is in.</summary>
-	public ComponentSlot Slot { get; }
+	public Slot Slot { get; }
 	/// <summary>The <see cref="ComponentReader"/> instance corresponding to the module type.</summary>
 	public ComponentReader Reader { get; }
 	/// <summary>A <see cref="ModuleScript"/> instance handling this module.</summary>
 	public ModuleScript Script { get; }  // Will be null for the timer.
 
-	public ModuleState(ComponentSlot slot, ComponentReader reader, ModuleScript script) {
+	public ModuleState(Slot slot, ComponentReader reader, ModuleScript script) {
 		this.Slot = slot;
 		this.Reader = reader ?? throw new ArgumentNullException(nameof(reader));
 		this.Script = script;
@@ -107,11 +107,11 @@ public class ModuleState {
 
 public class BombFace {
 	public bool HasModules { get; set; }
-	public ComponentSlot SelectedSlot;
+	public Slot SelectedSlot;
 
 	private readonly ModuleState?[,] slots = new ModuleState?[3, 2];
 
-	public ModuleState? this[ComponentSlot slot] {
+	public ModuleState? this[Slot slot] {
 		get => this.slots[slot.X, slot.Y];
 		set => this.slots[slot.X, slot.Y] = value;
 	}

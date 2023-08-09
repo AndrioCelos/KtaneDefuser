@@ -29,6 +29,10 @@
   <ItemGroup>
     <Using Include="AimlCSharp" />
     <Using Include="BombDefuserConnector" />
+    <Using Include="BombDefuserConnectorApi" />
+    <Using Include="BombDefuserScripts.AimlTasks">
+      <Static>True</Static>
+    </Using>
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

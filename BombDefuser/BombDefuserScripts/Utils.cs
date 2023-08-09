@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using AimlCSharpInterface;
+using BombDefuserConnectorApi;
 
 namespace BombDefuserScripts;
 internal static class Utils {
@@ -44,7 +45,7 @@ internal static class Utils {
 		new Point[] { new(1181,  566), new(1390,  566), new(1182,  678), new(1392,  678) }
 	};
 
-	public static IReadOnlyList<Point> GetPoints(ComponentSlot slot) {
+	public static IReadOnlyList<Point> GetPoints(Slot slot) {
 		if (GameState.Current.FocusState == FocusState.Module) {
 			var selectedSlot = GameState.Current.SelectedFace.SelectedSlot;
 			var dx = slot.X - selectedSlot.X;
@@ -60,16 +61,16 @@ internal static class Utils {
 	internal static async Task SelectFaceAsync(Interrupt interrupt, int face, SelectFaceAlignMode alignMode) {
 		if (GameState.Current.SelectedFaceNum == face) return;  // The requested side is already selected; do nothing.
 		GameState.Current.LookingAtSide = true;
-		interrupt.SendInputs("rx:1");
+		interrupt.SendInputs(new AxisAction(Axis.RightStickX, 1));
 		if (alignMode == SelectFaceAlignMode.CheckWidgets) {
-			await AimlTasks.Delay(0.375);
-			interrupt.SendInputs("rx:0");
+			await Delay(0.375);
+			interrupt.SendInputs(new AxisAction(Axis.RightStickX, 0));
 			using var ss = DefuserConnector.Instance.TakeScreenshot();
 			Edgework.RegisterWidgets(interrupt.Context, true, ss);
-			interrupt.SendInputs("rx:1");
-			await AimlTasks.Delay(0.125);
+			interrupt.SendInputs(new AxisAction(Axis.RightStickX, 1));
+			await Delay(0.125);
 		} else
-			await AimlTasks.Delay(0.75);
+			await Delay(0.75);
 
 		GameState.Current.FocusState = FocusState.Bomb;
 		GameState.Current.SelectedFaceNum = face;
@@ -77,15 +78,15 @@ internal static class Utils {
 
 		// Correct the bomb rotation.
 		if (alignMode == SelectFaceAlignMode.None)
-			interrupt.SendInputs("rx:0");
+			interrupt.SendInputs(new AxisAction(Axis.RightStickX, 0));
 		else {
 			// If the face we're moving to is known to have modules on it, pressing A B is faster.
 			if (GameState.Current.SelectedFace.HasModules) {
-				interrupt.SendInputs("rx:0 a b");
-				await AimlTasks.Delay(0.5);
+				interrupt.SendInputs(new AxisAction(Axis.RightStickX, 0), new ButtonAction(Button.A), new ButtonAction(Button.B));
+				await Delay(0.5);
 			} else {
-				interrupt.SendInputs("rx:0 b a");
-				await AimlTasks.Delay(1.5);
+				interrupt.SendInputs(new AxisAction(Axis.RightStickX, 0), new ButtonAction(Button.B), new ButtonAction(Button.A));
+				await Delay(1.5);
 			}
 		}
 		GameState.Current.LookingAtSide = false;
@@ -94,19 +95,19 @@ internal static class Utils {
 	internal static async Task SelectModuleAsync(Interrupt interrupt, int moduleNum, bool waitForFocus) {
 		if (GameState.Current.SelectedModuleNum == moduleNum)
 			return;  // The requested module is already selected.
-		var builder = new StringBuilder();
+		var buttons = new List<Button>();
 		var slot = GameState.Current.Modules[moduleNum].Slot;
 		await SelectFaceAsync(interrupt, slot.Face, SelectFaceAlignMode.None);
 		// If another module is selected, deselect it first.
 		if (GameState.Current.SelectedModuleNum is not null)
-			builder.Append("b ");
+			buttons.Add(Button.B);
 		// Move to the correct row.
 		var currentSlot = GameState.Current.SelectedFace.SelectedSlot;
 		if (slot.Y != currentSlot.Y) {
 			if (slot.Y < currentSlot.Y)
-				builder.Append("up ");
+				buttons.Add(Button.Up);
 			else
-				builder.Append("down ");
+				buttons.Add(Button.Down);
 
 			// Find which slot this input will select.
 			currentSlot.Y = slot.Y;
@@ -122,16 +123,16 @@ internal static class Utils {
 		}
 		// Move to the correct module within that row.
 		while (slot.X < currentSlot.X) {
-			builder.Append("left ");
+			buttons.Add(Button.Left);
 			do { currentSlot.X--; } while (GameState.Current.SelectedFace[currentSlot]?.Reader is null or BombDefuserConnector.Components.Timer);
 		}
 		while (slot.X > currentSlot.X) {
-			builder.Append("right ");
+			buttons.Add(Button.Right);
 			do { currentSlot.X++; } while (GameState.Current.SelectedFace[currentSlot]?.Reader is null or BombDefuserConnector.Components.Timer);
 		}
-		builder.Append('a');
-		await interrupt.SendInputsAsync(builder.ToString());
-		if (waitForFocus) await AimlTasks.Delay(0.75);
+		buttons.Add(Button.A);
+		await interrupt.SendInputsAsync(buttons);
+		if (waitForFocus) await Delay(0.75);
 
 		GameState.Current.SelectedFace.SelectedSlot = slot;
 		GameState.Current.SelectedModuleNum = moduleNum;

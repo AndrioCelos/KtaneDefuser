@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Timers;
+using BombDefuserConnectorApi;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -251,7 +252,7 @@ internal partial class Simulation {
 	}
 
 	public ComponentReader? GetComponentReader(Point point1) => this.GetComponent(point1)?.Reader;
-	public ComponentReader? GetComponentReader(int face, int x, int y) => this.moduleFaces[face].Slots[y, x]?.Reader;
+	public ComponentReader? GetComponentReader(Slot slot) => this.moduleFaces[slot.Face].Slots[slot.Y, slot.X]?.Reader;
 
 	public T ReadComponent<T>(Point point1) where T : notnull {
 		var component = this.GetComponent(point1) ?? throw new ArgumentException("Attempted to read an empty component slot.");
