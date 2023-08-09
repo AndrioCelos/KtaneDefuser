@@ -118,4 +118,41 @@ public partial class ClassificationForm : Form {
 				comboBox1.Items.Add(Activator.CreateInstance(type));
 		}
 	}
+
+	private void ClassificationForm_DragEnter(object sender, DragEventArgs e) {
+		if (e.AllowedEffect.HasFlag(DragDropEffects.Copy) && e.Data is DataObject dataObject) {
+			var hasImage = dataObject.ContainsImage();
+			var hasFile = dataObject.ContainsFileDropList();
+			if (hasFile) {
+				var list = dataObject.GetFileDropList();
+				if (list.Count == 1 && Path.GetExtension(list[0]) is string ext && ext.ToLowerInvariant() is ".bmp" or ".jpg" or ".jpeg" or ".png" or ".webp")
+					e.Effect = DragDropEffects.Copy;
+			} else if (hasImage)
+				e.Effect = DragDropEffects.Copy;
+		}
+	}
+
+	private void ClassificationForm_DragDrop(object sender, DragEventArgs e) {
+		if (e.AllowedEffect.HasFlag(DragDropEffects.Copy) && e.Data is DataObject dataObject) {
+			var hasImage = dataObject.ContainsImage();
+			var hasFile = dataObject.ContainsFileDropList();
+			if (hasFile) {
+				var list = dataObject.GetFileDropList();
+				if (list.Count == 1 && Path.GetExtension(list[0]) is string ext && ext.ToLowerInvariant() is ".bmp" or ".jpg" or ".jpeg" or ".png" or ".webp") {
+					e.Effect = DragDropEffects.Copy;
+					screenBitmap = Image.Load<Rgba32>(list[0]!);
+					pictureBox1.Image = screenBitmap.ToWinFormsImage();
+					comboBox1_SelectedIndexChanged(sender, EventArgs.Empty);
+				}
+			} else if (hasImage) {
+				var image = dataObject.GetImage();
+				if (image is not null) {
+					this.screenBitmap = image.ToImage<Rgba32>();
+					pictureBox1.Image = screenBitmap.ToWinFormsImage();
+					comboBox1_SelectedIndexChanged(sender, EventArgs.Empty);
+					e.Effect = DragDropEffects.Copy;
+				}
+			}
+		}
+	}
 }
