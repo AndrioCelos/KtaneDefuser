@@ -28,6 +28,7 @@ internal static class Timer {
 		}
 	}
 
+	/// <summary>Returns a <see cref="Task"/> that completes when the specified digit is displayed on the bomb timer.</summary>
 	public static async Task WaitForDigitInTimerAsync(int digit) {
 		var time = GameState.Current.Time;
 		if (time.Seconds % 10 == digit || time.Seconds / 10 == digit) return;

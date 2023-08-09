@@ -3,8 +3,10 @@
 namespace BombDefuserConnectorApi;
 public interface IInputAction { }
 
+/// <summary>An action that does nothing.</summary>
 public sealed class NoOpAction : IInputAction { }
 
+/// <summary>An action that presses, starts holding or releases a controller button.</summary>
 public sealed class ButtonAction : IInputAction {
 	public Button Button { get; set; }
 	public ButtonActionType Action { get; set; }
@@ -16,6 +18,7 @@ public sealed class ButtonAction : IInputAction {
 	}
 }
 
+/// <summary>An action that moves a controller stick or trigger axis.</summary>
 public sealed class AxisAction : IInputAction {
 	public Axis Axis { get; set; }
 	public float Value { get; set; }
@@ -26,12 +29,14 @@ public sealed class AxisAction : IInputAction {
 	}
 }
 
+/// <summary>An action that changes the camera's field of view, as if using the Camera Zoom mod.</summary>
 public sealed class ZoomAction : IInputAction {
 	public float Value { get; set; }
 
 	public ZoomAction(float value) => this.Value = value;
 }
 
+/// <summary>An action that sends a callback event to the client when reached.</summary>
 public sealed class CallbackAction : IInputAction {
 	public Guid Token { get; set; }
 

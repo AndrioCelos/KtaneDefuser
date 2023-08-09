@@ -54,13 +54,16 @@ internal static class NATO {
 		Map('9', "Nine");
 	}
 
+	/// <summary>Returns the character represented by the specified NATO code word, or if it's a single character already, returns that character.</summary>
 	public static char DecodeChar(string natoWord) => natoWord.Length == 1 ? natoWord[0] : decodeMap[natoWord];
 
+	/// <summary>Returns OOB tags that read the specified characters using the NATO phonetic alphabet.</summary>
 	public static string Speak(IEnumerable<char> chars) {
 		var builder = new StringBuilder();
 		Speak(builder, chars);
 		return builder.ToString();
 	}
+	/// <summary>Appends OOB tags that read the specified characters using the NATO phonetic alphabet to the specified <see cref="StringBuilder"/>.</summary>
 	public static void Speak(StringBuilder builder, IEnumerable<char> chars) {
 		builder.Append("<oob><speak><s>");
 		var any = false;

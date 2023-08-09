@@ -13,6 +13,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector;
+/// <summary>Integrates a bot with Keep Talking and Nobody Explodes.</summary>
 public class DefuserConnector : IDisposable {
 	private static readonly Dictionary<Type, ComponentReader> componentReaders
 		= (from t in typeof(ComponentReader).Assembly.GetTypes() where !t.IsAbstract && typeof(ComponentReader).IsAssignableFrom(t) select t).ToDictionary(t => t, t => (ComponentReader) Activator.CreateInstance(t)!);
@@ -28,9 +29,13 @@ public class DefuserConnector : IDisposable {
 
 	private static DefuserConnector? instance;
 	public static DefuserConnector Instance => instance ?? throw new InvalidOperationException("Service not yet initialised");
+	/// <summary>Returns the <see cref="ComponentReader"/> instance representing the timer.</summary>
 	public static Components.Timer TimerReader { get; }
 
+	/// <summary>Returns whether this instance is connected to the game.</summary>
 	public bool IsConnected { get; private set; }
+	/// <summary>Returns whether event callbacks have been enabled.</summary>
+	/// <seealso cref="EnableCallbacks"/>
 	public bool CallbacksEnabled { get; private set; }
 
 	private const int PORT = 8086;
@@ -43,11 +48,13 @@ public class DefuserConnector : IDisposable {
 
 	~DefuserConnector() => this.Dispose();
 
+	/// <summary>Closes the connection to the game and releases resources used by this <see cref="DefuserConnector"/>.</summary>
 	public void Dispose() {
 		this.connection?.tcpClient.Dispose();
 		GC.SuppressFinalize(this);
 	}
 
+	/// <summary>Starts processing callbacks to the AIML bot.</summary>
 	public void EnableCallbacks() {
 		this.CallbacksEnabled = true;
 		var thread = new Thread(this.RunCallbackThread) { IsBackground = true, Name = $"{nameof(DefuserConnector)} callback thread" };
@@ -61,6 +68,7 @@ public class DefuserConnector : IDisposable {
 		}
 	}
 
+	/// <summary>Connects to the game or initialises a simulation.</summary>
 	public async Task ConnectAsync(bool simulation) {
 		if (this.IsConnected) throw new InvalidOperationException("Cannot connect while already connected.");
 		if (simulation) {
@@ -158,7 +166,9 @@ public class DefuserConnector : IDisposable {
 	}
 #endif
 
+	/// <summary>Synchronously retrieves a screenshot of the game.</summary>
 	public Image<Rgba32> TakeScreenshot() => this.TakeScreenshotAsync().Result;
+	/// <summary>Asynchronously retrieves a screenshot of the game.</summary>
 	public async Task<Image<Rgba32>> TakeScreenshotAsync() {
 		if (this.simulation is not null)
 			return Simulation.DummyScreenshot;
@@ -172,6 +182,8 @@ public class DefuserConnector : IDisposable {
 		}
 	}
 
+	/// <summary>Sends the specified controller inputs to the game.</summary>
+	[Obsolete($"String input commands are being replaced with {nameof(IInputAction)}.")]
 	public void SendInputs(string inputs) {
 		if (this.simulation is not null)
 			this.simulation.SendInputs(inputs);
@@ -183,21 +195,26 @@ public class DefuserConnector : IDisposable {
 			}
 		}
 	}
+	/// <summary>Sends the specified controller inputs to the game.</summary>
 	public void SendInputs(params IInputAction[] actions) => this.SendMessage(new InputCommandMessage(actions));
+	/// <summary>Sends the specified controller inputs to the game.</summary>
 	public void SendInputs(IEnumerable<IInputAction> actions) => this.SendMessage(new InputCommandMessage(actions));
 
+	/// <summary>If in a simulation, solves the current module.</summary>
 	public void CheatSolve() {
 		if (this.simulation is null)
 			throw new InvalidOperationException("No simulation active");
 		this.simulation.Solve();
 	}
 
+	/// <summary>If in a simulation, triggers a strike on the current module.</summary>
 	public void CheatStrike() {
 		if (this.simulation is null)
 			throw new InvalidOperationException("No simulation active");
 		this.simulation.Strike();
 	}
 
+	/// <summary>If in a simulation, triggers the alarm clock.</summary>
 	public void CheatTriggerAlarmClock() {
 		if (this.simulation is null)
 			throw new InvalidOperationException("No simulation active");
@@ -206,6 +223,7 @@ public class DefuserConnector : IDisposable {
 
 	private static bool IsBombBacking(HsvColor hsv) => hsv.H is >= 180 and < 225 && hsv.S < 0.35f && hsv.V >= 0.35f;
 
+	/// <summary>Returns the distance by which side widget polygons should be adjusted, in pixels to the right.</summary>
 	public int GetSideWidgetAdjustment(Image<Rgba32> screenshotBitmap) {
 		if (this.simulation is not null)
 			return 0;
@@ -222,6 +240,7 @@ public class DefuserConnector : IDisposable {
 		return (left + right) / 2 - 988;
 	}
 
+	/// <summary>Returns the lights state in the specified screenshot.</summary>
 	public static LightsState GetLightsState(Image<Rgba32> screenshot) => screenshot[screenshot.Width / 2, 0].R switch {
 		< 17 => LightsState.Off,
 		< 32 => LightsState.Buzz,
@@ -229,13 +248,16 @@ public class DefuserConnector : IDisposable {
 		_ => LightsState.Emergency
 	};
 
+	/// <summary>Returns the light state of the module in the specified polygon.</summary>
 	public ModuleLightState GetModuleLightState(Image<Rgba32> screenshotBitmap, IReadOnlyList<Point> points)
 		=> this.simulation is not null
 			? this.simulation.GetLightState(points[0])
 			: ImageUtils.GetLightState(screenshotBitmap, points);
 
+	/// <summary>Returns the <see cref="ComponentReader"/> singleton instance of the specified type.</summary>
 	public static T GetComponentReader<T>() where T : ComponentReader => (T) componentReaders[typeof(T)];
 
+	/// <summary>Identifies the component in the specified polygon and returns the corresponding <see cref="ComponentReader"/> instance, or <see langword="null"/> if it is a blank component.</summary>
 	public ComponentReader? GetComponentReader(Image<Rgba32> screenshotBitmap, IReadOnlyList<Point> points) {
 		if (this.simulation is not null)
 			return this.simulation.GetComponentReader(points[0]);
@@ -260,6 +282,7 @@ public class DefuserConnector : IDisposable {
 		return ratings[0].reader;
 	}
 
+	/// <summary>Retrieves the type of the component in the specified polygon and returns the corresponding <see cref="ComponentReader"/> instance, or <see langword="null"/> if it is a blank component or the timer.</summary>
 	public ComponentReader? CheatGetComponentReader(Slot slot) {
 		if (this.simulation is not null)
 			return this.simulation.GetComponentReader(slot);
@@ -270,6 +293,7 @@ public class DefuserConnector : IDisposable {
 		return !string.IsNullOrEmpty(name) && typeof(ComponentReader).Assembly.GetType($"{nameof(BombDefuserConnector)}.{nameof(Components)}.{name}", false, true) is Type t ? componentReaders[t] : null;
 	}
 
+	/// <summary>Identifies the widget in the specified polygon and returns the corresponding <see cref="WidgetReader"/> instance, or <see langword="null"/> if no widget is found there.</summary>
 	public WidgetReader? GetWidgetReader(Image<Rgba32> screenshotBitmap, IReadOnlyList<Point> points) {
 		if (this.simulation is not null)
 			return this.simulation.GetWidgetReader(points[0]);
@@ -287,6 +311,7 @@ public class DefuserConnector : IDisposable {
 		return ratings[0].rating >= 0.25f ? ratings[0].reader : null;
 	}
 
+	/// <summary>Reads module data from the module in the specified polygon using the specified <see cref="ComponentReader"/>.</summary>
 	public T ReadComponent<T>(Image<Rgba32> screenshot, ComponentReader<T> reader, IReadOnlyList<Point> polygon) where T : notnull {
 		if (this.simulation is not null)
 			return this.simulation.ReadComponent<T>(polygon[0]);
@@ -298,6 +323,7 @@ public class DefuserConnector : IDisposable {
 		return reader.Process(image, ref debugImage);
 	}
 
+	/// <summary>Reads widget data from the widget in the specified polygon using the specified <see cref="WidgetReader"/>.</summary>
 	public T ReadWidget<T>(Image<Rgba32> screenshot, WidgetReader<T> reader, IReadOnlyList<Point> polygon) where T : notnull {
 		if (this.simulation is not null)
 			return this.simulation.ReadWidget<T>(polygon[0]);
@@ -309,6 +335,12 @@ public class DefuserConnector : IDisposable {
 		return reader.Process(image, 0, ref debugImage);
 	}
 
+	/// <summary>Retrieves the value of an internal field in the module in the specified slot.</summary>
+	/// <param name="members">
+	/// A list of chained specifiers indicating what to read.
+	/// May be a field or property name, an <see cref="IEnumerable{T}"/> index in square brackets, or a component type name in braces.
+	/// If the component type name is prefixed with a <c>*</c>, it instead reads a collection of that type of component in the current game object and its descendants.
+	/// </param>
 	public string? CheatRead(Slot slot, params string[] members) {
 		if (this.simulation is not null)
 			throw new NotImplementedException();
@@ -318,6 +350,7 @@ public class DefuserConnector : IDisposable {
 		return this.readTaskSource.Task.Result;
 	}
 
+	[Obsolete($"This method is being replaced with {nameof(ReadComponent)} and {nameof(ReadWidget)}.")]
 	internal string? Read(string readerName, Image<Rgba32> screenshot, Point[] points) {
 		if (this.simulation is not null)
 			return typeof(ComponentReader).Assembly.GetType($"{nameof(BombDefuserConnector)}.{nameof(Components)}.{readerName}", false, true) is Type t

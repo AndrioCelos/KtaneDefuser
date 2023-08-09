@@ -3,9 +3,13 @@ using SixLabors.ImageSharp.PixelFormats;
 using static BombDefuserConnector.LightsState;
 
 namespace BombDefuserConnector;
+/// <summary>Handles identification and reading of widgets from images.</summary>
 public abstract class WidgetReader {
+	/// <summary>When overridden, returns the name of the widget handled by this class.</summary>
 	public abstract string Name { get; }
 
+	/// <summary>Returns a value indicating how much the specified image looks like this widget type.</summary>
+	/// <returns>Generally this will range from 0 to 1, though it isn't strictly bounded.</returns>
 	protected internal abstract float IsWidgetPresent(Image<Rgba32> image, LightsState lightsState, PixelCounts pixelCounts);
 
 	protected internal abstract object ProcessNonGeneric(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage);
@@ -63,7 +67,11 @@ public abstract class WidgetReader {
 	public record PixelCounts(int Red, int Yellow, int Grey, int White);
 }
 
+/// <summary>A <see cref="WidgetReader"/> that represents widget data as the specified type.</summary>
 public abstract class WidgetReader<T> : WidgetReader where T : notnull {
+	/// <summary>When overridden, reads widget data from the specified image.</summary>
+	/// <param name="image">The image to read widget data from.</param>
+	/// <param name="debugImage">An image variable to draw debug annotations to. The image may be replaced with a larger one. May be a variable containing <see langword="null"/> to disable debug annotations.</param>
 	protected internal abstract T Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage);
 
 	protected internal override object ProcessNonGeneric(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage)

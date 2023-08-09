@@ -45,6 +45,7 @@ internal static class Utils {
 		new Point[] { new(1181,  566), new(1390,  566), new(1182,  678), new(1392,  678) }
 	};
 
+	/// <summary>Returns the quadrilateral representing the location of the specified slot on the screen. The slot should be on the side of the bomb we're already looking at.</summary>
 	public static IReadOnlyList<Point> GetPoints(Slot slot) {
 		if (GameState.Current.FocusState == FocusState.Module) {
 			var selectedSlot = GameState.Current.SelectedFace.SelectedSlot;
@@ -55,9 +56,12 @@ internal static class Utils {
 			return bombPointsLists[slot.Y * 3 + slot.X];
 	}
 
+	/// <summary>Returns the number represented by the specified ordinal word.</summary>
 	public static int ParseOrdinal(string ordinal) => (int) Enum.Parse<Ordinal>(ordinal, true);
+	/// <summary>Returns an ordinal word representing the specified number.</summary>
 	public static string ToOrdinal(int n) => $"{n}{(n % 10) switch { 1 => "st", 2 => "nd", 3 => "rd", _ => "th" }}";
 
+	/// <summary>Selects the specified bomb face, optionally looking at widgets on the intermediate side face.</summary>
 	internal static async Task SelectFaceAsync(Interrupt interrupt, int face, SelectFaceAlignMode alignMode) {
 		if (GameState.Current.SelectedFaceNum == face) return;  // The requested side is already selected; do nothing.
 		GameState.Current.LookingAtSide = true;
@@ -92,6 +96,8 @@ internal static class Utils {
 		GameState.Current.LookingAtSide = false;
 	}
 
+	/// <summary>Selects the specified module.</summary>
+	/// <param name="waitForFocus">If true, waits for the module focusing animation to finish before completing; otherwise completes as soon as controller input is able to be sent to the module.</param>
 	internal static async Task SelectModuleAsync(Interrupt interrupt, int moduleNum, bool waitForFocus) {
 		if (GameState.Current.SelectedModuleNum == moduleNum)
 			return;  // The requested module is already selected.
@@ -139,6 +145,7 @@ internal static class Utils {
 		GameState.Current.FocusState = FocusState.Module;
 	}
 
+	/// <summary>Returns a value indicating whether the specified module is currently visible to the bot.</summary>
 	internal static bool CanReadModuleImmediately(int moduleIndex) => !GameState.Current.LookingAtSide && GameState.Current.Modules[moduleIndex].Slot.Face == GameState.Current.SelectedFaceNum;
 }
 

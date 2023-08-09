@@ -7,6 +7,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector;
+/// <summary>Identifies images of text.</summary>
 internal class TextRecogniser {
 	internal static class Fonts {
 		private static readonly FontCollection fontCollection = new();
@@ -22,6 +23,12 @@ internal class TextRecogniser {
 
 	private readonly (Image<L8> image, float aspectRatio, string s)[] samples;
 
+	/// <param name="font">The font used in the images to recognise.</param>
+	/// <param name="backgroundValue">The background brightness in the images to recognise.</param>
+	/// <param name="foregroundValue">The text brightness in the images to recognise.</param>
+	/// <param name="resolution">The resolution that will be used for sample images.</param>
+	/// <param name="strings">The strings to choose between.</param>
+	/// <exception cref="ArgumentException">The specified font is too large for all sample strings to fit in the specified size.</exception>
 	public TextRecogniser(Font font, byte backgroundValue, byte foregroundValue, Size resolution, params string[] strings) {
 		var compareValue = (backgroundValue + foregroundValue) / 2;
 		Predicate<L8> predicate = foregroundValue > backgroundValue ? c => c.PackedValue >= compareValue : c => c.PackedValue < compareValue;
@@ -41,6 +48,7 @@ internal class TextRecogniser {
 		}
 	}
 
+	/// <summary>Identifies the text in the specified bounding box of the specified image.</summary>
 	public string Recognise(Image<Rgba32> image, Rectangle rectangle) {
 		string? result = null;
 		var bestDist = int.MaxValue;

@@ -8,6 +8,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserConnector;
+/// <summary>Integrates an AIML bot with Keep Talking and Nobody Explodes.</summary>
 public class BombDefuserAimlService : ISraixService {
 	private readonly DefuserConnector connector = new();
 	private static readonly Dictionary<string, Image<Rgba32>> cachedScreenshots = new(StringComparer.InvariantCultureIgnoreCase);

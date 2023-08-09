@@ -3,6 +3,7 @@
 namespace BombDefuserScripts;
 [AimlInterface]
 internal static class ModuleSelection {
+	/// <summary>Handles switching the user's selection to the specified module.</summary>
 	internal static async Task ChangeModuleAsync(AimlAsyncContext context, int index) {
 		GameState.Current.CurrentModule?.Script.Stopped(context);
 		GameState.Current.CurrentModuleNum = index;
@@ -19,6 +20,7 @@ internal static class ModuleSelection {
 		}
 	}
 
+	/// <summary>Populates the user selection queue with all modules that match the specified precidate and are not already solved. The 'next module' command will then cycle through these first.</summary>
 	internal static async Task QueueModulesAsync(AimlAsyncContext context, Func<ModuleState, bool> predicate) {
 		var modules = GameState.Current.Modules.Where(predicate);
 		if (!modules.Any()) {

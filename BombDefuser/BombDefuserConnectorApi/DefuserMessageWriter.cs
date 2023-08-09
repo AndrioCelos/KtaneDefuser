@@ -2,6 +2,7 @@
 using System.IO;
 
 namespace BombDefuserConnectorApi;
+/// <summary>Writes defuser interface messages to a stream.</summary>
 public class DefuserMessageWriter : IDisposable {
 	public Stream BaseStream { get; }
 	private readonly byte[] buffer;

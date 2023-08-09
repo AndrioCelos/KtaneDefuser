@@ -132,7 +132,10 @@ internal static class Start {
 }
 
 public enum SelectFaceAlignMode {
+	/// <summary>Do not align the bomb to the specified face. It will not be possible to reliably read modules until a module is selected or the bomb is dropped.</summary>
 	None,
+	/// <summary>Align the bomb to the specified face after moving.</summary>
 	Align,
+	/// <summary>Register widgets on the intermediate side face, then align the bomb to the specified face after moving.</summary>
 	CheckWidgets
 }

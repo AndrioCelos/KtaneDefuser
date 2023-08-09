@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 
 namespace BombDefuserConnectorApi;
+/// <summary>Reads defuser interface messages from a stream.</summary>
 public class DefuserMessageReader : IDisposable {
 	public Stream BaseStream { get; }
 	private readonly byte[] buffer;

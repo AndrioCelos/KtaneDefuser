@@ -4,14 +4,20 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector;
+/// <summary>Handles identification and reading of components from images.</summary>
 public abstract class ComponentReader {
+	/// <summary>When overridden, returns the name of the component handled by this class.</summary>
 	public abstract string Name { get; }
+	/// <summary>When overridden, returns a value indicating whether the component handled by this class uses the needy module frame.</summary>
 	protected internal abstract bool UsesNeedyFrame { get; }
 
+	/// <summary>Returns a value indicating how much the specified image looks like this component type.</summary>
+	/// <returns>Generally this will range from 0 to 1, though it isn't strictly bounded.</returns>
 	protected internal abstract float IsModulePresent(Image<Rgba32> image);
 
 	protected internal abstract object ProcessNonGeneric(Image<Rgba32> image, ref Image<Rgba32>? debugImage);
 
+	/// <summary>Returns the number of lit lights on the module's stage indicator.</summary>
 	protected static int ReadStageIndicator(Image<Rgba32> image) {
 		var count = 0;
 		var lastState = false;
@@ -28,6 +34,7 @@ public abstract class ComponentReader {
 		return count;
 	}
 
+	/// <summary>Returns the number displayed on the module's needy timer, or null if it is blank.</summary>
 	protected static int? ReadNeedyTimer(Image<Rgba32> image, Image<Rgba32>? debugImage) {
 		var bezelCorners = ImageUtils.FindCorners(image, new(80, 16, 96, 64), c => HsvColor.FromColor(c) is HsvColor hsv && hsv.H <= 150 && hsv.S <= 0.25f && hsv.V is >= 0.3f and <= 0.75f, 6) ?? throw new ArgumentException("Can't find needy timer bezel corners");
 		if (debugImage != null) ImageUtils.DebugDrawPoints(debugImage, bezelCorners);
@@ -86,7 +93,11 @@ public abstract class ComponentReader {
 	}
 }
 
+/// <summary>A <see cref="ComponentReader"/> that represents component data as the specified type.</summary>
 public abstract class ComponentReader<T> : ComponentReader where T : notnull {
+	/// <summary>When overridden, reads component data from the specified image.</summary>
+	/// <param name="image">The image to read component data from.</param>
+	/// <param name="debugImage">An image variable to draw debug annotations to. The image may be replaced with a larger one. May be a variable containing <see langword="null"/> to disable debug annotations.</param>
 	protected internal abstract T Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage);
 
 	protected internal override object ProcessNonGeneric(Image<Rgba32> image, ref Image<Rgba32>? debugImage)

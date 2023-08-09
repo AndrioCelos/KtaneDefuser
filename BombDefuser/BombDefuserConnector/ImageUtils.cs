@@ -9,8 +9,10 @@ using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector;
 public static class ImageUtils {
+	/// <summary>Returns an image drawn by stretching the specified quadrilateral area from another image.</summary>
 	public static Image<Rgba32> PerspectiveUndistort(Image<Rgba32> originalImage, IReadOnlyList<Point> points, InterpolationMode interpolationMode)
 		=> PerspectiveUndistort(originalImage, points, interpolationMode, new(256, 256));
+	/// <summary>Returns an image drawn by stretching the specified quadrilateral area from another image.</summary>
 	public static Image<Rgba32> PerspectiveUndistort(Image<Rgba32> originalImage, IReadOnlyList<Point> points, InterpolationMode interpolationMode, Size resolution) {
 		var bitmap = new Image<Rgba32>(resolution.Width, resolution.Height);
 		bitmap.ProcessPixelRows(p => {
@@ -38,7 +40,6 @@ public static class ImageUtils {
 							(byte) Math.Round(vy1Weight * (vx1Weight * c11.R + vx2Weight * c21.R) + vy2Weight * (vx1Weight * c12.R + vx2Weight * c22.R)),
 							(byte) Math.Round(vy1Weight * (vx1Weight * c11.G + vx2Weight * c21.G) + vy2Weight * (vx1Weight * c12.G + vx2Weight * c22.G)),
 							(byte) Math.Round(vy1Weight * (vx1Weight * c11.B + vx2Weight * c21.B) + vy2Weight * (vx1Weight * c12.B + vx2Weight * c22.B)));
-
 					} else
 						row[x] = originalImage[(int) Math.Round(sx), (int) Math.Round(sy)];
 				}
@@ -52,6 +53,9 @@ public static class ImageUtils {
 	public static bool IsModuleBack(HsvColor hsv, LightsState lightsState)
 		=> hsv.H is >= 180 and < 255 && hsv.S is >= 0.025f and < 0.25f && hsv.V is >= 0.45f and < 0.75f;
 
+	/// <summary>Finds a point closest to each corner of the specified rectangle of the area meeting the specified predicate.</summary>
+	/// <param name="continuitySize">The number out of 16 further pixels along the inward diagonal that must also match.</param>
+	/// <returns>The points found, or <see langword="null"/> if no points were found.</returns>
 	public static Point[]? FindCorners(Image<Rgba32> image, Rectangle bounds, Predicate<Rgba32> predicate, int continuitySize) {
 		var points = new Point[4];
 		var diagonalSweeps = new (Point start, Size dir, Size increment)[] {
@@ -117,10 +121,12 @@ public static class ImageUtils {
 		return points;
 	}
 
+	/// <summary>Finds a rectangle within the specified rectangle bounding pixels matching the specified predicate.</summary>
 	public static Rectangle FindEdges<TPixel>(Image<TPixel> image, Rectangle rectangle, Predicate<TPixel> predicate) where TPixel : unmanaged, IPixel<TPixel> {
 		image.ProcessPixelRows(a => rectangle = FindEdges(a, rectangle, predicate));
 		return rectangle;
 	}
+	/// <summary>Finds a rectangle within the specified rectangle bounding pixels matching the specified predicate.</summary>
 	public static Rectangle FindEdges<TPixel>(PixelAccessor<TPixel> accessor, Rectangle rectangle, Predicate<TPixel> predicate) where TPixel : unmanaged, IPixel<TPixel> {
 		if (rectangle.Height <= 0 || rectangle.Width <= 0) return rectangle;
 		for (var edge = 0; edge < 2; edge++) {
@@ -163,15 +169,18 @@ public static class ImageUtils {
 		}
 	}
 
+	/// <summary>Returns <paramref name="scale"/> minus the distance in RGB coordinates between the specified colours.</summary>
 	public static int ColorProximity(Rgba32 color, int refR, int refG, int refB, int scale)
 		=> Math.Max(0, scale - Math.Abs(color.R - refR) - Math.Abs(color.G - refG) - Math.Abs(color.B - refB));
 
+	/// <summary>Returns <paramref name="scale"/> minus the shorter of the distances in RGB coordinates between the specified colour and two reference colours.</summary>
 	public static int ColorProximity(Rgba32 color, int refR1, int refG1, int refB1, int refR2, int refG2, int refB2, int scale)
 		=> Math.Max(0, scale - Math.Min(
 			Math.Abs(color.R - refR1) + Math.Abs(color.G - refG1) + Math.Abs(color.B - refB1),
 			Math.Abs(color.R - refR2) + Math.Abs(color.G - refG2) + Math.Abs(color.B - refB2)
 		));
 
+	/// <summary>Corrects the colours of an image with the specified lights state to normal colours.</summary>
 	public static void ColourCorrect(Image<Rgba32> image, LightsState lightsState) {
 		if (lightsState == LightsState.On) return;
 
@@ -203,6 +212,7 @@ public static class ImageUtils {
 		});
 	}
 
+	/// <summary>Returns a value indicating how similar the specified image is to any of the samples.</summary>
 	public static float CheckSimilarity(Image<Rgba32> subject, params Image<Rgba32>[] samples) {
 		var size = samples.First().Size;
 		int score = 0, total = 0;
@@ -227,6 +237,7 @@ public static class ImageUtils {
 		return (float) score / total;
 	}
 
+	/// <summary>Returns a value indicating how much the module in the specified image looks like a needy frame.</summary>
 	public static float CheckForNeedyFrame(Image<Rgba32> image) {
 		var yellowPixels = 0;
 		for (int y = 0; y < image.Height * 80 / 256; y++) {
@@ -239,6 +250,7 @@ public static class ImageUtils {
 		return yellowPixels / 2000f;
 	}
 
+	/// <summary>Returns a value indicating whether the module in the specified image looks like a blank component.</summary>
 	public static bool CheckForBlankComponent(Image<Rgba32> image) {
 		var orangePixels = 0;
 		for (int y = 0; y < image.Height; y++) {
@@ -251,7 +263,9 @@ public static class ImageUtils {
 		return orangePixels >= 40000;
 	}
 
+	/// <summary>Reads the light state of the module in the specified quadrilateral area.</summary>
 	public static ModuleLightState GetLightState(Image<Rgba32> image, params Point[] points) => GetLightState(image, (IReadOnlyList<Point>) points);
+	/// <summary>Reads the light state of the module in the specified quadrilateral area.</summary>
 	public static ModuleLightState GetLightState(Image<Rgba32> image, IReadOnlyList<Point> points) {
 		var x = (int) Math.Round(points[1].X + (points[2].X - points[1].X) * 0.1015625);
 		var y = (int) Math.Round(points[1].Y + (points[2].Y - points[1].Y) * 0.1015625);
