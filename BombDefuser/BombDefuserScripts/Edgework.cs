@@ -6,30 +6,32 @@ namespace BombDefuserScripts;
 
 [AimlInterface]
 internal static class Edgework {
-	internal static void RegisterWidget(AimlAsyncContext context, WidgetReader? widget, Image<Rgba32> screenshot, Point[] polygon) {
+	internal static void RegisterWidget(AimlAsyncContext context, WidgetReader? widget, Image<Rgba32> screenshot, LightsState lightsState, Point[] polygon) {
 		if (widget is null) return;
 
 		context.RequestProcess.Log(LogLevel.Info, $"Registering widget: {widget.Name}");
 		switch (widget) {
 			case BatteryHolder batteryHolder:
 				GameState.Current.BatteryHolderCount++;
-				GameState.Current.BatteryCount += DefuserConnector.Instance.ReadWidget(screenshot, batteryHolder, polygon);
+				GameState.Current.BatteryCount += DefuserConnector.Instance.ReadWidget(screenshot, lightsState, batteryHolder, polygon);
 				break;
 			case Indicator indicator:
-				var data = DefuserConnector.Instance.ReadWidget(screenshot, indicator, polygon);
+				var data = DefuserConnector.Instance.ReadWidget(screenshot, lightsState, indicator, polygon);
 				GameState.Current.Indicators.Add(new(data.IsLit, data.Label));
 				break;
 			case PortPlate portPlate:
-				var ports = DefuserConnector.Instance.ReadWidget(screenshot, portPlate, polygon);
+				var ports = DefuserConnector.Instance.ReadWidget(screenshot, lightsState, portPlate, polygon);
 				GameState.Current.PortPlates.Add((PortTypes) ports.Value);
 				break;
 			case SerialNumber serialNumber:
-				GameState.Current.SerialNumber = DefuserConnector.Instance.ReadWidget(screenshot, serialNumber, polygon);
+				GameState.Current.SerialNumber = DefuserConnector.Instance.ReadWidget(screenshot, lightsState, serialNumber, polygon);
 				break;
 		}
 	}
 
 	internal static void RegisterWidgets(AimlAsyncContext context, bool isSide, Image<Rgba32> screenshot) {
+		var lightsState = DefuserConnector.Instance.GetLightsState(screenshot);
+		if (lightsState != LightsState.On) throw new ArgumentException($"Can't identify widgets on lights state {lightsState}.");
 		Point[][] polygons;
 		if (isSide) {
 			var adjustment = DefuserConnector.Instance.GetSideWidgetAdjustment(screenshot);
@@ -47,7 +49,7 @@ internal static class Edgework {
 		var widgets = polygons.Select(p => DefuserConnector.Instance.GetWidgetReader(screenshot, p)).ToList();
 		for (var i = 0; i < widgets.Count; i++) {
 			var widget = widgets[i];
-			RegisterWidget(context, widget, screenshot, polygons[i]);  // TODO: This assumes the vanilla bomb layout. It will need to be updated for other layouts.
+			RegisterWidget(context, widget, screenshot, lightsState, polygons[i]);  // TODO: This assumes the vanilla bomb layout. It will need to be updated for other layouts.
 		}
 	}
 

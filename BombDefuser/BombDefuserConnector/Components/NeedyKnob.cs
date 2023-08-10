@@ -49,8 +49,8 @@ public class NeedyKnob : ComponentReader<NeedyKnob.ReadData> {
 		new(184, 205, 10, 10),
 		new(202, 177, 10, 10)
 	};
-	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
-		var time = ReadNeedyTimer(image, debugImage);
+	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
+		var time = ReadNeedyTimer(image, lightsState, debugImage);
 		var lights = new bool[12];
 
 		bool isRectangleLit(PixelAccessor<Rgba32> a, Rectangle rectangle) {

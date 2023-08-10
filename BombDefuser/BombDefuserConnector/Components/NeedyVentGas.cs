@@ -26,8 +26,8 @@ public class NeedyVentGas : ComponentReader<NeedyVentGas.ReadData> {
 		});
 		return count / 36000f;
 	}
-	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
-		var time = ReadNeedyTimer(image, debugImage);
+	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
+		var time = ReadNeedyTimer(image, lightsState, debugImage);
 		if (time == null) return new(null, null);
 
 		int top = 0, bottom = 0;

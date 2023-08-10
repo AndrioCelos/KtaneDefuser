@@ -13,18 +13,17 @@ public class Timer : ComponentReader<Timer.ReadData> {
 	protected internal override bool UsesNeedyFrame => false;
 
 	protected internal override float IsModulePresent(Image<Rgba32> image) {
-		return ImageUtils.CheckSimilarity(image, Samples);
+		var timerCorners = ImageUtils.FindCorners(image, new(16, 96, 224, 144), isTimerBackground, 0);
+		return timerCorners is not null ? ImageUtils.CheckSimilarity(image, Samples) * 1.5f : 0;
 	}
 
-	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
-		static bool predicate(Rgba32 c) {
-			return c.G < 12 && c.B < 12;
-		}
+	private static bool isTimerBackground(Rgba32 c) => c.G < 12 && c.B < 12;
 
-		var timerCorners = ImageUtils.FindCorners(image, new(16, 96, 224, 144), predicate, 0) ?? throw new ArgumentException("Can't find timer display corners");
+	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
+		var timerCorners = ImageUtils.FindCorners(image, new(16, 96, 224, 144), isTimerBackground, 0) ?? throw new ArgumentException("Can't find timer display corners");
 		using var timerBitmap = ImageUtils.PerspectiveUndistort(image, timerCorners, InterpolationMode.NearestNeighbour, new(256, 128));
 
-		Point[]? strikesCorners = ImageUtils.FindCorners(image, new(88, 16, 96, 64), predicate, 0);
+		Point[]? strikesCorners = ImageUtils.FindCorners(image, new(88, 16, 96, 64), isTimerBackground, 0);
 		using var strikesBitmap = strikesCorners is not null ? ImageUtils.PerspectiveUndistort(image, strikesCorners, InterpolationMode.NearestNeighbour, new(128, 64)) : null;
 
 		if (debugImage is not null) {

@@ -76,32 +76,34 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 		return Math.Min(1, count / 100f);
 	}
 
-	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
-		static bool predicate(Rgba32 c) {
-			var hsv = HsvColor.FromColor(c);
-			return hsv.H is >= 30 and <= 60 && hsv.S <= 0.4f && hsv.V >= 0.35f;
+	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
+		bool isKeyBackground(Rgba32 c) {
+			var hsv = HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState));
+			return hsv.H is > 0 and <= 150 && hsv.S <= 0.6f && hsv.V >= 0.35f;
 		}
 
 		debugImage?.Mutate(c => c.Brightness(0.5f));
 		for (var y = 0; y < image.Width; y++) {
 			for (var x = 0; x < image.Width; x++) {
 				var color = image[x, y];
-				if (predicate(color)) {
+				if (isKeyBackground(color)) {
 					if (debugImage is not null) debugImage[x, y] = color;
 				}
 			}
 		}
 
-		var keypadCorners = ImageUtils.FindCorners(image, new(0, 48, 208, 208), predicate, 12) ?? throw new ArgumentException("Can't find keypad corners");
+		var keypadCorners = ImageUtils.FindCorners(image, new(0, 48, 208, 208), isKeyBackground, 12) ?? throw new ArgumentException("Can't find keypad corners");
 		if (debugImage is not null) ImageUtils.DebugDrawPoints(debugImage, keypadCorners);
 
 		var keysBitmap = ImageUtils.PerspectiveUndistort(image, keypadCorners, InterpolationMode.Bilinear, new(256, 256));
+		keysBitmap.ColourCorrect(lightsState);
 
-		var keyRectangles = new Rectangle[] { new(8, 16, 112, 96), new(136, 16, 112, 96), new(8, 144, 112, 96), new(136, 144, 112, 96) };
+		var baseRectangles = new Rectangle[] { new(12, 16, 104, 96), new(140, 16, 104, 96), new(8, 148, 104, 96), new(140, 148, 104, 96) };
+		var keyRectangles = new Rectangle[4];
 
 		// Find the symbol bounding boxes.
 		for (var i = 0; i < 4; i++) {
-			var rect = keyRectangles[i];
+			var rect = baseRectangles[i];
 
 			// Skip over the light and key shadows.
 			keysBitmap.ProcessPixelRows(a => {
@@ -141,10 +143,14 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 		}
 
 		if (debugImage is not null) {
-			debugImage?.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }).DrawImage(keysBitmap, new Point(0, 256), 1));
+			debugImage.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }).DrawImage(keysBitmap, new Point(0, 256), 1));
 			foreach (var rect in keyRectangles) {
 				rect.Offset(0, 256);
-				debugImage?.Mutate(c => c.Draw(Pens.Solid(Color.Lime, 1), rect));
+				debugImage.Mutate(c => c.Draw(Pens.Solid(Color.Lime, 1), rect));
+			}
+			foreach (var rect in baseRectangles) {
+				rect.Offset(0, 256);
+				debugImage.Mutate(c => c.Draw(Pens.Solid(Color.Cyan, 1), rect));
 			}
 		}
 

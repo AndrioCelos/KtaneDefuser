@@ -246,12 +246,7 @@ public class DefuserConnector : IDisposable {
 	}
 
 	/// <summary>Returns the lights state in the specified screenshot.</summary>
-	public static LightsState GetLightsState(Image<Rgba32> screenshot) => screenshot[screenshot.Width / 2, 0].R switch {
-		< 17 => LightsState.Off,
-		< 32 => LightsState.Buzz,
-		< 75 => LightsState.On,
-		_ => LightsState.Emergency
-	};
+	public LightsState GetLightsState(Image<Rgba32> screenshot) => this.simulation is not null ? LightsState.On : ImageUtils.GetLightsState(screenshot);
 
 	/// <summary>Returns the light state of the module in the specified polygon.</summary>
 	public ModuleLightState GetModuleLightState(Image<Rgba32> screenshotBitmap, IReadOnlyList<Point> points)
@@ -317,7 +312,7 @@ public class DefuserConnector : IDisposable {
 	}
 
 	/// <summary>Reads component data from the module in the specified polygon using the specified <see cref="ComponentReader"/>.</summary>
-	public T ReadComponent<T>(Image<Rgba32> screenshot, ComponentReader<T> reader, IReadOnlyList<Point> polygon) where T : notnull {
+	public T ReadComponent<T>(Image<Rgba32> screenshot, LightsState lightsState, ComponentReader<T> reader, IReadOnlyList<Point> polygon) where T : notnull {
 		if (this.simulation is not null)
 			return this.simulation.ReadComponent<T>(polygon[0]);
 		var image = ImageUtils.PerspectiveUndistort(screenshot, polygon, InterpolationMode.NearestNeighbour);
@@ -325,11 +320,11 @@ public class DefuserConnector : IDisposable {
 		SaveDebugImage(image, reader.Name);
 #endif
 		Image<Rgba32>? debugImage = null;
-		return reader.Process(image, ref debugImage);
+		return reader.Process(image, lightsState, ref debugImage);
 	}
 
 	/// <summary>Reads widget data from the widget in the specified polygon using the specified <see cref="WidgetReader"/>.</summary>
-	public T ReadWidget<T>(Image<Rgba32> screenshot, WidgetReader<T> reader, IReadOnlyList<Point> polygon) where T : notnull {
+	public T ReadWidget<T>(Image<Rgba32> screenshot, LightsState lightsState, WidgetReader<T> reader, IReadOnlyList<Point> polygon) where T : notnull {
 		if (this.simulation is not null)
 			return this.simulation.ReadWidget<T>(polygon[0]);
 		var image = ImageUtils.PerspectiveUndistort(screenshot, polygon, InterpolationMode.NearestNeighbour);
@@ -337,7 +332,7 @@ public class DefuserConnector : IDisposable {
 		SaveDebugImage(image, reader.Name);
 #endif
 		Image<Rgba32>? debugImage = null;
-		return reader.Process(image, 0, ref debugImage);
+		return reader.Process(image, lightsState, ref debugImage);
 	}
 
 	/// <summary>Retrieves the value of an internal field in the module in the specified slot.</summary>
@@ -364,6 +359,7 @@ public class DefuserConnector : IDisposable {
 				? this.simulation.ReadWidget(t2.Name, points[0])
 				: throw new ArgumentException($"No such command, module or widget is known: {readerName}");
 
+		var lightsState = ImageUtils.GetLightsState(screenshot);
 		var image = ImageUtils.PerspectiveUndistort(screenshot, points, InterpolationMode.NearestNeighbour);
 		Image<Rgba32>? debugImage = null;
 #if DEBUG
@@ -372,11 +368,11 @@ public class DefuserConnector : IDisposable {
 
 		var type = typeof(ComponentReader).Assembly.GetType($"{nameof(BombDefuserConnector)}.{nameof(Components)}.{readerName}");
 		if (type is not null)
-			return componentReaders[type].ProcessNonGeneric(image, ref debugImage)?.ToString();
+			return componentReaders[type].ProcessNonGeneric(image, lightsState, ref debugImage)?.ToString();
 
 		type = typeof(WidgetReader).Assembly.GetType($"{nameof(BombDefuserConnector)}.{nameof(Widgets)}.{readerName}");
 		if (type is not null)
-			return widgetReaders[type].ProcessNonGeneric(image, 0, ref debugImage)?.ToString();
+			return widgetReaders[type].ProcessNonGeneric(image, lightsState, ref debugImage)?.ToString();
 
 		throw new ArgumentException($"No such command, component or widget is known: {readerName}");
 	}

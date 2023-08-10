@@ -76,14 +76,14 @@ internal partial class Simulation {
 
 		public class Button : Module<Components.Button.ReadData> {
 			private readonly Components.Button.Colour colour;
-			private readonly Components.Button.Label label;
+			private readonly string label;
 			private Components.Button.Colour? indicatorColour;
 			private int correctDigit;
 			private readonly Timer pressTimer = new(500) { AutoReset = false };
 
 			internal override Components.Button.ReadData Details => new(this.colour, this.label, this.indicatorColour);
 
-			public Button(Components.Button.Colour colour, Components.Button.Label label) : base(DefuserConnector.GetComponentReader<Components.Button>(), 1, 1) {
+			public Button(Components.Button.Colour colour, string label) : base(DefuserConnector.GetComponentReader<Components.Button>(), 1, 1) {
 				this.colour = colour;
 				this.label = label;
 				this.pressTimer.Elapsed += this.PressTimer_Elapsed;

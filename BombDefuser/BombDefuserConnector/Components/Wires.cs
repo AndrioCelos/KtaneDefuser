@@ -47,19 +47,20 @@ public class Wires : ComponentReader<Wires.ReadData> {
 		return numWires is >= 3 and <= 6 ? wirePixelTotal / numWirePixels : 0;
 	}
 
-	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		debugImage?.Mutate(c => c.Brightness(0.5f));
 
 		var inWire = 0;
 		var added = false;
 		var colours = new List<Colour>();
-		for (var y = 32; y < 240; y++) {
-			var color = image[128, y];
+		for (var y = 32; y < 232; y++) {
+			var pixel = image[128, y];
+			if (lightsState == LightsState.Emergency || pixel.R < 160) pixel = ImageUtils.ColourCorrect(pixel, lightsState);
 			if (debugImage is not null)
-				debugImage[128, y] = color;
-			var hsv = HsvColor.FromColor(color);
-			var isBacking = hsv.V is >= 0.45f and <= 0.85f && hsv.S <= 0.2f && (hsv.S == 0 || hsv.H is >= 180 and <= 270);
-			if (isBacking) {
+				debugImage[128, y] = pixel;
+			var hsv = HsvColor.FromColor(pixel);
+			var colour = GetColour(hsv);
+			if (colour is null) {
 				if (inWire > 0) {
 					inWire--;
 					if (inWire == 0) {
@@ -69,25 +70,23 @@ public class Wires : ComponentReader<Wires.ReadData> {
 					}
 				}
 			} else {
-				if (!added) {
-					if (hsv.V < 0.1f) {
-						added = true;
-						colours.Add(Colour.Black);
-					} else if (hsv.S < 0.15f) {
-						added = true;
-						colours.Add(Colour.White);
-					} else if (hsv.H is >= 30 and <= 90) {
-						added = true;
-						colours.Add(Colour.Yellow);
-					} else if (hsv.H is >= 120 and < 300) {
-						added = true;
-						colours.Add(Colour.Blue);
-					}
+				if (!added && colour != Colour.Red) {
+					added = true;
+					colours.Add(colour.Value);
 				}
 				inWire = 4;
 			}
 		}
 		return new(colours.ToArray());
+	}
+
+	private static Colour? GetColour(HsvColor hsv) {
+		return hsv.V < 0.1f ? Colour.Black
+			: hsv.H is >= 330 or <= 15 && hsv.S >= 0.8f && hsv.V >= 0.5f ? Colour.Red
+			: hsv.H is >= 210 and < 255 && hsv.S >= 0.5f && hsv.V >= 0.35f ? Colour.Blue
+			: hsv.H is >= 30 and < 90 && hsv.S >= 0.5f && hsv.V >= 0.35f ? Colour.Yellow
+			: (hsv.S <= 0.2f && hsv.V >= 0.75f) || (hsv.H < 60 && hsv.S <= 0.2f) ? Colour.White
+			: null;
 	}
 
 	public enum Colour {

@@ -42,7 +42,8 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 		return count / 5120f + count2 / 280f;
 	}
 
-	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
+		debugImage?.ColourCorrect(lightsState);
 		var textRects = new[] {
 			new Rectangle(24, 60, 32, 48),
 			new Rectangle(24, 100, 32, 48),
@@ -50,36 +51,41 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 		};
 
 		for (var i = 0; i < 3; i++) {
-			textRects[i] = ImageUtils.FindEdges(image, textRects[i], c => HsvColor.FromColor(c) is HsvColor hsv && hsv.V < 0.05f);
+			textRects[i] = ImageUtils.FindEdges(image, textRects[i], c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is HsvColor hsv && hsv.V < 0.05f);
 			textRects[i].Inflate(1, 1);
 			debugImage?.Mutate(p => p.Draw(Color.Red, 1, textRects[i]));
 		}
 
 		var stagesCleared = ReadStageIndicator(image);
+		image.ColourCorrect(lightsState, textRects[0]);
 		var number = numberRecogniser.Recognise(image, textRects[0]);
 
-		static bool isSelectionHighlight(HsvColor hsv) => hsv.H <= 20 && hsv.S >= 0.65f && hsv.V >= 0.5f;
+		static bool isSelectionHighlight(HsvColor hsv) => hsv.H <= 25 && hsv.S >= 0.65f && hsv.V >= 0.5f;
 		// TODO: It turns out that telling the selection highlight apart from a red wire is hard.
 		// This will use a fairly strict condition to check for the selection highlight, so it will sometimes fail to match.
 		// It will be necessary to look at the module multiple times until the selection highlight opacity is high enough.
-		static bool isSelectionHighlightStrict(HsvColor hsv) => hsv.H is >= 5 and <= 15 && hsv.S >= 0.95f && hsv.V >= 0.9f;
-		static (int x, bool isStrictMatch)? getSelectionHighlight(Image<Rgba32> image, Rectangle textRect) {
+		static bool isSelectionHighlightStrict(HsvColor hsv, LightsState lightsState)
+			=> lightsState is LightsState.Buzz or LightsState.Off
+				? isSelectionHighlight(hsv)
+				: hsv.H is >= 5 and <= 15 && hsv.S >= 0.95f && hsv.V >= 0.9f;
+		static (int x, bool isStrictMatch)? getSelectionHighlight(Image<Rgba32> image, Rectangle textRect, LightsState lightsState) {
 			var x = textRect.Right;
 			while (true) {
 				for (var y = textRect.Top; y < textRect.Bottom; y++) {
 					var hsv = HsvColor.FromColor(image[x, y]);
+					var hsvCorrected = HsvColor.FromColor(ImageUtils.ColourCorrect(image[x, y], lightsState));
 					if (isSelectionHighlight(hsv))
-						return (x, isSelectionHighlightStrict(hsv));
-					if (hsv.H is >= 180 and <= 240 && hsv.S is >= 0.05f and <= 0.15f && hsv.V is >= 0.2f and <= 0.4f)
+						return (x, isSelectionHighlightStrict(hsv, lightsState));
+					if ((lightsState == LightsState.Off || hsvCorrected.H is >= 180 and <= 240) && hsvCorrected.S is >= 0.05f and <= 0.2f && hsvCorrected.V is >= 0.2f and <= 0.4f)
 						return null;
 				}
 				x++;
 			}
 		}
-		static WireColour? getWireColour(Image<Rgba32> image, Rectangle textRect, int x, bool isHighlighted) {
+		static WireColour? getWireColour(Image<Rgba32> image, Rectangle textRect, int x, bool isHighlighted, LightsState lightsState) {
 			for (; x < 76; x++) {
 				for (var y = textRect.Top; y < textRect.Bottom; y++) {
-					var hsv = HsvColor.FromColor(image[x, y]);
+					var hsv = HsvColor.FromColor(ImageUtils.ColourCorrect(image[x, y], lightsState));
 					if (hsv.V <= 0.05f)
 						return WireColour.Black;
 					if (hsv.H is >= 210 and <= 240 && hsv.S is >= 0.5f && hsv.V >= 0.4f)
@@ -115,14 +121,18 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 		// Find out whether either of the buttons is highlighted.
 		var highlightedButton = 0;
 		for (var y = 8; y < 32; y++) {
-			if (isSelectionHighlight(HsvColor.FromColor(image[106, y]))) {
+			var pixel = image[106, y];
+			if (lightsState == LightsState.Emergency) pixel = ImageUtils.ColourCorrect(pixel, lightsState);
+			if (isSelectionHighlight(HsvColor.FromColor(pixel))) {
 				highlightedButton = -1;
 				break;
 			}
 		}
 		if (highlightedButton == 0) {
 			for (var y = 240; y >= 216; y--) {
-				if (isSelectionHighlight(HsvColor.FromColor(image[106, y]))) {
+				var pixel = image[106, y];
+				if (lightsState == LightsState.Emergency) pixel = ImageUtils.ColourCorrect(pixel, lightsState);
+				if (isSelectionHighlight(HsvColor.FromColor(pixel))) {
 					highlightedButton = 1;
 					break;
 				}
@@ -134,16 +144,16 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 		HighlightedWireData? highlightedWire = null;
 		for (var i = 0; i < 3; i++) {
 			// This is highlighted if we see a red (selection highlight) pixel to the left of a grey (socket) pixel.
-			var r = highlightedButton == 0 ? getSelectionHighlight(image, textRects[i]) : null;
+			var r = highlightedButton == 0 ? getSelectionHighlight(image, textRects[i], lightsState) : null;
 			if (r is not null) {
 				var (x, isStrictMatch) = r.Value;
-				colours[i] = getWireColour(image, textRects[i], x, true) ?? WireColour.Red;
+				colours[i] = getWireColour(image, textRects[i], x, true, lightsState) ?? WireColour.Red;
 
 				if (isStrictMatch) {
 					for (x = 160; x >= 128; x--) {
 						for (var y = textRects[0].Top; y < textRects[2].Bottom; y++) {
 							var hsv = HsvColor.FromColor(image[x, y]);
-							if (isSelectionHighlightStrict(hsv)) {
+							if (isSelectionHighlightStrict(hsv, lightsState)) {
 								var to = y < (textRects[0].Bottom + textRects[1].Top) / 2 ? 'A'
 									: y < (textRects[1].Bottom + textRects[2].Top) / 2 ? 'B'
 									: 'C';
@@ -156,7 +166,7 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 					if (highlightedWire is null) throw new ArgumentException("Can't find the end terminal of the highlighted wire.");
 				}
 			} else
-				colours[i] = getWireColour(image, textRects[i], textRects[i].Right, false);
+				colours[i] = getWireColour(image, textRects[i], textRects[i].Right, false, lightsState);
 		}
 
 		return new(stagesCleared, int.Parse(number), colours, highlightedButton, highlightedWire);

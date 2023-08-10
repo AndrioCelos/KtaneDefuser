@@ -61,7 +61,7 @@ public class Password : ComponentReader<Password.ReadData> {
 		return Math.Min(1, Math.Max(0, count / 200 - count2 / 100));
 	}
 
-	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		static Rectangle GetLetterBounds(PixelAccessor<Rgba32> a, int x) {
 			int top, bottom, left, right, misses;
 

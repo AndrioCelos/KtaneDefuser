@@ -63,7 +63,7 @@ public class Interrupt : IDisposable {
 	public T Read<T>(ComponentReader<T> reader) where T : notnull {
 		if (this.IsDisposed) throw new ObjectDisposedException(nameof(Interrupt));
 		using var ss = DefuserConnector.Instance.TakeScreenshot();
-		return DefuserConnector.Instance.ReadComponent(ss, reader, Utils.CurrentModulePoints);
+		return DefuserConnector.Instance.ReadComponent(ss, DefuserConnector.Instance.GetLightsState(ss), reader, Utils.CurrentModulePoints);
 	}
 
 	/// <summary>Presses the specified buttons, announces a resulting solve or strike, and returns the resulting module light state afterward.</summary>

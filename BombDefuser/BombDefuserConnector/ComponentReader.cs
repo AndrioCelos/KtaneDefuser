@@ -12,10 +12,10 @@ public abstract class ComponentReader {
 	protected internal abstract bool UsesNeedyFrame { get; }
 
 	/// <summary>Returns a value indicating how much the specified image looks like this component type.</summary>
-	/// <returns>Generally this will range from 0 to 1, though it isn't strictly bounded.</returns>
+	/// <returns>Generally this will range from 0 to 1, though it isn't strictly bounded. The image should always be under normal lighting because this is used at the start of the game.</returns>
 	protected internal abstract float IsModulePresent(Image<Rgba32> image);
 
-	protected internal abstract object ProcessNonGeneric(Image<Rgba32> image, ref Image<Rgba32>? debugImage);
+	protected internal abstract object ProcessNonGeneric(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage);
 
 	/// <summary>Returns the number of lit lights on the module's stage indicator.</summary>
 	protected static int ReadStageIndicator(Image<Rgba32> image) {
@@ -35,19 +35,20 @@ public abstract class ComponentReader {
 	}
 
 	/// <summary>Returns the number displayed on the module's needy timer, or null if it is blank.</summary>
-	protected static int? ReadNeedyTimer(Image<Rgba32> image, Image<Rgba32>? debugImage) {
-		var bezelCorners = ImageUtils.FindCorners(image, new(80, 16, 96, 64), c => HsvColor.FromColor(c) is HsvColor hsv && hsv.H <= 150 && hsv.S <= 0.25f && hsv.V is >= 0.3f and <= 0.75f, 6) ?? throw new ArgumentException("Can't find needy timer bezel corners");
-		if (debugImage != null) ImageUtils.DebugDrawPoints(debugImage, bezelCorners);
+	protected static int? ReadNeedyTimer(Image<Rgba32> image, LightsState lightsState, Image<Rgba32>? debugImage) {
+		var bezelCorners = ImageUtils.FindCorners(image, new(80, 16, 96, 64), c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is var hsv && hsv.H >= (lightsState == LightsState.Emergency ? 15 : 45) && hsv.H <= 150 && hsv.S <= 0.25f && hsv.V is >= 0.3f and <= 0.9f, 4) ?? throw new ArgumentException("Can't find needy timer bezel corners");
+		debugImage?.DebugDrawPoints(bezelCorners);
 		var left = Math.Min(bezelCorners[0].X, bezelCorners[2].X);
 		var top = Math.Min(bezelCorners[0].Y, bezelCorners[1].Y);
 		var right = Math.Max(bezelCorners[1].X, bezelCorners[3].X) + 1;
 		var bottom = Math.Max(bezelCorners[2].Y, bezelCorners[3].Y) + 1;
 		var bezelRectangle = new Rectangle(left, top, right - left, bottom - top);
-		var displayCorners = ImageUtils.FindCorners(image, bezelRectangle, c => HsvColor.FromColor(c) is HsvColor hsv && hsv.H is >= 345 or <= 15 && hsv.V <= 0.2f, 6) ?? throw new ArgumentException("Can't find needy timer corners");
-		if (debugImage != null) ImageUtils.DebugDrawPoints(debugImage, displayCorners);
+		bezelRectangle.Inflate(-4, -4);
+		var displayCorners = ImageUtils.FindCorners(image, bezelRectangle, c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is var hsv && (hsv.H is >= 345 or <= 15 && hsv.S >= 0.75f) || hsv.V <= 0.10f, 4) ?? throw new ArgumentException("Can't find needy timer corners");
+		debugImage?.DebugDrawPoints(displayCorners);
 
 		var displayImage = ImageUtils.PerspectiveUndistort(image, displayCorners, InterpolationMode.NearestNeighbour, new(128, 64));
-		debugImage?.Mutate(p => p.DrawImage(displayImage, 1));
+		debugImage?.Mutate(p => p.DrawImage(displayImage, 0));
 
 		bool checkRectangle(Image<Rgba32> image, Rectangle rectangle) {
 			for (var dy = 0; dy < rectangle.Height; dy++) {
@@ -98,8 +99,8 @@ public abstract class ComponentReader<T> : ComponentReader where T : notnull {
 	/// <summary>When overridden, reads component data from the specified image.</summary>
 	/// <param name="image">The image to read component data from.</param>
 	/// <param name="debugImage">An image variable to draw debug annotations to. The image may be replaced with a larger one. May be a variable containing <see langword="null"/> to disable debug annotations.</param>
-	protected internal abstract T Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage);
+	protected internal abstract T Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage);
 
-	protected internal override object ProcessNonGeneric(Image<Rgba32> image, ref Image<Rgba32>? debugImage)
-		=> this.Process(image, ref debugImage);
+	protected internal override object ProcessNonGeneric(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage)
+		=> this.Process(image, lightsState, ref debugImage);
 }

@@ -18,7 +18,7 @@ public class MorseCode : ComponentReader<MorseCode.ReadData> {
 		}
 		return Math.Min(count / 600, 1);
 	}
-	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage)
+	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage)
 		=> new(image[89, 39].R >= 192);
 
 	public record ReadData(bool IsLightOn);

@@ -42,7 +42,7 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 
 		return count / 192 + count2 / 2240;
 	}
-	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		var displayBorderRect = ImageUtils.FindEdges(image, new(28, 22, 140, 50), c => c.R < 44 && c.G < 44 && c.B < 44);
 		displayBorderRect.Inflate(-4, -4);
 		var textRect = ImageUtils.FindEdges(image, displayBorderRect, c => c.B >= 192);
@@ -50,7 +50,7 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 		debugImage?.Mutate(c => c.Draw(Color.Red, 1, displayBorderRect).Draw(Color.Lime, 1, textRect));
 		var displayText = textRect.Height == 0 ? "" : displayRecogniser.Recognise(image, textRect);
 
-		static bool isKeyBackground(Rgba32 c) => HsvColor.FromColor(c) is HsvColor hsv && hsv.H is >= 30 and <= 45 && hsv.S is >= 0.2f and <= 0.4f;
+		bool isKeyBackground(Rgba32 c) => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is HsvColor hsv && hsv.H is >= 30 and <= 45 && hsv.S is >= 0.2f and <= 0.4f;
 
 		var baseRects = new[] {
 			ImageUtils.FindEdges(image, new(31, 90, 80, 48), isKeyBackground),
@@ -70,10 +70,12 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 				4 => new Rectangle(24, 178, 74, 44),
 				_ => new Rectangle(104, 178, 74, 44)
 			};
+			debugImage?.ColourCorrect(lightsState, keyRect);
 			keyRect = ImageUtils.FindEdges(image, keyRect, isKeyBackground);
-			textRect = Rectangle.Inflate(keyRect, -2, -5);
-			textRect = ImageUtils.FindEdges(image, textRect, c => c.R < 128);
+			textRect = Rectangle.Inflate(keyRect, -3, -5);
+			textRect = ImageUtils.FindEdges(image, textRect, c => ImageUtils.ColourCorrect(c, lightsState).R < 128);
 			debugImage?.Mutate(c => c.Draw(Color.Yellow, 1, keyRect).Draw(Color.Green, 1, textRect));
+			image.ColourCorrect(lightsState, textRect);
 			keyLabels[i] = keyRecogniser.Recognise(image, textRect);
 		}
 

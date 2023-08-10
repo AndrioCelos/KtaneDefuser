@@ -29,7 +29,7 @@ public class SimonSays : ComponentReader<SimonSays.ReadData> {
 		return count / 576f;
 	}
 
-	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		int red = 0, yellow = 0, green = 0, blue = 0;
 		image.ProcessPixelRows(a => {
 			for (var y = 20; y < 224; y++) {

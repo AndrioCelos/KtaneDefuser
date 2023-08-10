@@ -33,6 +33,11 @@ public partial class ClassificationForm : Form {
 			MessageBox.Show(this, "There is no usable image on the Clipboard.", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
 	}
 
+	internal void SetLightsState(LightsState lightsState) {
+		comboBox2.SelectedIndex = (int) lightsState;
+		comboBox1_SelectedIndexChanged(comboBox1, EventArgs.Empty);
+	}
+
 	internal void comboBox1_SelectedIndexChanged(object sender, EventArgs e) {
 		string? s = null;
 		var stopwatch = Stopwatch.StartNew();
@@ -42,7 +47,7 @@ public partial class ClassificationForm : Form {
 				return;
 			}
 			using var bitmap = screenBitmap.Clone();
-			ImageUtils.ColourCorrect(bitmap, lightsState);
+			//ImageUtils.ColourCorrect(bitmap, lightsState);
 			pictureBox1.Image = bitmap.ToWinFormsImage();
 			if (comboBox1.SelectedIndex == 0) {
 				if (ImageUtils.CheckForBlankComponent(bitmap)) {
@@ -85,11 +90,11 @@ public partial class ClassificationForm : Form {
 				try {
 					switch (comboBox1.SelectedItem) {
 						case ComponentReader componentReader:
-							var result = componentReader.ProcessNonGeneric(bitmap, ref debugImage);
+							var result = componentReader.ProcessNonGeneric(bitmap, lightsState, ref debugImage);
 							s = result.ToString();
 							break;
 						case WidgetReader widgetReader:
-							result = widgetReader.ProcessNonGeneric(bitmap, 0, ref debugImage);
+							result = widgetReader.ProcessNonGeneric(bitmap, lightsState, ref debugImage);
 							s = result.ToString();
 							break;
 					}

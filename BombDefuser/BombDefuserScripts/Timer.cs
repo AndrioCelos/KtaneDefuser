@@ -6,7 +6,7 @@ internal static class Timer {
 		int? lastSeconds = null;
 		// Keep watching the timer until it ticks over to get sub-second precision.
 		while (true) {
-			var data = DefuserConnector.Instance.ReadComponent(screenshot, DefuserConnector.TimerReader, polygon);
+			var data = DefuserConnector.Instance.ReadComponent(screenshot, DefuserConnector.Instance.GetLightsState(screenshot), DefuserConnector.TimerReader, polygon);
 			screenshot.Dispose();
 			GameState.Current.GameMode = data.GameMode;
 			if (timerHasNotStartedYet) {  // TimerBaseTime is now the time as of 2 seconds before the timer starts.

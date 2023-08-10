@@ -63,6 +63,8 @@ internal static class Start {
 	}
 
 	private static async Task RegisterComponentsAsync(AimlAsyncContext context, Image<Rgba32> screenshot) {
+		var lightsState = DefuserConnector.Instance.GetLightsState(screenshot);
+		if (lightsState != LightsState.On) throw new ArgumentException($"Can't identify components on lights state {lightsState}.");
 		var needTimerRead = false;
 		var anyModules = false;
 		for (var i = 0; i < 6; i++) {
@@ -82,8 +84,8 @@ internal static class Start {
 			}
 			var module = RegisterComponent(context, slot, component);  // TODO: This assumes the vanilla bomb layout. It will need to be updated for other layouts.
 			if (module is not null) {
-				var lightsState = DefuserConnector.Instance.GetModuleLightState(screenshot, points);
-				if (lightsState == ModuleLightState.Solved) {
+				var lightState = DefuserConnector.Instance.GetModuleLightState(screenshot, points);
+				if (lightState == ModuleLightState.Solved) {
 					context.RequestProcess.Log(LogLevel.Info, $"Module {module.Script.ModuleIndex + 1} is solved.");
 					module.IsSolved = true;
 				}

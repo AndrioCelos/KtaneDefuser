@@ -26,9 +26,9 @@ public class NeedyCapacitor : ComponentReader<NeedyCapacitor.ReadData> {
 		});
 		return count / 6000f;
 	}
-	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		// Find the timer.
-		return new(ReadNeedyTimer(image, debugImage));
+		return new(ReadNeedyTimer(image, lightsState, debugImage));
 	}
 
 	public record ReadData(int? Time);

@@ -42,7 +42,7 @@ public class ComplicatedWires : ComponentReader<ComplicatedWires.ReadData> {
 		}
 		return numWires is >= 3 and <= 6 ? pixelScore * 1.5f / numPixels : 0;
 	}
-	protected internal override ReadData Process(Image<Rgba32> image, ref Image<Rgba32>? debugImage) {
+	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		debugImage?.Mutate(c => c.Brightness(0.5f));
 
 		WireFlags? currentFlags = null;
@@ -53,7 +53,7 @@ public class ComplicatedWires : ComponentReader<ComplicatedWires.ReadData> {
 			var anyColours = false;
 			for (var y = 160; y < 176; y++) {
 				var pixel = image[x, y];
-				var hsv = HsvColor.FromColor(pixel);
+				var hsv = HsvColor.FromColor(ImageUtils.ColourCorrect(pixel, lightsState));
 				var colour = GetColour(hsv);
 
 				if (colour != Colour.None) {
@@ -81,7 +81,7 @@ public class ComplicatedWires : ComponentReader<ComplicatedWires.ReadData> {
 								for (var y = stickerRect.Top; y < stickerRect.Bottom; y++) {
 									var row = a.GetRowSpan(y);
 									for (var x = stickerRect.Left; x < stickerRect.Right; x++) {
-										if (HsvColor.FromColor(row[x]).V < 0.25f) {
+										if (HsvColor.FromColor(ImageUtils.ColourCorrect(row[x], lightsState)).V < 0.3f) {
 											currentFlags |= WireFlags.Star;
 											return;
 										}
@@ -104,6 +104,8 @@ public class ComplicatedWires : ComponentReader<ComplicatedWires.ReadData> {
 				}
 			}
 		}
+		if (currentFlags is not null)
+			wires.Add(currentFlags.Value);
 
 		return new(highlight >= 0 ? highlight : null, wires);
 	}
@@ -116,7 +118,7 @@ public class ComplicatedWires : ComponentReader<ComplicatedWires.ReadData> {
 		return hsv.H is >= 330 or <= 3 && hsv.S >= 0.8f && hsv.V >= 0.5f ? Colour.Red
 			: hsv.H is >= 330 or <= 30 && hsv.S >= 0.5f && hsv.V >= 0.5f ? Colour.Highlight
 			: hsv.H is >= 210 and < 240 && hsv.S >= 0.5f && hsv.V >= 0.35f ? Colour.Blue
-			: hsv.H <= 60 && hsv.S <= 0.15f && hsv.V >= 0.5f ? Colour.White
+			: hsv.S <= 0.15f && hsv.V >= 0.7f ? Colour.White
 			: Colour.None;
 	}
 

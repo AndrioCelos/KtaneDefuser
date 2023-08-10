@@ -45,7 +45,10 @@ partial class TransformationForm {
 		outputSaveButton = new Button();
 		outputClassifyButton = new Button();
 		autoClassifyBox = new CheckBox();
+		label3 = new Label();
+		lightsSimulateBox = new ComboBox();
 		saveFileDialog1 = new SaveFileDialog();
+		lightsLabel = new Label();
 		((System.ComponentModel.ISupportInitialize) screenshotPictureBox).BeginInit();
 		((System.ComponentModel.ISupportInitialize) pictureBox1).BeginInit();
 		((System.ComponentModel.ISupportInitialize) splitContainer).BeginInit();
@@ -133,9 +136,9 @@ partial class TransformationForm {
 		// 
 		panel1.Controls.Add(screenshotPictureBox);
 		panel1.Dock = DockStyle.Fill;
-		panel1.Location = new Point(3, 38);
+		panel1.Location = new Point(3, 59);
 		panel1.Name = "panel1";
-		panel1.Size = new Size(719, 424);
+		panel1.Size = new Size(719, 403);
 		panel1.TabIndex = 2;
 		panel1.Resize += this.screenshotPanel_Resize;
 		// 
@@ -150,9 +153,10 @@ partial class TransformationForm {
 		flowLayoutPanel2.Controls.Add(presetBox);
 		flowLayoutPanel2.Controls.Add(label1);
 		flowLayoutPanel2.Controls.Add(interpolationBox);
+		flowLayoutPanel2.Controls.Add(lightsLabel);
 		flowLayoutPanel2.Location = new Point(3, 3);
 		flowLayoutPanel2.Name = "flowLayoutPanel2";
-		flowLayoutPanel2.Size = new Size(715, 29);
+		flowLayoutPanel2.Size = new Size(715, 50);
 		flowLayoutPanel2.TabIndex = 3;
 		// 
 		// screenshotPasteButton
@@ -219,6 +223,7 @@ partial class TransformationForm {
 		label1.Size = new Size(78, 15);
 		label1.TabIndex = 2;
 		label1.Text = "Interpolation:";
+		label1.Visible = false;
 		// 
 		// interpolationBox
 		// 
@@ -229,6 +234,7 @@ partial class TransformationForm {
 		interpolationBox.Name = "interpolationBox";
 		interpolationBox.Size = new Size(135, 23);
 		interpolationBox.TabIndex = 3;
+		interpolationBox.Visible = false;
 		interpolationBox.SelectedIndexChanged += this.interpolationBox_SelectedIndexChanged;
 		// 
 		// tableLayoutPanel2
@@ -253,9 +259,11 @@ partial class TransformationForm {
 		flowLayoutPanel1.Controls.Add(outputSaveButton);
 		flowLayoutPanel1.Controls.Add(outputClassifyButton);
 		flowLayoutPanel1.Controls.Add(autoClassifyBox);
+		flowLayoutPanel1.Controls.Add(label3);
+		flowLayoutPanel1.Controls.Add(lightsSimulateBox);
 		flowLayoutPanel1.Location = new Point(3, 3);
 		flowLayoutPanel1.Name = "flowLayoutPanel1";
-		flowLayoutPanel1.Size = new Size(301, 29);
+		flowLayoutPanel1.Size = new Size(477, 29);
 		flowLayoutPanel1.TabIndex = 3;
 		// 
 		// outputCopyButton
@@ -302,10 +310,41 @@ partial class TransformationForm {
 		autoClassifyBox.Text = "Auto";
 		autoClassifyBox.UseVisualStyleBackColor = true;
 		// 
+		// label3
+		// 
+		label3.AutoSize = true;
+		label3.Location = new Point(304, 6);
+		label3.Margin = new Padding(3, 6, 3, 0);
+		label3.Name = "label3";
+		label3.Size = new Size(56, 15);
+		label3.TabIndex = 2;
+		label3.Text = "Simulate:";
+		// 
+		// lightsSimulateBox
+		// 
+		lightsSimulateBox.DropDownStyle = ComboBoxStyle.DropDownList;
+		lightsSimulateBox.FormattingEnabled = true;
+		lightsSimulateBox.Items.AddRange(new object[] { "On", "Buzz", "Off", "Emergency" });
+		lightsSimulateBox.Location = new Point(366, 3);
+		lightsSimulateBox.Name = "lightsSimulateBox";
+		lightsSimulateBox.Size = new Size(108, 23);
+		lightsSimulateBox.TabIndex = 8;
+		lightsSimulateBox.SelectedIndexChanged += this.lightsSimulateBox_SelectedIndexChanged;
+		// 
 		// saveFileDialog1
 		// 
 		saveFileDialog1.Filter = "Bitmap|*.bmp|GIF image|*.gif|JPEG image|*.jpeg;*.jpg|PNG image|*.png|TIFF image|*.tiff|WebP image|*.webp";
 		saveFileDialog1.FilterIndex = 4;
+		// 
+		// lightsLabel
+		// 
+		lightsLabel.AutoSize = true;
+		lightsLabel.Location = new Point(3, 35);
+		lightsLabel.Margin = new Padding(3, 6, 3, 0);
+		lightsLabel.Name = "lightsLabel";
+		lightsLabel.Size = new Size(61, 15);
+		lightsLabel.TabIndex = 2;
+		lightsLabel.Text = "Lights: On";
 		// 
 		// TransformationForm
 		// 
@@ -360,4 +399,8 @@ partial class TransformationForm {
 	private ComboBox presetBox;
 	private Button screenshotFromGameButton;
 	private Button screenshotSaveButton;
+	private Label label3;
+	private ComboBox lightsSimulateBox;
+	private Label label4;
+	private Label lightsLabel;
 }

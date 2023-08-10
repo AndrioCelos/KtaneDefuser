@@ -129,11 +129,12 @@ public static class ImageUtils {
 	/// <summary>Finds a rectangle within the specified rectangle bounding pixels matching the specified predicate.</summary>
 	public static Rectangle FindEdges<TPixel>(PixelAccessor<TPixel> accessor, Rectangle rectangle, Predicate<TPixel> predicate) where TPixel : unmanaged, IPixel<TPixel> {
 		if (rectangle.Height <= 0 || rectangle.Width <= 0) return rectangle;
+
 		for (var edge = 0; edge < 2; edge++) {
 			while (true) {
 				var r = accessor.GetRowSpan(edge == 0 ? rectangle.Top : rectangle.Bottom - 1);
 				var found = false;
-				for (var  x = rectangle.Left; x < rectangle.Right; x++) {
+				for (var x = rectangle.Left; x < rectangle.Right; x++) {
 					if (predicate(r[x])) {
 						found = true;
 						break;
@@ -163,7 +164,7 @@ public static class ImageUtils {
 		return rectangle;
 	}
 
-	public static void DebugDrawPoints(Image image, Point[] points) {
+	public static void DebugDrawPoints(this Image image, Point[] points) {
 		for (var i = 0; i < points.Length; i++) {
 			image.Mutate(c => c.Fill((i % 4) switch { 0 => Color.Red, 1 => Color.Yellow, 2 => Color.Lime, 3 => Color.RoyalBlue, _ => Color.Magenta }, new EllipsePolygon(points[i], 2)));
 		}
@@ -180,37 +181,51 @@ public static class ImageUtils {
 			Math.Abs(color.R - refR2) + Math.Abs(color.G - refG2) + Math.Abs(color.B - refB2)
 		));
 
-	/// <summary>Corrects the colours of an image with the specified lights state to normal colours.</summary>
-	public static void ColourCorrect(Image<Rgba32> image, LightsState lightsState) {
+	/// <summary>Corrects the colours of an image with the specified lights state to approximate <see cref="LightsState.On"/> colours.</summary>
+	public static void ColourCorrect(this Image<Rgba32> image, LightsState lightsState) => ColourCorrect(image, lightsState, image.Bounds);
+	/// <summary>Corrects the colours of the specified area of an image with the specified lights state to approximate <see cref="LightsState.On"/> colours.</summary>
+	public static void ColourCorrect(this Image<Rgba32> image, LightsState lightsState, Rectangle rectangle) {
 		if (lightsState == LightsState.On) return;
-
-		// This will apply a linear function to each component of each pixel.
-		// The linear function is defined by a gradient and intercent: y = m * x + c
-		// The gradient (M) and y-intercept (C) are multiplied by 65536 because fixed-point math is faster than floating-point math.
-		// 32768 is added to the intercepts for rounding.
-		(int rM, int rC, int gM, int gC, int bM, int bC) = lightsState switch {
-			LightsState.Buzz      => ( 358520, -744026 + 32768,  358520, -744026 + 32768,  358520, -744026 + 32768),
-			LightsState.Off       => (1913651,  642253 + 32768, 1913651,  642253 + 32768, 1507328,  786432 + 32768),
-			LightsState.Emergency => (  48545,  242726 + 32768,   90502, -405699 + 32768,   89902, -403298 + 32768),
-			_                     => (  65536,       0 + 32768,   65536,       0 + 32768,   65536,       0 + 32768)
-		};
-
-		image.ProcessPixelRows(p => {
-			for (var y = 0; y < image.Height; y++) {
-				var row = p.GetRowSpan(y);
-				for (var x = 0; x < image.Width; x++) {
-					var color = image[x, y];
-					int r = color.R, g = color.G, b = color.B;
-
-					r = Math.Min(255, Math.Max(0, (r * rM + rC) >> 16));
-					g = Math.Min(255, Math.Max(0, (g * gM + gC) >> 16));
-					b = Math.Min(255, Math.Max(0, (b * bM + bC) >> 16));
-
-					row[x] = new((byte) r, (byte) g, (byte) b);
+		image.ProcessPixelRows(a => {
+			for (var y = rectangle.Top; y < rectangle.Bottom; y++) {
+				var row = a.GetRowSpan(y);
+				for (var x = rectangle.Left; x < rectangle.Right; x++) {
+					row[x] = ColourCorrect(row[x], lightsState);
 				}
 			}
 		});
 	}
+
+	/// <summary>Alters the colours of an image taken under <see cref="LightsState.On"/> to simulate the specified lights state.</summary>
+	public static void ColourUncorrect(this Image<Rgba32> image, LightsState lightsState) {
+		if (lightsState == LightsState.On) return;
+		image.ProcessPixelRows(a => {
+			for (var y = 0; y < a.Height; y++) {
+				var row = a.GetRowSpan(y);
+				for (var x = 0; x < a.Width; x++) {
+					var pixel = ColourUncorrect(row[x], lightsState);
+					row[x] = pixel;
+				}
+			}
+		});
+	}
+
+	// The following lines were calculated using a linear least squares regression on sample images.
+	// The linear function is defined by a gradient and y-intercent: y = m * x + c
+	// The gradient (m) and intercept (c) are multiplied by 65536 because fixed-point math is faster than floating-point math.
+	// The intercept is also offset by +32768 for rounding.
+	public static Rgba32 ColourCorrect(Rgba32 pixel, LightsState lightsState) => lightsState switch {
+		LightsState.Buzz      => new((byte) Math.Min(Math.Max(( 319305 * pixel.R +  429087) >> 16, 0), 255), (byte) Math.Min(Math.Max(( 315405 * pixel.G +  664756) >> 16, 0), 255), (byte) Math.Min(Math.Max(( 316774 * pixel.B +  663781) >> 16, 0), 255), pixel.A),
+		LightsState.Off       => new((byte) Math.Min(Math.Max((2127280 * pixel.R +  497929) >> 16, 0), 255), (byte) Math.Min(Math.Max((1964778 * pixel.G +  715096) >> 16, 0), 255), (byte) Math.Min(Math.Max((1570129 * pixel.B +  740225) >> 16, 0), 255), pixel.A),
+		LightsState.Emergency => new((byte) Math.Min(Math.Max((  53982 * pixel.R + -299830) >> 16, 0), 255), (byte) Math.Min(Math.Max((  84761 * pixel.G +  256655) >> 16, 0), 255), (byte) Math.Min(Math.Max((  85066 * pixel.B +  250049) >> 16, 0), 255), pixel.A),
+		_ => pixel
+	};
+	public static Rgba32 ColourUncorrect(Rgba32 pixel, LightsState lightsState) => lightsState switch {
+		LightsState.Buzz      => new((byte) Math.Min(Math.Max((  13118 * pixel.R +   -2642) >> 16, 0), 255), (byte) Math.Min(Math.Max((  13099 * pixel.G +  -26052) >> 16, 0), 255), (byte) Math.Min(Math.Max((  12964 * pixel.B +  -15923) >> 16, 0), 255), pixel.A),
+		LightsState.Off       => new((byte) Math.Min(Math.Max((   1879 * pixel.R +   37662) >> 16, 0), 255), (byte) Math.Min(Math.Max((   1946 * pixel.G +   43646) >> 16, 0), 255), (byte) Math.Min(Math.Max((   2449 * pixel.B +   42723) >> 16, 0), 255), pixel.A),
+		LightsState.Emergency => new((byte) Math.Min(Math.Max((  78034 * pixel.R +  647314) >> 16, 0), 255), (byte) Math.Min(Math.Max((  50172 * pixel.G +  -70498) >> 16, 0), 255), (byte) Math.Min(Math.Max((  49926 * pixel.B +  -57006) >> 16, 0), 255), pixel.A),
+		_ => pixel
+	};
 
 	/// <summary>Returns a value indicating how similar the specified image is to any of the samples.</summary>
 	public static float CheckSimilarity(Image<Rgba32> subject, params Image<Rgba32>[] samples) {
@@ -275,5 +290,51 @@ public static class ImageUtils {
 			: hsv.S >= 0.65f && hsv.H is >= 330 or <= 30
 			? ModuleLightState.Strike
 			: ModuleLightState.Off;
+	}
+
+	private static readonly Rectangle[] lightsStateSearchRects = new Rectangle[] { new(96, 48, 16, 16), new(960, 48, 16, 16), new(1748, 236, 16, 16) };
+	private static readonly int[] lightsStateSearchTolerances = new[] { 0x20000, 0x20000, 0x8000, 0x30000 };
+	private static readonly Rgb48[,] lightsStateSearchColours = new Rgb48[,] {
+		{
+			new(0x1c08, 0x19e9, 0x17a3),
+			new(0x24eb, 0x2364, 0x206f),
+			new(0x244f, 0x2106, 0x1e3e),
+		}, {
+			new(0x0900, 0x093e, 0x0911),
+			new(0x1c98, 0x1733, 0x0ee0),
+			new(0x1aeb, 0x1491, 0x0c8d),
+		}, {
+			new(0x060e, 0x0800, 0x0a05),
+			new(0x05f2, 0x0700, 0x08f4),
+			new(0x0600, 0x06c3, 0x0800),
+		}, {
+			new(0x7e80, 0x1855, 0x1573),
+			new(0x7b1d, 0x220f, 0x1f74),
+			new(0x6122, 0x20bf, 0x1df0),
+		}
+	};
+	public static LightsState GetLightsState(Image<Rgba32> image) {
+		var result = LightsState.On;
+		image.ProcessPixelRows(a => {
+			for (var i = 1; i < 4; i++) {
+				for (var rectIndex = 0; rectIndex < 3; rectIndex++) {
+					var rect = lightsStateSearchRects[rectIndex];
+					var dist = 0;
+					var refColour = lightsStateSearchColours[i, rectIndex];
+					for (var y = rect.Top; y < rect.Bottom; y++) {
+						var r = a.GetRowSpan(y);
+						for (var x = rect.Left; x < rect.Right; x++) {
+							var p = r[x];
+							dist += Math.Abs((p.R << 8) - refColour.R) + Math.Abs((p.G << 8) - refColour.G) + Math.Abs((p.B << 8) - refColour.B);
+						}
+					}
+					if (dist < lightsStateSearchTolerances[i]) {
+						result = (LightsState) i;
+						return;
+					}
+				}
+			}
+		});
+		return result;
 	}
 }
