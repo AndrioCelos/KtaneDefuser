@@ -1,8 +1,9 @@
 ﻿using System.ComponentModel;
+using BombDefuserConnector.DataTypes;
 
 namespace BombDefuserScripts;
 [AimlInterface]
-internal class AlarmClock {
+internal class GameEvents {
 	[AimlCategory("OOB AlarmClockChange *"), EditorBrowsable(EditorBrowsableState.Never)]
 	public static async Task AlarmClockInterruptAsync(AimlAsyncContext context, bool on) {
 		if (!on) return;
@@ -13,5 +14,17 @@ internal class AlarmClock {
 			default: throw new InvalidOperationException($"Don't know how to deal with the alarm clock from state {GameState.Current.FocusState}.");
 		}
 		await Delay(1.5);
+	}
+
+	[AimlCategory("OOB Strike * * * *"), EditorBrowsable(EditorBrowsableState.Never)]
+	public static void OnStrike(AimlAsyncContext context, int bomb, int face, int x, int y) {
+		if (GameState.Current.GameMode != GameMode.Time)
+			GameState.Current.Strikes++;
+		var module = GameState.Current.Modules.FirstOrDefault(m => m.Slot.Bomb == bomb && m.Slot.Face == face && m.Slot.X == x && m.Slot.Y == y);
+		if (module is not null) {
+			context.Reply($"<oob><queue/></oob> Strike from {module.Reader.Name}.");
+			module?.Script.Strike(context);
+		}
+		GameState.Current.OnStrike(new(context, new(bomb, face, x, y), module));
 	}
 }

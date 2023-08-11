@@ -1,5 +1,4 @@
-﻿using System.Text;
-using BombDefuserConnector.DataTypes;
+﻿using BombDefuserConnector.DataTypes;
 
 namespace BombDefuserScripts.Modules;
 [AimlInterface("SimonSays")]
@@ -13,6 +12,8 @@ internal class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSay
 	private int stagesCleared;
 	private readonly List<SimonColour> pattern = new(5);
 	private SimonColour? currentColour;
+
+	protected internal override void Initialise(AimlAsyncContext context) => GameState.Current.Strike += (_, _) => Array.Clear(buttonMap);  // A strike invalidates the whole mapping.
 
 	protected internal override void Started(AimlAsyncContext context) => this.readyToRead = true;
 
@@ -52,10 +53,7 @@ internal class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSay
 			}
 			this.highlight = highlight;
 			var result = await interrupt.SubmitAsync(buttons);
-			if (result == ModuleLightState.Strike) {
-				// A strike invalidates the whole mapping.
-				Array.Clear(buttonMap);
-			} else {
+			if (result != ModuleLightState.Strike) {
 				this.stagesCleared++;
 				if (result == ModuleLightState.Solved) return;
 

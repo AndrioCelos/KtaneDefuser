@@ -48,6 +48,8 @@ public abstract class ModuleScript {
 	protected internal virtual void ModuleSelected(AimlAsyncContext context) { }
 	/// <summary>Called when the module has been deselected in-game.</summary>
 	protected internal virtual void ModuleDeselected(AimlAsyncContext context) { }
+	/// <summary>Called when a strike occurs on this module.</summary>
+	protected internal virtual void Strike(AimlAsyncContext context) { }
 	/// <summary>Called when the state of the needy module has changed.</summary>
 	protected internal virtual void NeedyStateChanged(AimlAsyncContext context, NeedyState newState) { }
 

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using BombDefuserConnector.DataTypes;
 
 namespace BombDefuserScripts;
 public class GameState {
@@ -6,6 +7,8 @@ public class GameState {
 
 	/// <summary>Indicates whether we are waiting for the lights to turn on at the start of the game.</summary>
 	public bool WaitingForLights { get; set; }
+	/// <summary>The current number of strikes. In Time mode, this is always zero.</summary>
+	public int Strikes { get; set; }
 	/// <summary>The location of the timer, or <see langword="null"/> if it is unknown.</summary>
 	public Slot? TimerSlot { get; set; }
 	/// <summary>The time on the timer at the moment the <see cref="TimerStopwatch"/> was started.</summary>
@@ -62,14 +65,18 @@ public class GameState {
 	public bool SerialNumberHasVowel => this.SerialNumber.Any(c => c is 'A' or 'E' or 'I' or 'O' or 'U');
 	public bool SerialNumberIsOdd => this.SerialNumber[^1] is '1' or '3' or '5' or '7' or '9';
 
-	public BombDefuserConnector.Components.Timer.GameMode GameMode { get; set; }
+	public GameMode GameMode { get; set; }
 
 	/// <summary>Returns the current bomb time.</summary>
-	public TimeSpan Time => this.GameMode is BombDefuserConnector.Components.Timer.GameMode.Zen or BombDefuserConnector.Components.Timer.GameMode.Training
+	public TimeSpan Time => this.GameMode is GameMode.Zen or GameMode.Training
 		? this.TimerBaseTime + this.TimerStopwatch.Elapsed
 		: this.TimerBaseTime - this.TimerStopwatch.Elapsed;
 
 	public readonly Dictionary<Slot, NeedyState> UnknownNeedyStates = new();
+
+	public event EventHandler<StrikeEventArgs>? Strike;
+
+	internal void OnStrike(StrikeEventArgs e) => this.Strike?.Invoke(this, e);
 }
 
 public struct IndicatorData {

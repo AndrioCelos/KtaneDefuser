@@ -1,5 +1,4 @@
-﻿using System.Text;
-using BombDefuserConnector.DataTypes;
+﻿using BombDefuserConnector.DataTypes;
 
 namespace BombDefuserScripts.Modules;
 [AimlInterface("Maze")]
@@ -11,8 +10,8 @@ internal class Maze : ModuleScript<BombDefuserConnector.Components.Maze> {
 	internal static async Task Read(AimlAsyncContext context) {
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		var data = interrupt.Read(Reader);
-		interrupt.Context.Reply(data.Circle2 is GridCell cell
-			? $"Markings at {NATO.Speak(data.Circle1.ToString())} and {NATO.Speak(cell.ToString())}. Starting at {NATO.Speak(data.Start.ToString())}. The goal is {NATO.Speak(data.Goal.ToString())}."
+		interrupt.Context.Reply(data.Circle2 is GridCell circle2
+			? $"Markings at {NATO.Speak(data.Circle1.ToString())} and {NATO.Speak(circle2.ToString())}. Starting at {NATO.Speak(data.Start.ToString())}. The goal is {NATO.Speak(data.Goal.ToString())}."
 			: $"Marking at {NATO.Speak(data.Circle1.ToString())}. Starting at {NATO.Speak(data.Start.ToString())}. The goal is {NATO.Speak(data.Goal.ToString())}.");
 	}
 
@@ -20,12 +19,8 @@ internal class Maze : ModuleScript<BombDefuserConnector.Components.Maze> {
 	internal static Task Input1(AimlAsyncContext context, string s1, string? s2)
 		=> GameState.Current.CurrentScript<Maze>().ProcessInputAsync(context, $"{s1} {s2}");
 
-	[AimlCategory("move *")]
-	internal static Task Input2(AimlAsyncContext context, string s)
-		=> GameState.Current.CurrentScript<Maze>().ProcessInputAsync(context, s);
-
-	[AimlCategory("press *")]
-	internal static Task Input3(AimlAsyncContext context, string s)
+	[AimlCategory("move *"), AimlCategory("press *")]
+	internal static Task Input(AimlAsyncContext context, string s)
 		=> GameState.Current.CurrentScript<Maze>().ProcessInputAsync(context, s);
 
 	private async Task ProcessInputAsync(AimlAsyncContext context, string s) {
@@ -57,6 +52,10 @@ internal class Maze : ModuleScript<BombDefuserConnector.Components.Maze> {
 		}
 		this.highlight = currentHighlight;
 		using var interrupt = await this.ModuleInterruptAsync(context);
-		await interrupt.SubmitAsync(buttons);
+		var result = await interrupt.SubmitAsync(buttons);
+		if (result == ModuleLightState.Strike) {
+			var data = interrupt.Read(Reader);
+			interrupt.Context.Reply($"<oob><queue/></oob> Now at {NATO.Speak(data.Start.ToString())}.");
+		}
 	}
 }

@@ -42,6 +42,7 @@ internal static class Edgework {
 				quadrilateral.TopRight.X += adjustment;
 				quadrilateral.BottomLeft.X += adjustment;
 				quadrilateral.BottomRight.X += adjustment;
+				quadrilaterals[i] = quadrilateral;
 			}
 		} else
 			quadrilaterals = Utils.topBottomWidgetAreas;

@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Text;
+using BombDefuserConnector.DataTypes;
 using BombDefuserConnector.Properties;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Components;
-public class Timer : ComponentReader<Timer.ReadData> {
+public partial class Timer : ComponentReader<Timer.ReadData> {
 	private static readonly Image<Rgba32>[] Samples = new[] { Image.Load<Rgba32>(Resources.Timer1), Image.Load<Rgba32>(Resources.Timer2) };
 
 	public override string Name => "Timer";
@@ -92,13 +93,5 @@ public class Timer : ComponentReader<Timer.ReadData> {
 
 	public record ReadData(GameMode GameMode, int Time, int CS, int Strikes) {
 		public override string ToString() => $"{this.GameMode} {this.Time} {this.CS} {this.Strikes}";
-	}
-
-	public enum GameMode {
-		Normal,
-		Time,
-		Zen,
-		Steady,
-		Training
 	}
 }

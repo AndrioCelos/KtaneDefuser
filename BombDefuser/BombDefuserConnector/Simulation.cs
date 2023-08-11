@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Timers;
+using BombDefuserConnector.DataTypes;
 using BombDefuserConnectorApi;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -49,6 +49,8 @@ internal partial class Simulation {
 			for (var y = 0; y < this.moduleFaces[i].Slots.GetLength(0); y++) {
 				for (var x = 0; x < this.moduleFaces[i].Slots.GetLength(1); x++) {
 					if (this.moduleFaces[i].Slots[y, x] is Module module) {
+						var slot = new Slot(0, i, x, y);
+						module.Strike += (_, _) => AimlVoice.Program.sendInput($"OOB Strike {slot.Bomb} {slot.Face} {slot.X} {slot.Y}");
 						module.InitialiseHighlight();
 						if (module is NeedyModule needyModule)
 							needyModule.Initialise(i, x, y);
@@ -259,6 +261,12 @@ internal partial class Simulation {
 		}
 	}
 
+	/// <summary>Cancels any queued input actions.</summary>
+	public void CancelInputs() {
+		this.actionQueue.Clear();
+		this.queueTimer.Stop();
+	}
+
 	/// <summary>Returns the <see cref="ComponentReader"/> instance that handles the component at the specified point.</summary>
 	public ComponentReader? GetComponentReader(Quadrilateral quadrilateral) => this.GetComponent(quadrilateral)?.Reader;
 	/// <summary>Returns the <see cref="ComponentReader"/> instance that handles the component in the specified slot.</summary>
@@ -358,7 +366,7 @@ internal partial class Simulation {
 	internal void SetAlarmClock(bool value) {
 		Message($"Turned alarm clock {(value ? "on" : "off")}");
 		isAlarmClockOn = value;
-		AimlVoice.Program.sendInput($"OOB DefuserSocketMessage AlarmClock {value}");
+		AimlVoice.Program.sendInput($"OOB AlarmClock {value}");
 	}
 
 	private enum FocusStates {
@@ -419,6 +427,8 @@ internal partial class Simulation {
 		public int X;
 		public int Y;
 		protected bool[,] SelectableGrid { get; }
+
+		public event EventHandler? Strike;
 
 		public Module(ComponentReader reader, int selectableWidth, int selectableHeight) : base(reader) {
 			NextID++;
@@ -483,6 +493,7 @@ internal partial class Simulation {
 				this.LightState = ModuleLightState.Strike;
 				this.ResetLightTimer.Stop();
 				this.ResetLightTimer.Start();
+				this.Strike?.Invoke(this, EventArgs.Empty);
 			}
 		}
 
@@ -520,7 +531,7 @@ internal partial class Simulation {
 			this.faceNum = faceNum;
 			this.x = x;
 			this.y = y;
-			AimlVoice.Program.sendInput($"OOB DefuserSocketMessage NeedyStateChanged {this.faceNum} {this.x} {this.y} AwaitingActivation");
+			AimlVoice.Program.sendInput($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} AwaitingActivation");
 			this.Timer.Interval = 10000;
 			this.Timer.Start();
 		}
@@ -532,7 +543,7 @@ internal partial class Simulation {
 			this.IsActive = true;
 			Message($"{this.Reader.Name} activated with {this.baseTime} left.");
 			this.OnActivate();
-			AimlVoice.Program.sendInput($"OOB DefuserSocketMessage NeedyStateChanged {this.faceNum} {this.x} {this.y} Running");
+			AimlVoice.Program.sendInput($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} Running");
 		}
 
 		protected abstract void OnActivate();
@@ -544,10 +555,10 @@ internal partial class Simulation {
 			Message($"{this.Reader.Name} deactivated with {this.RemainingTime} left.");
 			if (this.AutoReset) {
 				this.Timer.Interval = 30000;
-				AimlVoice.Program.sendInput($"OOB DefuserSocketMessage NeedyStateChanged {this.faceNum} {this.x} {this.y} Cooldown");
+				AimlVoice.Program.sendInput($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} Cooldown");
 			} else {
 				this.Timer.Stop();
-				AimlVoice.Program.sendInput($"OOB DefuserSocketMessage NeedyStateChanged {this.faceNum} {this.x} {this.y} Terminated");
+				AimlVoice.Program.sendInput($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} Terminated");
 			}
 		}
 
@@ -589,7 +600,7 @@ internal partial class Simulation {
 			get {
 				var elapsed = this.stopwatch.ElapsedTicks;
 				var seconds = elapsed / Stopwatch.Frequency;
-				return new(Components.Timer.GameMode.Zen, (int) seconds, seconds < 60 ? (int) (elapsed / (Stopwatch.Frequency / 100) % 100) : 0, 0);
+				return new(GameMode.Zen, (int) seconds, seconds < 60 ? (int) (elapsed / (Stopwatch.Frequency / 100) % 100) : 0, 0);
 			}
 		}
 		internal override string DetailsString => this.Details.ToString();

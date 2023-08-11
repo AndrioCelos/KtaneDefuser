@@ -205,6 +205,14 @@ public class DefuserConnector : IDisposable {
 			this.SendMessage(new InputCommandMessage(actions));
 	}
 
+	/// <summary>Cancels any queued input actions.</summary>
+	public void CancelInputs() {
+		if (this.simulation is not null)
+			this.simulation.CancelInputs();
+		else
+			this.SendMessage(new CancelCommandMessage());
+	}
+
 	/// <summary>If in a simulation, solves the current module.</summary>
 	public void CheatSolve() {
 		if (this.simulation is null)
