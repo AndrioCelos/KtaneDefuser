@@ -4,56 +4,56 @@ using BombDefuserConnectorApi;
 
 namespace BombDefuserScripts;
 internal static class Utils {
-	public static Point[] CurrentModulePoints { get; } = new Point[] { new( 836,  390), new(1120,  390), new( 832,  678), new(1124,  678) };
-	private static readonly Point[][] modulePointsLists = new[] {
-		new Point[] { new(220, 100), new(496, 100), new(193, 359), new(479, 359) },
-		new Point[] { new(535, 100), new(806, 101), new(522, 359), new(801, 360) },
-		new Point[] { new(840, 101), new(1113, 101), new(836, 360), new(1119, 360) },
-		new Point[] { new(1147, 101), new(1407, 101), new(1154, 360), new(1421, 360) },
-		new Point[] { new(1456, 102), new(1718, 102), new(1474, 360), new(1745, 360) },
-		new Point[] { new(190, 392), new(477, 392), new(160, 678), new(459, 678) },
-		new Point[] { new(520, 392), new(800, 392), new(501, 677), new(794, 677) },
-		CurrentModulePoints,
-		new Point[] { new(1155, 390), new(1425, 390), new(1163, 676), new(1442, 676) },
-		new Point[] { new(1476, 390), new(1748, 390), new(1497, 676), new(1779, 676) },
-		new Point[] { new(157, 706), new(457, 705), new(124, 1019), new(436, 1018) },
-		new Point[] { new(501, 705), new(794, 705), new(481, 1018), new(787, 1017) },
-		new Point[] { new(829, 705), new(1125, 704), new(828, 1018), new(1134, 1016) },
-		new Point[] { new(1164, 704), new(1444, 704), new(1173, 1016), new(1465, 1015) },
-		new Point[] { new(1499, 704), new(1782, 703), new(1521, 1015), new(1816, 1014) }
+	public static Quadrilateral CurrentModuleArea { get; } = new( 836,  390, 1120,  390,  832,  678, 1124,  678);
+	private static readonly Quadrilateral[] moduleAreas = new Quadrilateral[] {
+		new( 220,  100,  496,  100,  193,  359,  479,  359),
+		new( 535,  100,  806,  101,  522,  359,  801,  360),
+		new( 840,  101, 1113,  101,  836,  360, 1119,  360),
+		new(1147,  101, 1407,  101, 1154,  360, 1421,  360),
+		new(1456,  102, 1718,  102, 1474,  360, 1745,  360),
+		new( 190,  392,  477,  392,  160,  678,  459,  678),
+		new( 520,  392,  800,  392,  501,  677,  794,  677),
+		new( 836,  390, 1120,  390,  832,  678, 1124,  678),
+		new(1155,  390, 1425,  390, 1163,  676, 1442,  676),
+		new(1476,  390, 1748,  390, 1497,  676, 1779,  676),
+		new( 157,  706,  457,  705,  124, 1019,  436, 1018),
+		new( 501,  705,  794,  705,  481, 1018,  787, 1017),
+		new( 829,  705, 1125,  704,  828, 1018, 1134, 1016),
+		new(1164,  704, 1444,  704, 1173, 1016, 1465, 1015),
+		new(1499,  704, 1782,  703, 1521, 1015, 1816, 1014)
 	};
-	private static readonly Point[][] bombPointsLists = new[] {
-		new Point[] { new(572, 291), new(821, 291), new(559, 534), new(816, 534) },
-		new Point[] { new(852, 291), new(1096, 291), new(848, 534), new(1101, 534) },
-		new Point[] { new(1127, 292), new(1369, 292), new(1134, 533), new(1383, 533) },
-		new Point[] { new(558, 558), new(816, 558), new(544, 822), new(811, 822) },
-		new Point[] { new(848, 558), new(1099, 558), new(845, 821), new(1106, 821) },
-		new Point[] { new(1134, 558), new(1385, 558), new(1141, 821), new(1400, 821) }
+	private static readonly Quadrilateral[] bombAreas = new Quadrilateral[] {
+		new( 572,  291,  821,  291,  559,  534,  816,  534),
+		new( 852,  291, 1096,  291,  848,  534, 1101,  534),
+		new(1127,  292, 1369,  292, 1134,  533, 1383,  533),
+		new( 558,  558,  816,  558,  544,  822,  811,  822),
+		new( 848,  558, 1099,  558,  845,  821, 1106,  821),
+		new(1134,  558, 1385,  558, 1141,  821, 1400,  821)
 	};
-	internal static readonly Point[][] sideWidgetPointsLists = new[] {
-		new Point[] { new( 813,  465), new( 817,  228), new( 988,  465), new( 988,  228) },
-		new Point[] { new( 988,  465), new( 988,  228), new(1163,  465), new(1158,  228) },
-		new Point[] { new( 808,  772), new( 812,  515), new( 988,  772), new( 988,  515) },
-		new Point[] { new( 988,  772), new( 988,  515), new(1168,  772), new(1164,  515) }
+	internal static readonly Quadrilateral[] sideWidgetAreas = new Quadrilateral[] {
+		new( 813,  465,  817,  228,  988,  465,  988,  228),
+		new( 988,  465,  988,  228, 1163,  465, 1158,  228),
+		new( 808,  772,  812,  515,  988,  772,  988,  515),
+		new( 988,  772,  988,  515, 1168,  772, 1164,  515)
 	};
-	internal static readonly Point[][] topBottomWidgetPointsLists = new[] {
-		new Point[] { new( 588,  430), new( 784,  430), new( 587,  541), new( 784,  541) },
-		new Point[] { new( 824,  430), new(1140,  430), new( 824,  541), new(1140,  541) },
-		new Point[] { new(1181,  430), new(1389,  430), new(1182,  540), new(1390,  541) },
-		new Point[] { new( 580,  566), new( 783,  566), new( 578,  678), new( 782,  678) },
-		new Point[] { new( 821,  566), new(1140,  566), new( 821,  678), new(1140,  678) },
-		new Point[] { new(1181,  566), new(1390,  566), new(1182,  678), new(1392,  678) }
+	internal static readonly Quadrilateral[] topBottomWidgetAreas = new Quadrilateral[] {
+		new( 588,  430,  784,  430,  587,  541,  784,  541),
+		new( 824,  430, 1140,  430,  824,  541, 1140,  541),
+		new(1181,  430, 1389,  430, 1182,  540, 1390,  541),
+		new( 580,  566,  783,  566,  578,  678,  782,  678),
+		new( 821,  566, 1140,  566,  821,  678, 1140,  678),
+		new(1181,  566, 1390,  566, 1182,  678, 1392,  678)
 	};
 
 	/// <summary>Returns the quadrilateral representing the location of the specified slot on the screen. The slot should be on the side of the bomb we're already looking at.</summary>
-	public static IReadOnlyList<Point> GetPoints(Slot slot) {
+	public static Quadrilateral GetPoints(Slot slot) {
 		if (GameState.Current.FocusState == FocusState.Module) {
 			var selectedSlot = GameState.Current.SelectedFace.SelectedSlot;
 			var dx = slot.X - selectedSlot.X;
 			var dy = slot.Y - selectedSlot.Y;
-			return modulePointsLists[(dy + 1) * 5 + dx + 2];
+			return moduleAreas[(dy + 1) * 5 + dx + 2];
 		} else
-			return bombPointsLists[slot.Y * 3 + slot.X];
+			return bombAreas[slot.Y * 3 + slot.X];
 	}
 
 	/// <summary>Returns the number represented by the specified ordinal word.</summary>

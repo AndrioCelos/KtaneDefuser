@@ -249,22 +249,20 @@ public class DefuserConnector : IDisposable {
 	public LightsState GetLightsState(Image<Rgba32> screenshot) => this.simulation is not null ? LightsState.On : ImageUtils.GetLightsState(screenshot);
 
 	/// <summary>Returns the light state of the module in the specified polygon.</summary>
-	public ModuleLightState GetModuleLightState(Image<Rgba32> screenshotBitmap, IReadOnlyList<Point> points)
+	public ModuleLightState GetModuleLightState(Image<Rgba32> screenshotBitmap, Quadrilateral quadrilateral)
 		=> this.simulation is not null
-			? this.simulation.GetLightState(points[0])
-			: ImageUtils.GetLightState(screenshotBitmap, points);
+			? this.simulation.GetLightState(quadrilateral)
+			: ImageUtils.GetLightState(screenshotBitmap, quadrilateral);
 
 	/// <summary>Returns the <see cref="ComponentReader"/> singleton instance of the specified type.</summary>
 	public static T GetComponentReader<T>() where T : ComponentReader => (T) componentReaders[typeof(T)];
 
 	/// <summary>Identifies the component in the specified polygon and returns the corresponding <see cref="ComponentReader"/> instance, or <see langword="null"/> if it is a blank component.</summary>
-	public ComponentReader? GetComponentReader(Image<Rgba32> screenshotBitmap, IReadOnlyList<Point> points) {
+	public ComponentReader? GetComponentReader(Image<Rgba32> screenshotBitmap, Quadrilateral quadrilateral) {
 		if (this.simulation is not null)
-			return this.simulation.GetComponentReader(points[0]);
+			return this.simulation.GetComponentReader(quadrilateral);
 
-		var bitmap = ImageUtils.PerspectiveUndistort(screenshotBitmap,
-			points,
-			InterpolationMode.NearestNeighbour);
+		var bitmap = ImageUtils.PerspectiveUndistort(screenshotBitmap, quadrilateral, InterpolationMode.NearestNeighbour);
 
 		if (ImageUtils.CheckForBlankComponent(bitmap))
 			return null;
@@ -294,13 +292,11 @@ public class DefuserConnector : IDisposable {
 	}
 
 	/// <summary>Identifies the widget in the specified polygon and returns the corresponding <see cref="WidgetReader"/> instance, or <see langword="null"/> if no widget is found there.</summary>
-	public WidgetReader? GetWidgetReader(Image<Rgba32> screenshotBitmap, IReadOnlyList<Point> points) {
+	public WidgetReader? GetWidgetReader(Image<Rgba32> screenshotBitmap, Quadrilateral quadrilateral) {
 		if (this.simulation is not null)
-			return this.simulation.GetWidgetReader(points[0]);
+			return this.simulation.GetWidgetReader(quadrilateral);
 
-		var bitmap = ImageUtils.PerspectiveUndistort(screenshotBitmap,
-			points,
-			InterpolationMode.NearestNeighbour);
+		var bitmap = ImageUtils.PerspectiveUndistort(screenshotBitmap, quadrilateral, InterpolationMode.NearestNeighbour);
 		var pixelCounts = WidgetReader.GetPixelCounts(bitmap, 0);
 
 		var ratings = new List<(WidgetReader reader, float rating)>();
@@ -312,10 +308,10 @@ public class DefuserConnector : IDisposable {
 	}
 
 	/// <summary>Reads component data from the module in the specified polygon using the specified <see cref="ComponentReader"/>.</summary>
-	public T ReadComponent<T>(Image<Rgba32> screenshot, LightsState lightsState, ComponentReader<T> reader, IReadOnlyList<Point> polygon) where T : notnull {
+	public T ReadComponent<T>(Image<Rgba32> screenshot, LightsState lightsState, ComponentReader<T> reader, Quadrilateral quadrilateral) where T : notnull {
 		if (this.simulation is not null)
-			return this.simulation.ReadComponent<T>(polygon[0]);
-		var image = ImageUtils.PerspectiveUndistort(screenshot, polygon, InterpolationMode.NearestNeighbour);
+			return this.simulation.ReadComponent<T>(quadrilateral);
+		var image = ImageUtils.PerspectiveUndistort(screenshot, quadrilateral, InterpolationMode.NearestNeighbour);
 #if DEBUG
 		SaveDebugImage(image, reader.Name);
 #endif
@@ -324,10 +320,10 @@ public class DefuserConnector : IDisposable {
 	}
 
 	/// <summary>Reads widget data from the widget in the specified polygon using the specified <see cref="WidgetReader"/>.</summary>
-	public T ReadWidget<T>(Image<Rgba32> screenshot, LightsState lightsState, WidgetReader<T> reader, IReadOnlyList<Point> polygon) where T : notnull {
+	public T ReadWidget<T>(Image<Rgba32> screenshot, LightsState lightsState, WidgetReader<T> reader, Quadrilateral quadrilateral) where T : notnull {
 		if (this.simulation is not null)
-			return this.simulation.ReadWidget<T>(polygon[0]);
-		var image = ImageUtils.PerspectiveUndistort(screenshot, polygon, InterpolationMode.NearestNeighbour);
+			return this.simulation.ReadWidget<T>(quadrilateral);
+		var image = ImageUtils.PerspectiveUndistort(screenshot, quadrilateral, InterpolationMode.NearestNeighbour);
 #if DEBUG
 		SaveDebugImage(image, reader.Name);
 #endif
@@ -351,16 +347,16 @@ public class DefuserConnector : IDisposable {
 	}
 
 	[Obsolete($"This method is being replaced with {nameof(ReadComponent)} and {nameof(ReadWidget)}.")]
-	internal string? Read(string readerName, Image<Rgba32> screenshot, Point[] points) {
+	internal string? Read(string readerName, Image<Rgba32> screenshot, Quadrilateral quadrilateral) {
 		if (this.simulation is not null)
 			return typeof(ComponentReader).Assembly.GetType($"{nameof(BombDefuserConnector)}.{nameof(Components)}.{readerName}", false, true) is Type t
-				? this.simulation.ReadModule(t.Name, points[0])
+				? this.simulation.ReadModule(t.Name, quadrilateral)
 				: typeof(WidgetReader).Assembly.GetType($"{nameof(BombDefuserConnector)}.{nameof(Widgets)}.{readerName}", false, true) is Type t2
-				? this.simulation.ReadWidget(t2.Name, points[0])
+				? this.simulation.ReadWidget(t2.Name, quadrilateral)
 				: throw new ArgumentException($"No such command, module or widget is known: {readerName}");
 
 		var lightsState = ImageUtils.GetLightsState(screenshot);
-		var image = ImageUtils.PerspectiveUndistort(screenshot, points, InterpolationMode.NearestNeighbour);
+		var image = ImageUtils.PerspectiveUndistort(screenshot, quadrilateral, InterpolationMode.NearestNeighbour);
 		Image<Rgba32>? debugImage = null;
 #if DEBUG
 		SaveDebugImage(image, readerName);

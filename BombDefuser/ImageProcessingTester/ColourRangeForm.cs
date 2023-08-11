@@ -1,9 +1,12 @@
 ﻿
+using System.Configuration;
 using BombDefuserConnector;
 
 namespace ImageProcessingTester;
 public partial class ColourRangeForm : Form {
 	private Bitmap? originalImage;
+	private Rectangle imageRectangle;
+	private bool autoRedraw = true;
 
 	public ColourRangeForm() {
 		InitializeComponent();
@@ -35,6 +38,17 @@ public partial class ColourRangeForm : Form {
 
 	public void Redraw() {
 		if (originalImage is null) return;
+
+		var scaleX = (double) pictureBox1.Width / originalImage.Width;
+		var scaleY = (double) pictureBox1.Height / originalImage.Height;
+		if (scaleX < scaleY) {
+			var height = (int) Math.Round(originalImage.Height * scaleX);
+			imageRectangle = new(0, (pictureBox1.Height - height) / 2, pictureBox1.Width, height);
+		} else {
+			var width = (int) Math.Round(originalImage.Width * scaleY);
+			imageRectangle = new((pictureBox1.Width - width) / 2, 0, width, pictureBox1.Height);
+		}
+
 		var bitmap = new Bitmap(originalImage);
 		if (comboBox1.SelectedIndex == 1) {
 			for (int y = 0; y < bitmap.Height; y++) {
@@ -82,7 +96,7 @@ public partial class ColourRangeForm : Form {
 	}
 
 	private void numericUpDown1_ValueChanged(object sender, EventArgs e) {
-		Redraw();
+		if (autoRedraw) Redraw();
 	}
 
 	private void ColourRangeForm_Load(object sender, EventArgs e) {
@@ -103,6 +117,53 @@ public partial class ColourRangeForm : Form {
 			this.originalImage = new Bitmap(image);
 			RecalculateAverage();
 			Redraw();
+		}
+	}
+
+	private void pictureBox1_MouseDown(object sender, MouseEventArgs e) {
+		if (originalImage is null) return;
+		var x = (e.X - imageRectangle.X) * originalImage.Width / imageRectangle.Width;
+		var y = (e.Y - imageRectangle.Y) * originalImage.Height / imageRectangle.Height;
+		if (x >= 0 && x < originalImage.Width && y >= 0 && y < originalImage.Height) {
+			var pixel = originalImage.GetPixel(x, y);
+			if (e.Button == MouseButtons.Left) {
+				this.label5.Text = this.comboBox1.SelectedIndex == 1 ? HsvColor.FromColor(pixel).ToString() : pixel.ToString();
+			} else if (e.Button == MouseButtons.Right) {
+				autoRedraw = false;
+				switch (comboBox1.SelectedIndex) {
+					case 0:
+						numericUpDown1.Value = Math.Min(ModifierKeys.HasFlag(Keys.Alt) ? 255 : numericUpDown1.Value, pixel.R);
+						numericUpDown2.Value = Math.Max(ModifierKeys.HasFlag(Keys.Alt) ? 0 : numericUpDown2.Value, pixel.R);
+						numericUpDown3.Value = Math.Min(ModifierKeys.HasFlag(Keys.Alt) ? 255 : numericUpDown3.Value, pixel.G);
+						numericUpDown4.Value = Math.Max(ModifierKeys.HasFlag(Keys.Alt) ? 0 : numericUpDown4.Value, pixel.G);
+						numericUpDown5.Value = Math.Min(ModifierKeys.HasFlag(Keys.Alt) ? 255 : numericUpDown5.Value, pixel.B);
+						numericUpDown6.Value = Math.Max(ModifierKeys.HasFlag(Keys.Alt) ? 0 : numericUpDown6.Value, pixel.B);
+						break;
+					case 1:
+						var hsv = HsvColor.FromColor(pixel);
+						if (ModifierKeys.HasFlag(Keys.Alt)) {
+							numericUpDown1.Value = (decimal) Math.Floor(hsv.H);
+							numericUpDown2.Value = (decimal) Math.Ceiling(hsv.H);
+						} else if (numericUpDown2.Value < numericUpDown1.Value) {
+							var midpoint = (numericUpDown1.Value + numericUpDown2.Value) / 2;
+							if ((decimal) hsv.H < midpoint) numericUpDown2.Value = Math.Max(numericUpDown2.Value, (decimal) hsv.H);
+							else numericUpDown1.Value = Math.Min(numericUpDown1.Value, (decimal) hsv.H);
+						} else {
+							numericUpDown1.Value = Math.Min(numericUpDown1.Value, (decimal) hsv.H);
+							numericUpDown2.Value = Math.Max(numericUpDown2.Value, (decimal) hsv.H);
+						}
+						numericUpDown3.Value = Math.Min(ModifierKeys.HasFlag(Keys.Alt) ? 100 : numericUpDown3.Value, (decimal) Math.Floor(hsv.S * 100));
+						numericUpDown4.Value = Math.Max(ModifierKeys.HasFlag(Keys.Alt) ? 0 : numericUpDown4.Value, (decimal) Math.Ceiling(hsv.S * 100));
+						numericUpDown5.Value = Math.Min(ModifierKeys.HasFlag(Keys.Alt) ? 100 : numericUpDown5.Value, (decimal) Math.Floor(hsv.V * 100));
+						numericUpDown6.Value = Math.Max(ModifierKeys.HasFlag(Keys.Alt) ? 0 : numericUpDown6.Value, (decimal) Math.Ceiling(hsv.V * 100));
+						break;
+					case 2:
+						numericUpDown7.Value = Math.Max(ModifierKeys.HasFlag(Keys.Alt) ? 768 : numericUpDown7.Value, Math.Abs(pixel.R - (int) numericUpDown1.Value) + Math.Abs(pixel.G - (int) numericUpDown3.Value) + Math.Abs(pixel.B - (int) numericUpDown5.Value));
+						break;
+				}
+				autoRedraw = true;
+				Redraw();
+			}
 		}
 	}
 }

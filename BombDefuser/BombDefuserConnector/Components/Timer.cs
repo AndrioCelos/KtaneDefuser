@@ -12,25 +12,24 @@ public class Timer : ComponentReader<Timer.ReadData> {
 	public override string Name => "Timer";
 	protected internal override bool UsesNeedyFrame => false;
 
-	protected internal override float IsModulePresent(Image<Rgba32> image) {
-		var timerCorners = ImageUtils.FindCorners(image, new(16, 96, 224, 144), isTimerBackground, 0);
-		return timerCorners is not null ? ImageUtils.CheckSimilarity(image, Samples) * 1.5f : 0;
-	}
+	protected internal override float IsModulePresent(Image<Rgba32> image)
+		=> ImageUtils.TryFindCorners(image, new(16, 96, 224, 144), isTimerBackground, 0, out _) ? ImageUtils.CheckSimilarity(image, Samples) * 1.5f : 0;
 
 	private static bool isTimerBackground(Rgba32 c) => c.G < 12 && c.B < 12;
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		var timerCorners = ImageUtils.FindCorners(image, new(16, 96, 224, 144), isTimerBackground, 0) ?? throw new ArgumentException("Can't find timer display corners");
+		var timerCorners = ImageUtils.FindCorners(image, new(16, 96, 224, 144), isTimerBackground, 0);
 		using var timerBitmap = ImageUtils.PerspectiveUndistort(image, timerCorners, InterpolationMode.NearestNeighbour, new(256, 128));
 
-		Point[]? strikesCorners = ImageUtils.FindCorners(image, new(88, 16, 96, 64), isTimerBackground, 0);
-		using var strikesBitmap = strikesCorners is not null ? ImageUtils.PerspectiveUndistort(image, strikesCorners, InterpolationMode.NearestNeighbour, new(128, 64)) : null;
+		using var strikesBitmap = ImageUtils.TryFindCorners(image, new(88, 16, 96, 64), isTimerBackground, 0, out var strikesCorners)
+			? ImageUtils.PerspectiveUndistort(image, strikesCorners, InterpolationMode.NearestNeighbour, new(128, 64))
+			: null;
 
 		if (debugImage is not null) {
 			ImageUtils.DebugDrawPoints(debugImage, timerCorners);
 			debugImage.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Transparent }).DrawImage(timerBitmap, new Point(0, 256), 1));
 			if (strikesBitmap is not null) {
-				ImageUtils.DebugDrawPoints(debugImage, strikesCorners!);
+				ImageUtils.DebugDrawPoints(debugImage, strikesCorners);
 				debugImage.Mutate(c => c.Brightness(1.5f).DrawImage(strikesBitmap, new Point(0, 384), 1));
 			}
 		}

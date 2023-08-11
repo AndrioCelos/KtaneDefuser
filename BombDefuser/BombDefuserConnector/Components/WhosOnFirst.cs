@@ -45,10 +45,13 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		var displayBorderRect = ImageUtils.FindEdges(image, new(28, 22, 140, 50), c => c.R < 44 && c.G < 44 && c.B < 44);
 		displayBorderRect.Inflate(-4, -4);
-		var textRect = ImageUtils.FindEdges(image, displayBorderRect, c => c.B >= 192);
 
-		debugImage?.Mutate(c => c.Draw(Color.Red, 1, displayBorderRect).Draw(Color.Lime, 1, textRect));
-		var displayText = textRect.Height == 0 ? "" : displayRecogniser.Recognise(image, textRect);
+		string displayText;
+		if (ImageUtils.TryFindEdges(image, displayBorderRect, c => c.B >= 192, out var textRect)) {
+			debugImage?.Mutate(c => c.Draw(Color.Red, 1, displayBorderRect).Draw(Color.Lime, 1, textRect));
+			displayText = displayRecogniser.Recognise(image, textRect);
+		} else
+			displayText = "";
 
 		bool isKeyBackground(Rgba32 c) => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is HsvColor hsv && hsv.H is >= 30 and <= 45 && hsv.S is >= 0.2f and <= 0.4f;
 

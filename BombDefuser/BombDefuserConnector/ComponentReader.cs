@@ -36,15 +36,15 @@ public abstract class ComponentReader {
 
 	/// <summary>Returns the number displayed on the module's needy timer, or null if it is blank.</summary>
 	protected static int? ReadNeedyTimer(Image<Rgba32> image, LightsState lightsState, Image<Rgba32>? debugImage) {
-		var bezelCorners = ImageUtils.FindCorners(image, new(80, 16, 96, 64), c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is var hsv && hsv.H >= (lightsState == LightsState.Emergency ? 15 : 45) && hsv.H <= 150 && hsv.S <= 0.25f && hsv.V is >= 0.3f and <= 0.9f, 4) ?? throw new ArgumentException("Can't find needy timer bezel corners");
+		var bezelCorners = ImageUtils.FindCorners(image, new(80, 16, 96, 64), c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is var hsv && hsv.H >= (lightsState == LightsState.Emergency ? 15 : 45) && hsv.H <= 150 && hsv.S <= 0.25f && hsv.V is >= 0.3f and <= 0.9f, 4);
 		debugImage?.DebugDrawPoints(bezelCorners);
-		var left = Math.Min(bezelCorners[0].X, bezelCorners[2].X);
-		var top = Math.Min(bezelCorners[0].Y, bezelCorners[1].Y);
-		var right = Math.Max(bezelCorners[1].X, bezelCorners[3].X) + 1;
-		var bottom = Math.Max(bezelCorners[2].Y, bezelCorners[3].Y) + 1;
+		var left = Math.Min(bezelCorners.TopLeft.X, bezelCorners.BottomLeft.X);
+		var top = Math.Min(bezelCorners.TopLeft.Y, bezelCorners.TopRight.Y);
+		var right = Math.Max(bezelCorners.TopRight.X, bezelCorners.BottomRight.X);
+		var bottom = Math.Max(bezelCorners.BottomLeft.Y, bezelCorners.BottomRight.Y);
 		var bezelRectangle = new Rectangle(left, top, right - left, bottom - top);
 		bezelRectangle.Inflate(-4, -4);
-		var displayCorners = ImageUtils.FindCorners(image, bezelRectangle, c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is var hsv && (hsv.H is >= 345 or <= 15 && hsv.S >= 0.75f) || hsv.V <= 0.10f, 4) ?? throw new ArgumentException("Can't find needy timer corners");
+		var displayCorners = ImageUtils.FindCorners(image, bezelRectangle, c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is var hsv && (hsv.H is >= 345 or <= 15 && hsv.S >= 0.75f) || hsv.V <= 0.10f, 4);
 		debugImage?.DebugDrawPoints(displayCorners);
 
 		var displayImage = ImageUtils.PerspectiveUndistort(image, displayCorners, InterpolationMode.NearestNeighbour, new(128, 64));

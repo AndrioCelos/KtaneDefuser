@@ -6,25 +6,25 @@ namespace BombDefuserScripts;
 
 [AimlInterface]
 internal static class Edgework {
-	internal static void RegisterWidget(AimlAsyncContext context, WidgetReader? widget, Image<Rgba32> screenshot, LightsState lightsState, Point[] polygon) {
+	internal static void RegisterWidget(AimlAsyncContext context, WidgetReader? widget, Image<Rgba32> screenshot, LightsState lightsState, Quadrilateral quadrilateral) {
 		if (widget is null) return;
 
 		context.RequestProcess.Log(LogLevel.Info, $"Registering widget: {widget.Name}");
 		switch (widget) {
 			case BatteryHolder batteryHolder:
 				GameState.Current.BatteryHolderCount++;
-				GameState.Current.BatteryCount += DefuserConnector.Instance.ReadWidget(screenshot, lightsState, batteryHolder, polygon);
+				GameState.Current.BatteryCount += DefuserConnector.Instance.ReadWidget(screenshot, lightsState, batteryHolder, quadrilateral);
 				break;
 			case Indicator indicator:
-				var data = DefuserConnector.Instance.ReadWidget(screenshot, lightsState, indicator, polygon);
+				var data = DefuserConnector.Instance.ReadWidget(screenshot, lightsState, indicator, quadrilateral);
 				GameState.Current.Indicators.Add(new(data.IsLit, data.Label));
 				break;
 			case PortPlate portPlate:
-				var ports = DefuserConnector.Instance.ReadWidget(screenshot, lightsState, portPlate, polygon);
+				var ports = DefuserConnector.Instance.ReadWidget(screenshot, lightsState, portPlate, quadrilateral);
 				GameState.Current.PortPlates.Add((PortTypes) ports.Value);
 				break;
 			case SerialNumber serialNumber:
-				GameState.Current.SerialNumber = DefuserConnector.Instance.ReadWidget(screenshot, lightsState, serialNumber, polygon);
+				GameState.Current.SerialNumber = DefuserConnector.Instance.ReadWidget(screenshot, lightsState, serialNumber, quadrilateral);
 				break;
 		}
 	}
@@ -32,24 +32,23 @@ internal static class Edgework {
 	internal static void RegisterWidgets(AimlAsyncContext context, bool isSide, Image<Rgba32> screenshot) {
 		var lightsState = DefuserConnector.Instance.GetLightsState(screenshot);
 		if (lightsState != LightsState.On) throw new ArgumentException($"Can't identify widgets on lights state {lightsState}.");
-		Point[][] polygons;
+		Quadrilateral[] quadrilaterals;
 		if (isSide) {
 			var adjustment = DefuserConnector.Instance.GetSideWidgetAdjustment(screenshot);
-			polygons = new Point[4][];
-			for (int i = 0; i < polygons.Length; i++) {
-				var polygon = new Point[4];
-				for (int j = 0; j < 4; j++) {
-					polygon[j] = Utils.sideWidgetPointsLists[i][j];
-					polygon[j].X += adjustment;
-				}
-				polygons[i] = polygon;
+			quadrilaterals = new Quadrilateral[4];
+			for (int i = 0; i < quadrilaterals.Length; i++) {
+				var quadrilateral = Utils.sideWidgetAreas[i];
+				quadrilateral.TopLeft.X += adjustment;
+				quadrilateral.TopRight.X += adjustment;
+				quadrilateral.BottomLeft.X += adjustment;
+				quadrilateral.BottomRight.X += adjustment;
 			}
 		} else
-			polygons = Utils.topBottomWidgetPointsLists;
-		var widgets = polygons.Select(p => DefuserConnector.Instance.GetWidgetReader(screenshot, p)).ToList();
+			quadrilaterals = Utils.topBottomWidgetAreas;
+		var widgets = quadrilaterals.Select(p => DefuserConnector.Instance.GetWidgetReader(screenshot, p)).ToList();
 		for (var i = 0; i < widgets.Count; i++) {
 			var widget = widgets[i];
-			RegisterWidget(context, widget, screenshot, lightsState, polygons[i]);  // TODO: This assumes the vanilla bomb layout. It will need to be updated for other layouts.
+			RegisterWidget(context, widget, screenshot, lightsState, quadrilaterals[i]);  // TODO: This assumes the vanilla bomb layout. It will need to be updated for other layouts.
 		}
 	}
 

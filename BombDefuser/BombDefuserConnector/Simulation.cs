@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -260,13 +260,13 @@ internal partial class Simulation {
 	}
 
 	/// <summary>Returns the <see cref="ComponentReader"/> instance that handles the component at the specified point.</summary>
-	public ComponentReader? GetComponentReader(Point point1) => this.GetComponent(point1)?.Reader;
+	public ComponentReader? GetComponentReader(Quadrilateral quadrilateral) => this.GetComponent(quadrilateral)?.Reader;
 	/// <summary>Returns the <see cref="ComponentReader"/> instance that handles the component in the specified slot.</summary>
 	public ComponentReader? GetComponentReader(Slot slot) => this.moduleFaces[slot.Face].Slots[slot.Y, slot.X]?.Reader;
 
 	/// <summary>Reads component data of the specified type from the component at the specified point.</summary>
-	public T ReadComponent<T>(Point point1) where T : notnull {
-		var component = this.GetComponent(point1) ?? throw new ArgumentException("Attempted to read an empty component slot.");
+	public T ReadComponent<T>(Quadrilateral quadrilateral) where T : notnull {
+		var component = this.GetComponent(quadrilateral) ?? throw new ArgumentException("Attempted to read an empty component slot.");
 		return component is TimerComponent timerComponent
 			? timerComponent.Details is T t ? t : throw new ArgumentException("Wrong type for specified component.")
 			: component switch {
@@ -276,28 +276,28 @@ internal partial class Simulation {
 			};
 	}
 	[Obsolete("This method is being replaced with the generic overload.")]
-	public string ReadModule(string type, Point point1) {
-		var component = this.GetComponent(point1) ?? throw new ArgumentException("Attempt to read blank component");
+	public string ReadModule(string type, Quadrilateral quadrilateral) {
+		var component = this.GetComponent(quadrilateral) ?? throw new ArgumentException("Attempt to read blank component");
 		return component.Reader.GetType().Name.Equals(type, StringComparison.OrdinalIgnoreCase)
 			? component.DetailsString
 			: throw new ArgumentException("Wrong type for specified component.");
 	}
 
 	/// <summary>Returns the light state of the module at the specified point.</summary>
-	public ModuleLightState GetLightState(Point point1) => this.GetComponent(point1) is Module module && module is not NeedyModule ? module.LightState : ModuleLightState.Off;
+	public ModuleLightState GetLightState(Quadrilateral quadrilateral) => this.GetComponent(quadrilateral) is Module module && module is not NeedyModule ? module.LightState : ModuleLightState.Off;
 
-	private BombComponent? GetComponent(Point point1) {
+	private BombComponent? GetComponent(Quadrilateral quadrilateral) {
 		switch (this.focusState) {
 			case FocusStates.Bomb: {
 				var face = this.currentFace switch { BombFaces.Face1 => this.moduleFaces[0], BombFaces.Face2 => this.moduleFaces[1], _ => throw new InvalidOperationException($"Can't identify modules from face {this.currentFace}.") };
-				var slotX = point1.X switch { 558 or 572 => 0, 848 or 852 => 1, 1127 or 1134 => 2, _ => throw new ArgumentException($"Unknown x coordinate: {point1.X}") };
-				var slotY = point1.Y switch { 291 or 292 => 0, 558 => 1, _ => throw new ArgumentException($"Unknown y coordinate: {point1.Y}") };
+				var slotX = quadrilateral.TopLeft.X switch { 558 or 572 => 0, 848 or 852 => 1, 1127 or 1134 => 2, _ => throw new ArgumentException($"Unknown x coordinate: {quadrilateral.TopLeft.X}") };
+				var slotY = quadrilateral.TopLeft.Y switch { 291 or 292 => 0, 558 => 1, _ => throw new ArgumentException($"Unknown y coordinate: {quadrilateral.TopLeft.Y}") };
 				return face.Slots[slotY, slotX];
 			}
 			case FocusStates.Module: {
 				var face = this.SelectedFace;
-				var slotDX = point1.X switch { <= 220 => -2, <= 535 => -1, <= 840 => 0, <= 1164 => 1, _ => 2 };
-				var slotDY = point1.Y switch { <= 102 => -1, <= 393 => 0, _ => 1 };
+				var slotDX = quadrilateral.TopLeft.X switch { <= 220 => -2, <= 535 => -1, <= 840 => 0, <= 1164 => 1, _ => 2 };
+				var slotDY = quadrilateral.TopLeft.Y switch { <= 102 => -1, <= 393 => 0, _ => 1 };
 				return face.Slots[face.Y + slotDY, face.X + slotDX];
 			}
 			default:
@@ -306,33 +306,33 @@ internal partial class Simulation {
 	}
 
 	/// <summary>Returns the <see cref="WidgetReader"/> instance that handles the widget at the specified point.</summary>
-	public WidgetReader? GetWidgetReader(Point point1) => this.GetWidget(point1)?.Reader;
+	public WidgetReader? GetWidgetReader(Quadrilateral quadrilateral) => this.GetWidget(quadrilateral)?.Reader;
 
 	/// <summary>Reads widget data of the specified type from the widget at the specified point.</summary>
-	public T ReadWidget<T>(Point point1) where T : notnull {
-		var widget = this.GetWidget(point1) ?? throw new ArgumentException("Attempt to read blank widget.");
+	public T ReadWidget<T>(Quadrilateral quadrilateral) where T : notnull {
+		var widget = this.GetWidget(quadrilateral) ?? throw new ArgumentException("Attempt to read blank widget.");
 		return widget is Widget<T> widget2 ? widget2.Details : throw new ArgumentException("Wrong type for specified widget.");
 	}
 	[Obsolete("This method is being replaced with the generic overload.")]
-	public string ReadWidget(string type, Point point1) {
-		var widget = this.GetWidget(point1) ?? throw new ArgumentException("Attempt to read blank widget.");
+	public string ReadWidget(string type, Quadrilateral quadrilateral) {
+		var widget = this.GetWidget(quadrilateral) ?? throw new ArgumentException("Attempt to read blank widget.");
 		return widget.Reader.GetType().Name.Equals(type, StringComparison.OrdinalIgnoreCase)
 			? widget.DetailsString
 			: throw new ArgumentException("Wrong type for specified widget.");
 	}
 
-	private Widget? GetWidget(Point point1) {
+	private Widget? GetWidget(Quadrilateral quadrilateral) {
 		switch (this.focusState) {
 			case FocusStates.Bomb: {
 				var face = this.currentFace switch { BombFaces.Side1 => this.widgetFaces[0], BombFaces.Side2 => this.widgetFaces[1], _ => this.ry switch { < -0.5f => this.widgetFaces[2], >= 0.5f => this.widgetFaces[3], _ => throw new InvalidOperationException($"Can't identify widgets from face {this.currentFace}.") } };
 				int slot;
 				if (face.Slots.Length == 4) {
-					var slotX = point1.X switch { < 900 => 0, _ => 1 };
-					var slotY = point1.Y switch { 465 => 0, 772 => 1, _ => throw new ArgumentException($"Unknown y coordinate: {point1.Y}") };
+					var slotX = quadrilateral.TopLeft.X switch { < 900 => 0, _ => 1 };
+					var slotY = quadrilateral.TopLeft.Y switch { 465 => 0, 772 => 1, _ => throw new ArgumentException($"Unknown y coordinate: {quadrilateral.TopLeft.Y}") };
 					slot = slotY * 2 + slotX;
 				} else {
-					var slotX = point1.X switch { <= 588 => 0, <= 824 => 1, _ => 2 };
-					var slotY = point1.Y switch { 430 => 0, 566 => 1, _ => throw new ArgumentException($"Unknown y coordinate: {point1.Y}") };
+					var slotX = quadrilateral.TopLeft.X switch { <= 588 => 0, <= 824 => 1, _ => 2 };
+					var slotY = quadrilateral.TopLeft.Y switch { 430 => 0, 566 => 1, _ => throw new ArgumentException($"Unknown y coordinate: {quadrilateral.TopLeft.Y}") };
 					slot = slotY * 3 + slotX;
 				}
 				return face.Slots[slot];

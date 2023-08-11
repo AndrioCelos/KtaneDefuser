@@ -8,7 +8,7 @@ using Point = SixLabors.ImageSharp.Point;
 
 namespace ImageProcessingTester;
 public partial class ClassificationForm : Form {
-	internal Image<Rgba32>? screenBitmap;
+	internal Image<Rgba32>? screenImage;
 
 	public ClassificationForm() {
 		InitializeComponent();
@@ -17,8 +17,8 @@ public partial class ClassificationForm : Form {
 
 	private void button1_Click(object sender, EventArgs e) {
 		if (openFileDialog.ShowDialog(this) == DialogResult.OK) {
-			screenBitmap = Image.Load<Rgba32>(openFileDialog.FileName);
-			pictureBox1.Image = screenBitmap.ToWinFormsImage();
+			screenImage = Image.Load<Rgba32>(openFileDialog.FileName);
+			pictureBox1.Image = screenImage.ToWinFormsImage();
 			comboBox1_SelectedIndexChanged(sender, EventArgs.Empty);
 		}
 	}
@@ -26,8 +26,8 @@ public partial class ClassificationForm : Form {
 	private void button2_Click(object sender, EventArgs e) {
 		var image = Clipboard.GetImage();
 		if (image is not null) {
-			this.screenBitmap = image.ToImage<Rgba32>();
-			pictureBox1.Image = screenBitmap.ToWinFormsImage();
+			this.screenImage = image.ToImage<Rgba32>();
+			pictureBox1.Image = screenImage.ToWinFormsImage();
 			comboBox1_SelectedIndexChanged(sender, EventArgs.Empty);
 		} else
 			MessageBox.Show(this, "There is no usable image on the Clipboard.", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -43,24 +43,24 @@ public partial class ClassificationForm : Form {
 		var stopwatch = Stopwatch.StartNew();
 		try {
 			var lightsState = (LightsState) comboBox2.SelectedIndex;
-			if (screenBitmap == null) {
+			if (screenImage == null) {
 				return;
 			}
-			using var bitmap = screenBitmap.Clone();
+			using var image = screenImage.Clone();
 			//ImageUtils.ColourCorrect(bitmap, lightsState);
-			pictureBox1.Image = bitmap.ToWinFormsImage();
+			pictureBox1.Image = image.ToWinFormsImage();
 			if (comboBox1.SelectedIndex == 0) {
-				if (ImageUtils.CheckForBlankComponent(bitmap)) {
+				if (ImageUtils.CheckForBlankComponent(image)) {
 					s = "Blank";
 				} else {
 					var probs = new Dictionary<string, float>();
-					var needyRating = ImageUtils.CheckForNeedyFrame(bitmap);
+					var needyRating = ImageUtils.CheckForNeedyFrame(image);
 
 					var looksLikeANeedyModule = needyRating >= 0.5f;
 
 					foreach (var reader in comboBox1.Items.OfType<ComponentReader>()) {
 						if (reader.UsesNeedyFrame == looksLikeANeedyModule) {
-							var result = reader.IsModulePresent(bitmap);
+							var result = reader.IsModulePresent(image);
 							probs[reader.Name] = result;
 						}
 					}
@@ -70,11 +70,11 @@ public partial class ClassificationForm : Form {
 					s = $"Needy frame: {needyRating}\r\nClassified as: {max.Key}\r\n({string.Join(", ", sorted.Take(3).Select(e => $"{e.Key} [{e.Value:0.000}]"))})";
 				}
 			} else if (comboBox1.SelectedIndex == 1) {
-				var pixelCounts = WidgetReader.GetPixelCounts(bitmap, 0);
+				var pixelCounts = WidgetReader.GetPixelCounts(image, 0);
 				var probs = new Dictionary<string, float>();
 
 				foreach (var reader in comboBox1.Items.OfType<WidgetReader>()) {
-					var result = Math.Max(0, reader.IsWidgetPresent(bitmap, 0, pixelCounts));
+					var result = Math.Max(0, reader.IsWidgetPresent(image, 0, pixelCounts));
 					probs[reader.Name] = result;
 				}
 
@@ -82,19 +82,19 @@ public partial class ClassificationForm : Form {
 				var max = sorted[0];
 				s = $"Classified as: {(max.Value < 0.25f ? "nothing" : max.Key)}\r\n(R: {pixelCounts.Red}, Y: {pixelCounts.Yellow}, E: {pixelCounts.Grey}, W: {pixelCounts.White})\r\n({string.Join(", ", sorted.Take(3).Select(e => $"{e.Key} [{e.Value:0.000}]"))})";
 			} else if (comboBox1.SelectedIndex == 2) {
-				var result = ImageUtils.GetLightState(bitmap, new Point[] { new(0, 0), new(256, 0), new(0, 256), new(256, 256) });
+				var result = ImageUtils.GetLightState(image, image.Bounds);
 				s = result.ToString();
 			} else {
-				using var bitmap2 = bitmap.Clone();
+				using var bitmap2 = image.Clone();
 				var debugImage = bitmap2;
 				try {
 					switch (comboBox1.SelectedItem) {
 						case ComponentReader componentReader:
-							var result = componentReader.ProcessNonGeneric(bitmap, lightsState, ref debugImage);
+							var result = componentReader.ProcessNonGeneric(image, lightsState, ref debugImage);
 							s = result.ToString();
 							break;
 						case WidgetReader widgetReader:
-							result = widgetReader.ProcessNonGeneric(bitmap, lightsState, ref debugImage);
+							result = widgetReader.ProcessNonGeneric(image, lightsState, ref debugImage);
 							s = result.ToString();
 							break;
 					}
@@ -145,15 +145,15 @@ public partial class ClassificationForm : Form {
 				var list = dataObject.GetFileDropList();
 				if (list.Count == 1 && Path.GetExtension(list[0]) is string ext && ext.ToLowerInvariant() is ".bmp" or ".jpg" or ".jpeg" or ".png" or ".webp") {
 					e.Effect = DragDropEffects.Copy;
-					screenBitmap = Image.Load<Rgba32>(list[0]!);
-					pictureBox1.Image = screenBitmap.ToWinFormsImage();
+					screenImage = Image.Load<Rgba32>(list[0]!);
+					pictureBox1.Image = screenImage.ToWinFormsImage();
 					comboBox1_SelectedIndexChanged(sender, EventArgs.Empty);
 				}
 			} else if (hasImage) {
 				var image = dataObject.GetImage();
 				if (image is not null) {
-					this.screenBitmap = image.ToImage<Rgba32>();
-					pictureBox1.Image = screenBitmap.ToWinFormsImage();
+					this.screenImage = image.ToImage<Rgba32>();
+					pictureBox1.Image = screenImage.ToWinFormsImage();
 					comboBox1_SelectedIndexChanged(sender, EventArgs.Empty);
 					e.Effect = DragDropEffects.Copy;
 				}

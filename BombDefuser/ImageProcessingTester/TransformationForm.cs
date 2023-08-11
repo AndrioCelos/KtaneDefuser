@@ -130,14 +130,14 @@ public partial class TransformationForm : Form {
 			return;
 		}
 
-		distortedImage = ImageUtils.PerspectiveUndistort(screenImage, points.Select(p => new SixLabors.ImageSharp.Point(p.X, p.Y)).ToArray(), (InterpolationMode) interpolationBox.SelectedIndex);
+		distortedImage = ImageUtils.PerspectiveUndistort(screenImage, new(points.Select(p => new SixLabors.ImageSharp.Point(p.X, p.Y)).ToList()), (InterpolationMode) interpolationBox.SelectedIndex);
 		ImageUtils.ColourUncorrect(distortedImage, (LightsState) lightsSimulateBox.SelectedIndex);
 
 		pictureBox1.Image = distortedImage.ToWinFormsImage();
 		pictureBox1.Refresh();
 
 		if (autoClassifyBox.Checked && Application.OpenForms.OfType<ClassificationForm>().FirstOrDefault() is ClassificationForm form) {
-			form.screenBitmap = distortedImage;
+			form.screenImage = distortedImage;
 			form.SetLightsState(ImageUtils.GetLightsState(screenImage));
 		}
 	}
@@ -164,7 +164,7 @@ public partial class TransformationForm : Form {
 
 	private void outputClassifyButton_Click(object sender, EventArgs e) {
 		if (Application.OpenForms.OfType<ClassificationForm>().FirstOrDefault() is ClassificationForm form) {
-			form.screenBitmap = distortedImage;
+			form.screenImage = distortedImage;
 			if (screenImage is not null) form.SetLightsState(ImageUtils.GetLightsState(screenImage));
 		}
 	}

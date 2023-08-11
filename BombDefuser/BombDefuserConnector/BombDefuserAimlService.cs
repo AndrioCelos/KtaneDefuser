@@ -67,18 +67,18 @@ public class BombDefuserAimlService : ISraixService {
 			}
 			case "identifymodule": {
 				var screenshotBitmap = cachedScreenshots[tokens[1]];
-				var points = new Point[] { new(int.Parse(tokens[2]), int.Parse(tokens[3])), new(int.Parse(tokens[4]), int.Parse(tokens[5])), new(int.Parse(tokens[6]), int.Parse(tokens[7])), new(int.Parse(tokens[8]), int.Parse(tokens[9])) };
-				return this.connector.GetComponentReader(screenshotBitmap, points)?.GetType().Name ?? "nil";
+				var quadrilateral = new Quadrilateral(new(int.Parse(tokens[2]), int.Parse(tokens[3])), new(int.Parse(tokens[4]), int.Parse(tokens[5])), new(int.Parse(tokens[6]), int.Parse(tokens[7])), new(int.Parse(tokens[8]), int.Parse(tokens[9])));
+				return this.connector.GetComponentReader(screenshotBitmap, quadrilateral)?.GetType().Name ?? "nil";
 			}
 			case "identifywidget": {
 				var screenshotBitmap = cachedScreenshots[tokens[1]];
-				var points = new Point[] { new(int.Parse(tokens[2]), int.Parse(tokens[3])), new(int.Parse(tokens[4]), int.Parse(tokens[5])), new(int.Parse(tokens[6]), int.Parse(tokens[7])), new(int.Parse(tokens[8]), int.Parse(tokens[9])) };
-				return this.connector.GetWidgetReader(screenshotBitmap, points)?.GetType().Name ?? "nil";
+				var quadrilateral = new Quadrilateral(new(int.Parse(tokens[2]), int.Parse(tokens[3])), new(int.Parse(tokens[4]), int.Parse(tokens[5])), new(int.Parse(tokens[6]), int.Parse(tokens[7])), new(int.Parse(tokens[8]), int.Parse(tokens[9])));
+				return this.connector.GetWidgetReader(screenshotBitmap, quadrilateral)?.GetType().Name ?? "nil";
 			}
 			case "getlightstate": {
 				var screenshotBitmap = cachedScreenshots[tokens[1]];
-				var points = new Point[] { new(int.Parse(tokens[2]), int.Parse(tokens[3])), new(int.Parse(tokens[4]), int.Parse(tokens[5])), new(int.Parse(tokens[6]), int.Parse(tokens[7])), new(int.Parse(tokens[8]), int.Parse(tokens[9])) };
-				return this.connector.GetModuleLightState(screenshotBitmap, points).ToString();
+				var quadrilateral = new Quadrilateral(new(int.Parse(tokens[2]), int.Parse(tokens[3])), new(int.Parse(tokens[4]), int.Parse(tokens[5])), new(int.Parse(tokens[6]), int.Parse(tokens[7])), new(int.Parse(tokens[8]), int.Parse(tokens[9])));
+				return this.connector.GetModuleLightState(screenshotBitmap, quadrilateral).ToString();
 			}
 			case "read": {
 				return this.connector.CheatRead(new(int.Parse(tokens[1]), int.Parse(tokens[2]), int.Parse(tokens[3]), int.Parse(tokens[4])), tokens.Skip(5).ToArray()) ?? "nil";
@@ -88,8 +88,8 @@ public class BombDefuserAimlService : ISraixService {
 			}
 			default: {
 				var screenshotBitmap = cachedScreenshots[tokens[1]];
-				var points = new Point[] { new(int.Parse(tokens[2]), int.Parse(tokens[3])), new(int.Parse(tokens[4]), int.Parse(tokens[5])), new(int.Parse(tokens[6]), int.Parse(tokens[7])), new(int.Parse(tokens[8]), int.Parse(tokens[9])) };
-				return this.connector.Read(tokens[0], screenshotBitmap, points) ?? "nil";
+				var quadrilateral = new Quadrilateral(new(int.Parse(tokens[2]), int.Parse(tokens[3])), new(int.Parse(tokens[4]), int.Parse(tokens[5])), new(int.Parse(tokens[6]), int.Parse(tokens[7])), new(int.Parse(tokens[8]), int.Parse(tokens[9])));
+				return this.connector.Read(tokens[0], screenshotBitmap, quadrilateral) ?? "nil";
 			}
 		}
 	}

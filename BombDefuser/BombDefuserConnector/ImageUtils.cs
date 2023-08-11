@@ -10,19 +10,19 @@ using SixLabors.ImageSharp.Processing;
 namespace BombDefuserConnector;
 public static class ImageUtils {
 	/// <summary>Returns an image drawn by stretching the specified quadrilateral area from another image.</summary>
-	public static Image<Rgba32> PerspectiveUndistort(Image<Rgba32> originalImage, IReadOnlyList<Point> points, InterpolationMode interpolationMode)
-		=> PerspectiveUndistort(originalImage, points, interpolationMode, new(256, 256));
+	public static Image<Rgba32> PerspectiveUndistort(Image<Rgba32> originalImage, Quadrilateral quadrilateral, InterpolationMode interpolationMode)
+		=> PerspectiveUndistort(originalImage, quadrilateral, interpolationMode, new(256, 256));
 	/// <summary>Returns an image drawn by stretching the specified quadrilateral area from another image.</summary>
-	public static Image<Rgba32> PerspectiveUndistort(Image<Rgba32> originalImage, IReadOnlyList<Point> points, InterpolationMode interpolationMode, Size resolution) {
+	public static Image<Rgba32> PerspectiveUndistort(Image<Rgba32> originalImage, Quadrilateral quadrilateral, InterpolationMode interpolationMode, Size resolution) {
 		var bitmap = new Image<Rgba32>(resolution.Width, resolution.Height);
 		bitmap.ProcessPixelRows(p => {
 			for (var y = 0; y < bitmap.Height; y++) {
 				var row = p.GetRowSpan(y);
 
-				var sx1 = (float) points[0].X + (points[2].X - points[0].X) * y / bitmap.Height;
-				var sy1 = (float) points[0].Y + (points[2].Y - points[0].Y) * y / bitmap.Height;
-				var sx2 = (float) points[1].X + (points[3].X - points[1].X) * y / bitmap.Height;
-				var sy2 = (float) points[1].Y + (points[3].Y - points[1].Y) * y / bitmap.Height;
+				var sx1 = (float) quadrilateral.TopLeft.X + (quadrilateral.BottomLeft.X - quadrilateral.TopLeft.X) * y / bitmap.Height;
+				var sy1 = (float) quadrilateral.TopLeft.Y + (quadrilateral.BottomLeft.Y - quadrilateral.TopLeft.Y) * y / bitmap.Height;
+				var sx2 = (float) quadrilateral.TopRight.X + (quadrilateral.BottomRight.X - quadrilateral.TopRight.X) * y / bitmap.Height;
+				var sy2 = (float) quadrilateral.TopRight.Y + (quadrilateral.BottomRight.Y - quadrilateral.TopRight.Y) * y / bitmap.Height;
 
 				for (var x = 0; x < bitmap.Width; x++) {
 					var sx = sx1 + (sx2 - sx1) * x / bitmap.Width;
@@ -55,9 +55,12 @@ public static class ImageUtils {
 
 	/// <summary>Finds a point closest to each corner of the specified rectangle of the area meeting the specified predicate.</summary>
 	/// <param name="continuitySize">The number out of 16 further pixels along the inward diagonal that must also match.</param>
-	/// <returns>The points found, or <see langword="null"/> if no points were found.</returns>
-	public static Point[]? FindCorners(Image<Rgba32> image, Rectangle bounds, Predicate<Rgba32> predicate, int continuitySize) {
-		var points = new Point[4];
+	public static Quadrilateral FindCorners(Image<Rgba32> image, Rectangle bounds, Predicate<Rgba32> predicate, int continuitySize)
+		=> TryFindCorners(image, bounds, predicate, continuitySize, out var quadrilateral) ? quadrilateral : throw new ArgumentException("No area matching the specified condition was found.");
+	/// <summary>Finds a point closest to each corner of the specified rectangle of the area meeting the specified predicate.</summary>
+	/// <param name="continuitySize">The number out of 16 further pixels along the inward diagonal that must also match.</param>
+	public static bool TryFindCorners(Image<Rgba32> image, Rectangle bounds, Predicate<Rgba32> predicate, int continuitySize, out Quadrilateral quadrilateral) {
+		quadrilateral = new();
 		var diagonalSweeps = new (Point start, Size dir, Size increment)[] {
 			(new(bounds.Left, bounds.Top), new(-1, 1), new(1, 0)),
 			(new(bounds.Right - 1, bounds.Top), new(1, 1), new(-1, 0)),
@@ -109,26 +112,34 @@ public static class ImageUtils {
 						}
 						point2 -= dir;
 					}
-					points[n] = new((point.X + point2.X) / 2, (point.Y + point2.Y) / 2);
+					quadrilateral[n] = new((point.X + point2.X) / 2, (point.Y + point2.Y) / 2);
 					break;
 				}
 				diagonalPoint1 += increment;
 				diagonalPoint2 += increment + dir;
 			}
-			if (!found)
-				return null;
+			if (!found) return false;
 		}
-		return points;
+		return true;
 	}
 
 	/// <summary>Finds a rectangle within the specified rectangle bounding pixels matching the specified predicate.</summary>
-	public static Rectangle FindEdges<TPixel>(Image<TPixel> image, Rectangle rectangle, Predicate<TPixel> predicate) where TPixel : unmanaged, IPixel<TPixel> {
-		image.ProcessPixelRows(a => rectangle = FindEdges(a, rectangle, predicate));
-		return rectangle;
+	public static bool TryFindEdges<TPixel>(Image<TPixel> image, Rectangle rectangle, Predicate<TPixel> predicate, out Rectangle result) where TPixel : unmanaged, IPixel<TPixel> {
+		var success = false;
+		var result2 = new Rectangle();
+		image.ProcessPixelRows(a => {
+			success = TryFindEdges(a, rectangle, predicate, out var result);
+			result2 = result;
+		});
+		result = result2;
+		return success;
 	}
 	/// <summary>Finds a rectangle within the specified rectangle bounding pixels matching the specified predicate.</summary>
-	public static Rectangle FindEdges<TPixel>(PixelAccessor<TPixel> accessor, Rectangle rectangle, Predicate<TPixel> predicate) where TPixel : unmanaged, IPixel<TPixel> {
-		if (rectangle.Height <= 0 || rectangle.Width <= 0) return rectangle;
+	public static bool TryFindEdges<TPixel>(PixelAccessor<TPixel> accessor, Rectangle rectangle, Predicate<TPixel> predicate, out Rectangle result) where TPixel : unmanaged, IPixel<TPixel> {
+		if (rectangle.Height <= 0 || rectangle.Width <= 0) {
+			result = rectangle;
+			return false;
+		}
 
 		for (var edge = 0; edge < 2; edge++) {
 			while (true) {
@@ -143,7 +154,10 @@ public static class ImageUtils {
 				if (found) break;
 				if (edge == 0) rectangle.Y++;
 				rectangle.Height--;
-				if (rectangle.Height == 0) return rectangle;
+				if (rectangle.Height == 0) {
+					result = rectangle;
+					return false;
+				}
 			}
 		}
 		for (var edge = 0; edge < 2; edge++) {
@@ -161,13 +175,22 @@ public static class ImageUtils {
 				rectangle.Width--;
 			}
 		}
-		return rectangle;
+		result = rectangle;
+		return true;
 	}
+	/// <summary>Finds a rectangle within the specified rectangle bounding pixels matching the specified predicate.</summary>
+	public static Rectangle FindEdges<TPixel>(Image<TPixel> image, Rectangle rectangle, Predicate<TPixel> predicate) where TPixel : unmanaged, IPixel<TPixel>
+		=> TryFindEdges(image, rectangle, predicate, out var result) ? result : throw new ArgumentException("No area matching the specified condition was found.");
+	/// <summary>Finds a rectangle within the specified rectangle bounding pixels matching the specified predicate.</summary>
+	public static Rectangle FindEdges<TPixel>(PixelAccessor<TPixel> accessor, Rectangle rectangle, Predicate<TPixel> predicate) where TPixel : unmanaged, IPixel<TPixel>
+		=> TryFindEdges(accessor, rectangle, predicate, out var result) ? result : throw new ArgumentException("No area matching the specified condition was found.");
 
-	public static void DebugDrawPoints(this Image image, Point[] points) {
-		for (var i = 0; i < points.Length; i++) {
-			image.Mutate(c => c.Fill((i % 4) switch { 0 => Color.Red, 1 => Color.Yellow, 2 => Color.Lime, 3 => Color.RoyalBlue, _ => Color.Magenta }, new EllipsePolygon(points[i], 2)));
-		}
+	public static void DebugDrawPoints(this Image image, Quadrilateral quadrilateral) {
+		image.Mutate(c => c
+			.Fill(Color.Red, new EllipsePolygon(quadrilateral.TopLeft, 2))
+			.Fill(Color.Yellow, new EllipsePolygon(quadrilateral.TopRight, 2))
+			.Fill(Color.Lime, new EllipsePolygon(quadrilateral.BottomLeft, 2))
+			.Fill(Color.RoyalBlue, new EllipsePolygon(quadrilateral.BottomRight, 2)));
 	}
 
 	/// <summary>Returns <paramref name="scale"/> minus the distance in RGB coordinates between the specified colours.</summary>
@@ -279,11 +302,9 @@ public static class ImageUtils {
 	}
 
 	/// <summary>Reads the light state of the module in the specified quadrilateral area.</summary>
-	public static ModuleLightState GetLightState(Image<Rgba32> image, params Point[] points) => GetLightState(image, (IReadOnlyList<Point>) points);
-	/// <summary>Reads the light state of the module in the specified quadrilateral area.</summary>
-	public static ModuleLightState GetLightState(Image<Rgba32> image, IReadOnlyList<Point> points) {
-		var x = (int) Math.Round(points[1].X + (points[2].X - points[1].X) * 0.1015625);
-		var y = (int) Math.Round(points[1].Y + (points[2].Y - points[1].Y) * 0.1015625);
+	public static ModuleLightState GetLightState(Image<Rgba32> image, Quadrilateral points) {
+		var x = (int) Math.Round(points.TopRight.X + (points.BottomLeft.X - points.TopRight.X) * 0.1015625);
+		var y = (int) Math.Round(points.TopRight.Y + (points.BottomLeft.Y - points.TopRight.Y) * 0.1015625);
 		var hsv = HsvColor.FromColor(image[x, y]);
 		return hsv.S >= 0.85f && hsv.H is >= 105 and <= 150
 			? ModuleLightState.Solved

@@ -63,7 +63,7 @@ public class Interrupt : IDisposable {
 	public T Read<T>(ComponentReader<T> reader) where T : notnull {
 		if (this.IsDisposed) throw new ObjectDisposedException(nameof(Interrupt));
 		using var ss = DefuserConnector.Instance.TakeScreenshot();
-		return DefuserConnector.Instance.ReadComponent(ss, DefuserConnector.Instance.GetLightsState(ss), reader, Utils.CurrentModulePoints);
+		return DefuserConnector.Instance.ReadComponent(ss, DefuserConnector.Instance.GetLightsState(ss), reader, Utils.CurrentModuleArea);
 	}
 
 	/// <summary>Presses the specified buttons, announces a resulting solve or strike, and returns the resulting module light state afterward.</summary>
@@ -79,7 +79,7 @@ public class Interrupt : IDisposable {
 		await this.SendInputsAsync(actions);
 		await Delay(0.5);  // Wait for the interaction punch to end.
 		using var ss = DefuserConnector.Instance.TakeScreenshot();
-		var result = DefuserConnector.Instance.GetModuleLightState(ss, Utils.CurrentModulePoints);
+		var result = DefuserConnector.Instance.GetModuleLightState(ss, Utils.CurrentModuleArea);
 		switch (result) {
 			case ModuleLightState.Solved:
 				if (GameState.Current.CurrentModule is ModuleState module && !module.IsSolved) {

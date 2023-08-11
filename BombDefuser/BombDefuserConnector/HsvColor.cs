@@ -5,22 +5,15 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserConnector;
 /// <summary>Represents a colour in HSVA coordinates.</summary>
-public struct HsvColor {
+public struct HsvColor(float h, float s, float v, byte a) {
 	/// <summary>The hue in degrees, between 0 and 360.</summary>
-	public float H;
+	public float H = h;
 	/// <summary>The saturation, between 0 and 1.</summary>
-	public float S;
+	public float S = s;
 	/// <summary>The brightness, between 0 and 1.</summary>
-	public float V;
+	public float V = v;
 	/// <summary>The opacity, between 0 and 255.</summary>
-	public byte A;
-
-	public HsvColor(float h, float s, float v, byte a) {
-		this.H = h;
-		this.S = s;
-		this.V = v;
-		this.A = a;
-	}
+	public byte A = a;
 
 	/// <summary>Converts a <see cref="Color"/> to a <see cref="HsvColor"/>.</summary>
 	public static HsvColor FromColor(Color color)
@@ -48,4 +41,6 @@ public struct HsvColor {
 
 		return new(H, S, V, a);
 	}
+
+	public override readonly string ToString() => $"{nameof(HsvColor)} [ H={this.H:N1}, S={this.S:N2}, V={this.V:N2} ]";
 }
