@@ -1,7 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using Aiml;
-using BombDefuserConnectorApi;
 
 namespace BombDefuserScripts;
 [AimlInterface]
@@ -32,6 +31,7 @@ internal static class Start {
 		// 1. Pick up the bomb
 		GameState.Current.TimerStopwatch.Restart();
 		using var interrupt = await Interrupt.EnterAsync(context);
+		interrupt.SendInputs(new ButtonAction(Button.A, ButtonActionType.Release), new AxisAction(Axis.RightStickX, 0), new AxisAction(Axis.RightStickY, 0));
 		interrupt.SendInputs(Button.A);
 		await Delay(1);  // Wait for modules to initialise.
 		// 2. Identify components on the bomb.

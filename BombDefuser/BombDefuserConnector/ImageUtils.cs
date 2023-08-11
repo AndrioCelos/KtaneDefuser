@@ -306,9 +306,9 @@ public static class ImageUtils {
 		var x = (int) Math.Round(points.TopRight.X + (points.BottomLeft.X - points.TopRight.X) * 0.1015625);
 		var y = (int) Math.Round(points.TopRight.Y + (points.BottomLeft.Y - points.TopRight.Y) * 0.1015625);
 		var hsv = HsvColor.FromColor(image[x, y]);
-		return hsv.S >= 0.85f && hsv.H is >= 105 and <= 150
+		return hsv.S >= 0.85f && hsv.H is >= 105 and <= 150 && hsv.V >= 0.5f
 			? ModuleLightState.Solved
-			: hsv.S >= 0.65f && hsv.H is >= 330 or <= 30
+			: hsv.S >= 0.65f && hsv.H is >= 330 or <= 30 && hsv.V >= 0.75f
 			? ModuleLightState.Strike
 			: ModuleLightState.Off;
 	}

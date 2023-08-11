@@ -3,7 +3,7 @@
 namespace BombDefuserScripts;
 [AimlInterface]
 internal class NeedyModules {
-	[AimlCategory("OOB NeedyStateChanged * * * * *"), EditorBrowsable(EditorBrowsableState.Never)]
+	[AimlCategory("OOB NeedyStateChange * * * * *"), EditorBrowsable(EditorBrowsableState.Never)]
 	public static void NeedyStateChange(AimlAsyncContext context, int bombNum, int faceNum, int x, int y, NeedyState newState) {
 		var module = GameState.Current.Faces[faceNum][x, y];
 		if (module?.Script is ModuleScript script) {

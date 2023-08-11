@@ -214,7 +214,7 @@ internal class WhosOnFirst : ModuleScript<BombDefuserConnector.Components.WhosOn
 		YOU_ARE,
 		[AimlSetItem("you're"), AimlSetItem("youre"), AimlSetItem("you're contraction"), AimlSetItem("you're apostrophe"), AimlSetItem("you're with apostrophe"), AimlSetItem("you're 5 letters"), AimlSetItem("you're five letters"), AimlSetItem("you are contraction"), AimlSetItem("you are apostrophe"), AimlSetItem("you are with apostrophe"), AimlSetItem("you are 5 letters"), AimlSetItem("you are five letters")]
 		YOU_RE,
-		[AimlSetItem("your"), AimlSetItem("your 4 letters"), AimlSetItem("your four letters")]
+		[AimlSetItem("your"), AimlSetItem("your word"), AimlSetItem("word your"), AimlSetItem("your 4 letters"), AimlSetItem("your four letters")]
 		YOUR
 	}
 }
