@@ -7,7 +7,7 @@
 public class Interrupt : IDisposable {
 	[AimlResponse("OOB DefuserCallback *"), Obsolete("String inputs are being replaced with IInputAction")]
 	private static readonly AimlTaskFactory sendInputs = new("<oob><sendinputs>{0} callback:{ID}</sendinputs></oob>");
-	[AimlResponse("OOB DefuserCallback *")]
+	//[AimlResponse("OOB DefuserCallback *")]
 	private static readonly AimlTaskFactory inputCallback = new(null);
 
 	public static bool EnableInterrupts { get; set; } = true;
@@ -132,7 +132,7 @@ public class Interrupt : IDisposable {
 					context.RequestProcess.Log(Aiml.LogLevel.Info, $"Module {GameState.Current.CurrentModuleNum + 1} is solved.");
 					module.IsSolved = true;
 				}
-				context.Reply("Module complete.");
+				context.Reply("Module complete<reply>next</reply>.");
 			}
 			return result;
 		} catch (TaskCanceledException) {

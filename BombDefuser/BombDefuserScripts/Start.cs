@@ -59,7 +59,7 @@ internal static class Start {
 		// 9. Reset the bomb tilt.
 		interrupt.SendInputs(new AxisAction(Axis.RightStickY, 0));
 		GameState.Current.LookingAtSide = false;
-		context.Reply("Ready.");
+		context.Reply("Ready. <reply>edgework</reply><reply>first module</reply><reply>vanilla modules</reply><reply>specific module…</reply>");
 	}
 
 	private static async Task RegisterComponentsAsync(AimlAsyncContext context, Image<Rgba32> screenshot) {
@@ -117,7 +117,7 @@ internal static class Start {
 				GameState.Current.Faces[slot.Face].HasModules = true;
 				context.RequestProcess.Log(LogLevel.Info, $"Registering module {script.ModuleIndex + 1}: {component.Name} @ {slot}");
 				if (script.PriorityCategory != PriorityCategory.None)
-					context.Reply($"<oob><queue/></oob> Module {script.ModuleIndex + 1} is {script.IndefiniteDescription}.");
+					context.Reply($"<priority/> Module {script.ModuleIndex + 1} is {script.IndefiniteDescription}.");
 				script.Initialise(context);
 				NeedyState state;
 				lock (GameState.Current.UnknownNeedyStates) {

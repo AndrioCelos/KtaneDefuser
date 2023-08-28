@@ -3,21 +3,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Linq;
 using Aiml;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserConnector;
 /// <summary>Integrates an AIML bot with Keep Talking and Nobody Explodes.</summary>
-public class BombDefuserAimlService : ISraixService {
+public class BombDefuserAimlService : IAimlExtension {
 	private readonly DefuserConnector connector = new();
 	private static readonly Dictionary<string, Image<Rgba32>> cachedScreenshots = new(StringComparer.InvariantCultureIgnoreCase);
 	private static readonly Queue<string> cachedScreenshotIds = new();
 
-	public BombDefuserAimlService() {
+	public void Initialise() {
 		this.connector.EnableCallbacks();
-		AimlVoice.Program.OobHandlers["takescreenshot"] = this.OobAction(async (c, e) => {
-			var token = e.Attributes["token"]?.Value ?? e.GetElementsByTagName("token").Cast<XmlNode>().FirstOrDefault()?.InnerText ?? "nil";
+		AimlLoader.AddCustomOobHandler("takescreenshot", this.OobAction(async (c, e, r) => {
+			var token = e.Attribute("token")?.Value ?? e.Element("token")?.Value ?? "nil";
 			var image = await c.TakeScreenshotAsync();
 			var newId = Guid.NewGuid().ToString("N");
 			lock (cachedScreenshots) {
@@ -29,32 +30,33 @@ public class BombDefuserAimlService : ISraixService {
 				cachedScreenshotIds.Enqueue(newId);
 				cachedScreenshots[newId] = image;
 			}
-			AimlVoice.Program.sendInput($"OOB ScreenshotReady {token} {newId}");
-		});
-		AimlVoice.Program.OobHandlers["tasconnect"] = this.OobAction(async (c, e) => {
-			await c.ConnectAsync(e.HasAttribute("simulation"));
-			AimlVoice.Program.sendInput("OOB DefuserSocketConnected");
-		});
-		AimlVoice.Program.OobHandlers["sendinputs"] = this.OobAction((c, e) => c.SendInputs(e.InnerText));
-		AimlVoice.Program.OobHandlers["solve"] = this.OobAction(c => c.CheatSolve());
+			r.User.Postback($"OOB ScreenshotReady {token} {newId}");
+		}));
+		AimlLoader.AddCustomOobHandler("tasconnect", this.OobAction(async (c, e, r) => {
+			c.user = r.User;
+			await c.ConnectAsync(e.Attribute("simulation") is not null);
+			r.User.Postback("OOB DefuserSocketConnected");
+		}));
+		AimlLoader.AddCustomOobHandler("sendinputs", this.OobAction((c, e, r) => c.SendInputs(e.Value)));
+		AimlLoader.AddCustomOobHandler("solve", this.OobAction(c => c.CheatSolve()));
 
-		AimlVoice.Program.OobHandlers["strike"] = this.OobAction(c => c.CheatStrike());
-		AimlVoice.Program.OobHandlers["triggeralarmclock"] = this.OobAction(c => c.CheatTriggerAlarmClock());
+		AimlLoader.AddCustomOobHandler("strike", this.OobAction(c => c.CheatStrike()));
+		AimlLoader.AddCustomOobHandler("triggeralarmclock", this.OobAction(c => c.CheatTriggerAlarmClock()));
 	}
 
-	private Action<XmlElement> OobAction(Action<DefuserConnector> action) => this.OobAction((e, _) => action(e));
-	private Action<XmlElement> OobAction(Action<DefuserConnector, XmlElement> action) => e => {
+	private OobHandler OobAction(Action<DefuserConnector> action) => this.OobAction((c, _, _) => action(c));
+	private OobHandler OobAction(Action<DefuserConnector, XElement, Response> action) => (e, r) => {
 		try {
-			action.Invoke(this.connector, e);
+			action.Invoke(this.connector, e, r);
 		} catch (Exception ex) {
-			AimlVoice.Program.sendInput($"OOB DefuserSocketError {ex.Message}");
+			r.User.Postback($"OOB DefuserSocketError {ex.Message}");
 		}
 	};
-	private Action<XmlElement> OobAction(Func<DefuserConnector, XmlElement, Task> action) => async e => {
+	private OobHandler OobAction(Func<DefuserConnector, XElement, Response, Task> action) => async (e, r) => {
 		try {
-			await action.Invoke(this.connector, e);
+			await action.Invoke(this.connector, e, r);
 		} catch (Exception ex) {
-			AimlVoice.Program.sendInput($"OOB DefuserSocketError {ex.Message}");
+			r.User.Postback($"OOB DefuserSocketError {ex.Message}");
 		}
 	};
 	

@@ -2,8 +2,8 @@
 using System.Text;
 
 namespace BombDefuserScripts;
-
-internal static class NATO {
+[AimlInterface]
+public static class NATO {
 	private static readonly Dictionary<char, string> encodeMap = new(new CaseInsensitiveCharComparer());
 	private static readonly Dictionary<string, char> decodeMap = new(StringComparer.CurrentCultureIgnoreCase);
 
@@ -57,6 +57,10 @@ internal static class NATO {
 	/// <summary>Returns the character represented by the specified NATO code word, or if it's a single character already, returns that character.</summary>
 	public static char DecodeChar(string natoWord) => natoWord.Length == 1 ? natoWord[0] : decodeMap[natoWord];
 
+	/// <summary>Decodes the specified NATO code words and/or characters.</summary>
+	[AimlCategory("DecodeNato *")]
+	public static string DecodeNato(string phrase) => string.Join(null, phrase.Split((char[]?) null, StringSplitOptions.RemoveEmptyEntries).Select(NATO.DecodeChar));
+
 	/// <summary>Returns OOB tags that read the specified characters using the NATO phonetic alphabet.</summary>
 	public static string Speak(IEnumerable<char> chars) {
 		var builder = new StringBuilder();
@@ -65,7 +69,7 @@ internal static class NATO {
 	}
 	/// <summary>Appends OOB tags that read the specified characters using the NATO phonetic alphabet to the specified <see cref="StringBuilder"/>.</summary>
 	public static void Speak(StringBuilder builder, IEnumerable<char> chars) {
-		builder.Append("<oob><speak><s>");
+		builder.Append("<speak><s>");
 		var any = false;
 		foreach (var c in chars) {
 			if (char.IsWhiteSpace(c)) continue;
@@ -81,7 +85,7 @@ internal static class NATO {
 			else
 				builder.Append(c);
 		}
-		builder.Append($"</s></speak><alt>{(chars is string s ? s : string.Join(null, chars))}</alt></oob>");
+		builder.Append($"</s><alt>{(chars is string s ? s : string.Join(null, chars))}</alt></speak>");
 	}
 
 	private class CaseInsensitiveCharComparer : IEqualityComparer<char> {

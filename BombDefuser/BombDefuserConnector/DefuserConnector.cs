@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Aiml;
 using BombDefuserConnectorApi;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -24,7 +25,8 @@ public class DefuserConnector : IDisposable {
 
 	private TaskCompletionSource<Image<Rgba32>>? screenshotTaskSource;
 	private TaskCompletionSource<string?>? readTaskSource;
-	private readonly BlockingCollection<string> aimlNotificationQueue = new();
+	internal User? user;
+	private readonly BlockingCollection<(string, User)> aimlNotificationQueue = new();
 	private Simulation? simulation;
 
 	private static DefuserConnector? instance;
@@ -63,8 +65,8 @@ public class DefuserConnector : IDisposable {
 
 	private void RunCallbackThread() {
 		while (true) {
-			var s = this.aimlNotificationQueue.Take();
-			AimlVoice.Program.sendInput(s);
+			var (s, user) = this.aimlNotificationQueue.Take();
+			user.Postback(s);
 		}
 	}
 
@@ -73,6 +75,7 @@ public class DefuserConnector : IDisposable {
 		if (this.IsConnected) throw new InvalidOperationException("Cannot connect while already connected.");
 		if (simulation) {
 			this.simulation = new();
+			this.simulation.Postback += (s, m) => this.user?.Postback(m);
 		} else {
 			var tcpClient = new TcpClient();
 			await tcpClient.ConnectAsync(new IPEndPoint(IPAddress.Loopback, PORT));
@@ -150,7 +153,7 @@ public class DefuserConnector : IDisposable {
 
 	private void SendAimlNotification(string message) {
 		if (this.CallbacksEnabled)
-			this.aimlNotificationQueue.Add(message);
+			this.aimlNotificationQueue.Add((message, this.user ?? throw new InvalidOperationException("No connecting user")));
 	}
 
 	private void SendMessage(IDefuserMessage message) {
@@ -191,7 +194,7 @@ public class DefuserConnector : IDisposable {
 			try {
 				this.SendMessage(new LegacyCommandMessage($"input {inputs}"));
 			} catch (Exception ex) {
-				AimlVoice.Program.sendInput($"OOB DefuserSocketError {ex.Message}");
+				this.user?.Postback($"OOB DefuserSocketError {ex.Message}");
 			}
 		}
 	}

@@ -88,7 +88,7 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 			} else if (firstUnknown != null) {
 				currentFlags = firstUnknown.Value;
 				context.Reply(firstUnknown == 0 ? "plain white" : $"{(firstUnknown.Value.HasFlag(WireFlags.Red) ? "red " : "")}{(firstUnknown.Value.HasFlag(WireFlags.Blue) ? "blue " : "")}{(firstUnknown.Value.HasFlag(WireFlags.Star) ? "star " : "")}{(firstUnknown.Value.HasFlag(WireFlags.Light) ? "light " : "")}.");
-				context.Reply("<reply>cut</reply><reply>do not cut</reply>");
+				context.Reply("<reply>cut</reply><reply>don't cut</reply>");
 				return;
 			} else {
 				// Uh oh, we thought we knew all remaining wires shouldn't be cut, but the module isn't solved.

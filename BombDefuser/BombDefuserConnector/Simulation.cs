@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Timers;
@@ -27,17 +27,19 @@ internal partial class Simulation {
 
 	private ComponentFace SelectedFace => this.moduleFaces[this.selectedFaceNum];
 
+	internal event EventHandler<string>? Postback;
+
 	public Simulation() {
 		this.queueTimer.Elapsed += this.QueueTimer_Elapsed;
 		this.rxTimer.Elapsed += this.RXTimer_Elapsed;
 
 		this.moduleFaces[0] = new(new BombComponent?[,] {
-			{ TimerComponent.Instance, null, null },
-			{ null, null, null }
+			{ TimerComponent.Instance, new Modules.Button(Components.Button.Colour.Red, "PRESS"), null },
+			{ new Modules.Wires(0, Components.Wires.Colour.Blue, Components.Wires.Colour.Red, Components.Wires.Colour.Red), null, null }
 		});
 		this.moduleFaces[1] = new(new BombComponent?[,] {
 			{ null, null, null },
-			{ null, null, null }
+			{ null, new Modules.Button(Components.Button.Colour.White, "HOLD"), null }
 		});
 		this.widgetFaces[0] = new(new[] { Widget.Create(new Widgets.SerialNumber(), "AB3DE6"), null, null, null });
 		this.widgetFaces[1] = new(new[] { Widget.Create(new Widgets.Indicator(), new(false, "BOB")), Widget.Create(new Widgets.Indicator(), new(true, "FRQ")), null, null });
@@ -48,9 +50,11 @@ internal partial class Simulation {
 		for (var i = 0; i < this.moduleFaces.Length; i++) {
 			for (var y = 0; y < this.moduleFaces[i].Slots.GetLength(0); y++) {
 				for (var x = 0; x < this.moduleFaces[i].Slots.GetLength(1); x++) {
+					if (this.moduleFaces[i].Slots[y, x] is BombComponent component)
+						component.PostbackSent += (s, m) => this.Postback?.Invoke(this, m);
 					if (this.moduleFaces[i].Slots[y, x] is Module module) {
 						var slot = new Slot(0, i, x, y);
-						module.Strike += (_, _) => AimlVoice.Program.sendInput($"OOB Strike {slot.Bomb} {slot.Face} {slot.X} {slot.Y}");
+						module.Strike += (_, _) => this.Postback?.Invoke(this, $"OOB Strike {slot.Bomb} {slot.Face} {slot.X} {slot.Y}");
 						module.InitialiseHighlight();
 						if (module is NeedyModule needyModule)
 							needyModule.Initialise(i, x, y);
@@ -94,7 +98,7 @@ internal partial class Simulation {
 		}
 		switch (action) {
 			case CallbackAction callbackAction:
-				AimlVoice.Program.sendInput($"OOB DefuserCallback {callbackAction.Token:N}");
+				this.Postback?.Invoke(this, $"OOB DefuserCallback {callbackAction.Token:N}");
 				break;
 			case AxisAction axisAction:
 				switch (axisAction.Axis) {
@@ -114,13 +118,16 @@ internal partial class Simulation {
 					case Button.A:
 						switch (this.focusState) {
 							case FocusStates.Room:
+								if (buttonAction.Action != ButtonActionType.Press) break;
 								this.focusState = this.roomX == -1 ? FocusStates.AlarmClock : FocusStates.Bomb;
 								Message($"{this.focusState} selected");
 								break;
 							case FocusStates.AlarmClock:
+								if (buttonAction.Action != ButtonActionType.Press) break;
 								this.SetAlarmClock(!isAlarmClockOn);
 								break;
 							case FocusStates.Bomb:
+								if (buttonAction.Action != ButtonActionType.Press) break;
 								if ((int) this.currentFace % 2 != 0) {
 									this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
 									this.rxBetweenFaces = false;
@@ -366,7 +373,7 @@ internal partial class Simulation {
 	internal void SetAlarmClock(bool value) {
 		Message($"Turned alarm clock {(value ? "on" : "off")}");
 		isAlarmClockOn = value;
-		AimlVoice.Program.sendInput($"OOB AlarmClock {value}");
+		this.Postback?.Invoke(this, $"OOB AlarmClock {value}");
 	}
 
 	private enum FocusStates {
@@ -413,7 +420,9 @@ internal partial class Simulation {
 	private abstract class BombComponent {
 		internal ComponentReader Reader { get; }
 		internal abstract string DetailsString { get; }
+		public event EventHandler<string>? PostbackSent;
 		protected BombComponent(ComponentReader reader) => this.Reader = reader ?? throw new ArgumentNullException(nameof(reader));
+		protected void Postback(string message) => this.PostbackSent?.Invoke(this, message);
 	}
 
 	private abstract class Module : BombComponent {
@@ -531,7 +540,7 @@ internal partial class Simulation {
 			this.faceNum = faceNum;
 			this.x = x;
 			this.y = y;
-			AimlVoice.Program.sendInput($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} AwaitingActivation");
+			this.Postback($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} AwaitingActivation");
 			this.Timer.Interval = 10000;
 			this.Timer.Start();
 		}
@@ -543,7 +552,7 @@ internal partial class Simulation {
 			this.IsActive = true;
 			Message($"{this.Reader.Name} activated with {this.baseTime} left.");
 			this.OnActivate();
-			AimlVoice.Program.sendInput($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} Running");
+			this.Postback($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} Running");
 		}
 
 		protected abstract void OnActivate();
@@ -555,10 +564,10 @@ internal partial class Simulation {
 			Message($"{this.Reader.Name} deactivated with {this.RemainingTime} left.");
 			if (this.AutoReset) {
 				this.Timer.Interval = 30000;
-				AimlVoice.Program.sendInput($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} Cooldown");
+				this.Postback($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} Cooldown");
 			} else {
 				this.Timer.Stop();
-				AimlVoice.Program.sendInput($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} Terminated");
+				this.Postback($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} Terminated");
 			}
 		}
 

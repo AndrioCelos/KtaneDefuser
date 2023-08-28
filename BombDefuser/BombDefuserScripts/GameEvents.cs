@@ -22,7 +22,7 @@ internal class GameEvents {
 			GameState.Current.Strikes++;
 		var module = GameState.Current.Modules.FirstOrDefault(m => m.Slot.Bomb == bomb && m.Slot.Face == face && m.Slot.X == x && m.Slot.Y == y);
 		if (module is not null) {
-			context.Reply($"<oob><queue/></oob> Strike from {module.Reader.Name}.");
+			context.Reply($"<priority/> Strike from {module.Reader.Name}.");
 			module?.Script.Strike(context);
 		}
 		GameState.Current.OnStrike(new(context, new(bomb, face, x, y), module));

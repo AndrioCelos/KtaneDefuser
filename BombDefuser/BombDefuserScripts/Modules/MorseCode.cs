@@ -73,6 +73,8 @@ internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCod
 	private int highlight;  // For this script, 0 => down button, 1 => right button, 2 => submit button
 	private int selectedFrequency;
 
+	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
+
 	[AimlCategory("read")]
 	internal static Task Read(AimlAsyncContext context) {
 		context.Reply($"Stand by.");
@@ -102,6 +104,7 @@ internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCod
 				if (!continuedWord && !interrupt.IsDisposed) {
 					interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Word start");
 					interrupt.Context.Reply("Word start.");
+					interrupt.Context.Reply("<reply>505</reply><reply>515</reply><reply>522</reply><reply>532</reply><reply>535</reply><reply>542</reply><reply>545</reply><reply>552</reply><reply>555</reply><reply>565</reply><reply>572</reply><reply>575</reply><reply>582</reply><reply>592</reply><reply>595</reply><reply>600</reply>");
 					await WaitForStateAsync(interrupt, true, cancellationToken);
 				}
 				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Next letter started");
@@ -123,6 +126,7 @@ internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCod
 					interrupt.Context.Reply(NATO.Speak(c.ToString()));
 				} else
 					interrupt.Context.Reply(string.Join(' ', currentLetter));
+				interrupt.Context.Reply("<reply>505</reply><reply>515</reply><reply>522</reply><reply>532</reply><reply>535</reply><reply>542</reply><reply>545</reply><reply>552</reply><reply>555</reply><reply>565</reply><reply>572</reply><reply>575</reply><reply>582</reply><reply>592</reply><reply>595</reply><reply>600</reply>");
 			}
 		} finally {
 			// Only dispose the interrupt if we're not ending due to a cancellation signal, as that indicates we're keeping the interrupt to submit an answer.

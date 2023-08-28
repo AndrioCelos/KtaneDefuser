@@ -1,5 +1,6 @@
 [
 	[ "<oob><speak/><alt comment=\"souvenir\"/></oob>" , "SouvenirQuestionMarker"        ],
+	[ "<reply>.*?</reply>" , "", "regex" ],
 
 	// That matching
 	[ "<oob><tp>" , "BeginTPTag " ],

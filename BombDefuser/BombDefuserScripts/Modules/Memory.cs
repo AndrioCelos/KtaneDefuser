@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace BombDefuserScripts.Modules;
+﻿namespace BombDefuserScripts.Modules;
 [AimlInterface("Memory")]
 internal class Memory : ModuleScript<BombDefuserConnector.Components.Memory> {
 	public override string IndefiniteDescription => "Memory";
@@ -28,6 +26,8 @@ internal class Memory : ModuleScript<BombDefuserConnector.Components.Memory> {
 		var data = interrupt.Read(Reader);
 		this.keyLabels = data.Keys;
 		interrupt.Context.Reply(data.Display.ToString());
+		interrupt.Context.Reply("<reply>position 1</reply><reply><text>2</text><postback>position 2</postback></reply><reply><text>3</text><postback>position 3</postback></reply><reply><text>4</text><postback>position 4</postback></reply>");
+		interrupt.Context.Reply("<reply>label 1</reply><reply><text>2</text><postback>label 2</postback></reply><reply><text>3</text><postback>label 3</postback></reply><reply><text>4</text><postback>label 4</postback></reply>");
 	}
 
 	[AimlCategory("position <set>number</set>")]

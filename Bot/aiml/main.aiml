@@ -7,7 +7,12 @@
 
 	<category>
 		<pattern>OOB DefuserSocketConnected</pattern>
-		<template><condition name='simulation' value='true'><srai>test start</srai></condition></template>
+		<template>
+			<condition name='simulation'>
+				<li value='true'><srai>test start</srai></li>
+				<li><reply><text>Game already in progress</text><postback>test start</postback></reply></li>
+			</condition>
+		</template>
 	</category>
 
 	<category>
@@ -16,5 +21,10 @@
 			<think><set name='simulation'>true</set></think>
 			<oob><tasconnect simulation='true'/></oob>
 		</template>
+	</category>
+
+	<category>
+		<pattern>ready</pattern>
+		<template><srai>read</srai></template>
 	</category>
 </aiml>

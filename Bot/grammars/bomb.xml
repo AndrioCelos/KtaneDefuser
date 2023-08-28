@@ -5,6 +5,7 @@
 			<item><ruleref uri='#globalModuleCommand'/></item>
 			<item> say again </item>
 			<item> edgework </item>
+			<item> ready </item>
 		</one-of>
 	</rule>
 	<rule id='globalModuleCommand'>

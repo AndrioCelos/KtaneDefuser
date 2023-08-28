@@ -55,24 +55,43 @@ internal static class Edgework {
 
 	[AimlCategory("edgework"), EditorBrowsable(EditorBrowsableState.Never)]
 	internal static void EdgeworkRequest(AimlAsyncContext context) {
-		var batteries = GameState.Current.BatteryCount switch {
-			0 => "No batteries.",
-			1 => "1 battery in 1 holder.",
-			_ => $"{GameState.Current.BatteryCount} batteries in {GameState.Current.BatteryHolderCount} {(GameState.Current.BatteryHolderCount == 1 ? "holder" : "holders")}."
-		};
-		var indicators = GameState.Current.Indicators.Count > 0
-			? $"Indicators: {string.Join(", ", from i in GameState.Current.Indicators select $"{(i.IsLit ? "lit" : "unlit")} {NATO.Speak(i.Label)}")}."
-			: "No indicators.";
-		string ports;
-		if (GameState.Current.PortPlates.Count > 0) {
-			var emptyPlates = GameState.Current.PortPlates.Count(p => p == 0);
-			var emptyPlatesDesc = emptyPlates switch { 0 => "", 1 => "; an empty port plate", _ => $"{emptyPlates} empty port plates" };
-			var list = string.Join("; ", from p in GameState.Current.PortPlates where p != 0 select $"plate: {string.Join(' ', from t in GetPortTypes(p) select t switch { PortTypes.DviD => "DVI", PortTypes.PS2 => "PS2", PortTypes.RJ45 => "RJ45", PortTypes.StereoRCA => "RCA", _ => t.ToString() })}");
-			ports = $"Ports: {list}{emptyPlatesDesc}.";
-		} else
-			ports = "No ports.";
-		var serial = NATO.Speak(GameState.Current.SerialNumber);
-		context.Reply($"{batteries} {indicators} {ports} Serial number: {serial}.");
+		if (GameState.Current.Modules.All(m => m.Type <= ModuleType.WireSequence)) {
+			// Report simplified edgework information for vanilla-only games.
+			var batteries = GameState.Current.BatteryCount switch {
+				0 => "No batteries.",
+				1 => "1 battery.",
+				_ => $"{GameState.Current.BatteryCount} batteries."
+			};
+			var relevantIndicators = GameState.Current.Indicators.Where(i => i.IsLit && i.Label is "CAR" or "FRK");
+			var indicators = GameState.Current.Indicators.Count > 0
+				? relevantIndicators.Any()
+				? $"Indicators: {string.Join(", ", from i in relevantIndicators select $"lit {NATO.Speak(i.Label)}")}."
+				: "No relevant indicators."
+				: "No indicators.";
+			var ports = GameState.Current.PortPlates.Any(p => p.HasFlag(PortTypes.Parallel)) ? "Parallel port." : "No relevant port.";
+			context.Reply($"{batteries} {indicators} {ports} Serial number {(GameState.Current.SerialNumberHasVowel ? "has a vowel" : "has no vowel")} and is {(GameState.Current.SerialNumberIsOdd ? "odd" : "even")}.");
+		} else {
+			var batteries = GameState.Current.BatteryCount switch {
+				0 => "No batteries.",
+				1 => "1 battery in 1 holder.",
+				_ => $"{GameState.Current.BatteryCount} batteries in {GameState.Current.BatteryHolderCount} {(GameState.Current.BatteryHolderCount == 1 ? "holder" : "holders")}."
+			};
+			var indicators = GameState.Current.Indicators.Count > 0
+				? $"Indicators: {string.Join(", ", from i in GameState.Current.Indicators select $"{(i.IsLit ? "lit" : "unlit")} {NATO.Speak(i.Label)}")}."
+				: "No indicators.";
+			string ports;
+			if (GameState.Current.PortPlates.Count > 0) {
+				var emptyPlates = GameState.Current.PortPlates.Count(p => p == 0);
+				var emptyPlatesDesc = emptyPlates switch { 0 => "", 1 => "; an empty port plate", _ => $"{emptyPlates} empty port plates" };
+				var list = string.Join("; ", from p in GameState.Current.PortPlates where p != 0 select $"plate: {string.Join(' ', from t in GetPortTypes(p) select t switch { PortTypes.DviD => "DVI", PortTypes.PS2 => "PS2", PortTypes.RJ45 => "RJ45", PortTypes.StereoRCA => "RCA", _ => t.ToString() })}");
+				ports = $"Ports: {list}{emptyPlatesDesc}.";
+			} else
+				ports = "No ports.";
+			var serial = NATO.Speak(GameState.Current.SerialNumber);
+			context.Reply($"{batteries} {indicators} {ports} Serial number: {serial}.");
+		}
+		if (GameState.Current.FocusState == FocusState.Bomb)
+			context.Reply("<reply>first module</reply><reply>vanilla modules</reply><reply>specific module…</reply>");
 	}
 
 	private static IEnumerable<PortTypes> GetPortTypes(PortTypes ports) {

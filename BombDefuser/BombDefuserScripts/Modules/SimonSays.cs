@@ -38,6 +38,7 @@ internal class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSay
 				if (correctColour is null) {
 					this.currentColour = patternColour;
 					interrupt.Context.Reply(patternColour.ToString());
+					interrupt.Context.AddReplies("red", "yellow", "green", "blue");
 					return;
 				}
 				if (highlight != correctColour) {

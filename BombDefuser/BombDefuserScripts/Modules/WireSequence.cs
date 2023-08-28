@@ -41,6 +41,7 @@ internal class WireSequence : ModuleScript<BombDefuserConnector.Components.WireS
 			ref var count = ref this.wireCounts[(int) colour];
 			count++;
 			interrupt.Context.Reply($"{Utils.ToOrdinal(count)} {colour} to {NATO.Speak(new[] { data.HighlightedWire.To })}");
+			interrupt.Context.AddReplies("cut", "don't cut");
 		}
 	}
 

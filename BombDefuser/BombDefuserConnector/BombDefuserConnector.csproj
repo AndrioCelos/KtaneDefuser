@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0-windows</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <Nullable>enable</Nullable>
     <LangVersion>preview</LangVersion>
@@ -18,13 +18,8 @@
 
   <ItemGroup>
     <Reference Include="Aiml">
-      <HintPath>..\..\..\Aiml\Aiml\bin\Debug\net7.0\Aiml.dll</HintPath>
+      <HintPath>..\..\..\Aiml\Aiml\bin\Debug\net6.0\Aiml.dll</HintPath>
       <Private>True</Private>
-      <ExcludeAssets>runtime</ExcludeAssets>
-    </Reference>
-    <Reference Include="AimlVoice">
-      <HintPath>..\..\..\Aiml\AimlVoice\bin\Debug\net7.0-windows\AimlVoice.dll</HintPath>
-      <Private>false</Private>
       <ExcludeAssets>runtime</ExcludeAssets>
     </Reference>
   </ItemGroup>

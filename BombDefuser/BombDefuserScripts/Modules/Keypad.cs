@@ -1,5 +1,4 @@
-﻿using System.Text;
-using static BombDefuserConnector.Components.Keypad;
+﻿using static BombDefuserConnector.Components.Keypad;
 
 namespace BombDefuserScripts.Modules;
 [AimlInterface("Keypad")]
@@ -39,8 +38,10 @@ internal class Keypad : ModuleScript<BombDefuserConnector.Components.Keypad> {
 
 	public override string IndefiniteDescription => "a Keypad";
 
+	private readonly bool[] pressed = new bool[4];
 	private Symbol[]? symbols;
 	private int highlight;
+	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
 	[AimlCategory("read")]
 	internal static async Task Read(AimlAsyncContext context) {
@@ -48,6 +49,7 @@ internal class Keypad : ModuleScript<BombDefuserConnector.Components.Keypad> {
 		var data = interrupt.Read(Reader);
 		GameState.Current.CurrentScript<Keypad>().symbols = data.Symbols;
 		interrupt.Context.Reply(string.Join(", ", from s in data.Symbols select SymbolDescriptions[s]));
+		interrupt.Context.AddReplies(from s in data.Symbols select new Aiml.Media.Reply(SymbolDescriptions[s], $"press {SymbolDescriptions[s]}"));
 	}
 
 	[AimlCategory("press *")]
@@ -85,7 +87,12 @@ internal class Keypad : ModuleScript<BombDefuserConnector.Components.Keypad> {
 		foreach (var (inputs, index) in presses) {
 			script.highlight = index;
 			var result = await interrupt.SubmitAsync(inputs);
+			if (result != ModuleLightState.Strike) script.pressed[index] = true;
 			if (result != ModuleLightState.Off) return;
+		}
+		if (script.symbols is null) return;
+		for (var i = 0; i < 4; i++) {
+			if (!script.pressed[i]) interrupt.Context.AddReply(SymbolDescriptions[script.symbols[i]], $"press {SymbolDescriptions[script.symbols[i]]}");
 		}
 	}
 }

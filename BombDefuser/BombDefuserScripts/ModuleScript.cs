@@ -22,6 +22,8 @@ public abstract class ModuleScript {
 	/// <summary>If this instance is handling a needy module, returns the module's needy state.</summary>
 	public NeedyState NeedyState { get; internal set; }
 
+	public static IReadOnlyCollection<Type> ScriptTypes => Scripts.Keys;
+
 	internal static ModuleScript Create(ComponentReader reader) {
 		var readerType = reader.GetType();
 		if (!Scripts.TryGetValue(readerType, out var entry))

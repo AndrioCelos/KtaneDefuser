@@ -38,7 +38,12 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 				}
 			} else {
 				this.isHandled = false;
-				context.Reply($"<oob><queue/></oob> Knob {this.ModuleIndex + 1} is active. Counts: {counts.Left}, {counts.Right}.");
+				context.Reply($"<priority/> Knob {this.ModuleIndex + 1} is active. Counts: {counts.Left}, {counts.Right}");
+				context.AddReply("up", $"knob {this.ModuleIndex + 1} is up");
+				context.AddReply("down", $"knob {this.ModuleIndex + 1} is down");
+				context.AddReply("left", $"knob {this.ModuleIndex + 1} is left");
+				context.AddReply("right", $"knob {this.ModuleIndex + 1} is right");
+				context.Reply(".");
 			}
 		} else
 			this.counts = null;

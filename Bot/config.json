@@ -21,5 +21,6 @@
 	"Splitters": [ ".", "!", "?", ";" ],
 	//"Locale": "en-AU",
 	//"LearnfFile": "aiml/learnf.aiml
-	"UnbindPredicatesWithDefaultValue": true
+	"UnbindPredicatesWithDefaultValue": true,
+	"ThatExcludeEmptyResponse": true
 }

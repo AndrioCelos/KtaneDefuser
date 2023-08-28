@@ -10,6 +10,8 @@ internal class Password : ModuleScript<BombDefuserConnector.Components.Password>
 	private readonly char[]?[] columns = new char[]?[5];
 	private readonly int[] columnPositions = new int[5];
 
+	protected internal override void Started(AimlAsyncContext context) => context.Reply("<reply>column 1</reply><reply><text>2</text><postback>column 2</postback></reply><reply><text>3</text><postback>column 3</postback></reply><reply><text>4</text><postback>column 4</postback></reply><reply><text>5</text><postback>column 5</postback></reply>");
+
 	private async Task ReadColumn(AimlAsyncContext context, int column) {
 		using var interrupt = await this.ModuleInterruptAsync(context);
 		var builder = new StringBuilder();
@@ -23,6 +25,7 @@ internal class Password : ModuleScript<BombDefuserConnector.Components.Password>
 		this.columns[column] = letters;
 		this.columnPositions[column] = 5;
 		interrupt.Context.Reply(NATO.Speak(letters));
+		interrupt.Context.Reply("<reply>submit …</reply><reply>column 1</reply><reply><text>2</text><postback>column 2</postback></reply><reply><text>3</text><postback>column 3</postback></reply><reply><text>4</text><postback>column 4</postback></reply><reply><text>5</text><postback>column 5</postback></reply>");
 	}
 
 	private async Task MoveToDownButtonRowAsync(Interrupt interrupt) {
@@ -93,6 +96,10 @@ internal class Password : ModuleScript<BombDefuserConnector.Components.Password>
 		return script.ReadColumn(context, num - 1);
 	}
 
+	[AimlCategory("submit …")]
+	public static string SubmitMenu() => "Please enter the word.";
+
+	[AimlCategory("*")]
 	[AimlCategory("submit *")]
 	[AimlCategory("password is *")]
 	[AimlCategory("the password is *")]

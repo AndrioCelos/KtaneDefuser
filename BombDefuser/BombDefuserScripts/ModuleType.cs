@@ -3,7 +3,7 @@
 namespace BombDefuserScripts;
 [AimlSet]
 public enum ModuleType {
-	[AimlSetItem("Button"), AimlSetItem("The Button")]
+	[AimlSetItem("The Button"), AimlSetItem("Button")]
 	ButtonModule,
 	[AimlSetItem("Complicated Wires")]
 	ComplicatedWires,

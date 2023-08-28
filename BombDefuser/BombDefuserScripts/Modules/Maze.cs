@@ -6,6 +6,8 @@ internal class Maze : ModuleScript<BombDefuserConnector.Components.Maze> {
 	public override string IndefiniteDescription => "a Maze";
 	private Direction highlight;
 
+	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
+
 	[AimlCategory("read")]
 	internal static async Task Read(AimlAsyncContext context) {
 		using var interrupt = await CurrentModuleInterruptAsync(context);
@@ -13,10 +15,14 @@ internal class Maze : ModuleScript<BombDefuserConnector.Components.Maze> {
 		interrupt.Context.Reply(data.Circle2 is GridCell circle2
 			? $"Markings at {NATO.Speak(data.Circle1.ToString())} and {NATO.Speak(circle2.ToString())}. Starting at {NATO.Speak(data.Start.ToString())}. The goal is {NATO.Speak(data.Goal.ToString())}."
 			: $"Marking at {NATO.Speak(data.Circle1.ToString())}. Starting at {NATO.Speak(data.Start.ToString())}. The goal is {NATO.Speak(data.Goal.ToString())}.");
+		interrupt.Context.AddReplies("left", "down", "up", "right");
 	}
 
-	[AimlCategory("<set>Direction</set> ^")]
-	internal static Task Input1(AimlAsyncContext context, string s1, string? s2)
+	[AimlCategory("<set>Direction</set>")]
+	internal static Task Input1(AimlAsyncContext context, string s1)
+		=> GameState.Current.CurrentScript<Maze>().ProcessInputAsync(context, s1);
+	[AimlCategory("<set>Direction</set> *")]
+	internal static Task Input2(AimlAsyncContext context, string s1, string? s2)
 		=> GameState.Current.CurrentScript<Maze>().ProcessInputAsync(context, $"{s1} {s2}");
 
 	[AimlCategory("move *"), AimlCategory("press *")]
@@ -27,7 +33,7 @@ internal class Maze : ModuleScript<BombDefuserConnector.Components.Maze> {
 		var buttons = new List<Button>();
 		var tokens = s.Split((char[]?) null, StringSplitOptions.RemoveEmptyEntries);
 		var currentHighlight = this.highlight;
-		for (var i =  0; i < tokens.Length; i++) {
+		for (var i = 0; i < tokens.Length; i++) {
 			var token = tokens[i].ToLowerInvariant();
 			if (token is "time" or "times" or "step" or "steps" or "space" or "spaces") continue;
 			var direction = token switch {
@@ -53,9 +59,10 @@ internal class Maze : ModuleScript<BombDefuserConnector.Components.Maze> {
 		this.highlight = currentHighlight;
 		using var interrupt = await this.ModuleInterruptAsync(context);
 		var result = await interrupt.SubmitAsync(buttons);
-		if (result == ModuleLightState.Strike) {
-			var data = interrupt.Read(Reader);
-			interrupt.Context.Reply($"<oob><queue/></oob> Now at {NATO.Speak(data.Start.ToString())}.");
-		}
+		if (result == ModuleLightState.Solved) return;
+
+		var data = interrupt.Read(Reader);
+		interrupt.Context.Reply($"<priority/> Now at {NATO.Speak(data.Start.ToString())}.");
+		interrupt.Context.AddReplies("left", "down", "up", "right");
 	}
 }

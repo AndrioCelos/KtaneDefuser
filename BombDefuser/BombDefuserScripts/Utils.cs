@@ -1,6 +1,7 @@
-﻿using System.Text;
+﻿using System.Web;
+using Aiml.Media;
 using AimlCSharpInterface;
-using BombDefuserConnectorApi;
+using Button = BombDefuserConnectorApi.Button;
 
 namespace BombDefuserScripts;
 internal static class Utils {
@@ -54,6 +55,17 @@ internal static class Utils {
 			return moduleAreas[(dy + 1) * 5 + dx + 2];
 		} else
 			return bombAreas[slot.Y * 3 + slot.X];
+	}
+
+	public static void AddReply(this AimlAsyncContext context, Reply reply) => AddReply(context, reply.Text, reply.Postback);
+	public static void AddReply(this AimlAsyncContext context, string text) => context.Reply($"<reply>{HttpUtility.HtmlEncode(text)}</reply>");
+	public static void AddReply(this AimlAsyncContext context, string text, string postback) => context.Reply($"<reply><text>{HttpUtility.HtmlEncode(text)}</text><postback>{HttpUtility.HtmlEncode(postback)}</postback></reply>");
+	public static void AddReplies(this AimlAsyncContext context, params string[] replies) {
+		foreach (var text in replies) AddReply(context, text);
+	}
+	public static void AddReplies(this AimlAsyncContext context, params Reply[] replies) => AddReplies(context, (IEnumerable<Reply>) replies);
+	public static void AddReplies(this AimlAsyncContext context, IEnumerable<Reply> replies) {
+		foreach (var reply in replies) AddReply(context, reply);
 	}
 
 	/// <summary>Returns the number represented by the specified ordinal word.</summary>
