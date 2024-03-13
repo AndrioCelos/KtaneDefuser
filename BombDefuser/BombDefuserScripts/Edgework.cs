@@ -1,6 +1,8 @@
 ﻿using System.ComponentModel;
 using Aiml;
 using BombDefuserConnector.Widgets;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserScripts;
 

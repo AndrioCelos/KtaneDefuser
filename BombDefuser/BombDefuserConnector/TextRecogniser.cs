@@ -43,7 +43,7 @@ internal class TextRecogniser {
 		this.backgroundValue = backgroundValue;
 		this.foregroundValue = foregroundValue;
 		this.samples = new (Image<L8>, float, string)[strings.Length];
-		var textOptions = new TextOptions(font) { Dpi = 96, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Origin = new(resolution.Width / 2, resolution.Height / 2) };
+		var textOptions = new RichTextOptions(font) { Dpi = 96, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Origin = new(resolution.Width / 2, resolution.Height / 2) };
 		for (var i = 0; i < strings.Length; i++) {
 			var image = new Image<L8>(resolution.Width, resolution.Height, new(0));
 			image.Mutate(c => c.DrawText(textOptions, strings[i], Color.White));

@@ -29,7 +29,7 @@ public class SerialNumber : WidgetReader<string> {
 
 	private static (Image<Rgba32> image, char c) CreateSampleImage(char c) {
 		var image = new Image<Rgba32>(128, 128, Color.White);
-		image.Mutate(ctx => ctx.DrawText(new TextOptions(FONT) { Dpi = 96, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Origin = new(64, 64) }, c.ToString(), Color.Black));
+		image.Mutate(ctx => ctx.DrawText(new RichTextOptions(FONT) { Dpi = 96, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Origin = new(64, 64) }, c.ToString(), Color.Black));
 		var charBB = ImageUtils.FindEdges(image, image.Bounds, c => c.B < 128);
 		image.Mutate(ctx => ctx.Crop(charBB).Resize(64, 64, KnownResamplers.NearestNeighbor));
 		return (image, c);

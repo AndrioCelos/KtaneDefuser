@@ -1,4 +1,6 @@
 ﻿using BombDefuserConnector.DataTypes;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserScripts;
 internal static class Timer {
