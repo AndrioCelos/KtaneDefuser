@@ -67,6 +67,8 @@ public class GameState {
 
 	public GameMode GameMode { get; set; }
 
+	public bool IsDefused => this.Modules.Where(m => !m.Script.PriorityCategory.HasFlag(PriorityCategory.Needy)).All(m => m.IsSolved);
+
 	/// <summary>Returns the current bomb time.</summary>
 	public TimeSpan Time => this.GameMode is GameMode.Zen or GameMode.Training
 		? this.TimerBaseTime + this.TimerStopwatch.Elapsed
@@ -75,6 +77,21 @@ public class GameState {
 	public readonly Dictionary<Slot, NeedyState> UnknownNeedyStates = new();
 
 	public event EventHandler<StrikeEventArgs>? Strike;
+	public event EventHandler<StrikeEventArgs>? ModuleSolved;
+	public event EventHandler? Defuse;
+
+	internal bool TryMarkModuleSolved(AimlAsyncContext context, int index) {
+		var module = this.Modules[index];
+		if (module.IsSolved) return false;
+		if (module.Script.PriorityCategory == PriorityCategory.Needy) throw new ArgumentException("Cannot mark a needy module as solved.");
+
+		module.IsSolved = true;
+		this.ModuleSolved?.Invoke(this, new(context, module.Slot, module));
+
+		var defused = this.IsDefused;
+		if (defused) this.Defuse?.Invoke(this, EventArgs.Empty);
+		return defused;
+	}
 
 	internal void OnStrike(StrikeEventArgs e) => this.Strike?.Invoke(this, e);
 }

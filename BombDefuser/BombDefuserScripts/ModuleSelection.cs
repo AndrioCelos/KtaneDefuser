@@ -8,13 +8,15 @@ namespace BombDefuserScripts;
 [AimlInterface]
 internal static class ModuleSelection {
 	/// <summary>Handles switching the user's selection to the specified module.</summary>
-	internal static async Task ChangeModuleAsync(AimlAsyncContext context, int index) {
+	internal static async Task ChangeModuleAsync(AimlAsyncContext context, int index, bool silent) {
 		GameState.Current.CurrentModule?.Script.Stopped(context);
 		GameState.Current.CurrentModuleNum = index;
 		var script = GameState.Current.CurrentModule!.Script;
 		context.RequestProcess.Log(Aiml.LogLevel.Info, $"Selected module {index + 1} ({GameState.Current.CurrentModule.Reader.Name})");
 		context.RequestProcess.User.Topic = script.Topic;
-		context.Reply($"<oob><setgrammar>{script.Topic}</setgrammar></oob><priority/> Module {index + 1} is {script.IndefiniteDescription}.");
+		context.Reply($"<oob><setgrammar>{script.Topic}</setgrammar></oob>");
+		if (!silent)
+			context.Reply($"<priority/> Module {index + 1} is {script.IndefiniteDescription}.");
 		script.Started(context);
 		// If we aren't in another interrupt, select this module. (If we are, Interrupt.Exit will select this module afterward if it is still the current module.)
 		if (Interrupt.EnableInterrupts) {
@@ -39,7 +41,7 @@ internal static class ModuleSelection {
 			GameState.Current.NextModuleNums.Enqueue(i);
 		if (GameState.Current.NextModuleNums.Count > 1)
 			context.Reply($"{GameState.Current.NextModuleNums.Count} of those remain.");
-		await ChangeModuleAsync(context, GameState.Current.NextModuleNums.Dequeue());
+		await ChangeModuleAsync(context, GameState.Current.NextModuleNums.Dequeue(), false);
 	}
 
 	[AimlCategory("module <set>number</set>"), EditorBrowsable(EditorBrowsableState.Never)]
@@ -54,7 +56,7 @@ internal static class ModuleSelection {
 			context.Reply("There do not seem to be that many modules.");
 			return;
 		}
-		await ChangeModuleAsync(context, index);
+		await ChangeModuleAsync(context, index, false);
 	}
 
 	[AimlCategory("first module"), EditorBrowsable(EditorBrowsableState.Never)]
@@ -65,7 +67,7 @@ internal static class ModuleSelection {
 			context.Reply("Could not find any modules.");
 			return;
 		}
-		await ChangeModuleAsync(context, index);
+		await ChangeModuleAsync(context, index, false);
 	}
 
 	[AimlCategory("next module"), AimlCategory("next", That = "MODULE COMPLETE ^"), EditorBrowsable(EditorBrowsableState.Never)]
@@ -76,7 +78,7 @@ internal static class ModuleSelection {
 			context.Reply("Could not find any more modules.");
 			return;
 		}
-		await ChangeModuleAsync(context, index);
+		await ChangeModuleAsync(context, index, false);
 	}
 
 	[AimlCategory("vanilla modules"), EditorBrowsable(EditorBrowsableState.Never)]

@@ -116,7 +116,8 @@ public class Interrupt : IDisposable {
 	public async Task<ModuleLightState> SubmitAsync(IEnumerable<IInputAction> actions) {
 		if (this.IsDisposed) throw new ObjectDisposedException(nameof(Interrupt));
 		if (this.submitCancellationTokenSource is not null) throw new InvalidOperationException("Already submitting.");
-		if (GameState.Current.CurrentModule is not ModuleState module) throw new InvalidOperationException("No current module.");
+		if (GameState.Current.CurrentModuleNum is null) throw new InvalidOperationException("No current module.");
+		var module = GameState.Current.Modules[GameState.Current.CurrentModuleNum.Value];
 		var context = AimlAsyncContext.Current ?? throw new InvalidOperationException("No current request");
 
 		this.submitCancellationTokenSource = new CancellationTokenSource();
@@ -128,11 +129,19 @@ public class Interrupt : IDisposable {
 			using var ss = DefuserConnector.Instance.TakeScreenshot();
 			var result = DefuserConnector.Instance.GetModuleLightState(ss, Utils.CurrentModuleArea);
 			if (result == ModuleLightState.Solved) {
-				if (!module.IsSolved) {
-					context.RequestProcess.Log(Aiml.LogLevel.Info, $"Module {GameState.Current.CurrentModuleNum + 1} is solved.");
-					module.IsSolved = true;
+				var isDefused = GameState.Current.TryMarkModuleSolved(context, GameState.Current.CurrentModuleNum.Value);
+				if (isDefused)
+					context.Reply("The bomb is defused.");
+				else {
+					context.Reply("<priority/>Module complete<reply>next</reply>.");
+					using var interrupt = await EnterAsync(context);
+					if (!GameState.Current.NextModuleNums.TryDequeue(out var nextModule))
+						nextModule = GameState.Current.Modules.FindIndex(GameState.Current.SelectedModuleNum is int i ? i + 1 : 0, m => m.Script.PriorityCategory != PriorityCategory.Needy && !m.IsSolved);
+					if (nextModule >= 0) {
+						context.Reply($"Next is {GameState.Current.Modules[nextModule].Script.IndefiniteDescription}.");
+						await ModuleSelection.ChangeModuleAsync(context, nextModule, true);
+					}
 				}
-				context.Reply("Module complete<reply>next</reply>.");
 			}
 			return result;
 		} catch (TaskCanceledException) {

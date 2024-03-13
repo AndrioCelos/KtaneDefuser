@@ -7,7 +7,7 @@
 	"DefaultWildcard": "nil",
 	//"HistorySize": 16,
 	"DefaultResponse": "",
-	//"Timeout": 10000,
+	"Timeout": 1e+10,
 	//"TimeoutMessage": "That query took too long for me to process.",
 	//"RecursionLimit": 50,
 	//"RecursionLimitMessage": "Too much recursion in AIML.",
