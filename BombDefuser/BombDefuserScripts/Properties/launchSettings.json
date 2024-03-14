@@ -2,14 +2,14 @@
   "profiles": {
     "BombDefuser (AimlVoice)": {
       "commandName": "Executable",
-      "executablePath": "..\\Aiml\\AimlVoice\\bin\\Debug\\net7.0-windows\\AimlVoice.exe",
-      "commandLineArgs": "-e ..\\Aiml\\AimlCSharpInterface\\bin\\Debug\\net6.0\\AimlCSharpInterface.dll -e BombDefuser\\BombDefuserConnector\\bin\\Debug\\net7.0\\BombDefuserConnector.dll -e ..\\Aiml\\AimlTimers\\bin\\Debug\\net6.0\\AimlTimers.dll -r 1 --no-sr Bot",
+      "executablePath": "..\\Aiml\\AimlVoice\\bin\\Debug\\net8.0-windows\\AimlVoice.exe",
+      "commandLineArgs": "-e ..\\Aiml\\AimlCSharpInterface\\bin\\Debug\\net6.0\\AimlCSharpInterface.dll -e BombDefuser\\BombDefuserConnector\\bin\\Debug\\net8.0\\BombDefuserConnector.dll -e ..\\Aiml\\AimlTimers\\bin\\Debug\\net6.0\\AimlTimers.dll -r 1 --no-sr Bot",
       "workingDirectory": "..\\.."
     },
     "BombDefuser (with speech)": {
       "commandName": "Executable",
       "executablePath": "..\\Aiml\\AimlVoice\\bin\\Debug\\net6.0-windows\\AimlVoice.exe",
-      "commandLineArgs": "-e ..\\Aiml\\AimlCSharpInterface\\bin\\Debug\\net6.0\\AimlCSharpInterface.dll -e BombDefuser\\BombDefuserConnector\\bin\\Debug\\net7.0\\BombDefuserConnector.dll -e ..\\Aiml\\AimlTimers\\bin\\Debug\\net6.0\\AimlTimers.dll -r 1 -g bomb Bot",
+      "commandLineArgs": "-e ..\\Aiml\\AimlCSharpInterface\\bin\\Debug\\net6.0\\AimlCSharpInterface.dll -e BombDefuser\\BombDefuserConnector\\bin\\Debug\\net8.0\\BombDefuserConnector.dll -e ..\\Aiml\\AimlTimers\\bin\\Debug\\net6.0\\AimlTimers.dll -r 1 -g bomb Bot",
       "workingDirectory": "..\\.."
     }
   }

@@ -3,7 +3,7 @@
 	"version": "0.1",
 	"IrcHost": "localhost",
 	"IrcPort": "6677",
-	"InterfaceDirectory": "BombDefuser/BombDefuserScripts/bin/Debug/net7.0",
+	"InterfaceDirectory": "BombDefuser/BombDefuserScripts/bin/Debug/net8.0",
 
 	"UseMorseCode": "true"
 }

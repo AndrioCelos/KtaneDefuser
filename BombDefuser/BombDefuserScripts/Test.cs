@@ -1,4 +1,6 @@
 ﻿namespace BombDefuserScripts;
+
+using SixLabors.ImageSharp.Formats.Bmp;
 using static BombDefuserScripts.AimlTasks;
 [AimlInterface]
 internal class Test {
@@ -44,7 +46,8 @@ internal class Test {
 	[AimlCategory("test screenshot")]
 	public static void TestScreenshot(AimlAsyncContext context) {
 		var image = DefuserConnector.Instance.TakeScreenshot();
-		image.Save(@"C:\Users\Andrea\test.bmp");
+		using var fileStream = File.OpenWrite(Path.Combine(Path.GetTempPath(), "test.bmp"));
+		image.Save(fileStream, new BmpEncoder() { BitsPerPixel = BmpBitsPerPixel.Pixel24 });
 		context.Reply("Done.");
 	}
 

@@ -21,7 +21,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="AimlCSharpInterface">
-      <HintPath>..\..\..\Aiml\AimlCSharpInterface\bin\Debug\net7.0\AimlCSharpInterface.dll</HintPath>
+      <HintPath>..\..\..\Aiml\AimlCSharpInterface\bin\Debug\net8.0\AimlCSharpInterface.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -36,7 +36,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="..\..\..\Aiml\AimlInterfaceCompiler\bin\Debug\net7.0\AimlInterfaceCompiler.exe -o ..\..\Bot $(OutputPath)\$(AssemblyName).dll" />
+    <Exec Command="..\..\..\Aiml\AimlInterfaceCompiler\bin\Debug\net8.0\AimlInterfaceCompiler.exe -o ..\..\Bot $(OutputPath)\$(AssemblyName).dll" />
   </Target>
 
 </Project>
