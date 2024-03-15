@@ -94,14 +94,6 @@ public class GameState {
 	}
 
 	internal void OnStrike(StrikeEventArgs e) => this.Strike?.Invoke(this, e);
-
-	public GameState() {
-		this.ModuleSolved += async (s, e) => {
-			using var interrupt = await Interrupt.EnterAsync(e.Context);
-			interrupt.Context.Reply("Test interrupt.");
-			await Delay(5);
-		};
-	}
 }
 
 public struct IndicatorData {

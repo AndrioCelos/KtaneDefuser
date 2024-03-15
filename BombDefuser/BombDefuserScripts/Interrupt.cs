@@ -133,8 +133,7 @@ public class Interrupt : IDisposable {
 				if (isDefused)
 					context.Reply("The bomb is defused.");
 				else {
-					context.Reply("<priority/>Module complete<reply>next</reply>.");
-					using var interrupt = await EnterAsync(context);
+					context.Reply("<priority/>Module complete<reply>next module</reply>.");
 					if (!GameState.Current.NextModuleNums.TryDequeue(out var nextModule))
 						nextModule = GameState.Current.Modules.FindIndex(GameState.Current.SelectedModuleNum is int i ? i + 1 : 0, m => m.Script.PriorityCategory != PriorityCategory.Needy && !m.IsSolved);
 					if (nextModule >= 0) {
