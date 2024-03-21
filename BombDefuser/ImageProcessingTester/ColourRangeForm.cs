@@ -1,6 +1,7 @@
 ﻿
 using System.Configuration;
 using BombDefuserConnector;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace ImageProcessingTester;
 public partial class ColourRangeForm : Form {
@@ -105,7 +106,8 @@ public partial class ColourRangeForm : Form {
 
 	private void button1_Click(object sender, EventArgs e) {
 		if (openFileDialog.ShowDialog(this) == DialogResult.OK) {
-			originalImage = new Bitmap(openFileDialog.FileName);
+			var image = SixLabors.ImageSharp.Image.Load<Rgba32>(openFileDialog.FileName);
+			originalImage = image.ToWinFormsImage();
 			RecalculateAverage();
 			Redraw();
 		}
@@ -120,8 +122,8 @@ public partial class ColourRangeForm : Form {
 		}
 	}
 
-	private void pictureBox1_MouseDown(object sender, MouseEventArgs e) {
-		if (originalImage is null) return;
+	private void pictureBox1_MouseMove(object sender, MouseEventArgs e) {
+		if (originalImage is null || (!e.Button.HasFlag(MouseButtons.Left) && !e.Button.HasFlag(MouseButtons.Right))) return;
 		var x = (e.X - imageRectangle.X) * originalImage.Width / imageRectangle.Width;
 		var y = (e.Y - imageRectangle.Y) * originalImage.Height / imageRectangle.Height;
 		if (x >= 0 && x < originalImage.Width && y >= 0 && y < originalImage.Height) {
@@ -146,11 +148,11 @@ public partial class ColourRangeForm : Form {
 							numericUpDown2.Value = (decimal) Math.Ceiling(hsv.H);
 						} else if (numericUpDown2.Value < numericUpDown1.Value) {
 							var midpoint = (numericUpDown1.Value + numericUpDown2.Value) / 2;
-							if ((decimal) hsv.H < midpoint) numericUpDown2.Value = Math.Max(numericUpDown2.Value, (decimal) hsv.H);
-							else numericUpDown1.Value = Math.Min(numericUpDown1.Value, (decimal) hsv.H);
+							if ((decimal) hsv.H < midpoint) numericUpDown2.Value = Math.Max(numericUpDown2.Value, (decimal) Math.Ceiling(hsv.H));
+							else numericUpDown1.Value = Math.Min(numericUpDown1.Value, (decimal) Math.Floor(hsv.H));
 						} else {
-							numericUpDown1.Value = Math.Min(numericUpDown1.Value, (decimal) hsv.H);
-							numericUpDown2.Value = Math.Max(numericUpDown2.Value, (decimal) hsv.H);
+							numericUpDown1.Value = Math.Min(numericUpDown1.Value, (decimal) Math.Floor(hsv.H));
+							numericUpDown2.Value = Math.Max(numericUpDown2.Value, (decimal) Math.Ceiling(hsv.H));
 						}
 						numericUpDown3.Value = Math.Min(ModifierKeys.HasFlag(Keys.Alt) ? 100 : numericUpDown3.Value, (decimal) Math.Floor(hsv.S * 100));
 						numericUpDown4.Value = Math.Max(ModifierKeys.HasFlag(Keys.Alt) ? 0 : numericUpDown4.Value, (decimal) Math.Ceiling(hsv.S * 100));
@@ -164,6 +166,19 @@ public partial class ColourRangeForm : Form {
 				autoRedraw = true;
 				Redraw();
 			}
+		}
+	}
+
+	private void pictureBox1_Resize(object sender, EventArgs e) {
+		if (originalImage is null) return;
+		var scaleX = (double) pictureBox1.Width / originalImage.Width;
+		var scaleY = (double) pictureBox1.Height / originalImage.Height;
+		if (scaleX < scaleY) {
+			var height = (int) Math.Round(originalImage.Height * scaleX);
+			imageRectangle = new(0, (pictureBox1.Height - height) / 2, pictureBox1.Width, height);
+		} else {
+			var width = (int) Math.Round(originalImage.Width * scaleY);
+			imageRectangle = new((pictureBox1.Width - width) / 2, 0, width, pictureBox1.Height);
 		}
 	}
 }

@@ -302,7 +302,7 @@ public partial class TransformationForm : Form {
 			3 => new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder(),
 			4 => new SixLabors.ImageSharp.Formats.Png.PngEncoder(),
 			5 => new SixLabors.ImageSharp.Formats.Tiff.TiffEncoder(),
-			_ => new SixLabors.ImageSharp.Formats.Webp.WebpEncoder()
+			_ => new SixLabors.ImageSharp.Formats.Webp.WebpEncoder() { FileFormat = SixLabors.ImageSharp.Formats.Webp.WebpFileFormatType.Lossless }
 		});
 	}
 
