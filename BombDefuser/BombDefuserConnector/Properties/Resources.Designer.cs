@@ -623,6 +623,96 @@ namespace BombDefuserConnector.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
+        internal static byte[] PianoKeysCClef {
+            get {
+                object obj = ResourceManager.GetObject("PianoKeysCClef", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] PianoKeysCommonTime {
+            get {
+                object obj = ResourceManager.GetObject("PianoKeysCommonTime", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] PianoKeysCutCommonTime {
+            get {
+                object obj = ResourceManager.GetObject("PianoKeysCutCommonTime", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] PianoKeysFermata {
+            get {
+                object obj = ResourceManager.GetObject("PianoKeysFermata", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] PianoKeysFlat {
+            get {
+                object obj = ResourceManager.GetObject("PianoKeysFlat", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] PianoKeysMordent {
+            get {
+                object obj = ResourceManager.GetObject("PianoKeysMordent", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] PianoKeysNatural {
+            get {
+                object obj = ResourceManager.GetObject("PianoKeysNatural", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] PianoKeysSharp {
+            get {
+                object obj = ResourceManager.GetObject("PianoKeysSharp", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] PianoKeysTurn {
+            get {
+                object obj = ResourceManager.GetObject("PianoKeysTurn", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
         internal static byte[] SimonSays {
             get {
                 object obj = ResourceManager.GetObject("SimonSays", resourceCulture);

@@ -26,5 +26,12 @@ public enum ModuleType {
 	Wires,
 	[AimlSetItem("Wire Sequence")]
 	WireSequence,
+
+	[AimlSetItem("Colour Flash")]
+	ColourFlash,
+	[AimlSetItem("Piano Keys")]
+	PianoKeys,
+	Semaphore,
+
 	Unknown = -1
 }

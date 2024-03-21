@@ -34,12 +34,12 @@ internal partial class Simulation {
 		this.rxTimer.Elapsed += this.RXTimer_Elapsed;
 
 		this.moduleFaces[0] = new(new BombComponent?[,] {
-			{ TimerComponent.Instance, new Modules.Button(Components.Button.Colour.Red, "PRESS"), null },
-			{ new Modules.Wires(0, Components.Wires.Colour.Blue, Components.Wires.Colour.Red, Components.Wires.Colour.Red), null, null }
+			{ TimerComponent.Instance, new Modules.Semaphore(), null },
+			{ null, null, null }
 		});
 		this.moduleFaces[1] = new(new BombComponent?[,] {
 			{ null, null, null },
-			{ null, new Modules.Button(Components.Button.Colour.White, "HOLD"), null }
+			{ null, null, null }
 		});
 		this.widgetFaces[0] = new(new[] { Widget.Create(new Widgets.SerialNumber(), "AB3DE6"), null, null, null });
 		this.widgetFaces[1] = new(new[] { Widget.Create(new Widgets.Indicator(), new(false, "BOB")), Widget.Create(new Widgets.Indicator(), new(true, "FRQ")), null, null });

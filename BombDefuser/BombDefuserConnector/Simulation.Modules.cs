@@ -9,6 +9,7 @@ using WireFlags = BombDefuserConnector.Components.ComplicatedWires.WireFlags;
 namespace BombDefuserConnector;
 internal partial class Simulation {
 	private static class Modules {
+#region Vanilla modules
 		public class Wires : Module<Components.Wires.ReadData> {
 			internal override Components.Wires.ReadData Details => new(this.wires);
 
@@ -607,9 +608,110 @@ internal partial class Simulation {
 						if (!this.shouldCut[this.currentPage * 3 + this.Y - 1])
 							this.StrikeFlash();
 						break;
-						
+
 				}
 			}
 		}
+
+#endregion
+
+#region Mod modules
+		public class ColourFlash : Module<Components.ColourFlash.ReadData> {
+			internal override Components.ColourFlash.ReadData Details => this.index < 0 ? new(null, Components.ColourFlash.Colour.None) : this.sequence[this.index];
+
+			private int index;
+			private Components.ColourFlash.ReadData[] sequence;
+			private readonly Timer animationTimer = new(750);
+
+			public ColourFlash() : base(DefuserConnector.GetComponentReader<Components.ColourFlash>(), 2, 1) {
+				this.sequence = [ new("RED", Components.ColourFlash.Colour.Yellow), new("YELLOW", Components.ColourFlash.Colour.Green), new("GREEN", Components.ColourFlash.Colour.Blue),
+					new("BLUE", Components.ColourFlash.Colour.Magenta), new("MAGENTA", Components.ColourFlash.Colour.White), new("WHITE", Components.ColourFlash.Colour.Blue),
+					new("RED", Components.ColourFlash.Colour.Red), new("BLUE", Components.ColourFlash.Colour.Blue) ];
+				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
+				this.animationTimer.Start();
+			}
+
+			private void AnimationTimer_Elapsed(object? sender, ElapsedEventArgs e) {
+				this.index++;
+				if (this.index >= this.sequence.Length) this.index = -4;
+			}
+
+			public override void Interact() {
+				if (this.X == 0) {
+					Message($"Yes was pressed at {this.index}.");
+					if (this.index == 0) {
+						this.Solve();
+						this.animationTimer.Stop();
+						this.index = -1;
+					} else
+						this.StrikeFlash();
+				} else if (this.X == 1) {
+					Message($"No was pressed at {this.index}.");
+					this.StrikeFlash();
+				}
+			}
+		}
+
+		public class PianoKeys : Module<Components.PianoKeys.ReadData> {
+			internal override Components.PianoKeys.ReadData Details => new([Components.PianoKeys.Symbol.CutCommonTime, Components.PianoKeys.Symbol.Natural, Components.PianoKeys.Symbol.Fermata]);
+
+			private static readonly string[] labels = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+			private readonly int[] correctSequence = [4, 6, 6, 6, 6, 4, 4, 4];
+			private int index;
+
+			public PianoKeys() : base(DefuserConnector.GetComponentReader<Components.PianoKeys>(), 12, 1) { }
+
+			public override void Interact() {
+				Message($"{labels[this.X]} was played.");
+				if (this.index >= this.correctSequence.Length) return;
+				if (this.X == this.correctSequence[this.index]) {
+					this.index++;
+					if (this.index >= this.correctSequence.Length)
+						this.Solve();
+				} else {
+					this.StrikeFlash();
+					this.index = 0;
+				}
+			}
+		}
+
+		public class Semaphore : Module<Components.Semaphore.ReadData> {
+			internal override Components.Semaphore.ReadData Details => this.signals[this.index];
+
+			private readonly Components.Semaphore.ReadData[] signals = [
+				new(Components.Semaphore.Direction.Up, Components.Semaphore.Direction.Right),
+				new(Components.Semaphore.Direction.DownLeft, Components.Semaphore.Direction.Down),
+				new(Components.Semaphore.Direction.Left, Components.Semaphore.Direction.Down),
+				new(Components.Semaphore.Direction.Up, Components.Semaphore.Direction.UpRight),
+				new(Components.Semaphore.Direction.UpLeft, Components.Semaphore.Direction.Down),
+				new(Components.Semaphore.Direction.Up, Components.Semaphore.Direction.Down),
+				new(Components.Semaphore.Direction.Up, Components.Semaphore.Direction.Right),
+				new(Components.Semaphore.Direction.Up, Components.Semaphore.Direction.Down),
+				new(Components.Semaphore.Direction.Down, Components.Semaphore.Direction.UpRight)
+			];
+			private int index;
+			private readonly int correctIndex = 5;
+
+			public Semaphore() : base(DefuserConnector.GetComponentReader<Components.Semaphore>(), 3, 1) { }
+
+			public override void Interact() {
+				switch (this.X) {
+					case 0:
+						if (this.index > 0) this.index--;
+						break;
+					case 2:
+						if (this.index < this.signals.Length - 1) this.index++;
+						break;
+					case 1:
+						Message($"{this.Details} was submitted.");
+						if (this.index == this.correctIndex)
+							this.Solve();
+						else
+							this.StrikeFlash();
+						break;
+				}
+			}
+		}
+#endregion
 	}
 }

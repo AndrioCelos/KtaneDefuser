@@ -286,6 +286,33 @@
   <data name="Password2" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\ComponentSamples\Password2.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="PianoKeysCClef" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Piano Keys\CClef.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="PianoKeysCommonTime" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Piano Keys\CommonTime.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="PianoKeysCutCommonTime" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Piano Keys\CutCommonTime.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="PianoKeysFermata" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Piano Keys\Fermata.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="PianoKeysFlat" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Piano Keys\Flat.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="PianoKeysMordent" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Piano Keys\Mordent.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="PianoKeysNatural" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Piano Keys\Natural.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="PianoKeysSharp" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Piano Keys\Sharp.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="PianoKeysTurn" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Piano Keys\Turn.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="SimonSays" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\ComponentSamples\SimonSays.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>

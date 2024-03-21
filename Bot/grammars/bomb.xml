@@ -59,6 +59,10 @@
 			<item> Who's on First </item>
 			<item> Wires </item>
 			<item> Wire Sequence </item>
+
+			<item> Colour Flash </item>
+			<item> Piano Keys </item>
+			<item> Semaphore </item>
 		</one-of>
 	</rule>
 	<rule id='colour' scope='public'>
