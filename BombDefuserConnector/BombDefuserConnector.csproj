@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <Reference Include="Aiml">
-      <HintPath>..\..\..\Aiml\Aiml\bin\Debug\net6.0\Aiml.dll</HintPath>
+      <HintPath>..\..\Aiml\Aiml\bin\Debug\net6.0\Aiml.dll</HintPath>
       <Private>True</Private>
       <ExcludeAssets>runtime</ExcludeAssets>
     </Reference>
