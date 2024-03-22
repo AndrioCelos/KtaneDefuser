@@ -6,6 +6,15 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Title>Image Processing Tester</Title>
+    <Authors>Andrio Celos</Authors>
+    <Copyright>© 2023-2024 Andrio Celos</Copyright>
+    <PackageProjectUrl>https://github.com/AndrioCelos/BombDefuser</PackageProjectUrl>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/AndrioCelos/BombDefuser</RepositoryUrl>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>$(AssemblyVersion)</FileVersion>
+    <PackageLicenseFile>license.md</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>

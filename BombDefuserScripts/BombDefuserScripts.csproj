@@ -5,6 +5,15 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Title>Bomb Defuser Scripts</Title>
+    <Authors>Andrio Celos</Authors>
+    <Copyright>© 2023-2024 Andrio Celos</Copyright>
+    <PackageProjectUrl>https://github.com/AndrioCelos/BombDefuser</PackageProjectUrl>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/AndrioCelos/BombDefuser</RepositoryUrl>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>$(AssemblyVersion)</FileVersion>
+    <PackageLicenseFile>license.md</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
