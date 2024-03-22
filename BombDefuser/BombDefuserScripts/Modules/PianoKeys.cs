@@ -58,7 +58,7 @@ internal partial class PianoKeys : ModuleScript<BombDefuserConnector.Components.
 		var script = GameState.Current.CurrentScript<PianoKeys>();
 		var buttons = new List<Button>();
 		var newHighlight = script.highlight;
-		foreach (Match m in matches) {
+		foreach (var m in matches.Cast<Match>()) {
 			if (m.Groups[1].Success) break;
 			var note = m.Groups[2].Value[0] switch {
 				'A' or 'a' => Note.A,

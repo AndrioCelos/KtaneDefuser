@@ -75,10 +75,8 @@ public class Maze : ComponentReader<Maze.ReadData> {
 							if (debugImage2 is not null) debugImage2[x + 1, y] = Color.Green;
 							if (circle1 is null)
 								circle1 = new(x, y);
-							else if (circle2 is null)
-								circle2 = new(x, y);
 							else
-								throw new ArgumentException("Found more than two circle locations.");
+								circle2 = circle2 is null ? new(x, y) : throw new ArgumentException("Found more than two circle locations.");
 							break;
 						}
 					}

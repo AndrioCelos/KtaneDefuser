@@ -26,7 +26,7 @@ public class DefuserConnector : IDisposable {
 	private TaskCompletionSource<Image<Rgba32>>? screenshotTaskSource;
 	private TaskCompletionSource<string?>? readTaskSource;
 	internal User? user;
-	private readonly BlockingCollection<(string, User)> aimlNotificationQueue = new();
+	private readonly BlockingCollection<(string, User)> aimlNotificationQueue = [];
 	private Simulation? simulation;
 
 	private static DefuserConnector? instance;
@@ -44,9 +44,7 @@ public class DefuserConnector : IDisposable {
 
 	static DefuserConnector() => TimerReader = GetComponentReader<Components.Timer>();
 
-	public DefuserConnector() {
-		instance ??= this;
-	}
+	public DefuserConnector() => instance ??= this;
 
 	~DefuserConnector() => this.Dispose();
 
@@ -89,6 +87,7 @@ public class DefuserConnector : IDisposable {
 	}
 
 	private void Reader_Disconnected(object? sender, DisconnectedEventArgs e) => this.SendAimlNotification($"OOB DefuserSocketError {e.Exception?.Message ?? "nil"}");
+#pragma warning disable CS0618 // TODO: Obsolete message types may be removed later.
 	private void Reader_MessageReceived(object? sender, DefuserMessageEventArgs e) {
 		switch (e.Message) {
 			case LegacyEventMessage legacyEventMessage:
@@ -150,6 +149,7 @@ public class DefuserConnector : IDisposable {
 				break;
 		}
 	}
+#pragma warning restore CS0618 // Type or member is obsolete
 
 	private void SendAimlNotification(string message) {
 		if (this.CallbacksEnabled)
@@ -378,9 +378,8 @@ public class DefuserConnector : IDisposable {
 			return componentReaders[type].ProcessNonGeneric(image, lightsState, ref debugImage)?.ToString();
 
 		type = typeof(WidgetReader).Assembly.GetType($"{nameof(BombDefuserConnector)}.{nameof(Widgets)}.{readerName}");
-		if (type is not null)
-			return widgetReaders[type].ProcessNonGeneric(image, lightsState, ref debugImage)?.ToString();
-
-		throw new ArgumentException($"No such command, component or widget is known: {readerName}");
+		return type is not null
+			? widgetReaders[type].ProcessNonGeneric(image, lightsState, ref debugImage)?.ToString()
+			: throw new ArgumentException($"No such command, component or widget is known: {readerName}");
 	}
 }

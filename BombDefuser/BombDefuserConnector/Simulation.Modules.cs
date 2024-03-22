@@ -10,18 +10,12 @@ namespace BombDefuserConnector;
 internal partial class Simulation {
 	private static class Modules {
 #region Vanilla modules
-		public class Wires : Module<Components.Wires.ReadData> {
+		public class Wires(int shouldCut, params Components.Wires.Colour[] wires) : Module<Components.Wires.ReadData>(DefuserConnector.GetComponentReader<Components.Wires>(), 1, wires.Length) {
 			internal override Components.Wires.ReadData Details => new(this.wires);
 
-			private readonly Components.Wires.Colour[] wires;
-			private readonly bool[] isCut;
-			private readonly int shouldCut;
-
-			public Wires(int shouldCut, params Components.Wires.Colour[] wires) : base(DefuserConnector.GetComponentReader<Components.Wires>(), 1, wires.Length) {
-				this.shouldCut = shouldCut;
-				this.wires = wires;
-				this.isCut = new bool[wires.Length];
-			}
+			private readonly Components.Wires.Colour[] wires = wires;
+			private readonly bool[] isCut = new bool[wires.Length];
+			private readonly int shouldCut = shouldCut;
 
 			public override void Interact() {
 				Message($"Cut wire {this.Y + 1}");
@@ -35,16 +29,16 @@ internal partial class Simulation {
 			}
 		}
 
-		public class ComplicatedWires : Module<Components.ComplicatedWires.ReadData> {
-			internal static readonly ComplicatedWires Test1 = new(new WireFlags[] { WireFlags.None, WireFlags.None, WireFlags.Blue });
-			internal static readonly ComplicatedWires Test2 = new(new WireFlags[] { WireFlags.Blue, WireFlags.Red, WireFlags.Blue | WireFlags.Light });
-			internal static readonly ComplicatedWires Test3 = new(new WireFlags[] { WireFlags.Red, WireFlags.Blue | WireFlags.Star, WireFlags.Blue | WireFlags.Light });
+		public class ComplicatedWires(Components.ComplicatedWires.WireFlags[] wires) : Module<Components.ComplicatedWires.ReadData>(DefuserConnector.GetComponentReader<Components.ComplicatedWires>(), wires.Length, 1) {
+			internal static readonly ComplicatedWires Test1 = new([WireFlags.None, WireFlags.None, WireFlags.Blue]);
+			internal static readonly ComplicatedWires Test2 = new([WireFlags.Blue, WireFlags.Red, WireFlags.Blue | WireFlags.Light]);
+			internal static readonly ComplicatedWires Test3 = new([WireFlags.Red, WireFlags.Blue | WireFlags.Star, WireFlags.Blue | WireFlags.Light]);
 
 			internal override Components.ComplicatedWires.ReadData Details => new(this.X, this.wires);
 
 			public static bool[] ShouldCut = new bool[16];
-			private readonly WireFlags[] wires;
-			private readonly bool[] isCut;
+			private readonly WireFlags[] wires = wires;
+			private readonly bool[] isCut = new bool[wires.Length];
 
 			static ComplicatedWires() {
 				ShouldCut[(int) WireFlags.None] = true;
@@ -52,11 +46,6 @@ internal partial class Simulation {
 				ShouldCut[(int) (WireFlags.Blue | WireFlags.Star)] = true;
 				ShouldCut[(int) (WireFlags.Blue | WireFlags.Light)] = true;
 				ShouldCut[(int) (WireFlags.Blue | WireFlags.Star | WireFlags.Light)] = true;
-			}
-
-			public ComplicatedWires(WireFlags[] wires) : base(DefuserConnector.GetComponentReader<Components.ComplicatedWires>(), wires.Length, 1) {
-				this.wires = wires;
-				this.isCut = new bool[wires.Length];
 			}
 
 			public override void Interact() {
@@ -123,18 +112,12 @@ internal partial class Simulation {
 			}
 		}
 
-		public class Keypad : Module<Components.Keypad.ReadData> {
+		public class Keypad(Components.Keypad.Symbol[] symbols, int[] correctOrder) : Module<Components.Keypad.ReadData>(DefuserConnector.GetComponentReader<Components.Keypad>(), 2, 2) {
 			internal override Components.Keypad.ReadData Details => new(this.symbols);
 
-			private readonly Components.Keypad.Symbol[] symbols;
-			private readonly int[] correctOrder;
-			private readonly bool[] isPressed;
-
-			public Keypad(Components.Keypad.Symbol[] symbols, int[] correctOrder) : base(DefuserConnector.GetComponentReader<Components.Keypad>(), 2, 2) {
-				this.symbols = symbols;
-				this.correctOrder = correctOrder;
-				this.isPressed = new bool[symbols.Length];
-			}
+			private readonly Components.Keypad.Symbol[] symbols = symbols;
+			private readonly int[] correctOrder = correctOrder;
+			private readonly bool[] isPressed = new bool[symbols.Length];
 
 			public override void Interact() {
 				if (this.X is < 0 or >= 2 || this.Y is < 0 or >= 2) throw new InvalidOperationException("Invalid highlight position");
@@ -257,7 +240,7 @@ internal partial class Simulation {
 			private int index;
 			private readonly Timer animationTimer = new(250);
 			private int selectedFrequency;
-			private static readonly string[] allFrequencies = new[] { "505", "515", "522", "532", "535", "542", "545", "552", "555", "565", "572", "575", "582", "592", "595", "600" };
+			private static readonly string[] allFrequencies = ["505", "515", "522", "532", "535", "542", "545", "552", "555", "565", "572", "575", "582", "592", "595", "600"];
 
 			public MorseCode() : base(DefuserConnector.GetComponentReader<Components.MorseCode>(), 2, 2) {
 				this.SelectableGrid[1, 1] = false;
@@ -320,10 +303,10 @@ internal partial class Simulation {
 			private int correctPosition;
 			private int nextStateIndex;
 
-			private static readonly (bool[] lights, int correctPosition)[] states = new[] {
+			private static readonly (bool[] lights, int correctPosition)[] states = [
 				(new[] { false, false, true, false, true, true, true, true, true, true, false, true }, 0),
 				(new[] { false, true, true, false, false, true, true, true, true, true, false, true }, 2)
-			};
+			];
 
 			internal override Components.NeedyKnob.ReadData Details => new(this.DisplayedTime, this.lights);
 
@@ -349,7 +332,7 @@ internal partial class Simulation {
 		}
 
 		public class NeedyVentGas : NeedyModule<Components.NeedyVentGas.ReadData> {
-			private static readonly string[] messages = new[] { "VENT GAS?", "DETONATE?" };
+			private static readonly string[] messages = ["VENT GAS?", "DETONATE?"];
 			private int messageIndex = 1;
 
 			internal override Components.NeedyVentGas.ReadData Details => new(this.DisplayedTime, this.DisplayedTime is not null ? messages[this.messageIndex] : null);
@@ -479,10 +462,10 @@ internal partial class Simulation {
 			private bool isAnimating;
 			private readonly Timer animationTimer = new(2900) { AutoReset = false };
 
-			private static readonly string[] displayStrings = new[] { "", "YES", "FIRST", "DISPLAY", "OKAY", "SAYS", "NOTHING", "BLANK", "NO", "LED", "LEAD", "READ", "RED", "REED", "LEED",
-				"HOLD ON", "YOU", "YOU ARE", "YOUR", "YOU'RE", "UR", "THERE", "THEY'RE", "THEIR", "THEY ARE", "SEE", "C", "CEE" };
-			private static readonly string[] keyStrings = new[] { "READY", "FIRST", "NO", "BLANK", "NOTHING", "YES", "WHAT", "UHHH", "LEFT", "RIGHT", "MIDDLE", "OKAY", "WAIT", "PRESS",
-				"YOU", "YOU ARE", "YOUR", "YOU’RE", "UR", "U", "UH HUH", "UH UH", "WHAT?", "DONE", "NEXT", "HOLD", "SURE", "LIKE" };
+			private static readonly string[] displayStrings = [ "", "YES", "FIRST", "DISPLAY", "OKAY", "SAYS", "NOTHING", "BLANK", "NO", "LED", "LEAD", "READ", "RED", "REED", "LEED",
+				"HOLD ON", "YOU", "YOU ARE", "YOUR", "YOU'RE", "UR", "THERE", "THEY'RE", "THEIR", "THEY ARE", "SEE", "C", "CEE" ];
+			private static readonly string[] keyStrings = [ "READY", "FIRST", "NO", "BLANK", "NOTHING", "YES", "WHAT", "UHHH", "LEFT", "RIGHT", "MIDDLE", "OKAY", "WAIT", "PRESS",
+				"YOU", "YOU ARE", "YOUR", "YOU’RE", "UR", "U", "UH HUH", "UH UH", "WHAT?", "DONE", "NEXT", "HOLD", "SURE", "LIKE" ];
 
 			public WhosOnFirst() : base(DefuserConnector.GetComponentReader<Components.WhosOnFirst>(), 2, 3) {
 				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
@@ -620,7 +603,7 @@ internal partial class Simulation {
 			internal override Components.ColourFlash.ReadData Details => this.index < 0 ? new(null, Components.ColourFlash.Colour.None) : this.sequence[this.index];
 
 			private int index;
-			private Components.ColourFlash.ReadData[] sequence;
+			private readonly Components.ColourFlash.ReadData[] sequence;
 			private readonly Timer animationTimer = new(750);
 
 			public ColourFlash() : base(DefuserConnector.GetComponentReader<Components.ColourFlash>(), 2, 1) {

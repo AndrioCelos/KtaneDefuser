@@ -1,17 +1,10 @@
 ﻿namespace BombDefuserScripts;
 
-public class AimlInterfaceEventArgs : EventArgs {
-	public AimlAsyncContext Context { get; set; }
-
-	public AimlInterfaceEventArgs(AimlAsyncContext context) => this.Context = context ?? throw new ArgumentNullException(nameof(context));
+public class AimlInterfaceEventArgs(AimlAsyncContext context) : EventArgs {
+	public AimlAsyncContext Context { get; set; } = context ?? throw new ArgumentNullException(nameof(context));
 }
 
-public class StrikeEventArgs : AimlInterfaceEventArgs {
-	public Slot Slot { get; }
-	public ModuleState? ModuleState { get; }
-
-	public StrikeEventArgs(AimlAsyncContext context, Slot slot, ModuleState? moduleState) : base(context) {
-		this.Slot = slot;
-		this.ModuleState = moduleState;
-	}
+public class StrikeEventArgs(AimlAsyncContext context, Slot slot, ModuleState? moduleState) : AimlInterfaceEventArgs(context) {
+	public Slot Slot { get; } = slot;
+	public ModuleState? ModuleState { get; } = moduleState;
 }

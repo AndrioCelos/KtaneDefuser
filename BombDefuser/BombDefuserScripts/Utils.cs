@@ -6,7 +6,7 @@ using Button = BombDefuserConnectorApi.Button;
 namespace BombDefuserScripts;
 internal static class Utils {
 	public static Quadrilateral CurrentModuleArea { get; } = new( 836,  390, 1120,  390,  832,  678, 1124,  678);
-	private static readonly Quadrilateral[] moduleAreas = new Quadrilateral[] {
+	private static readonly Quadrilateral[] moduleAreas = [
 		new( 220,  100,  496,  100,  193,  359,  479,  359),
 		new( 535,  100,  806,  101,  522,  359,  801,  360),
 		new( 840,  101, 1113,  101,  836,  360, 1119,  360),
@@ -22,29 +22,29 @@ internal static class Utils {
 		new( 829,  705, 1125,  704,  828, 1018, 1134, 1016),
 		new(1164,  704, 1444,  704, 1173, 1016, 1465, 1015),
 		new(1499,  704, 1782,  703, 1521, 1015, 1816, 1014)
-	};
-	private static readonly Quadrilateral[] bombAreas = new Quadrilateral[] {
+	];
+	private static readonly Quadrilateral[] bombAreas = [
 		new( 572,  291,  821,  291,  559,  534,  816,  534),
 		new( 852,  291, 1096,  291,  848,  534, 1101,  534),
 		new(1127,  292, 1369,  292, 1134,  533, 1383,  533),
 		new( 558,  558,  816,  558,  544,  822,  811,  822),
 		new( 848,  558, 1099,  558,  845,  821, 1106,  821),
 		new(1134,  558, 1385,  558, 1141,  821, 1400,  821)
-	};
-	internal static readonly Quadrilateral[] sideWidgetAreas = new Quadrilateral[] {
+	];
+	internal static readonly Quadrilateral[] sideWidgetAreas = [
 		new( 813,  465,  817,  228,  988,  465,  988,  228),
 		new( 988,  465,  988,  228, 1163,  465, 1158,  228),
 		new( 808,  772,  812,  515,  988,  772,  988,  515),
 		new( 988,  772,  988,  515, 1168,  772, 1164,  515)
-	};
-	internal static readonly Quadrilateral[] topBottomWidgetAreas = new Quadrilateral[] {
+	];
+	internal static readonly Quadrilateral[] topBottomWidgetAreas = [
 		new( 588,  430,  784,  430,  587,  541,  784,  541),
 		new( 824,  430, 1140,  430,  824,  541, 1140,  541),
 		new(1181,  430, 1389,  430, 1182,  540, 1390,  541),
 		new( 580,  566,  783,  566,  578,  678,  782,  678),
 		new( 821,  566, 1140,  566,  821,  678, 1140,  678),
 		new(1181,  566, 1390,  566, 1182,  678, 1392,  678)
-	};
+	];
 
 	/// <summary>Returns the quadrilateral representing the location of the specified slot on the screen. The slot should be on the side of the bomb we're already looking at.</summary>
 	public static Quadrilateral GetPoints(Slot slot) {

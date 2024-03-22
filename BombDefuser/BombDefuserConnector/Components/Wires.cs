@@ -77,7 +77,7 @@ public class Wires : ComponentReader<Wires.ReadData> {
 				inWire = 4;
 			}
 		}
-		return new(colours.ToArray());
+		return new([.. colours]);
 	}
 
 	private static Colour? GetColour(HsvColor hsv) {

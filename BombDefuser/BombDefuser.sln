@@ -9,7 +9,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BombDefuserConnector", "Bom
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BombDefuserScripts", "BombDefuserScripts\BombDefuserScripts.csproj", "{D45B3EA8-0CFE-4FCB-8FD5-6277E2BBFFEB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BombDefuserConnectorApi", "BombDefuserConnectorApi\BombDefuserConnectorApi.csproj", "{174639AF-080A-4DAF-AEE7-C3AEB803C4F0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BombDefuserConnectorApi", "BombDefuserConnectorApi\BombDefuserConnectorApi.csproj", "{174639AF-080A-4DAF-AEE7-C3AEB803C4F0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{AC2EA590-DC89-4C91-A3D9-E62AB5CB5029}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

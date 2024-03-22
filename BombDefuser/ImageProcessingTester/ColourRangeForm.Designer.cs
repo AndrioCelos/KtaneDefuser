@@ -25,90 +25,90 @@ partial class ColourRangeForm {
 	/// </summary>
 	private void InitializeComponent() {
 		this.flowLayoutPanel1 = new FlowLayoutPanel();
-		this.button1 = new Button();
-		this.button2 = new Button();
-		this.comboBox1 = new ComboBox();
+		this.OpenButton = new Button();
+		this.PasteButton = new Button();
+		this.ModeBox = new ComboBox();
 		this.label1 = new Label();
-		this.numericUpDown1 = new NumericUpDown();
-		this.numericUpDown2 = new NumericUpDown();
+		this.RHMinBox = new NumericUpDown();
+		this.RHMaxBox = new NumericUpDown();
 		this.label2 = new Label();
-		this.numericUpDown3 = new NumericUpDown();
-		this.numericUpDown4 = new NumericUpDown();
+		this.GSMinBox = new NumericUpDown();
+		this.GSMaxBox = new NumericUpDown();
 		this.label3 = new Label();
-		this.numericUpDown5 = new NumericUpDown();
-		this.numericUpDown6 = new NumericUpDown();
+		this.BVMinBox = new NumericUpDown();
+		this.BVMaxBox = new NumericUpDown();
 		this.label4 = new Label();
-		this.numericUpDown7 = new NumericUpDown();
-		this.label5 = new Label();
-		this.pictureBox1 = new PictureBox();
+		this.DistanceBox = new NumericUpDown();
+		this.StatusLabel = new Label();
+		this.PictureBox = new PictureBox();
 		this.openFileDialog = new OpenFileDialog();
 		this.flowLayoutPanel1.SuspendLayout();
-		((System.ComponentModel.ISupportInitialize) this.numericUpDown1).BeginInit();
-		((System.ComponentModel.ISupportInitialize) this.numericUpDown2).BeginInit();
-		((System.ComponentModel.ISupportInitialize) this.numericUpDown3).BeginInit();
-		((System.ComponentModel.ISupportInitialize) this.numericUpDown4).BeginInit();
-		((System.ComponentModel.ISupportInitialize) this.numericUpDown5).BeginInit();
-		((System.ComponentModel.ISupportInitialize) this.numericUpDown6).BeginInit();
-		((System.ComponentModel.ISupportInitialize) this.numericUpDown7).BeginInit();
-		((System.ComponentModel.ISupportInitialize) this.pictureBox1).BeginInit();
+		((System.ComponentModel.ISupportInitialize) this.RHMinBox).BeginInit();
+		((System.ComponentModel.ISupportInitialize) this.RHMaxBox).BeginInit();
+		((System.ComponentModel.ISupportInitialize) this.GSMinBox).BeginInit();
+		((System.ComponentModel.ISupportInitialize) this.GSMaxBox).BeginInit();
+		((System.ComponentModel.ISupportInitialize) this.BVMinBox).BeginInit();
+		((System.ComponentModel.ISupportInitialize) this.BVMaxBox).BeginInit();
+		((System.ComponentModel.ISupportInitialize) this.DistanceBox).BeginInit();
+		((System.ComponentModel.ISupportInitialize) this.PictureBox).BeginInit();
 		this.SuspendLayout();
 		// 
 		// flowLayoutPanel1
 		// 
 		this.flowLayoutPanel1.AutoSize = true;
-		this.flowLayoutPanel1.Controls.Add(this.button1);
-		this.flowLayoutPanel1.Controls.Add(this.button2);
-		this.flowLayoutPanel1.Controls.Add(this.comboBox1);
+		this.flowLayoutPanel1.Controls.Add(this.OpenButton);
+		this.flowLayoutPanel1.Controls.Add(this.PasteButton);
+		this.flowLayoutPanel1.Controls.Add(this.ModeBox);
 		this.flowLayoutPanel1.Controls.Add(this.label1);
-		this.flowLayoutPanel1.Controls.Add(this.numericUpDown1);
-		this.flowLayoutPanel1.Controls.Add(this.numericUpDown2);
+		this.flowLayoutPanel1.Controls.Add(this.RHMinBox);
+		this.flowLayoutPanel1.Controls.Add(this.RHMaxBox);
 		this.flowLayoutPanel1.Controls.Add(this.label2);
-		this.flowLayoutPanel1.Controls.Add(this.numericUpDown3);
-		this.flowLayoutPanel1.Controls.Add(this.numericUpDown4);
+		this.flowLayoutPanel1.Controls.Add(this.GSMinBox);
+		this.flowLayoutPanel1.Controls.Add(this.GSMaxBox);
 		this.flowLayoutPanel1.Controls.Add(this.label3);
-		this.flowLayoutPanel1.Controls.Add(this.numericUpDown5);
-		this.flowLayoutPanel1.Controls.Add(this.numericUpDown6);
+		this.flowLayoutPanel1.Controls.Add(this.BVMinBox);
+		this.flowLayoutPanel1.Controls.Add(this.BVMaxBox);
 		this.flowLayoutPanel1.Controls.Add(this.label4);
-		this.flowLayoutPanel1.Controls.Add(this.numericUpDown7);
-		this.flowLayoutPanel1.Controls.Add(this.label5);
+		this.flowLayoutPanel1.Controls.Add(this.DistanceBox);
+		this.flowLayoutPanel1.Controls.Add(this.StatusLabel);
 		this.flowLayoutPanel1.Dock = DockStyle.Top;
 		this.flowLayoutPanel1.Location = new Point(0, 0);
 		this.flowLayoutPanel1.Name = "flowLayoutPanel1";
 		this.flowLayoutPanel1.Size = new Size(1008, 29);
 		this.flowLayoutPanel1.TabIndex = 0;
 		// 
-		// button1
+		// OpenButton
 		// 
-		this.button1.ForeColor = Color.Black;
-		this.button1.Location = new Point(3, 3);
-		this.button1.Name = "button1";
-		this.button1.Size = new Size(75, 23);
-		this.button1.TabIndex = 0;
-		this.button1.Text = "Open...";
-		this.button1.UseVisualStyleBackColor = true;
-		this.button1.Click += this.button1_Click;
+		this.OpenButton.ForeColor = Color.Black;
+		this.OpenButton.Location = new Point(3, 3);
+		this.OpenButton.Name = "OpenButton";
+		this.OpenButton.Size = new Size(75, 23);
+		this.OpenButton.TabIndex = 0;
+		this.OpenButton.Text = "Open...";
+		this.OpenButton.UseVisualStyleBackColor = true;
+		this.OpenButton.Click += this.OpenButton_Click;
 		// 
-		// button2
+		// PasteButton
 		// 
-		this.button2.ForeColor = Color.Black;
-		this.button2.Location = new Point(84, 3);
-		this.button2.Name = "button2";
-		this.button2.Size = new Size(75, 23);
-		this.button2.TabIndex = 1;
-		this.button2.Text = "Paste";
-		this.button2.UseVisualStyleBackColor = true;
-		this.button2.Click += this.button2_Click;
+		this.PasteButton.ForeColor = Color.Black;
+		this.PasteButton.Location = new Point(84, 3);
+		this.PasteButton.Name = "PasteButton";
+		this.PasteButton.Size = new Size(75, 23);
+		this.PasteButton.TabIndex = 1;
+		this.PasteButton.Text = "Paste";
+		this.PasteButton.UseVisualStyleBackColor = true;
+		this.PasteButton.Click += this.PasteButton_Click;
 		// 
-		// comboBox1
+		// ModeBox
 		// 
-		this.comboBox1.DropDownStyle = ComboBoxStyle.DropDownList;
-		this.comboBox1.FormattingEnabled = true;
-		this.comboBox1.Items.AddRange(new object[] { "RGB", "HSV", "RGBD" });
-		this.comboBox1.Location = new Point(165, 3);
-		this.comboBox1.Name = "comboBox1";
-		this.comboBox1.Size = new Size(75, 23);
-		this.comboBox1.TabIndex = 2;
-		this.comboBox1.SelectedIndexChanged += this.comboBox1_SelectedIndexChanged;
+		this.ModeBox.DropDownStyle = ComboBoxStyle.DropDownList;
+		this.ModeBox.FormattingEnabled = true;
+		this.ModeBox.Items.AddRange(new object[] { "RGB", "HSV", "RGBD" });
+		this.ModeBox.Location = new Point(165, 3);
+		this.ModeBox.Name = "ModeBox";
+		this.ModeBox.Size = new Size(75, 23);
+		this.ModeBox.TabIndex = 2;
+		this.ModeBox.SelectedIndexChanged += this.ModeBox_SelectedIndexChanged;
 		// 
 		// label1
 		// 
@@ -120,25 +120,25 @@ partial class ColourRangeForm {
 		this.label1.TabIndex = 3;
 		this.label1.Text = "R";
 		// 
-		// numericUpDown1
+		// RHMinBox
 		// 
-		this.numericUpDown1.Location = new Point(266, 3);
-		this.numericUpDown1.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
-		this.numericUpDown1.Name = "numericUpDown1";
-		this.numericUpDown1.Size = new Size(40, 23);
-		this.numericUpDown1.TabIndex = 4;
-		this.numericUpDown1.TextAlign = HorizontalAlignment.Right;
-		this.numericUpDown1.ValueChanged += this.numericUpDown1_ValueChanged;
+		this.RHMinBox.Location = new Point(266, 3);
+		this.RHMinBox.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
+		this.RHMinBox.Name = "RHMinBox";
+		this.RHMinBox.Size = new Size(40, 23);
+		this.RHMinBox.TabIndex = 4;
+		this.RHMinBox.TextAlign = HorizontalAlignment.Right;
+		this.RHMinBox.ValueChanged += this.RhMinBox_ValueChanged;
 		// 
-		// numericUpDown2
+		// RHMaxBox
 		// 
-		this.numericUpDown2.Location = new Point(312, 3);
-		this.numericUpDown2.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
-		this.numericUpDown2.Name = "numericUpDown2";
-		this.numericUpDown2.Size = new Size(40, 23);
-		this.numericUpDown2.TabIndex = 5;
-		this.numericUpDown2.TextAlign = HorizontalAlignment.Right;
-		this.numericUpDown2.ValueChanged += this.numericUpDown1_ValueChanged;
+		this.RHMaxBox.Location = new Point(312, 3);
+		this.RHMaxBox.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
+		this.RHMaxBox.Name = "RHMaxBox";
+		this.RHMaxBox.Size = new Size(40, 23);
+		this.RHMaxBox.TabIndex = 5;
+		this.RHMaxBox.TextAlign = HorizontalAlignment.Right;
+		this.RHMaxBox.ValueChanged += this.RhMinBox_ValueChanged;
 		// 
 		// label2
 		// 
@@ -150,25 +150,25 @@ partial class ColourRangeForm {
 		this.label2.TabIndex = 6;
 		this.label2.Text = "G";
 		// 
-		// numericUpDown3
+		// GSMinBox
 		// 
-		this.numericUpDown3.Location = new Point(379, 3);
-		this.numericUpDown3.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
-		this.numericUpDown3.Name = "numericUpDown3";
-		this.numericUpDown3.Size = new Size(40, 23);
-		this.numericUpDown3.TabIndex = 7;
-		this.numericUpDown3.TextAlign = HorizontalAlignment.Right;
-		this.numericUpDown3.ValueChanged += this.numericUpDown1_ValueChanged;
+		this.GSMinBox.Location = new Point(379, 3);
+		this.GSMinBox.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
+		this.GSMinBox.Name = "GSMinBox";
+		this.GSMinBox.Size = new Size(40, 23);
+		this.GSMinBox.TabIndex = 7;
+		this.GSMinBox.TextAlign = HorizontalAlignment.Right;
+		this.GSMinBox.ValueChanged += this.RhMinBox_ValueChanged;
 		// 
-		// numericUpDown4
+		// GSMaxBox
 		// 
-		this.numericUpDown4.Location = new Point(425, 3);
-		this.numericUpDown4.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
-		this.numericUpDown4.Name = "numericUpDown4";
-		this.numericUpDown4.Size = new Size(40, 23);
-		this.numericUpDown4.TabIndex = 8;
-		this.numericUpDown4.TextAlign = HorizontalAlignment.Right;
-		this.numericUpDown4.ValueChanged += this.numericUpDown1_ValueChanged;
+		this.GSMaxBox.Location = new Point(425, 3);
+		this.GSMaxBox.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
+		this.GSMaxBox.Name = "GSMaxBox";
+		this.GSMaxBox.Size = new Size(40, 23);
+		this.GSMaxBox.TabIndex = 8;
+		this.GSMaxBox.TextAlign = HorizontalAlignment.Right;
+		this.GSMaxBox.ValueChanged += this.RhMinBox_ValueChanged;
 		// 
 		// label3
 		// 
@@ -180,25 +180,25 @@ partial class ColourRangeForm {
 		this.label3.TabIndex = 9;
 		this.label3.Text = "B";
 		// 
-		// numericUpDown5
+		// BVMinBox
 		// 
-		this.numericUpDown5.Location = new Point(491, 3);
-		this.numericUpDown5.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
-		this.numericUpDown5.Name = "numericUpDown5";
-		this.numericUpDown5.Size = new Size(40, 23);
-		this.numericUpDown5.TabIndex = 10;
-		this.numericUpDown5.TextAlign = HorizontalAlignment.Right;
-		this.numericUpDown5.ValueChanged += this.numericUpDown1_ValueChanged;
+		this.BVMinBox.Location = new Point(491, 3);
+		this.BVMinBox.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
+		this.BVMinBox.Name = "BVMinBox";
+		this.BVMinBox.Size = new Size(40, 23);
+		this.BVMinBox.TabIndex = 10;
+		this.BVMinBox.TextAlign = HorizontalAlignment.Right;
+		this.BVMinBox.ValueChanged += this.RhMinBox_ValueChanged;
 		// 
-		// numericUpDown6
+		// BVMaxBox
 		// 
-		this.numericUpDown6.Location = new Point(537, 3);
-		this.numericUpDown6.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
-		this.numericUpDown6.Name = "numericUpDown6";
-		this.numericUpDown6.Size = new Size(40, 23);
-		this.numericUpDown6.TabIndex = 11;
-		this.numericUpDown6.TextAlign = HorizontalAlignment.Right;
-		this.numericUpDown6.ValueChanged += this.numericUpDown1_ValueChanged;
+		this.BVMaxBox.Location = new Point(537, 3);
+		this.BVMaxBox.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
+		this.BVMaxBox.Name = "BVMaxBox";
+		this.BVMaxBox.Size = new Size(40, 23);
+		this.BVMaxBox.TabIndex = 11;
+		this.BVMaxBox.TextAlign = HorizontalAlignment.Right;
+		this.BVMaxBox.ValueChanged += this.RhMinBox_ValueChanged;
 		// 
 		// label4
 		// 
@@ -210,38 +210,38 @@ partial class ColourRangeForm {
 		this.label4.TabIndex = 9;
 		this.label4.Text = "Dist";
 		// 
-		// numericUpDown7
+		// DistanceBox
 		// 
-		this.numericUpDown7.Location = new Point(616, 3);
-		this.numericUpDown7.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
-		this.numericUpDown7.Name = "numericUpDown7";
-		this.numericUpDown7.Size = new Size(40, 23);
-		this.numericUpDown7.TabIndex = 11;
-		this.numericUpDown7.TextAlign = HorizontalAlignment.Right;
-		this.numericUpDown7.ValueChanged += this.numericUpDown1_ValueChanged;
+		this.DistanceBox.Location = new Point(616, 3);
+		this.DistanceBox.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
+		this.DistanceBox.Name = "DistanceBox";
+		this.DistanceBox.Size = new Size(40, 23);
+		this.DistanceBox.TabIndex = 11;
+		this.DistanceBox.TextAlign = HorizontalAlignment.Right;
+		this.DistanceBox.ValueChanged += this.RhMinBox_ValueChanged;
 		// 
-		// label5
+		// StatusLabel
 		// 
-		this.label5.AutoSize = true;
-		this.label5.Location = new Point(662, 5);
-		this.label5.Margin = new Padding(3, 5, 3, 0);
-		this.label5.Name = "label5";
-		this.label5.Size = new Size(94, 15);
-		this.label5.TabIndex = 9;
-		this.label5.Text = "Average: (0, 0, 0)";
+		this.StatusLabel.AutoSize = true;
+		this.StatusLabel.Location = new Point(662, 5);
+		this.StatusLabel.Margin = new Padding(3, 5, 3, 0);
+		this.StatusLabel.Name = "StatusLabel";
+		this.StatusLabel.Size = new Size(94, 15);
+		this.StatusLabel.TabIndex = 9;
+		this.StatusLabel.Text = "Average: (0, 0, 0)";
 		// 
-		// pictureBox1
+		// PictureBox
 		// 
-		this.pictureBox1.Dock = DockStyle.Fill;
-		this.pictureBox1.Location = new Point(0, 29);
-		this.pictureBox1.Name = "pictureBox1";
-		this.pictureBox1.Size = new Size(1008, 532);
-		this.pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
-		this.pictureBox1.TabIndex = 1;
-		this.pictureBox1.TabStop = false;
-		this.pictureBox1.MouseDown += this.pictureBox1_MouseMove;
-		this.pictureBox1.MouseMove += this.pictureBox1_MouseMove;
-		this.pictureBox1.Resize += this.pictureBox1_Resize;
+		this.PictureBox.Dock = DockStyle.Fill;
+		this.PictureBox.Location = new Point(0, 29);
+		this.PictureBox.Name = "PictureBox";
+		this.PictureBox.Size = new Size(1008, 532);
+		this.PictureBox.SizeMode = PictureBoxSizeMode.Zoom;
+		this.PictureBox.TabIndex = 1;
+		this.PictureBox.TabStop = false;
+		this.PictureBox.MouseDown += this.PictureBox_MouseMove;
+		this.PictureBox.MouseMove += this.PictureBox_MouseMove;
+		this.PictureBox.Resize += this.PictureBox_Resize;
 		// 
 		// openFileDialog
 		// 
@@ -253,7 +253,7 @@ partial class ColourRangeForm {
 		this.AutoScaleMode = AutoScaleMode.Font;
 		this.BackColor = Color.Black;
 		this.ClientSize = new Size(1008, 561);
-		this.Controls.Add(this.pictureBox1);
+		this.Controls.Add(this.PictureBox);
 		this.Controls.Add(this.flowLayoutPanel1);
 		this.ForeColor = Color.White;
 		this.Name = "ColourRangeForm";
@@ -261,14 +261,14 @@ partial class ColourRangeForm {
 		this.Load += this.ColourRangeForm_Load;
 		this.flowLayoutPanel1.ResumeLayout(false);
 		this.flowLayoutPanel1.PerformLayout();
-		((System.ComponentModel.ISupportInitialize) this.numericUpDown1).EndInit();
-		((System.ComponentModel.ISupportInitialize) this.numericUpDown2).EndInit();
-		((System.ComponentModel.ISupportInitialize) this.numericUpDown3).EndInit();
-		((System.ComponentModel.ISupportInitialize) this.numericUpDown4).EndInit();
-		((System.ComponentModel.ISupportInitialize) this.numericUpDown5).EndInit();
-		((System.ComponentModel.ISupportInitialize) this.numericUpDown6).EndInit();
-		((System.ComponentModel.ISupportInitialize) this.numericUpDown7).EndInit();
-		((System.ComponentModel.ISupportInitialize) this.pictureBox1).EndInit();
+		((System.ComponentModel.ISupportInitialize) this.RHMinBox).EndInit();
+		((System.ComponentModel.ISupportInitialize) this.RHMaxBox).EndInit();
+		((System.ComponentModel.ISupportInitialize) this.GSMinBox).EndInit();
+		((System.ComponentModel.ISupportInitialize) this.GSMaxBox).EndInit();
+		((System.ComponentModel.ISupportInitialize) this.BVMinBox).EndInit();
+		((System.ComponentModel.ISupportInitialize) this.BVMaxBox).EndInit();
+		((System.ComponentModel.ISupportInitialize) this.DistanceBox).EndInit();
+		((System.ComponentModel.ISupportInitialize) this.PictureBox).EndInit();
 		this.ResumeLayout(false);
 		this.PerformLayout();
 	}
@@ -276,21 +276,21 @@ partial class ColourRangeForm {
 	#endregion
 
 	private FlowLayoutPanel flowLayoutPanel1;
-	private Button button1;
-	private Button button2;
-	private ComboBox comboBox1;
+	private Button OpenButton;
+	private Button PasteButton;
+	private ComboBox ModeBox;
 	private Label label1;
-	private NumericUpDown numericUpDown1;
-	private NumericUpDown numericUpDown2;
+	private NumericUpDown RHMinBox;
+	private NumericUpDown RHMaxBox;
 	private Label label2;
-	private NumericUpDown numericUpDown3;
-	private NumericUpDown numericUpDown4;
+	private NumericUpDown GSMinBox;
+	private NumericUpDown GSMaxBox;
 	private Label label3;
-	private NumericUpDown numericUpDown5;
-	private NumericUpDown numericUpDown6;
-	private PictureBox pictureBox1;
+	private NumericUpDown BVMinBox;
+	private NumericUpDown BVMaxBox;
+	private PictureBox PictureBox;
 	private OpenFileDialog openFileDialog;
 	private Label label4;
-	private NumericUpDown numericUpDown7;
-	private Label label5;
+	private NumericUpDown DistanceBox;
+	private Label StatusLabel;
 }

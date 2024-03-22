@@ -27,7 +27,7 @@ partial class TransformationForm {
 		screenshotPictureBox = new PictureBox();
 		screenshotLoadButton = new Button();
 		openFileDialog = new OpenFileDialog();
-		pictureBox1 = new PictureBox();
+		OutputPictureBox = new PictureBox();
 		splitContainer = new SplitContainer();
 		tableLayoutPanel1 = new TableLayoutPanel();
 		panel1 = new Panel();
@@ -50,7 +50,7 @@ partial class TransformationForm {
 		saveFileDialog1 = new SaveFileDialog();
 		lightsLabel = new Label();
 		((System.ComponentModel.ISupportInitialize) screenshotPictureBox).BeginInit();
-		((System.ComponentModel.ISupportInitialize) pictureBox1).BeginInit();
+		((System.ComponentModel.ISupportInitialize) OutputPictureBox).BeginInit();
 		((System.ComponentModel.ISupportInitialize) splitContainer).BeginInit();
 		splitContainer.Panel1.SuspendLayout();
 		splitContainer.Panel2.SuspendLayout();
@@ -69,10 +69,10 @@ partial class TransformationForm {
 		screenshotPictureBox.Size = new Size(400, 225);
 		screenshotPictureBox.TabIndex = 0;
 		screenshotPictureBox.TabStop = false;
-		screenshotPictureBox.Paint += this.screenPictureBox_Paint;
-		screenshotPictureBox.MouseDown += this.screenPictureBox_MouseDown;
-		screenshotPictureBox.MouseMove += this.screenPictureBox_MouseMove;
-		screenshotPictureBox.MouseUp += this.screenPictureBox_MouseUp;
+		screenshotPictureBox.Paint += this.ScreenPictureBox_Paint;
+		screenshotPictureBox.MouseDown += this.ScreenPictureBox_MouseDown;
+		screenshotPictureBox.MouseMove += this.ScreenPictureBox_MouseMove;
+		screenshotPictureBox.MouseUp += this.ScreenPictureBox_MouseUp;
 		// 
 		// screenshotLoadButton
 		// 
@@ -83,7 +83,7 @@ partial class TransformationForm {
 		screenshotLoadButton.TabIndex = 1;
 		screenshotLoadButton.Text = "Load...";
 		screenshotLoadButton.UseVisualStyleBackColor = true;
-		screenshotLoadButton.Click += this.screenshotLoadButton_Click;
+		screenshotLoadButton.Click += this.ScreenshotLoadButton_Click;
 		// 
 		// openFileDialog
 		// 
@@ -91,13 +91,13 @@ partial class TransformationForm {
 		// 
 		// pictureBox1
 		// 
-		pictureBox1.Dock = DockStyle.Fill;
-		pictureBox1.Location = new Point(3, 38);
-		pictureBox1.Name = "pictureBox1";
-		pictureBox1.Size = new Size(477, 424);
-		pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
-		pictureBox1.TabIndex = 2;
-		pictureBox1.TabStop = false;
+		OutputPictureBox.Dock = DockStyle.Fill;
+		OutputPictureBox.Location = new Point(3, 38);
+		OutputPictureBox.Name = "pictureBox1";
+		OutputPictureBox.Size = new Size(477, 424);
+		OutputPictureBox.SizeMode = PictureBoxSizeMode.Zoom;
+		OutputPictureBox.TabIndex = 2;
+		OutputPictureBox.TabStop = false;
 		// 
 		// splitContainer
 		// 
@@ -140,7 +140,7 @@ partial class TransformationForm {
 		panel1.Name = "panel1";
 		panel1.Size = new Size(719, 403);
 		panel1.TabIndex = 2;
-		panel1.Resize += this.screenshotPanel_Resize;
+		panel1.Resize += this.ScreenshotPanel_Resize;
 		// 
 		// flowLayoutPanel2
 		// 
@@ -168,7 +168,7 @@ partial class TransformationForm {
 		screenshotPasteButton.TabIndex = 4;
 		screenshotPasteButton.Text = "Paste";
 		screenshotPasteButton.UseVisualStyleBackColor = true;
-		screenshotPasteButton.Click += this.screenshotPasteButton_Click;
+		screenshotPasteButton.Click += this.ScreenshotPasteButton_Click;
 		// 
 		// screenshotFromGameButton
 		// 
@@ -179,7 +179,7 @@ partial class TransformationForm {
 		screenshotFromGameButton.TabIndex = 6;
 		screenshotFromGameButton.Text = "From game";
 		screenshotFromGameButton.UseVisualStyleBackColor = true;
-		screenshotFromGameButton.Click += this.getFromGameButton_Click;
+		screenshotFromGameButton.Click += this.GetFromGameButton_Click;
 		// 
 		// screenshotSaveButton
 		// 
@@ -190,7 +190,7 @@ partial class TransformationForm {
 		screenshotSaveButton.TabIndex = 7;
 		screenshotSaveButton.Text = "Save...";
 		screenshotSaveButton.UseVisualStyleBackColor = true;
-		screenshotSaveButton.Click += this.screenshotSaveButton_Click;
+		screenshotSaveButton.Click += this.ScreenshotSaveButton_Click;
 		// 
 		// label2
 		// 
@@ -212,7 +212,7 @@ partial class TransformationForm {
 		presetBox.TabIndex = 5;
 		presetBox.SelectedIndexChanged += this.PresetBox_SelectedIndexChanged;
 		presetBox.Format += this.PresetBox_Format;
-		presetBox.KeyDown += this.presetBox_KeyDown;
+		presetBox.KeyDown += this.PresetBox_KeyDown;
 		// 
 		// label1
 		// 
@@ -235,13 +235,13 @@ partial class TransformationForm {
 		interpolationBox.Size = new Size(135, 23);
 		interpolationBox.TabIndex = 3;
 		interpolationBox.Visible = false;
-		interpolationBox.SelectedIndexChanged += this.interpolationBox_SelectedIndexChanged;
+		interpolationBox.SelectedIndexChanged += this.InterpolationBox_SelectedIndexChanged;
 		// 
 		// tableLayoutPanel2
 		// 
 		tableLayoutPanel2.ColumnCount = 1;
 		tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-		tableLayoutPanel2.Controls.Add(pictureBox1, 0, 1);
+		tableLayoutPanel2.Controls.Add(OutputPictureBox, 0, 1);
 		tableLayoutPanel2.Controls.Add(flowLayoutPanel1, 0, 0);
 		tableLayoutPanel2.Dock = DockStyle.Fill;
 		tableLayoutPanel2.Location = new Point(0, 0);
@@ -275,7 +275,7 @@ partial class TransformationForm {
 		outputCopyButton.TabIndex = 0;
 		outputCopyButton.Text = "Copy";
 		outputCopyButton.UseVisualStyleBackColor = true;
-		outputCopyButton.Click += this.outputCopyButton_Click;
+		outputCopyButton.Click += this.OutputCopyButton_Click;
 		// 
 		// outputSaveButton
 		// 
@@ -286,7 +286,7 @@ partial class TransformationForm {
 		outputSaveButton.TabIndex = 1;
 		outputSaveButton.Text = "Save...";
 		outputSaveButton.UseVisualStyleBackColor = true;
-		outputSaveButton.Click += this.outputSaveButton_Click;
+		outputSaveButton.Click += this.OutputSaveButton_Click;
 		// 
 		// outputClassifyButton
 		// 
@@ -297,7 +297,7 @@ partial class TransformationForm {
 		outputClassifyButton.TabIndex = 3;
 		outputClassifyButton.Text = "Classify";
 		outputClassifyButton.UseVisualStyleBackColor = true;
-		outputClassifyButton.Click += this.outputClassifyButton_Click;
+		outputClassifyButton.Click += this.OutputClassifyButton_Click;
 		// 
 		// autoClassifyBox
 		// 
@@ -329,7 +329,7 @@ partial class TransformationForm {
 		lightsSimulateBox.Name = "lightsSimulateBox";
 		lightsSimulateBox.Size = new Size(108, 23);
 		lightsSimulateBox.TabIndex = 8;
-		lightsSimulateBox.SelectedIndexChanged += this.lightsSimulateBox_SelectedIndexChanged;
+		lightsSimulateBox.SelectedIndexChanged += this.LightsSimulateBox_SelectedIndexChanged;
 		// 
 		// saveFileDialog1
 		// 
@@ -358,7 +358,7 @@ partial class TransformationForm {
 		this.Text = "Transformation";
 		this.Load += this.TransformationForm_Load;
 		((System.ComponentModel.ISupportInitialize) screenshotPictureBox).EndInit();
-		((System.ComponentModel.ISupportInitialize) pictureBox1).EndInit();
+		((System.ComponentModel.ISupportInitialize) OutputPictureBox).EndInit();
 		splitContainer.Panel1.ResumeLayout(false);
 		splitContainer.Panel2.ResumeLayout(false);
 		((System.ComponentModel.ISupportInitialize) splitContainer).EndInit();
@@ -380,7 +380,7 @@ partial class TransformationForm {
 	private PictureBox screenshotPictureBox;
 	private Button screenshotLoadButton;
 	private OpenFileDialog openFileDialog;
-	private PictureBox pictureBox1;
+	private PictureBox OutputPictureBox;
 	private SplitContainer splitContainer;
 	private TableLayoutPanel tableLayoutPanel1;
 	private Panel panel1;
@@ -401,6 +401,5 @@ partial class TransformationForm {
 	private Button screenshotSaveButton;
 	private Label label3;
 	private ComboBox lightsSimulateBox;
-	private Label label4;
 	private Label lightsLabel;
 }

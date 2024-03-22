@@ -37,9 +37,9 @@ public class GameState {
 	public T CurrentScript<T>() where T : ModuleScript => this.CurrentModule?.Script as T ?? throw new InvalidOperationException("Specified script is not in progress.");
 
 	internal FocusState FocusState { get; set; }
-	internal BombFace[] Faces { get; } = new BombFace[] { new(), new() };
-	internal List<ModuleState> Modules { get; } = new();
-	internal List<WidgetReader> Widgets { get; } = new();
+	internal BombFace[] Faces { get; } = [new(), new()];
+	internal List<ModuleState> Modules { get; } = [];
+	internal List<WidgetReader> Widgets { get; } = [];
 
 	// Edgework
 	public int BatteryHolderCount { get; set; }
@@ -47,14 +47,14 @@ public class GameState {
 	public int AABatteryCount => 2 * this.BatteryCount - 2 * this.BatteryHolderCount;
 	public int DBatteryCount => 2 * this.BatteryHolderCount - this.BatteryCount;
 
-	public List<IndicatorData> Indicators { get; } = new();
+	public List<IndicatorData> Indicators { get; } = [];
 	public int IndicatorUnlitCount => this.Indicators.Count(i => !i.IsLit);
 	public int IndicatorLitCount => this.Indicators.Count(i => i.IsLit);
 
 	public bool HasIndicator(string label) => this.Indicators.Any(i => i.Label == label);
 	public bool HasIndicator(bool isLit, string label) => this.Indicators.Any(i => i.IsLit == isLit && i.Label == label);
 
-	public List<PortTypes> PortPlates { get; } = new();
+	public List<PortTypes> PortPlates { get; } = [];
 	public bool PortEmptyPlate => this.PortPlates.Contains(0);
 	public int PortCount => this.PortPlates.Sum(p => (p.HasFlag(PortTypes.Parallel) ? 1 : 0) + (p.HasFlag(PortTypes.Serial) ? 1 : 0) + (p.HasFlag(PortTypes.StereoRCA) ? 1 : 0) + (p.HasFlag(PortTypes.DviD) ? 1 : 0) + (p.HasFlag(PortTypes.PS2) ? 1 : 0) + (p.HasFlag(PortTypes.RJ45) ? 1 : 0));
 
@@ -74,7 +74,7 @@ public class GameState {
 		? this.TimerBaseTime + this.TimerStopwatch.Elapsed
 		: this.TimerBaseTime - this.TimerStopwatch.Elapsed;
 
-	public readonly Dictionary<Slot, NeedyState> UnknownNeedyStates = new();
+	public readonly Dictionary<Slot, NeedyState> UnknownNeedyStates = [];
 
 	public event EventHandler<StrikeEventArgs>? Strike;
 	public event EventHandler<StrikeEventArgs>? ModuleSolved;
@@ -96,14 +96,9 @@ public class GameState {
 	internal void OnStrike(StrikeEventArgs e) => this.Strike?.Invoke(this, e);
 }
 
-public struct IndicatorData {
-	public bool IsLit;
-	public string Label;
-
-	public IndicatorData(bool isLit, string label) {
-		this.IsLit = isLit;
-		this.Label = label ?? throw new ArgumentNullException(nameof(label));
-	}
+public struct IndicatorData(bool isLit, string label) {
+	public bool IsLit = isLit;
+	public string Label = label ?? throw new ArgumentNullException(nameof(label));
 }
 
 [Flags]
@@ -116,24 +111,17 @@ public enum PortTypes {
 	RJ45 = 32
 }
 
-public class ModuleState {
+public class ModuleState(Slot slot, ComponentReader reader, ModuleScript script) {
 	/// <summary>The slot that this module is in.</summary>
-	public Slot Slot { get; }
+	public Slot Slot { get; } = slot;
 	/// <summary>A <see cref="ModuleType"/> value indicating the type of module.</summary>
-	public ModuleType Type { get; }
+	public ModuleType Type { get; } = Enum.Parse<ModuleType>(script.GetType().Name);
 	/// <summary>The <see cref="ComponentReader"/> instance corresponding to the module type.</summary>
-	public ComponentReader Reader { get; }
+	public ComponentReader Reader { get; } = reader ?? throw new ArgumentNullException(nameof(reader));
 	/// <summary>A <see cref="ModuleScript"/> instance handling this module.</summary>
-	public ModuleScript Script { get; }
+	public ModuleScript Script { get; } = script;
 	/// <summary>Whether the module is solved.</summary>
 	public bool IsSolved { get; set; }
-
-	public ModuleState(Slot slot, ComponentReader reader, ModuleScript script) {
-		this.Slot = slot;
-		this.Reader = reader ?? throw new ArgumentNullException(nameof(reader));
-		this.Script = script;
-		this.Type = Enum.Parse<ModuleType>(script.GetType().Name);
-	}
 }
 
 public class BombFace {

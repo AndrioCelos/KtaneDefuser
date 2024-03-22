@@ -37,7 +37,9 @@ public class BombDefuserAimlService : IAimlExtension {
 			await c.ConnectAsync(e.Attribute("simulation") is not null);
 			r.User.Postback("OOB DefuserSocketConnected");
 		}));
+#pragma warning disable CS0618 // TODO: Obsolete message types may be removed later.
 		AimlLoader.AddCustomOobHandler("sendinputs", this.OobAction((c, e, r) => c.SendInputs(e.Value)));
+#pragma warning restore CS0618 // Type or member is obsolete
 		AimlLoader.AddCustomOobHandler("solve", this.OobAction(c => c.CheatSolve()));
 
 		AimlLoader.AddCustomOobHandler("strike", this.OobAction(c => c.CheatStrike()));
@@ -59,7 +61,8 @@ public class BombDefuserAimlService : IAimlExtension {
 			r.User.Postback($"OOB DefuserSocketError {ex.Message}");
 		}
 	};
-	
+
+#pragma warning disable CS0618 // TODO: Obsolete message types may be removed later.
 	public string Process(string text, XmlAttributeCollection attributes, RequestProcess process) {
 		var tokens = text.Split();
 		switch (tokens[0].ToLower()) {
@@ -95,4 +98,5 @@ public class BombDefuserAimlService : IAimlExtension {
 			}
 		}
 	}
+#pragma warning restore CS0618 // Type or member is obsolete
 }

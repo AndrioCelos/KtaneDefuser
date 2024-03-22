@@ -12,7 +12,7 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 	private Direction direction;
 	private bool isHandled;
 
-	private static readonly Dictionary<Counts, Direction> correctDirections = new();
+	private static readonly Dictionary<Counts, Direction> correctDirections = [];
 
 	protected internal override async void NeedyStateChanged(AimlAsyncContext context, NeedyState newState) {
 		if (newState == NeedyState.Running) { 

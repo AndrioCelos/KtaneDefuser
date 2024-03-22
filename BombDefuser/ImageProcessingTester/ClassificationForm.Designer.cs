@@ -24,137 +24,137 @@ partial class ClassificationForm {
 	/// the contents of this method with the code editor.
 	/// </summary>
 	private void InitializeComponent() {
-		openFileDialog = new OpenFileDialog();
-		button1 = new Button();
-		flowLayoutPanel1 = new FlowLayoutPanel();
-		button2 = new Button();
-		button3 = new Button();
-		label2 = new Label();
-		comboBox2 = new ComboBox();
-		pictureBox1 = new PictureBox();
-		textBox1 = new TextBox();
-		label1 = new Label();
-		comboBox1 = new ComboBox();
-		flowLayoutPanel1.SuspendLayout();
-		((System.ComponentModel.ISupportInitialize) pictureBox1).BeginInit();
+		this.openFileDialog = new OpenFileDialog();
+		this.OpenButton = new Button();
+		this.flowLayoutPanel1 = new FlowLayoutPanel();
+		this.PasteButton = new Button();
+		this.CopyAnnotationsButton = new Button();
+		this.label2 = new Label();
+		this.LightsStateBox = new ComboBox();
+		this.PictureBox = new PictureBox();
+		this.OutputBox = new TextBox();
+		this.label1 = new Label();
+		this.ReadModeBox = new ComboBox();
+		this.flowLayoutPanel1.SuspendLayout();
+		((System.ComponentModel.ISupportInitialize) this.PictureBox).BeginInit();
 		this.SuspendLayout();
 		// 
 		// openFileDialog
 		// 
-		openFileDialog.Filter = "Images|*.bmp;*.jpg;*.jpeg;*.png;*.webp";
+		this.openFileDialog.Filter = "Images|*.bmp;*.jpg;*.jpeg;*.png;*.webp";
 		// 
-		// button1
+		// OpenButton
 		// 
-		button1.ForeColor = SystemColors.ControlText;
-		button1.Location = new Point(3, 3);
-		button1.Name = "button1";
-		button1.Size = new Size(75, 23);
-		button1.TabIndex = 2;
-		button1.Text = "Open...";
-		button1.UseVisualStyleBackColor = true;
-		button1.Click += this.button1_Click;
+		this.OpenButton.ForeColor = SystemColors.ControlText;
+		this.OpenButton.Location = new Point(3, 3);
+		this.OpenButton.Name = "OpenButton";
+		this.OpenButton.Size = new Size(75, 23);
+		this.OpenButton.TabIndex = 2;
+		this.OpenButton.Text = "Open...";
+		this.OpenButton.UseVisualStyleBackColor = true;
+		this.OpenButton.Click += this.OpenButton_Click;
 		// 
 		// flowLayoutPanel1
 		// 
-		flowLayoutPanel1.AutoSize = true;
-		flowLayoutPanel1.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-		flowLayoutPanel1.Controls.Add(button1);
-		flowLayoutPanel1.Controls.Add(button2);
-		flowLayoutPanel1.Controls.Add(button3);
-		flowLayoutPanel1.Controls.Add(label2);
-		flowLayoutPanel1.Controls.Add(comboBox2);
-		flowLayoutPanel1.Location = new Point(12, 9);
-		flowLayoutPanel1.Name = "flowLayoutPanel1";
-		flowLayoutPanel1.Size = new Size(441, 29);
-		flowLayoutPanel1.TabIndex = 3;
+		this.flowLayoutPanel1.AutoSize = true;
+		this.flowLayoutPanel1.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+		this.flowLayoutPanel1.Controls.Add(this.OpenButton);
+		this.flowLayoutPanel1.Controls.Add(this.PasteButton);
+		this.flowLayoutPanel1.Controls.Add(this.CopyAnnotationsButton);
+		this.flowLayoutPanel1.Controls.Add(this.label2);
+		this.flowLayoutPanel1.Controls.Add(this.LightsStateBox);
+		this.flowLayoutPanel1.Location = new Point(12, 9);
+		this.flowLayoutPanel1.Name = "flowLayoutPanel1";
+		this.flowLayoutPanel1.Size = new Size(441, 29);
+		this.flowLayoutPanel1.TabIndex = 3;
 		// 
-		// button2
+		// PasteButton
 		// 
-		button2.ForeColor = SystemColors.ControlText;
-		button2.Location = new Point(84, 3);
-		button2.Name = "button2";
-		button2.Size = new Size(75, 23);
-		button2.TabIndex = 2;
-		button2.Text = "Paste";
-		button2.UseVisualStyleBackColor = true;
-		button2.Click += this.button2_Click;
+		this.PasteButton.ForeColor = SystemColors.ControlText;
+		this.PasteButton.Location = new Point(84, 3);
+		this.PasteButton.Name = "PasteButton";
+		this.PasteButton.Size = new Size(75, 23);
+		this.PasteButton.TabIndex = 2;
+		this.PasteButton.Text = "Paste";
+		this.PasteButton.UseVisualStyleBackColor = true;
+		this.PasteButton.Click += this.PasteButton_Click;
 		// 
-		// button3
+		// CopyAnnotationsButton
 		// 
-		button3.ForeColor = SystemColors.ControlText;
-		button3.Location = new Point(165, 3);
-		button3.Name = "button3";
-		button3.Size = new Size(111, 23);
-		button3.TabIndex = 2;
-		button3.Text = "Copy annotations";
-		button3.UseVisualStyleBackColor = true;
-		button3.Click += this.button3_Click;
+		this.CopyAnnotationsButton.ForeColor = SystemColors.ControlText;
+		this.CopyAnnotationsButton.Location = new Point(165, 3);
+		this.CopyAnnotationsButton.Name = "CopyAnnotationsButton";
+		this.CopyAnnotationsButton.Size = new Size(111, 23);
+		this.CopyAnnotationsButton.TabIndex = 2;
+		this.CopyAnnotationsButton.Text = "Copy annotations";
+		this.CopyAnnotationsButton.UseVisualStyleBackColor = true;
+		this.CopyAnnotationsButton.Click += this.CopyAnnotationsButton_Click;
 		// 
 		// label2
 		// 
-		label2.AutoSize = true;
-		label2.Location = new Point(282, 6);
-		label2.Margin = new Padding(3, 6, 3, 0);
-		label2.Name = "label2";
-		label2.Size = new Size(42, 15);
-		label2.TabIndex = 6;
-		label2.Text = "Lights:";
+		this.label2.AutoSize = true;
+		this.label2.Location = new Point(282, 6);
+		this.label2.Margin = new Padding(3, 6, 3, 0);
+		this.label2.Name = "label2";
+		this.label2.Size = new Size(42, 15);
+		this.label2.TabIndex = 6;
+		this.label2.Text = "Lights:";
 		// 
-		// comboBox2
+		// LightsStateBox
 		// 
-		comboBox2.DropDownStyle = ComboBoxStyle.DropDownList;
-		comboBox2.FormattingEnabled = true;
-		comboBox2.Items.AddRange(new object[] { "On", "Buzz", "Off", "Emergency" });
-		comboBox2.Location = new Point(330, 3);
-		comboBox2.Name = "comboBox2";
-		comboBox2.Size = new Size(108, 23);
-		comboBox2.TabIndex = 7;
-		comboBox2.SelectedIndexChanged += this.comboBox1_SelectedIndexChanged;
+		this.LightsStateBox.DropDownStyle = ComboBoxStyle.DropDownList;
+		this.LightsStateBox.FormattingEnabled = true;
+		this.LightsStateBox.Items.AddRange(new object[] { "On", "Buzz", "Off", "Emergency" });
+		this.LightsStateBox.Location = new Point(330, 3);
+		this.LightsStateBox.Name = "LightsStateBox";
+		this.LightsStateBox.Size = new Size(108, 23);
+		this.LightsStateBox.TabIndex = 7;
+		this.LightsStateBox.SelectedIndexChanged += this.ReadModeBox_SelectedIndexChanged;
 		// 
-		// pictureBox1
+		// PictureBox
 		// 
-		pictureBox1.Anchor =  AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-		pictureBox1.Location = new Point(12, 44);
-		pictureBox1.Name = "pictureBox1";
-		pictureBox1.Size = new Size(512, 512);
-		pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
-		pictureBox1.TabIndex = 4;
-		pictureBox1.TabStop = false;
+		this.PictureBox.Anchor =  AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+		this.PictureBox.Location = new Point(12, 44);
+		this.PictureBox.Name = "PictureBox";
+		this.PictureBox.Size = new Size(512, 512);
+		this.PictureBox.SizeMode = PictureBoxSizeMode.Zoom;
+		this.PictureBox.TabIndex = 4;
+		this.PictureBox.TabStop = false;
 		// 
-		// textBox1
+		// OutputBox
 		// 
-		textBox1.Anchor =  AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-		textBox1.BackColor = Color.FromArgb(  16,   16,   16);
-		textBox1.ForeColor = Color.White;
-		textBox1.Location = new Point(12, 591);
-		textBox1.Multiline = true;
-		textBox1.Name = "textBox1";
-		textBox1.ReadOnly = true;
-		textBox1.Size = new Size(512, 87);
-		textBox1.TabIndex = 5;
+		this.OutputBox.Anchor =  AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+		this.OutputBox.BackColor = Color.FromArgb(  16,   16,   16);
+		this.OutputBox.ForeColor = Color.White;
+		this.OutputBox.Location = new Point(12, 591);
+		this.OutputBox.Multiline = true;
+		this.OutputBox.Name = "OutputBox";
+		this.OutputBox.ReadOnly = true;
+		this.OutputBox.Size = new Size(512, 87);
+		this.OutputBox.TabIndex = 5;
 		// 
 		// label1
 		// 
-		label1.Anchor =  AnchorStyles.Bottom | AnchorStyles.Left;
-		label1.AutoSize = true;
-		label1.Location = new Point(12, 565);
-		label1.Name = "label1";
-		label1.Size = new Size(36, 15);
-		label1.TabIndex = 6;
-		label1.Text = "Read:";
+		this.label1.Anchor =  AnchorStyles.Bottom | AnchorStyles.Left;
+		this.label1.AutoSize = true;
+		this.label1.Location = new Point(12, 565);
+		this.label1.Name = "label1";
+		this.label1.Size = new Size(36, 15);
+		this.label1.TabIndex = 6;
+		this.label1.Text = "Read:";
 		// 
-		// comboBox1
+		// ReadModeBox
 		// 
-		comboBox1.Anchor =  AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-		comboBox1.DisplayMember = "Name";
-		comboBox1.DropDownStyle = ComboBoxStyle.DropDownList;
-		comboBox1.FormattingEnabled = true;
-		comboBox1.Items.AddRange(new object[] { "Module information", "Widget information", "Module light state" });
-		comboBox1.Location = new Point(54, 562);
-		comboBox1.Name = "comboBox1";
-		comboBox1.Size = new Size(470, 23);
-		comboBox1.TabIndex = 7;
-		comboBox1.SelectedIndexChanged += this.comboBox1_SelectedIndexChanged;
+		this.ReadModeBox.Anchor =  AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+		this.ReadModeBox.DisplayMember = "Name";
+		this.ReadModeBox.DropDownStyle = ComboBoxStyle.DropDownList;
+		this.ReadModeBox.FormattingEnabled = true;
+		this.ReadModeBox.Items.AddRange(new object[] { "Module information", "Widget information", "Module light state" });
+		this.ReadModeBox.Location = new Point(54, 562);
+		this.ReadModeBox.Name = "ReadModeBox";
+		this.ReadModeBox.Size = new Size(470, 23);
+		this.ReadModeBox.TabIndex = 7;
+		this.ReadModeBox.SelectedIndexChanged += this.ReadModeBox_SelectedIndexChanged;
 		// 
 		// ClassificationForm
 		// 
@@ -163,20 +163,20 @@ partial class ClassificationForm {
 		this.AutoScaleMode = AutoScaleMode.Font;
 		this.BackColor = Color.Black;
 		this.ClientSize = new Size(532, 689);
-		this.Controls.Add(comboBox1);
-		this.Controls.Add(label1);
-		this.Controls.Add(textBox1);
-		this.Controls.Add(pictureBox1);
-		this.Controls.Add(flowLayoutPanel1);
+		this.Controls.Add(this.ReadModeBox);
+		this.Controls.Add(this.label1);
+		this.Controls.Add(this.OutputBox);
+		this.Controls.Add(this.PictureBox);
+		this.Controls.Add(this.flowLayoutPanel1);
 		this.ForeColor = Color.White;
 		this.Name = "ClassificationForm";
 		this.Text = "ClassificationForm";
 		this.Load += this.ClassificationForm_Load;
 		this.DragDrop += this.ClassificationForm_DragDrop;
 		this.DragEnter += this.ClassificationForm_DragEnter;
-		flowLayoutPanel1.ResumeLayout(false);
-		flowLayoutPanel1.PerformLayout();
-		((System.ComponentModel.ISupportInitialize) pictureBox1).EndInit();
+		this.flowLayoutPanel1.ResumeLayout(false);
+		this.flowLayoutPanel1.PerformLayout();
+		((System.ComponentModel.ISupportInitialize) this.PictureBox).EndInit();
 		this.ResumeLayout(false);
 		this.PerformLayout();
 	}
@@ -184,14 +184,14 @@ partial class ClassificationForm {
 	#endregion
 
 	private OpenFileDialog openFileDialog;
-	private Button button1;
+	private Button OpenButton;
 	private FlowLayoutPanel flowLayoutPanel1;
-	private Button button2;
-	private PictureBox pictureBox1;
-	private TextBox textBox1;
+	private Button PasteButton;
+	private PictureBox PictureBox;
+	private TextBox OutputBox;
 	private Label label1;
-	private ComboBox comboBox1;
-	private Button button3;
+	private ComboBox ReadModeBox;
+	private Button CopyAnnotationsButton;
 	private Label label2;
-	private ComboBox comboBox2;
+	private ComboBox LightsStateBox;
 }

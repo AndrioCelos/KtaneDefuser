@@ -85,6 +85,7 @@ public class DefuserMessageReader : IDisposable {
 	}
 #endif
 
+#pragma warning disable CS0618 // TODO: Obsolete message types may be removed later.
 	public unsafe void ProcessMessage(MessageType messageType, int length) {
 		lock (this.buffer) {
 			fixed (byte* ptr = this.buffer) {
@@ -118,6 +119,7 @@ public class DefuserMessageReader : IDisposable {
 			}
 		}
 	}
+#pragma warning restore CS0618 // Type or member is obsolete
 
 	private static unsafe InputCommandMessage ReadInputCommand(byte[] buffer, int length) {
 		var actions = new List<IInputAction>();
@@ -177,12 +179,10 @@ public class DefuserMessageReader : IDisposable {
 	}
 }
 
-public class DefuserMessageEventArgs : EventArgs {
-	public IDefuserMessage Message { get; }
-	public DefuserMessageEventArgs(IDefuserMessage message) => this.Message = message ?? throw new ArgumentNullException(nameof(message));
+public class DefuserMessageEventArgs(IDefuserMessage message) : EventArgs {
+	public IDefuserMessage Message { get; } = message ?? throw new ArgumentNullException(nameof(message));
 }
 
-public class DisconnectedEventArgs : EventArgs {
-	public Exception? Exception { get; }
-	public DisconnectedEventArgs(Exception? exception) => this.Exception = exception;
+public class DisconnectedEventArgs(Exception? exception) : EventArgs {
+	public Exception? Exception { get; } = exception;
 }

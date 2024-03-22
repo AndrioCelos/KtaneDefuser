@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
-using Aiml.Media;
-using Aiml.Tags;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
@@ -21,6 +18,7 @@ public class Semaphore : ComponentReader<Semaphore.ReadData> {
 			? 0.75f : 0;
 	}
 
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0042:Deconstruct variable declaration")]
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		var points = GetDisplayPoints(image, lightsState);
 		if (debugImage is not null) ImageUtils.DebugDrawPoints(debugImage, points);

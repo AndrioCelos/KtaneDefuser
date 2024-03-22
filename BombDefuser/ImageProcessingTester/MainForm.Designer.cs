@@ -24,63 +24,60 @@ partial class MainForm {
 	/// the contents of this method with the code editor.
 	/// </summary>
 	private void InitializeComponent() {
-			this.button1 = new System.Windows.Forms.Button();
-			this.button2 = new System.Windows.Forms.Button();
-			this.button3 = new System.Windows.Forms.Button();
-			this.SuspendLayout();
-			// 
-			// button1
-			// 
-			this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.button1.Location = new System.Drawing.Point(12, 12);
-			this.button1.Name = "button1";
-			this.button1.Size = new System.Drawing.Size(164, 23);
-			this.button1.TabIndex = 0;
-			this.button1.Text = "TransformationForm";
-			this.button1.UseVisualStyleBackColor = true;
-			this.button1.Click += new System.EventHandler(this.button1_Click);
-			// 
-			// button2
-			// 
-			this.button2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.button2.Location = new System.Drawing.Point(12, 41);
-			this.button2.Name = "button2";
-			this.button2.Size = new System.Drawing.Size(164, 23);
-			this.button2.TabIndex = 1;
-			this.button2.Text = "ClassificationForm";
-			this.button2.UseVisualStyleBackColor = true;
-			this.button2.Click += new System.EventHandler(this.button2_Click);
-			// 
-			// button3
-			// 
-			this.button3.Location = new System.Drawing.Point(12, 70);
-			this.button3.Name = "button3";
-			this.button3.Size = new System.Drawing.Size(164, 23);
-			this.button3.TabIndex = 2;
-			this.button3.Text = "ColourRangeForm";
-			this.button3.UseVisualStyleBackColor = true;
-			this.button3.Click += new System.EventHandler(this.button3_Click);
-			// 
-			// MainForm
-			// 
-			this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(188, 102);
-			this.Controls.Add(this.button3);
-			this.Controls.Add(this.button2);
-			this.Controls.Add(this.button1);
-			this.MaximizeBox = false;
-			this.Name = "MainForm";
-			this.Text = "MainForm";
-			this.ResumeLayout(false);
-
+		this.TransformationButton = new Button();
+		this.ClassificationButton = new Button();
+		this.ColourRangeButton = new Button();
+		this.SuspendLayout();
+		// 
+		// TransformationButton
+		// 
+		this.TransformationButton.Anchor =  AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+		this.TransformationButton.Location = new Point(12, 12);
+		this.TransformationButton.Name = "TransformationButton";
+		this.TransformationButton.Size = new Size(164, 23);
+		this.TransformationButton.TabIndex = 0;
+		this.TransformationButton.Text = "TransformationForm";
+		this.TransformationButton.UseVisualStyleBackColor = true;
+		this.TransformationButton.Click += this.TransformationButton_Click;
+		// 
+		// ClassificationButton
+		// 
+		this.ClassificationButton.Anchor =  AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+		this.ClassificationButton.Location = new Point(12, 41);
+		this.ClassificationButton.Name = "ClassificationButton";
+		this.ClassificationButton.Size = new Size(164, 23);
+		this.ClassificationButton.TabIndex = 1;
+		this.ClassificationButton.Text = "ClassificationForm";
+		this.ClassificationButton.UseVisualStyleBackColor = true;
+		this.ClassificationButton.Click += this.ClassificationButton_Click;
+		// 
+		// ColourRangeButton
+		// 
+		this.ColourRangeButton.Location = new Point(12, 70);
+		this.ColourRangeButton.Name = "ColourRangeButton";
+		this.ColourRangeButton.Size = new Size(164, 23);
+		this.ColourRangeButton.TabIndex = 2;
+		this.ColourRangeButton.Text = "ColourRangeForm";
+		this.ColourRangeButton.UseVisualStyleBackColor = true;
+		this.ColourRangeButton.Click += this.ColourRangeButton_Click;
+		// 
+		// MainForm
+		// 
+		this.AutoScaleDimensions = new SizeF(7F, 15F);
+		this.AutoScaleMode = AutoScaleMode.Font;
+		this.ClientSize = new Size(188, 102);
+		this.Controls.Add(this.ColourRangeButton);
+		this.Controls.Add(this.ClassificationButton);
+		this.Controls.Add(this.TransformationButton);
+		this.MaximizeBox = false;
+		this.Name = "MainForm";
+		this.Text = "MainForm";
+		this.ResumeLayout(false);
 	}
 
 	#endregion
 
-	private Button button1;
-	private Button button2;
-	private Button button3;
+	private Button TransformationButton;
+	private Button ClassificationButton;
+	private Button ColourRangeButton;
 }

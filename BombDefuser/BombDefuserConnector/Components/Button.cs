@@ -17,20 +17,6 @@ public class Button : ComponentReader<Button.ReadData> {
 	private static bool IsCoveredBlue(HsvColor hsv) => hsv.H is >= 210 and <= 220 && hsv.S is >= 0.30f and <= 0.55f && hsv.V >= 0.5f;
 	private static bool IsCoveredWhite(HsvColor hsv) => hsv.H is >= 150 and <= 180 && hsv.S <= 0.15f && hsv.V >= 0.5f;
 
-	private (int red, int yellow, int blue, int white) getIsModulePresentColours1(Image<Rgba32> image) {
-		int red = 0, yellow = 0, blue = 0, white = 0;
-		for (var y = 90; y <= 210; y += 30) {
-			for (var x = 40; x <= 160; x += 30) {
-				var hsv = HsvColor.FromColor(image[x, y]);
-				if (IsCoveredRed(hsv)) red++;
-				else if (IsCoveredYellow(hsv)) yellow++;
-				else if (IsCoveredBlue(hsv)) blue++;
-				else if (IsCoveredWhite(hsv)) white++;
-			}
-		}
-		return (red, yellow, blue, white);
-	}
-
 	private static bool CheckPixel(Image<Rgba32> image, int x, int y, Predicate<HsvColor> predicate)
 		=> x is >= 0 and < 256 && y is >= 0 and < 256 && predicate(HsvColor.FromColor(image[x, y]));
 

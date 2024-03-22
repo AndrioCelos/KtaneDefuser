@@ -8,21 +8,21 @@ using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Components;
 public partial class Timer : ComponentReader<Timer.ReadData> {
-	private static readonly Image<Rgba32>[] Samples = new[] { Image.Load<Rgba32>(Resources.Timer1), Image.Load<Rgba32>(Resources.Timer2) };
+	private static readonly Image<Rgba32>[] Samples = [Image.Load<Rgba32>(Resources.Timer1), Image.Load<Rgba32>(Resources.Timer2)];
 
 	public override string Name => "Timer";
 	protected internal override bool UsesNeedyFrame => false;
 
 	protected internal override float IsModulePresent(Image<Rgba32> image)
-		=> ImageUtils.TryFindCorners(image, new(16, 96, 224, 144), isTimerBackground, 0, out _) ? ImageUtils.CheckSimilarity(image, Samples) * 1.5f : 0;
+		=> ImageUtils.TryFindCorners(image, new(16, 96, 224, 144), IsTimerBackground, 0, out _) ? ImageUtils.CheckSimilarity(image, Samples) * 1.5f : 0;
 
-	private static bool isTimerBackground(Rgba32 c) => c.G < 12 && c.B < 12;
+	private static bool IsTimerBackground(Rgba32 c) => c.G < 12 && c.B < 12;
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		var timerCorners = ImageUtils.FindCorners(image, new(16, 96, 224, 144), isTimerBackground, 0);
+		var timerCorners = ImageUtils.FindCorners(image, new(16, 96, 224, 144), IsTimerBackground, 0);
 		using var timerBitmap = ImageUtils.PerspectiveUndistort(image, timerCorners, InterpolationMode.NearestNeighbour, new(256, 128));
 
-		using var strikesBitmap = ImageUtils.TryFindCorners(image, new(88, 16, 96, 64), isTimerBackground, 0, out var strikesCorners)
+		using var strikesBitmap = ImageUtils.TryFindCorners(image, new(88, 16, 96, 64), IsTimerBackground, 0, out var strikesCorners)
 			? ImageUtils.PerspectiveUndistort(image, strikesCorners, InterpolationMode.NearestNeighbour, new(128, 64))
 			: null;
 

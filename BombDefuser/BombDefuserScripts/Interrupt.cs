@@ -69,7 +69,7 @@ public class Interrupt : IDisposable {
 
 	/// <summary>Reads data from the currently-focused module using the specified <see cref="ComponentReader"/.></summary>
 	public T Read<T>(ComponentReader<T> reader) where T : notnull {
-		if (this.IsDisposed) throw new ObjectDisposedException(nameof(Interrupt));
+		ObjectDisposedException.ThrowIf(this.IsDisposed, this);
 		using var ss = DefuserConnector.Instance.TakeScreenshot();
 		return DefuserConnector.Instance.ReadComponent(ss, DefuserConnector.Instance.GetLightsState(ss), reader, Utils.CurrentModuleArea);
 	}
@@ -87,7 +87,7 @@ public class Interrupt : IDisposable {
 	public void SendInputs(params IInputAction[] actions) => this.SendInputs((IEnumerable<IInputAction>) actions);
 	/// <summary>Performs the specified input actions in sequence.</summary>
 	public void SendInputs(IEnumerable<IInputAction> actions) {
-		if (this.IsDisposed) throw new ObjectDisposedException(nameof(Interrupt));
+		ObjectDisposedException.ThrowIf(this.IsDisposed, this);
 		DefuserConnector.Instance.SendInputs(actions);
 	}
 	/// <summary>Creates an <see cref="AimlTask"/> that presses the specified buttons in sequence and completes after this is complete.</summary>
@@ -95,10 +95,10 @@ public class Interrupt : IDisposable {
 	/// <summary>Creates an <see cref="AimlTask"/> that presses the specified buttons in sequence and completes after this is complete.</summary>
 	public AimlTask SendInputsAsync(IEnumerable<Button> buttons, CancellationToken cancellationToken = default) => this.SendInputsAsync(from b in buttons select new ButtonAction(b), cancellationToken);
 	/// <summary>Creates an <see cref="AimlTask"/> that performs the specified input actions in sequence and completes after this is complete.</summary>
-	public AimlTask SendInputsAsync(params IInputAction[] actions) => this.SendInputsAsync(actions);
+	public AimlTask SendInputsAsync(params IInputAction[] actions) => this.SendInputsAsync((IEnumerable<IInputAction>) actions);
 	/// <summary>Creates an <see cref="AimlTask"/> that performs the specified input actions in sequence and completes after this is complete.</summary>
 	public AimlTask SendInputsAsync(IEnumerable<IInputAction> actions, CancellationToken cancellationToken = default) {
-		if (this.IsDisposed) throw new ObjectDisposedException(nameof(Interrupt));
+		ObjectDisposedException.ThrowIf(this.IsDisposed, this);
 		cancellationToken.Register(DefuserConnector.Instance.CancelInputs);
 		var guid = Guid.NewGuid();
 		var task = inputCallback.CallAsync(this.Context, guid, cancellationToken);
@@ -114,7 +114,7 @@ public class Interrupt : IDisposable {
 	public Task<ModuleLightState> SubmitAsync(params IInputAction[] actions) => this.SubmitAsync((IEnumerable<IInputAction>) actions);
 	/// <summary>Performs the specified input actions, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
 	public async Task<ModuleLightState> SubmitAsync(IEnumerable<IInputAction> actions) {
-		if (this.IsDisposed) throw new ObjectDisposedException(nameof(Interrupt));
+		ObjectDisposedException.ThrowIf(this.IsDisposed, this);
 		if (this.submitCancellationTokenSource is not null) throw new InvalidOperationException("Already submitting.");
 		if (GameState.Current.CurrentModuleNum is null) throw new InvalidOperationException("No current module.");
 		var module = GameState.Current.Modules[GameState.Current.CurrentModuleNum.Value];

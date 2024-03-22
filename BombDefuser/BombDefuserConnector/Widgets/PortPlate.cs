@@ -60,10 +60,8 @@ public class PortPlate : WidgetReader<PortPlate.Ports> {
 		return new(ports);
 	}
 
-	public struct Ports : IReadOnlyCollection<PortType> {
-		public PortType Value;
-
-		public Ports(PortType value) => this.Value = value;
+	public struct Ports(PortPlate.PortType value) : IReadOnlyCollection<PortType> {
+		public PortType Value = value;
 
 		public readonly bool Contains(PortType portType) => this.Value.HasFlag(portType);
 

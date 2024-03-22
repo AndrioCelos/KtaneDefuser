@@ -312,8 +312,8 @@ public static class ImageUtils {
 			: ModuleLightState.Off;
 	}
 
-	private static readonly Rectangle[] lightsStateSearchRects = new Rectangle[] { new(96, 48, 16, 16), new(960, 48, 16, 16), new(1748, 236, 16, 16) };
-	private static readonly int[] lightsStateSearchTolerances = new[] { 0x20000, 0x20000, 0x8000, 0x30000 };
+	private static readonly Rectangle[] lightsStateSearchRects = [new(96, 48, 16, 16), new(960, 48, 16, 16), new(1748, 236, 16, 16)];
+	private static readonly int[] lightsStateSearchTolerances = [0x20000, 0x20000, 0x8000, 0x30000];
 	private static readonly Rgb48[,] lightsStateSearchColours = new Rgb48[,] {
 		{
 			new(0x1c08, 0x19e9, 0x17a3),

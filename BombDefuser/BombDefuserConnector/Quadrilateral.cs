@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing;
 
 namespace BombDefuserConnector;
 public struct Quadrilateral {
@@ -23,7 +22,7 @@ public struct Quadrilateral {
 		this.BottomRight = new(bottomRightX, bottomRightY);
 	}
 	public Quadrilateral(IReadOnlyList<Point> points) {
-		if (points is null) throw new ArgumentNullException(nameof(points));
+		ArgumentNullException.ThrowIfNull(points);
 		if (points.Count != 4) throw new ArgumentException("Points list must have length 4.", nameof(points));
 		this.TopLeft = points[0];
 		this.TopRight = points[1];

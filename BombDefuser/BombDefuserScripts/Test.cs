@@ -1,7 +1,7 @@
-﻿namespace BombDefuserScripts;
+﻿using SixLabors.ImageSharp.Formats.Bmp;
 
-using SixLabors.ImageSharp.Formats.Bmp;
-using static BombDefuserScripts.AimlTasks;
+namespace BombDefuserScripts;
+
 [AimlInterface]
 internal class Test {
 	[AimlCategory("test input *")]
@@ -52,12 +52,8 @@ internal class Test {
 	}
 
 	[AimlCategory("test getmoduletype * * *")]
-	public static void TestGetModuleType(AimlAsyncContext context, int face, int x, int y) {
-		context.Reply(DefuserConnector.Instance.CheatGetComponentReader(new(0, face, x, y))?.Name ?? "nil");
-	}
+	public static void TestGetModuleType(AimlAsyncContext context, int face, int x, int y) => context.Reply(DefuserConnector.Instance.CheatGetComponentReader(new(0, face, x, y))?.Name ?? "nil");
 
 	[AimlCategory("test read * * * *")]
-	public static void TestRead(AimlAsyncContext context, int face, int x, int y, string members) {
-		context.Reply(DefuserConnector.Instance.CheatRead(new(0, face, x, y), members.Split((char[]?) null, StringSplitOptions.RemoveEmptyEntries)) ?? "nil");
-	}
+	public static void TestRead(AimlAsyncContext context, int face, int x, int y, string members) => context.Reply(DefuserConnector.Instance.CheatRead(new(0, face, x, y), members.Split((char[]?) null, StringSplitOptions.RemoveEmptyEntries)) ?? "nil");
 }

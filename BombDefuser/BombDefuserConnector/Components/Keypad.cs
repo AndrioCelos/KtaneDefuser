@@ -9,7 +9,7 @@ using SixLabors.ImageSharp.Processing;
 
 namespace BombDefuserConnector.Components;
 public class Keypad : ComponentReader<Keypad.ReadData> {
-	private static readonly (Image<L8> image, Symbol symbol)[] ReferenceSymbols = new[] {
+	private static readonly (Image<L8> image, Symbol symbol)[] ReferenceSymbols = [
 		(LoadSampleImage(Resources.KeypadAe), Symbol.Ae),
 		(LoadSampleImage(Resources.KeypadAT), Symbol.AT),
 		(LoadSampleImage(Resources.KeypadBalloon), Symbol.Balloon),
@@ -43,7 +43,7 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 		(LoadSampleImage(Resources.KeypadTripod), Symbol.Tripod),
 		(LoadSampleImage(Resources.KeypadUpsideDownY), Symbol.UpsideDownY),
 		(LoadSampleImage(Resources.KeypadWeirdNose), Symbol.WeirdNose)
-	};
+	];
 
 	private static Image<L8> LoadSampleImage(byte[] bytes) {
 		var image = Image.Load<L8>(bytes);
@@ -160,7 +160,7 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 			var box = keyRectangles[i];
 			using var resizedKeyImage = keysBitmap.Clone(c => c.Crop(box).Resize(64, 64));
 
-			symbolGuesses[i] = new List<(Symbol symbol, int dist)>();
+			symbolGuesses[i] = [];
 			var bestDist = int.MaxValue;
 			foreach (var (refBitmap, symbol) in ReferenceSymbols) {
 				var dist = 0;

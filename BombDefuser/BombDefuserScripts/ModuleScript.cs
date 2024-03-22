@@ -6,7 +6,7 @@ public abstract class ModuleScript {
 	private static readonly Dictionary<Type, (Type scriptType, string topic)> Scripts = new(from t in typeof(ModuleScript).Assembly.GetTypes() where t.BaseType is Type t2 && t2.IsGenericType && t2.GetGenericTypeDefinition() == typeof(ModuleScript<>)
 																							select new KeyValuePair<Type, (Type, string)>(t.BaseType!.GenericTypeArguments[0], (t, t.GetCustomAttribute<AimlInterfaceAttribute>()?.Topic ?? throw new InvalidOperationException($"Missing topic on {t.Name}"))));
 	private static readonly MethodInfo CreateMethodBase = typeof(ModuleScript).GetMethod(nameof(CreateInternal), BindingFlags.NonPublic | BindingFlags.Static)!;
-	private static readonly Dictionary<Type, MethodInfo> CreateMethodCache = new();
+	private static readonly Dictionary<Type, MethodInfo> CreateMethodCache = [];
 
 	private protected string? topic;
 	/// <summary>Returns the AIML topic associated with this script.</summary>
@@ -34,7 +34,7 @@ public abstract class ModuleScript {
 			method = CreateMethodBase.MakeGenericMethod(scriptType, readerType);
 			CreateMethodCache[scriptType] = method;
 		}
-		return (ModuleScript) method.Invoke(null, new object[] { topic })!;
+		return (ModuleScript) method.Invoke(null, [topic])!;
 	}
 
 	private static TScript CreateInternal<TScript, TReader>(string topic) where TScript : ModuleScript<TReader>, new() where TReader : ComponentReader

@@ -411,17 +411,15 @@ internal partial class Simulation {
 		}
 	}
 
-	private class WidgetFace {
-		internal readonly Widget?[] Slots;
-
-		public WidgetFace(Widget?[] slots) => this.Slots = slots ?? throw new ArgumentNullException(nameof(slots));
+	private class WidgetFace(Simulation.Widget?[] slots) {
+		internal readonly Widget?[] Slots = slots ?? throw new ArgumentNullException(nameof(slots));
 	}
 
-	private abstract class BombComponent {
-		internal ComponentReader Reader { get; }
+	private abstract class BombComponent(ComponentReader reader) {
+		internal ComponentReader Reader { get; } = reader ?? throw new ArgumentNullException(nameof(reader));
 		internal abstract string DetailsString { get; }
 		public event EventHandler<string>? PostbackSent;
-		protected BombComponent(ComponentReader reader) => this.Reader = reader ?? throw new ArgumentNullException(nameof(reader));
+
 		protected void Postback(string message) => this.PostbackSent?.Invoke(this, message);
 	}
 
@@ -510,12 +508,11 @@ internal partial class Simulation {
 		public virtual void StopInteract() { }
 	}
 
-	private abstract class Module<TDetails> : Module where TDetails : notnull {
-		internal virtual TDetails Details { get; }
+	private abstract class Module<TDetails>(ComponentReader<TDetails> reader, TDetails details, int selectableWidth, int selectableHeight) : Module(reader, selectableWidth, selectableHeight) where TDetails : notnull {
+		internal virtual TDetails Details { get; } = details;
 		internal override string DetailsString => this.Details.ToString() ?? "";
 
 		protected Module(ComponentReader<TDetails> reader, int selectableWidth, int selectableHeight) : this(reader, default!, selectableWidth, selectableHeight) { }
-		public Module(ComponentReader<TDetails> reader, TDetails details, int selectableWidth, int selectableHeight) : base(reader, selectableWidth, selectableHeight) => this.Details = details;
 	}
 
 	private abstract class NeedyModule : Module {
@@ -590,12 +587,11 @@ internal partial class Simulation {
 		}
 	}
 
-	private abstract class NeedyModule<TDetails> : NeedyModule where TDetails : notnull {
-		internal virtual TDetails Details { get; }
+	private abstract class NeedyModule<TDetails>(ComponentReader<TDetails> reader, TDetails details, int selectableWidth, int selectableHeight) : NeedyModule(reader, selectableWidth, selectableHeight) where TDetails : notnull {
+		internal virtual TDetails Details { get; } = details;
 		internal override string DetailsString => this.Details.ToString() ?? "";
 
 		protected NeedyModule(ComponentReader<TDetails> reader, int selectableWidth, int selectableHeight) : this(reader, default!, selectableWidth, selectableHeight) { }
-		protected NeedyModule(ComponentReader<TDetails> reader, TDetails details, int selectableWidth, int selectableHeight) : base(reader, selectableWidth, selectableHeight) => this.Details = details;
 	}
 
 	private class TimerComponent : BombComponent {
@@ -617,19 +613,15 @@ internal partial class Simulation {
 		private TimerComponent() : base(new Components.Timer()) { }
 	}
 
-	private abstract class Widget {
-		internal WidgetReader Reader { get; }
+	private abstract class Widget(WidgetReader reader) {
+		internal WidgetReader Reader { get; } = reader ?? throw new ArgumentNullException(nameof(reader));
 		internal abstract string DetailsString { get; }
-
-		protected Widget(WidgetReader reader) => this.Reader = reader ?? throw new ArgumentNullException(nameof(reader));
 
 		internal static Widget<T> Create<T>(WidgetReader<T> reader, T details) where T : notnull => new(reader, details);
 	}
 
-	private class Widget<T> : Widget where T : notnull {
-		internal T Details { get; }
+	private class Widget<T>(WidgetReader<T> reader, T details) : Widget(reader) where T : notnull {
+		internal T Details { get; } = details;
 		internal override string DetailsString => this.Details.ToString() ?? "";
-
-		public Widget(WidgetReader<T> reader, T details) : base(reader) => this.Details = details;
 	}
 }

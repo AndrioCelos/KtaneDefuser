@@ -13,7 +13,7 @@ public partial class TransformationForm : Form {
 	private Image<Rgba32>? screenImage;
 	private Image<Rgba32>? distortedImage;
 	private Bitmap? screenBitmap;
-	private Point[] points = new Point[4];
+	private readonly Point[] points = new Point[4];
 	private int? draggingPoint;
 
 	private void SetScreenImage(Image<Rgba32>? value) {
@@ -25,7 +25,7 @@ public partial class TransformationForm : Form {
 			points[3].X = Math.Min(points[3].X, value.Width);
 			points[3].Y = Math.Min(points[3].Y, value.Height);
 			lightsLabel.Text = value.Height >= 250 ? $"Lights: {ImageUtils.GetLightsState(value)}" : "";
-			screenshotPanel_Resize(this, EventArgs.Empty);
+			ScreenshotPanel_Resize(this, EventArgs.Empty);
 			RecalculateSideWidgetPresets();
 			RedrawTransformedImage();
 		}
@@ -38,13 +38,13 @@ public partial class TransformationForm : Form {
 		RecalculateSideWidgetPresets();
 	}
 
-	private void screenshotLoadButton_Click(object sender, EventArgs e) {
+	private void ScreenshotLoadButton_Click(object sender, EventArgs e) {
 		if (openFileDialog.ShowDialog(this) == DialogResult.OK) {
 			SetScreenImage(Image.Load<Rgba32>(openFileDialog.FileName));
 		}
 	}
 
-	private void screenPictureBox_Paint(object sender, PaintEventArgs e) {
+	private void ScreenPictureBox_Paint(object sender, PaintEventArgs e) {
 		if (screenImage != null && screenBitmap != null) {
 			e.Graphics.DrawImage(screenBitmap, 0, 0, screenshotPictureBox.ClientSize.Width, screenshotPictureBox.ClientSize.Height);
 			e.Graphics.DrawLine(Pens.LightGray, ToDisplayPoint(points[0]), ToDisplayPoint(points[1]));
@@ -80,7 +80,7 @@ public partial class TransformationForm : Form {
 		}
 	}
 
-	private void screenPictureBox_MouseDown(object sender, MouseEventArgs e) {
+	private void ScreenPictureBox_MouseDown(object sender, MouseEventArgs e) {
 		presetBox.Select();
 		var ds = new int[4];
 		var index = 0;
@@ -94,7 +94,7 @@ public partial class TransformationForm : Form {
 		screenshotPictureBox.Refresh();
 	}
 
-	private void screenPictureBox_MouseMove(object sender, MouseEventArgs e) {
+	private void ScreenPictureBox_MouseMove(object sender, MouseEventArgs e) {
 		if (draggingPoint != null && screenImage != null) {
 			var point = FromDisplayPoint(e.Location);
 			point.X = Math.Min(Math.Max(point.X, 0), screenImage.Width);
@@ -106,7 +106,7 @@ public partial class TransformationForm : Form {
 		}
 	}
 
-	private void screenPictureBox_MouseUp(object sender, MouseEventArgs e) {
+	private void ScreenPictureBox_MouseUp(object sender, MouseEventArgs e) {
 		draggingPoint = null;
 		screenshotPictureBox.Refresh();
 	}
@@ -114,7 +114,7 @@ public partial class TransformationForm : Form {
 	private Point ToDisplayPoint(Point bitmapPoint) => screenImage == null ? bitmapPoint : new(bitmapPoint.X * screenshotPictureBox.ClientSize.Height / screenImage.Height, bitmapPoint.Y * screenshotPictureBox.ClientSize.Height / screenImage.Height);
 	private Point FromDisplayPoint(Point displayPoint) => screenImage == null ? displayPoint : new(displayPoint.X * screenImage.Height / screenshotPictureBox.ClientSize.Height, displayPoint.Y * screenImage.Height / screenshotPictureBox.ClientSize.Height);
 
-	private void screenshotPanel_Resize(object sender, EventArgs e) {
+	private void ScreenshotPanel_Resize(object sender, EventArgs e) {
 		if (screenImage == null) return;
 		var size = new SizeF(panel1.ClientSize.Width, (float) panel1.ClientSize.Width * screenImage.Height / screenImage.Width);
 		if (size.Height > panel1.ClientSize.Height)
@@ -126,15 +126,15 @@ public partial class TransformationForm : Form {
 
 	private void RedrawTransformedImage() {
 		if (screenImage == null) {
-			pictureBox1.Image = null;
+			OutputPictureBox.Image = null;
 			return;
 		}
 
 		distortedImage = ImageUtils.PerspectiveUndistort(screenImage, new(points.Select(p => new SixLabors.ImageSharp.Point(p.X, p.Y)).ToList()), (InterpolationMode) interpolationBox.SelectedIndex);
 		ImageUtils.ColourUncorrect(distortedImage, (LightsState) lightsSimulateBox.SelectedIndex);
 
-		pictureBox1.Image = distortedImage.ToWinFormsImage();
-		pictureBox1.Refresh();
+		OutputPictureBox.Image = distortedImage.ToWinFormsImage();
+		OutputPictureBox.Refresh();
 
 		if (autoClassifyBox.Checked && Application.OpenForms.OfType<ClassificationForm>().FirstOrDefault() is ClassificationForm form) {
 			form.screenImage = distortedImage;
@@ -142,34 +142,30 @@ public partial class TransformationForm : Form {
 		}
 	}
 
-	private void outputCopyButton_Click(object sender, EventArgs e) {
-		Clipboard.SetImage(pictureBox1.Image);
-	}
+	private void OutputCopyButton_Click(object sender, EventArgs e) => Clipboard.SetImage(OutputPictureBox.Image);
 
-	private void outputSaveButton_Click(object sender, EventArgs e) {
+	private void OutputSaveButton_Click(object sender, EventArgs e) {
 		if (saveFileDialog1.ShowDialog() == DialogResult.OK) {
 			SaveImage(distortedImage!);
 		}
 	}
 
-	private void interpolationBox_SelectedIndexChanged(object sender, EventArgs e) {
-		RedrawTransformedImage();
-	}
+	private void InterpolationBox_SelectedIndexChanged(object sender, EventArgs e) => RedrawTransformedImage();
 
-	private void screenshotPasteButton_Click(object sender, EventArgs e) {
+	private void ScreenshotPasteButton_Click(object sender, EventArgs e) {
 		if (Clipboard.ContainsImage()) {
 			SetScreenImage(new Bitmap(Clipboard.GetImage()!).ToImage<Rgba32>());
 		}
 	}
 
-	private void outputClassifyButton_Click(object sender, EventArgs e) {
+	private void OutputClassifyButton_Click(object sender, EventArgs e) {
 		if (Application.OpenForms.OfType<ClassificationForm>().FirstOrDefault() is ClassificationForm form) {
 			form.screenImage = distortedImage;
 			if (screenImage is not null) form.SetLightsState(ImageUtils.GetLightsState(screenImage));
 		}
 	}
 
-	private void setPreset(Point[] points) {
+	private void SetPreset(Point[] points) {
 		if (screenImage == null || (screenImage.Width == 1920 && screenImage.Height == 1080))
 			points.CopyTo(this.points, 0);
 		else {
@@ -185,7 +181,7 @@ public partial class TransformationForm : Form {
 	private void PresetBox_SelectedIndexChanged(object sender, EventArgs e) {
 		switch (presetBox.SelectedItem) {
 			case Preset preset:
-				setPreset(preset.Points);
+				SetPreset(preset.Points);
 				screenshotPictureBox.Refresh();
 				RedrawTransformedImage();
 				break;
@@ -198,38 +194,38 @@ public partial class TransformationForm : Form {
 	private readonly Preset[] sidePresets = Enumerable.Range(1, 4).Select(i => new Preset($"Side widget {i}", new Point[4])).ToArray();
 
 	private void TransformationForm_Load(object sender, EventArgs e) {
-		presetBox.Items.Add(new Preset("Focus", new Point[] { new(836, 390), new(1120, 390), new(832, 678), new(1124, 678) }));
+		presetBox.Items.Add(new Preset("Focus", [new(836, 390), new(1120, 390), new(832, 678), new(1124, 678)]));
 
-		presetBox.Items.Add(new Preset("Module 1", new Point[] { new(572, 291), new(821, 291), new(560, 534), new(817, 534) }));
-		presetBox.Items.Add(new Preset("Module 2", new Point[] { new(852, 291), new(1096, 291), new(849, 534), new(1102, 534) }));
-		presetBox.Items.Add(new Preset("Module 3", new Point[] { new(1127, 292), new(1369, 292), new(1134, 533), new(1382, 533) }));
-		presetBox.Items.Add(new Preset("Module 4", new Point[] { new(558, 558), new(816, 558), new(544, 822), new(811, 822) }));
-		presetBox.Items.Add(new Preset("Module 5", new Point[] { new(848, 558), new(1099, 558), new(845, 821), new(1106, 821) }));
-		presetBox.Items.Add(new Preset("Module 6", new Point[] { new(1134, 558), new(1385, 558), new(1141, 821), new(1400, 821) }));
+		presetBox.Items.Add(new Preset("Module 1", [new(572, 291), new(821, 291), new(560, 534), new(817, 534)]));
+		presetBox.Items.Add(new Preset("Module 2", [new(852, 291), new(1096, 291), new(849, 534), new(1102, 534)]));
+		presetBox.Items.Add(new Preset("Module 3", [new(1127, 292), new(1369, 292), new(1134, 533), new(1382, 533)]));
+		presetBox.Items.Add(new Preset("Module 4", [new(558, 558), new(816, 558), new(544, 822), new(811, 822)]));
+		presetBox.Items.Add(new Preset("Module 5", [new(848, 558), new(1099, 558), new(845, 821), new(1106, 821)]));
+		presetBox.Items.Add(new Preset("Module 6", [new(1134, 558), new(1385, 558), new(1141, 821), new(1400, 821)]));
 
-		presetBox.Items.Add(new Preset("Module (–2, –1)", new Point[] { new(220, 100), new(496, 100), new(193, 359), new(479, 359) }));
-		presetBox.Items.Add(new Preset("Module (–1, –1)", new Point[] { new(535, 100), new(806, 101), new(522, 359), new(801, 360) }));
-		presetBox.Items.Add(new Preset("Module ( 0, –1)", new Point[] { new(840, 101), new(1113, 101), new(836, 360), new(1119, 360) }));
-		presetBox.Items.Add(new Preset("Module (+1, –1)", new Point[] { new(1147, 101), new(1407, 101), new(1154, 360), new(1421, 360) }));
-		presetBox.Items.Add(new Preset("Module (+2, –1)", new Point[] { new(1456, 102), new(1718, 102), new(1474, 360), new(1745, 360) }));
-		presetBox.Items.Add(new Preset("Module (–2,  0)", new Point[] { new(190, 392), new(477, 392), new(160, 678), new(459, 678) }));
-		presetBox.Items.Add(new Preset("Module (–1,  0)", new Point[] { new(520, 392), new(800, 392), new(501, 677), new(794, 677) }));
-		presetBox.Items.Add(new Preset("Module (+1,  0)", new Point[] { new(1155, 390), new(1425, 390), new(1163, 676), new(1442, 676) }));
-		presetBox.Items.Add(new Preset("Module (+2,  0)", new Point[] { new(1476, 390), new(1748, 390), new(1497, 676), new(1779, 676) }));
-		presetBox.Items.Add(new Preset("Module (–2, +1)", new Point[] { new(157, 706), new(457, 705), new(124, 1019), new(436, 1018) }));
-		presetBox.Items.Add(new Preset("Module (–1, +1)", new Point[] { new(501, 705), new(794, 705), new(481, 1018), new(787, 1017) }));
-		presetBox.Items.Add(new Preset("Module ( 0, +1)", new Point[] { new(829, 705), new(1125, 704), new(828, 1018), new(1134, 1016) }));
-		presetBox.Items.Add(new Preset("Module (+1, +1)", new Point[] { new(1164, 704), new(1444, 704), new(1173, 1016), new(1465, 1015) }));
-		presetBox.Items.Add(new Preset("Module (+2, +1)", new Point[] { new(1499, 704), new(1782, 703), new(1521, 1015), new(1816, 1014) }));
+		presetBox.Items.Add(new Preset("Module (–2, –1)", [new(220, 100), new(496, 100), new(193, 359), new(479, 359)]));
+		presetBox.Items.Add(new Preset("Module (–1, –1)", [new(535, 100), new(806, 101), new(522, 359), new(801, 360)]));
+		presetBox.Items.Add(new Preset("Module ( 0, –1)", [new(840, 101), new(1113, 101), new(836, 360), new(1119, 360)]));
+		presetBox.Items.Add(new Preset("Module (+1, –1)", [new(1147, 101), new(1407, 101), new(1154, 360), new(1421, 360)]));
+		presetBox.Items.Add(new Preset("Module (+2, –1)", [new(1456, 102), new(1718, 102), new(1474, 360), new(1745, 360)]));
+		presetBox.Items.Add(new Preset("Module (–2,  0)", [new(190, 392), new(477, 392), new(160, 678), new(459, 678)]));
+		presetBox.Items.Add(new Preset("Module (–1,  0)", [new(520, 392), new(800, 392), new(501, 677), new(794, 677)]));
+		presetBox.Items.Add(new Preset("Module (+1,  0)", [new(1155, 390), new(1425, 390), new(1163, 676), new(1442, 676)]));
+		presetBox.Items.Add(new Preset("Module (+2,  0)", [new(1476, 390), new(1748, 390), new(1497, 676), new(1779, 676)]));
+		presetBox.Items.Add(new Preset("Module (–2, +1)", [new(157, 706), new(457, 705), new(124, 1019), new(436, 1018)]));
+		presetBox.Items.Add(new Preset("Module (–1, +1)", [new(501, 705), new(794, 705), new(481, 1018), new(787, 1017)]));
+		presetBox.Items.Add(new Preset("Module ( 0, +1)", [new(829, 705), new(1125, 704), new(828, 1018), new(1134, 1016)]));
+		presetBox.Items.Add(new Preset("Module (+1, +1)", [new(1164, 704), new(1444, 704), new(1173, 1016), new(1465, 1015)]));
+		presetBox.Items.Add(new Preset("Module (+2, +1)", [new(1499, 704), new(1782, 703), new(1521, 1015), new(1816, 1014)]));
 
 		foreach (var preset in sidePresets) presetBox.Items.Add(preset);
 
-		presetBox.Items.Add(new Preset("Top widget 1", new Point[] { new(588, 430), new(784, 430), new(587, 541), new(784, 541) }));
-		presetBox.Items.Add(new Preset("Top widget 2", new Point[] { new(824, 430), new(1140, 430), new(824, 541), new(1140, 541) }));
-		presetBox.Items.Add(new Preset("Top widget 3", new Point[] { new(1181, 430), new(1389, 430), new(1182, 540), new(1390, 541) }));
-		presetBox.Items.Add(new Preset("Top widget 4", new Point[] { new(580, 566), new(783, 566), new(578, 678), new(782, 678) }));
-		presetBox.Items.Add(new Preset("Top widget 5", new Point[] { new(821, 566), new(1140, 566), new(821, 678), new(1140, 678) }));
-		presetBox.Items.Add(new Preset("Top widget 6", new Point[] { new(1181, 566), new(1390, 566), new(1182, 678), new(1392, 678) }));
+		presetBox.Items.Add(new Preset("Top widget 1", [new(588, 430), new(784, 430), new(587, 541), new(784, 541)]));
+		presetBox.Items.Add(new Preset("Top widget 2", [new(824, 430), new(1140, 430), new(824, 541), new(1140, 541)]));
+		presetBox.Items.Add(new Preset("Top widget 3", [new(1181, 430), new(1389, 430), new(1182, 540), new(1390, 541)]));
+		presetBox.Items.Add(new Preset("Top widget 4", [new(580, 566), new(783, 566), new(578, 678), new(782, 678)]));
+		presetBox.Items.Add(new Preset("Top widget 5", [new(821, 566), new(1140, 566), new(821, 678), new(1140, 678)]));
+		presetBox.Items.Add(new Preset("Top widget 6", [new(1181, 566), new(1390, 566), new(1182, 678), new(1392, 678)]));
 
 		presetBox.Items.Add("Copy current");
 	}
@@ -261,14 +257,9 @@ public partial class TransformationForm : Form {
 		}
 	}
 
-	public struct Preset {
-		public string Name;
-		public Point[] Points;
-
-		public Preset(string name, Point[] points) {
-			this.Name = name ?? throw new ArgumentNullException(nameof(name));
-			this.Points = points ?? throw new ArgumentNullException(nameof(points));
-		}
+	public struct Preset(string name, Point[] points) {
+		public string Name = name ?? throw new ArgumentNullException(nameof(name));
+		public Point[] Points = points ?? throw new ArgumentNullException(nameof(points));
 	}
 
 	private void PresetBox_Format(object sender, ListControlConvertEventArgs e) {
@@ -282,14 +273,14 @@ public partial class TransformationForm : Form {
 		}
 	}
 
-	private async void getFromGameButton_Click(object sender, EventArgs e) {
+	private async void GetFromGameButton_Click(object sender, EventArgs e) {
 		using var connector = new DefuserConnector();
 		await connector.ConnectAsync(false);
 		var image = await connector.TakeScreenshotAsync();
 		SetScreenImage(image);
 	}
 
-	private void screenshotSaveButton_Click(object sender, EventArgs e) {
+	private void ScreenshotSaveButton_Click(object sender, EventArgs e) {
 		if (saveFileDialog1.ShowDialog() == DialogResult.OK) {
 			SaveImage(screenImage!);
 		}
@@ -306,7 +297,7 @@ public partial class TransformationForm : Form {
 		});
 	}
 
-	private void presetBox_KeyDown(object sender, KeyEventArgs e) {
+	private void PresetBox_KeyDown(object sender, KeyEventArgs e) {
 		switch (e.KeyCode) {
 			case Keys.W:
 				if (this.draggingPoint.HasValue) {
@@ -351,7 +342,5 @@ public partial class TransformationForm : Form {
 		}
 	}
 
-	private void lightsSimulateBox_SelectedIndexChanged(object sender, EventArgs e) {
-		RedrawTransformedImage();
-	}
+	private void LightsSimulateBox_SelectedIndexChanged(object sender, EventArgs e) => RedrawTransformedImage();
 }

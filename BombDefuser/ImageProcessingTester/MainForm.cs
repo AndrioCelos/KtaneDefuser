@@ -1,18 +1,10 @@
 ﻿namespace ImageProcessingTester;
 public partial class MainForm : Form {
-	public MainForm() {
-		InitializeComponent();
-	}
+	public MainForm() => this.InitializeComponent();
 
-	private void button1_Click(object sender, EventArgs e) {
-		new TransformationForm().Show();
-	}
+	private void TransformationButton_Click(object sender, EventArgs e) => new TransformationForm().Show();
 
-	private void button2_Click(object sender, EventArgs e) {
-		new ClassificationForm().Show();
-	}
+	private void ClassificationButton_Click(object sender, EventArgs e) => new ClassificationForm().Show();
 
-	private void button3_Click(object sender, EventArgs e) {
-		new ColourRangeForm().Show();
-	}
+	private void ColourRangeButton_Click(object sender, EventArgs e) => new ColourRangeForm().Show();
 }

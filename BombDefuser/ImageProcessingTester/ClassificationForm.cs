@@ -4,7 +4,6 @@ using BombDefuserConnector;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Image = SixLabors.ImageSharp.Image;
-using Point = SixLabors.ImageSharp.Point;
 
 namespace ImageProcessingTester;
 public partial class ClassificationForm : Form {
@@ -12,44 +11,44 @@ public partial class ClassificationForm : Form {
 
 	public ClassificationForm() {
 		InitializeComponent();
-		comboBox2.SelectedIndex = 0;
+		LightsStateBox.SelectedIndex = 0;
 	}
 
-	private void button1_Click(object sender, EventArgs e) {
-		if (openFileDialog.ShowDialog(this) == DialogResult.OK) {
-			screenImage = Image.Load<Rgba32>(openFileDialog.FileName);
-			pictureBox1.Image = screenImage.ToWinFormsImage();
-			comboBox1_SelectedIndexChanged(sender, EventArgs.Empty);
-		}
+	private void OpenButton_Click(object sender, EventArgs e) {
+		if (openFileDialog.ShowDialog(this) != DialogResult.OK) return;
+		screenImage = Image.Load<Rgba32>(openFileDialog.FileName);
+		PictureBox.Image = screenImage.ToWinFormsImage();
+		ReadModeBox_SelectedIndexChanged(sender, EventArgs.Empty);
 	}
 
-	private void button2_Click(object sender, EventArgs e) {
+	private void PasteButton_Click(object sender, EventArgs e) {
 		var image = Clipboard.GetImage();
-		if (image is not null) {
-			this.screenImage = image.ToImage<Rgba32>();
-			pictureBox1.Image = screenImage.ToWinFormsImage();
-			comboBox1_SelectedIndexChanged(sender, EventArgs.Empty);
-		} else
+		if (image is null) {
 			MessageBox.Show(this, "There is no usable image on the Clipboard.", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+			return;
+		}
+		this.screenImage = image.ToImage<Rgba32>();
+		PictureBox.Image = screenImage.ToWinFormsImage();
+		ReadModeBox_SelectedIndexChanged(sender, EventArgs.Empty);
 	}
 
 	internal void SetLightsState(LightsState lightsState) {
-		comboBox2.SelectedIndex = (int) lightsState;
-		comboBox1_SelectedIndexChanged(comboBox1, EventArgs.Empty);
+		LightsStateBox.SelectedIndex = (int) lightsState;
+		ReadModeBox_SelectedIndexChanged(ReadModeBox, EventArgs.Empty);
 	}
 
-	internal void comboBox1_SelectedIndexChanged(object sender, EventArgs e) {
+	internal void ReadModeBox_SelectedIndexChanged(object sender, EventArgs e) {
 		string? s = null;
 		var stopwatch = Stopwatch.StartNew();
 		try {
-			var lightsState = (LightsState) comboBox2.SelectedIndex;
+			var lightsState = (LightsState) LightsStateBox.SelectedIndex;
 			if (screenImage == null) {
 				return;
 			}
 			using var image = screenImage.Clone();
 			//ImageUtils.ColourCorrect(bitmap, lightsState);
-			pictureBox1.Image = image.ToWinFormsImage();
-			if (comboBox1.SelectedIndex == 0) {
+			PictureBox.Image = image.ToWinFormsImage();
+			if (ReadModeBox.SelectedIndex == 0) {
 				if (ImageUtils.CheckForBlankComponent(image)) {
 					s = "Blank";
 				} else {
@@ -58,7 +57,7 @@ public partial class ClassificationForm : Form {
 
 					var looksLikeANeedyModule = needyRating >= 0.5f;
 
-					foreach (var reader in comboBox1.Items.OfType<ComponentReader>()) {
+					foreach (var reader in ReadModeBox.Items.OfType<ComponentReader>()) {
 						if (reader.UsesNeedyFrame == looksLikeANeedyModule) {
 							var result = reader.IsModulePresent(image);
 							probs[reader.Name] = result;
@@ -69,11 +68,11 @@ public partial class ClassificationForm : Form {
 					var max = sorted[0];
 					s = $"Needy frame: {needyRating}\r\nClassified as: {max.Key}\r\n({string.Join(", ", sorted.Take(3).Select(e => $"{e.Key} [{e.Value:0.000}]"))})";
 				}
-			} else if (comboBox1.SelectedIndex == 1) {
+			} else if (ReadModeBox.SelectedIndex == 1) {
 				var pixelCounts = WidgetReader.GetPixelCounts(image, 0);
 				var probs = new Dictionary<string, float>();
 
-				foreach (var reader in comboBox1.Items.OfType<WidgetReader>()) {
+				foreach (var reader in ReadModeBox.Items.OfType<WidgetReader>()) {
 					var result = Math.Max(0, reader.IsWidgetPresent(image, 0, pixelCounts));
 					probs[reader.Name] = result;
 				}
@@ -81,14 +80,14 @@ public partial class ClassificationForm : Form {
 				var sorted = probs.OrderByDescending(e => e.Value).ToList();
 				var max = sorted[0];
 				s = $"Classified as: {(max.Value < 0.25f ? "nothing" : max.Key)}\r\n(R: {pixelCounts.Red}, Y: {pixelCounts.Yellow}, E: {pixelCounts.Grey}, W: {pixelCounts.White})\r\n({string.Join(", ", sorted.Take(3).Select(e => $"{e.Key} [{e.Value:0.000}]"))})";
-			} else if (comboBox1.SelectedIndex == 2) {
+			} else if (ReadModeBox.SelectedIndex == 2) {
 				var result = ImageUtils.GetLightState(image, image.Bounds);
 				s = result.ToString();
 			} else {
 				using var bitmap2 = image.Clone();
 				var debugImage = bitmap2;
 				try {
-					switch (comboBox1.SelectedItem) {
+					switch (ReadModeBox.SelectedItem) {
 						case ComponentReader componentReader:
 							var result = componentReader.ProcessNonGeneric(image, lightsState, ref debugImage);
 							s = result.ToString();
@@ -98,29 +97,27 @@ public partial class ClassificationForm : Form {
 							s = result.ToString();
 							break;
 					}
-					pictureBox1.Image = debugImage?.ToWinFormsImage();
+					PictureBox.Image = debugImage?.ToWinFormsImage();
 				} finally {
-					pictureBox1.Image = debugImage?.ToWinFormsImage();
+					PictureBox.Image = debugImage?.ToWinFormsImage();
 					debugImage?.Dispose();
 				}
 			}
 		} catch (Exception ex) {
 			s = ex.ToString();
 		} finally {
-			textBox1.Text = $"Time: {stopwatch.ElapsedMilliseconds} ms\r\n{s}";
+			OutputBox.Text = $"Time: {stopwatch.ElapsedMilliseconds} ms\r\n{s}";
 		}
 	}
 
-	private void button3_Click(object sender, EventArgs e) {
-		Clipboard.SetImage(pictureBox1.Image);
-	}
+	private void CopyAnnotationsButton_Click(object sender, EventArgs e) => Clipboard.SetImage(PictureBox.Image);
 
 	private void ClassificationForm_Load(object sender, EventArgs e) {
 		foreach (var type in typeof(ComponentReader).Assembly.GetTypes()) {
 			if (!type.IsAbstract && typeof(ComponentReader).IsAssignableFrom(type))
-				comboBox1.Items.Add(Activator.CreateInstance(type));
+				ReadModeBox.Items.Add(Activator.CreateInstance(type)!);
 			else if (!type.IsAbstract && typeof(WidgetReader).IsAssignableFrom(type))
-				comboBox1.Items.Add(Activator.CreateInstance(type));
+				ReadModeBox.Items.Add(Activator.CreateInstance(type)!);
 		}
 	}
 
@@ -146,15 +143,15 @@ public partial class ClassificationForm : Form {
 				if (list.Count == 1 && Path.GetExtension(list[0]) is string ext && ext.ToLowerInvariant() is ".bmp" or ".jpg" or ".jpeg" or ".png" or ".webp") {
 					e.Effect = DragDropEffects.Copy;
 					screenImage = Image.Load<Rgba32>(list[0]!);
-					pictureBox1.Image = screenImage.ToWinFormsImage();
-					comboBox1_SelectedIndexChanged(sender, EventArgs.Empty);
+					PictureBox.Image = screenImage.ToWinFormsImage();
+					ReadModeBox_SelectedIndexChanged(sender, EventArgs.Empty);
 				}
 			} else if (hasImage) {
 				var image = dataObject.GetImage();
 				if (image is not null) {
 					this.screenImage = image.ToImage<Rgba32>();
-					pictureBox1.Image = screenImage.ToWinFormsImage();
-					comboBox1_SelectedIndexChanged(sender, EventArgs.Empty);
+					PictureBox.Image = screenImage.ToWinFormsImage();
+					ReadModeBox_SelectedIndexChanged(sender, EventArgs.Empty);
 					e.Effect = DragDropEffects.Copy;
 				}
 			}

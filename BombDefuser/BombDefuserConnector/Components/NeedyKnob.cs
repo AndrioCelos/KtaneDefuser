@@ -35,7 +35,7 @@ public class NeedyKnob : ComponentReader<NeedyKnob.ReadData> {
 
 	// TODO: These rectangles were chosen with respect to viewing angles that can be seen on the vanilla bomb.
 	// It should be fine with larger bombs, but should be tested.
-	private static readonly Rectangle[] rectangles = new Rectangle[] {
+	private static readonly Rectangle[] rectangles = [
 		new( 57, 168, 10, 10),
 		new( 72, 190, 10, 10),
 		new( 95, 205, 10, 10),
@@ -48,12 +48,12 @@ public class NeedyKnob : ComponentReader<NeedyKnob.ReadData> {
 		new(155, 225, 10, 10),
 		new(184, 205, 10, 10),
 		new(202, 177, 10, 10)
-	};
+	];
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		var time = ReadNeedyTimer(image, lightsState, debugImage);
 		var lights = new bool[12];
 
-		bool isRectangleLit(PixelAccessor<Rgba32> a, Rectangle rectangle) {
+		static bool isRectangleLit(PixelAccessor<Rgba32> a, Rectangle rectangle) {
 			var count = 0;
 			for (var dy = 0; dy < rectangle.Height; dy++) {
 				var r = a.GetRowSpan(rectangle.Y + dy);

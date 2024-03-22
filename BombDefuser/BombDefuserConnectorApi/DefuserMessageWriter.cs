@@ -3,14 +3,8 @@ using System.IO;
 
 namespace BombDefuserConnectorApi;
 /// <summary>Writes defuser interface messages to a stream.</summary>
-public class DefuserMessageWriter : IDisposable {
-	public Stream BaseStream { get; }
-	private readonly byte[] buffer;
-
-	public DefuserMessageWriter(Stream baseStream, byte[] buffer) {
-		this.BaseStream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
-		this.buffer = buffer;
-	}
+public class DefuserMessageWriter(Stream baseStream, byte[] buffer) : IDisposable {
+	public Stream BaseStream { get; } = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
 
 	public void Dispose() {
 		this.BaseStream.Dispose();
@@ -20,13 +14,13 @@ public class DefuserMessageWriter : IDisposable {
 	~DefuserMessageWriter() => this.Dispose();
 
 	public unsafe void Write(IDefuserMessage message) {
-		lock (this.buffer) {
+		lock (buffer) {
 			var messageType = message.MessageType;
-			fixed (byte* ptr = this.buffer) {
-				var length = message.ToBuffer(this.buffer);
-				this.buffer[0] = (byte) messageType;
+			fixed (byte* ptr = buffer) {
+				var length = message.ToBuffer(buffer);
+				buffer[0] = (byte) messageType;
 				*(int*) (ptr + 1) = length;
-				this.BaseStream.Write(this.buffer, 0, length + 5);
+				this.BaseStream.Write(buffer, 0, length + 5);
 			}
 		}
 	}

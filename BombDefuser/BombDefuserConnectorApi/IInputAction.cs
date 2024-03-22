@@ -7,40 +7,27 @@ public interface IInputAction { }
 public sealed class NoOpAction : IInputAction { }
 
 /// <summary>An action that presses, starts holding or releases a controller button.</summary>
-public sealed class ButtonAction : IInputAction {
-	public Button Button { get; set; }
-	public ButtonActionType Action { get; set; }
+public sealed class ButtonAction(Button button, ButtonActionType action) : IInputAction {
+	public Button Button { get; set; } = button;
+	public ButtonActionType Action { get; set; } = action;
 
 	public ButtonAction(Button button) : this(button, ButtonActionType.Press) { }
-	public ButtonAction(Button button, ButtonActionType action) {
-		this.Button = button;
-		this.Action = action;
-	}
 }
 
 /// <summary>An action that moves a controller stick or trigger axis.</summary>
-public sealed class AxisAction : IInputAction {
-	public Axis Axis { get; set; }
-	public float Value { get; set; }
-
-	public AxisAction(Axis axis, float value) {
-		this.Axis = axis;
-		this.Value = value;
-	}
+public sealed class AxisAction(Axis axis, float value) : IInputAction {
+	public Axis Axis { get; set; } = axis;
+	public float Value { get; set; } = value;
 }
 
 /// <summary>An action that changes the camera's field of view, as if using the Camera Zoom mod.</summary>
-public sealed class ZoomAction : IInputAction {
-	public float Value { get; set; }
-
-	public ZoomAction(float value) => this.Value = value;
+public sealed class ZoomAction(float value) : IInputAction {
+	public float Value { get; set; } = value;
 }
 
 /// <summary>An action that sends a callback event to the client when reached.</summary>
-public sealed class CallbackAction : IInputAction {
-	public Guid Token { get; set; }
-
-	public CallbackAction(Guid token) => this.Token = token;
+public sealed class CallbackAction(Guid token) : IInputAction {
+	public Guid Token { get; set; } = token;
 }
 
 public enum InputActionType {
