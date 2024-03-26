@@ -12,7 +12,7 @@ public class Semaphore : ComponentReader<Semaphore.ReadData> {
 	protected internal override bool UsesNeedyFrame => false;
 
 	protected internal override float IsModulePresent(Image<Rgba32> image) {
-		var points = GetDisplayPoints(image, LightsState.On);
+		if (!TryGetDisplayPoints(image, LightsState.On, out var points)) return 0;
 		return Math.Abs(points.TopRight.Y - points.TopLeft.Y) <= 5 && Math.Abs(points.BottomRight.Y - points.BottomLeft.Y) <= 5
 			&& Math.Abs(points.BottomLeft.X - points.TopLeft.X) <= 5 && Math.Abs(points.BottomRight.X - points.TopRight.X) <= 5
 			? 0.75f : 0;
@@ -20,7 +20,7 @@ public class Semaphore : ComponentReader<Semaphore.ReadData> {
 
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0042:Deconstruct variable declaration")]
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		var points = GetDisplayPoints(image, lightsState);
+		if (!TryGetDisplayPoints(image, LightsState.On, out var points)) throw new ArgumentException("Couldn't find the display", nameof(image));
 		if (debugImage is not null) ImageUtils.DebugDrawPoints(debugImage, points);
 
 		var displayBitmap = ImageUtils.PerspectiveUndistort(image, points, InterpolationMode.NearestNeighbour, new(180, 142));
@@ -183,13 +183,13 @@ public class Semaphore : ComponentReader<Semaphore.ReadData> {
 		return (new(sx / count, sy / count), rectangle);
 	}
 
-	private static Quadrilateral GetDisplayPoints(Image<Rgba32> image, LightsState lightsState)
-		=> ImageUtils.FindCorners(image, new(12, 48, 200, 180), lightsState switch {
+	private static bool TryGetDisplayPoints(Image<Rgba32> image, LightsState lightsState, out Quadrilateral points)
+		=> ImageUtils.TryFindCorners(image, new(12, 48, 200, 180), lightsState switch {
 			LightsState.Buzz => c => HsvColor.FromColor(c) is var hsv && hsv.S < 0.25f && hsv.V < 0.05f,
 			LightsState.Off => c => c.R < 2 && c.G < 2 && c.B < 2,
 			LightsState.Emergency => c => HsvColor.FromColor(c) is var hsv && hsv.H < 15 && hsv.S < 0.6f && hsv.V < 0.2f,
 			_ => c => HsvColor.FromColor(c) is var hsv && hsv.V < 0.15f
-		}, 12);
+		}, 12, out points);
 
 	public enum Direction {
 		Down,
