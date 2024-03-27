@@ -6,7 +6,7 @@ using SixLabors.ImageSharp.Processing;
 namespace BombDefuserConnector.Components;
 public class NeedyVentGas : ComponentReader<NeedyVentGas.ReadData> {
 	public override string Name => "Needy Vent Gas";
-	protected internal override bool UsesNeedyFrame => true;
+	protected internal override ComponentFrameType FrameType => ComponentFrameType.Needy;
 
 	private static readonly TextRecogniser displayRecogniser = new(new(TextRecogniser.Fonts.CABIN_MEDIUM, 24), 0, 128, new(256, 64),
 		"VENT GAS?", "DETONATE?");

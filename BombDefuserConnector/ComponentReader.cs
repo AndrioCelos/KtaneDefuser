@@ -9,7 +9,7 @@ public abstract class ComponentReader {
 	/// <summary>When overridden, returns the name of the component handled by this class.</summary>
 	public abstract string Name { get; }
 	/// <summary>When overridden, returns a value indicating whether the component handled by this class uses the needy module frame.</summary>
-	protected internal abstract bool UsesNeedyFrame { get; }
+	protected internal abstract ComponentFrameType FrameType { get; }
 
 	/// <summary>Returns a value indicating how much the specified image looks like this component type.</summary>
 	/// <returns>Generally this will range from 0 to 1, though it isn't strictly bounded. The image should always be under normal lighting because this is used at the start of the game.</returns>

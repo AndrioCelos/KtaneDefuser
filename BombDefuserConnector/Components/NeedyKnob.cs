@@ -6,7 +6,7 @@ using SixLabors.ImageSharp.Processing;
 namespace BombDefuserConnector.Components;
 public class NeedyKnob : ComponentReader<NeedyKnob.ReadData> {
 	public override string Name => "Needy Knob";
-	protected internal override bool UsesNeedyFrame => true;
+	protected internal override ComponentFrameType FrameType => ComponentFrameType.Needy;
 
 	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		var knobCount = 0;

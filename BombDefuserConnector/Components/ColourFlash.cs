@@ -7,7 +7,7 @@ using SixLabors.ImageSharp.Processing;
 namespace BombDefuserConnector.Components;
 public class ColourFlash : ComponentReader<ColourFlash.ReadData> {
 	public override string Name => "Colour Flash";
-	protected internal override bool UsesNeedyFrame => false;
+	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
 	private static readonly TextRecogniser displayRecogniser = new(new(TextRecogniser.Fonts.OSTRICH_SANS_HEAVY, 24), 0, 128, new(128, 64),
 		"RED", "YELLOW", "GREEN", "BLUE", "MAGENTA", "WHITE");

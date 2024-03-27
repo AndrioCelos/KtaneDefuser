@@ -11,7 +11,7 @@ public partial class Timer : ComponentReader<Timer.ReadData> {
 	private static readonly Image<Rgba32>[] Samples = [Image.Load<Rgba32>(Resources.Timer1), Image.Load<Rgba32>(Resources.Timer2)];
 
 	public override string Name => "Timer";
-	protected internal override bool UsesNeedyFrame => false;
+	protected internal override ComponentFrameType FrameType => ComponentFrameType.Timer;
 
 	protected internal override float IsModulePresent(Image<Rgba32> image)
 		=> ImageUtils.TryFindCorners(image, new(16, 96, 224, 144), IsTimerBackground, 0, out _) ? ImageUtils.CheckSimilarity(image, Samples) * 1.5f : 0;

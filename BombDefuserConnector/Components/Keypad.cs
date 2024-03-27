@@ -52,7 +52,7 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 	}
 
 	public override string Name => "Keypad";
-	protected internal override bool UsesNeedyFrame => false;
+	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
 	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Keypad: look for white keys and gray bezel

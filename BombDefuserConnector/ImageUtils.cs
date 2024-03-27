@@ -275,6 +275,7 @@ public static class ImageUtils {
 	}
 
 	/// <summary>Returns a value indicating how much the module in the specified image looks like a needy frame.</summary>
+	[Obsolete("Being replaced with GetComponentFrame.")]
 	public static float CheckForNeedyFrame(Image<Rgba32> image) {
 		var yellowPixels = 0;
 		for (int y = 0; y < image.Height * 80 / 256; y++) {
@@ -285,6 +286,43 @@ public static class ImageUtils {
 			}
 		}
 		return yellowPixels / 2000f;
+	}
+
+	public static ComponentFrameType GetComponentFrame(Image<Rgba32> image) {
+		var rectangles = new Rectangle[] { new(0, 0, image.Width, image.Height / 4), new(0, 0, image.Width / 4, image.Height), new(0, image.Height * 3 / 4, image.Width, image.Height / 4), new(image.Width * 3 / 4, 0, image.Width / 4, image.Height) };
+		var total = 0;
+		var match = new int[3];
+		image.ProcessPixelRows(p => {
+			for (var i = 0; i < rectangles.Length; i++) {
+				var rect = rectangles[i];
+				for (var y = rect.Top; y < rect.Bottom; y++) {
+					var r = p.GetRowSpan(y);
+					for (var x = rect.Left; x < rect.Right; x++) {
+						total++;
+
+						var hsv = HsvColor.FromColor(r[x]);
+						if (hsv.H is >= 180 and < 240 && hsv.S < 0.5f && hsv.V is >= 0.15f and < 0.5f)
+							match[1]++;  // Needy background
+						else if (i == 0 && hsv.H is >= 30 and < 60 && hsv.S >= 0.5f && hsv.V is >= 0.3f and < 0.75f)
+							match[1]++;  // Needy yellow stripes
+						else if (i == 0 && hsv.H >= 240 && hsv.S is >= 0.25f and < 0.5f && hsv.V is >= 0.1f and < 0.2f)
+							match[1]++;  // Needy black stripes
+						else if (hsv.H is >= 150 and < 240 && hsv.S < 0.5f && hsv.V >= 0.5f)
+							match[0]++;  // Solvable background
+						else if (hsv.S < 0.25f && hsv.V < 0.2f)
+							match[2]++;  // Timer background
+						else if (hsv.S < 0.25f && hsv.V < 0.2f)
+							match[2]++;  // Timer background
+						else if (hsv.H < 60 && hsv.S >= 0.5f && hsv.V < 0.2f)
+							match[2] += 2;  // Timer display background
+					}
+				}
+			}
+		});
+		return match[2] >= total / 4 && match[2] >= match[1] && match[2] >= match[0] ? ComponentFrameType.Timer
+			: match[0] > match[1] && match[0] >= total / 4 ? ComponentFrameType.Solvable
+			: match[1] > match[0] && match[1] >= total / 5 ? ComponentFrameType.Needy
+			: ComponentFrameType.Unknown;
 	}
 
 	/// <summary>Returns a value indicating whether the module in the specified image looks like a blank component.</summary>

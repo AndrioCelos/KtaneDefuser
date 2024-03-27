@@ -6,7 +6,7 @@ using SixLabors.ImageSharp.PixelFormats;
 namespace BombDefuserConnector.Components;
 public class SimonSays : ComponentReader<SimonSays.ReadData> {
 	public override string Name => "Simon Says";
-	protected internal override bool UsesNeedyFrame => false;
+	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
 	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Simon: look for the colours

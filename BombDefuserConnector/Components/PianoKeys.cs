@@ -9,7 +9,7 @@ using SixLabors.ImageSharp.Processing;
 namespace BombDefuserConnector.Components;
 public class PianoKeys : ComponentReader<PianoKeys.ReadData> {
 	public override string Name => "Piano Keys";
-	protected internal override bool UsesNeedyFrame => false;
+	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
 	private static readonly Image<Rgba32>[] referenceImages = [
 		LoadSampleImage(Properties.Resources.PianoKeysNatural),

@@ -53,12 +53,10 @@ public partial class ClassificationForm : Form {
 					s = "Blank";
 				} else {
 					var probs = new Dictionary<string, float>();
-					var needyRating = ImageUtils.CheckForNeedyFrame(image);
-
-					var looksLikeANeedyModule = needyRating >= 0.5f;
+					var frameType = ImageUtils.GetComponentFrame(image);
 
 					foreach (var reader in ReadModeBox.Items.OfType<ComponentReader>()) {
-						if (reader.UsesNeedyFrame == looksLikeANeedyModule) {
+						if (reader.FrameType == frameType) {
 							var result = reader.IsModulePresent(image);
 							probs[reader.Name] = result;
 						}
@@ -66,7 +64,7 @@ public partial class ClassificationForm : Form {
 
 					var sorted = probs.OrderByDescending(e => e.Value).ToList();
 					var max = sorted[0];
-					s = $"Needy frame: {needyRating}\r\nClassified as: {max.Key}\r\n({string.Join(", ", sorted.Take(3).Select(e => $"{e.Key} [{e.Value:0.000}]"))})";
+					s = $"Frame: {frameType}\r\nClassified as: {max.Key}\r\n({string.Join(", ", sorted.Take(3).Select(e => $"{e.Key} [{e.Value:0.000}]"))})";
 				}
 			} else if (ReadModeBox.SelectedIndex == 1) {
 				var pixelCounts = WidgetReader.GetPixelCounts(image, 0);

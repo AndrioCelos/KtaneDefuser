@@ -10,7 +10,7 @@ using SixLabors.ImageSharp.Processing;
 namespace BombDefuserConnector.Components;
 public class Password : ComponentReader<Password.ReadData> {
 	public override string Name => "Password";
-	protected internal override bool UsesNeedyFrame => false;
+	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
 	private static readonly Dictionary<BitVector32, char> charPatterns = new() {
 		{ new(0b0100101001011110100100110), 'A' },

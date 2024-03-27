@@ -4,7 +4,7 @@ using SixLabors.ImageSharp.PixelFormats;
 namespace BombDefuserConnector.Components;
 public class NeedyCapacitor : ComponentReader<NeedyCapacitor.ReadData> {
 	public override string Name => "Needy Capacitor";
-	protected internal override bool UsesNeedyFrame => true;
+	protected internal override ComponentFrameType FrameType => ComponentFrameType.Needy;
 
 	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Look for the brown lever frame.

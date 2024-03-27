@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reflection.Metadata.Ecma335;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
@@ -8,7 +7,7 @@ using SixLabors.ImageSharp.Processing;
 namespace BombDefuserConnector.Components;
 public class WireSequence : ComponentReader<WireSequence.ReadData> {
 	public override string Name => "Wire Sequence";
-	protected internal override bool UsesNeedyFrame => false;
+	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
 	private static readonly TextRecogniser numberRecogniser = new(new(TextRecogniser.Fonts.OSTRICH_SANS_HEAVY, 12), 144, 0, new(64, 64),
 		"1", "4", "7", "10");

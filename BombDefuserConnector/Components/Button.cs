@@ -10,7 +10,7 @@ public class Button : ComponentReader<Button.ReadData> {
 		  "ABORT", "DETONATE", "HOLD", "PRESS");
 
 	public override string Name => "The Button";
-	protected internal override bool UsesNeedyFrame => false;
+	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
 	private static bool IsCoveredRed(HsvColor hsv) => hsv.H is >= 330 or <= 15 && hsv.S is >= 0.2f and <= 0.4f && hsv.V >= 0.5f;
 	private static bool IsCoveredYellow(HsvColor hsv) => hsv.H is >= 45 and <= 90 && hsv.S is >= 0.2f and <= 0.4f && hsv.V >= 0.5f;

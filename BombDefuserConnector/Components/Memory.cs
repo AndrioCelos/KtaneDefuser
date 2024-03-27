@@ -8,7 +8,7 @@ using SixLabors.ImageSharp.Processing;
 namespace BombDefuserConnector.Components;
 public class Memory : ComponentReader<Memory.ReadData> {
 	public override string Name => "Memory";
-	protected internal override bool UsesNeedyFrame => false;
+	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
 	private static readonly TextRecogniser displayRecogniser = new(new(TextRecogniser.Fonts.CABIN_MEDIUM, 48), 70, 255, new(64, 64),
 		"1", "2", "3", "4");

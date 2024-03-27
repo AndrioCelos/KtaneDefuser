@@ -5,7 +5,7 @@ using SixLabors.ImageSharp.PixelFormats;
 namespace BombDefuserConnector.Components;
 public class MorseCode : ComponentReader<MorseCode.ReadData> {
 	public override string Name => "Morse Code";
-	protected internal override bool UsesNeedyFrame => false;
+	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
 	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Morse Code: look for the orange display pixels

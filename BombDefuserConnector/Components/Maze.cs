@@ -6,7 +6,7 @@ using SixLabors.ImageSharp.PixelFormats;
 namespace BombDefuserConnector.Components;
 public class Maze : ComponentReader<Maze.ReadData> {
 	public override string Name => "Maze";
-	protected internal override bool UsesNeedyFrame => false;
+	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
 	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Maze: look for the display

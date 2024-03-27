@@ -9,7 +9,7 @@ using SixLabors.ImageSharp.Processing;
 namespace BombDefuserConnector.Components;
 public class ComplicatedWires : ComponentReader<ComplicatedWires.ReadData> {
 	public override string Name => "Complicated Wires";
-	protected internal override bool UsesNeedyFrame => false;
+	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
 	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Complicated Wires: look for vertical wires crossing the centre
