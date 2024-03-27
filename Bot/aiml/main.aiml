@@ -1,12 +1,10 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <aiml version='2.1'>
-	<category>
-		<pattern>OOB START</pattern>
+	<category><pattern>OOB START</pattern>
 		<template><oob><tasconnect/></oob></template>
 	</category>
 
-	<category>
-		<pattern>OOB DefuserSocketConnected</pattern>
+	<category><pattern>OOB DefuserSocketConnected</pattern>
 		<template>
 			<condition name='simulation'>
 				<li value='true'><srai>test start</srai></li>
@@ -15,16 +13,14 @@
 		</template>
 	</category>
 
-	<category>
-		<pattern>OOB DefuserSocketError No connection could be made because the target machine actively refused it</pattern>
+	<category><pattern>OOB DefuserSocketError No connection could be made because the target machine actively refused it</pattern>
 		<template>
 			<think><set name='simulation'>true</set></think>
 			<oob><tasconnect simulation='true'/></oob>
 		</template>
 	</category>
 
-	<category>
-		<pattern>ready</pattern>
+	<category><pattern>ready</pattern>
 		<template><srai>read</srai></template>
 	</category>
 </aiml>
