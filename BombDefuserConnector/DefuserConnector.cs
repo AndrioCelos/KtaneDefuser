@@ -278,12 +278,11 @@ public class DefuserConnector : IDisposable {
 		if (ImageUtils.CheckForBlankComponent(bitmap))
 			return null;
 
-		var needyRating = ImageUtils.CheckForNeedyFrame(bitmap);
-		var looksLikeANeedyModule = needyRating >= 0.8f;
+		var frameType = ImageUtils.GetComponentFrame(bitmap);
 
 		var ratings = new List<(ComponentReader reader, float rating)>();
 		foreach (var reader in componentReaders.Values) {
-			if (reader.UsesNeedyFrame == looksLikeANeedyModule)
+			if (reader.FrameType == frameType)
 				ratings.Add((reader, reader.IsModulePresent(bitmap)));
 		}
 
