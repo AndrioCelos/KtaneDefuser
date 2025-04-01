@@ -14,38 +14,30 @@
     <AssemblyVersion>2.0.0.0</AssemblyVersion>
     <FileVersion>$(AssemblyVersion)</FileVersion>
     <PackageLicenseFile>license.md</PackageLicenseFile>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.6" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.7" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\AngelAiml.DotNetInterface\AngelAiml.DotNetInterface\AngelAiml.DotNetInterface.csproj" />
     <ProjectReference Include="..\BombDefuserConnector\BombDefuserConnector.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Aiml">
-      <HintPath>..\..\Aiml\Aiml\bin\Debug\net6.0\Aiml.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="AimlCSharpInterface">
-      <HintPath>..\..\Aiml\AimlCSharpInterface\bin\Debug\net8.0\AimlCSharpInterface.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Using Include="AimlCSharp" />
+    <Using Include="AngelAiml.DotNetInterface" />
     <Using Include="BombDefuserConnector" />
     <Using Include="BombDefuserConnectorApi" />
     <Using Include="BombDefuserScripts.AimlTasks">
       <Static>True</Static>
     </Using>
+    <Using Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="..\..\Aiml\AimlInterfaceCompiler\bin\Debug\net8.0\AimlInterfaceCompiler.exe -o ..\Bot $(OutputPath)\$(AssemblyName).dll" />
+    <Exec Command="..\AngelAiml.DotNetInterface\AngelAiml.InterfaceCompiler\bin\Debug\net8.0\AngelAiml.InterfaceCompiler.exe -o ..\Bot $(OutputPath)\$(AssemblyName).dll" />
   </Target>
 
 </Project>

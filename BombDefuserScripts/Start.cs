@@ -1,20 +1,26 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
-using Aiml;
+using AngelAiml;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserScripts;
 [AimlInterface]
-internal static class Start {
+internal static partial class Start {
+	private static ILogger logger = NullLogger.Instance;
 	private static bool waitingForLights;
 	private static Stopwatch? startDelayStopwatch;
 
 	[AimlCategory("OOB NewBomb *"), EditorBrowsable(EditorBrowsableState.Never)]
-	public static void NewBomb() {
+	public static void NewBomb(RequestProcess process) {
 		// 0. Clear previous game variables.
-		GameState.Current = new();
 		waitingForLights = true;
+		GameState.Current = new(process.Bot.LoggerFactory);
+		logger = GameState.Current.LoggerFactory.CreateLogger(nameof(Start));
+		Edgework.logger = GameState.Current.LoggerFactory.CreateLogger(nameof(Edgework));
+		ModuleSelection.logger = GameState.Current.LoggerFactory.CreateLogger(nameof(ModuleSelection));
 	}
 
 	[AimlCategory("OOB LightsChange *"), EditorBrowsable(EditorBrowsableState.Never)]
@@ -30,6 +36,8 @@ internal static class Start {
 	public static async Task TestCategory(AimlAsyncContext context) => await GameStartAsync(context);
 
 	internal static async Task GameStartAsync(AimlAsyncContext context) {
+		GameState.Current = new(context.RequestProcess.Bot.LoggerFactory);
+		
 		// 1. Pick up the bomb
 		GameState.Current.TimerStopwatch.Restart();
 		using var interrupt = await Interrupt.EnterAsync(context);
@@ -75,7 +83,7 @@ internal static class Start {
 			var slot = new Slot(0, GameState.Current.SelectedFaceNum, i % 3, i / 3);
 			var actualComponent = DefuserConnector.Instance.CheatGetComponentReader(slot);
 			if (actualComponent != component && !(actualComponent is null && component is BombDefuserConnector.Components.Timer)) {
-				context.RequestProcess.Log(LogLevel.Warning, $"Wrong component at {GameState.Current.SelectedFaceNum} {i % 3} {i / 3} - identified: {component?.Name}; actual: {actualComponent?.Name}");
+				LogWrongComponent(logger, slot, component?.Name, actualComponent?.Name);
 				component = actualComponent;
 			}
 
@@ -88,7 +96,7 @@ internal static class Start {
 			if (module is not null) {
 				var lightState = DefuserConnector.Instance.GetModuleLightState(screenshot, points);
 				if (lightState == ModuleLightState.Solved) {
-					context.RequestProcess.Log(LogLevel.Info, $"Module {module.Script.ModuleIndex + 1} is solved.");
+					LogSolvedModule(logger, module.Script.ModuleIndex + 1);
 					module.IsSolved = true;
 				}
 			}
@@ -108,7 +116,7 @@ internal static class Start {
 				return null;
 			case BombDefuserConnector.Components.Timer:
 				GameState.Current.TimerSlot = slot;
-				context.RequestProcess.Log(LogLevel.Info, $"Registering timer @ {slot}");
+				LogRegisteringTimer(logger, slot);
 				return null;
 			default:
 				var script = ModuleScript.Create(component);
@@ -117,7 +125,7 @@ internal static class Start {
 				GameState.Current.Faces[slot.Face][slot] = module;
 				GameState.Current.Modules.Add(module);
 				GameState.Current.Faces[slot.Face].HasModules = true;
-				context.RequestProcess.Log(LogLevel.Info, $"Registering module {script.ModuleIndex + 1}: {component.Name} @ {slot}");
+				LogRegisteringModule(logger, script.ModuleIndex + 1, component.Name, slot);
 				if (script.PriorityCategory != PriorityCategory.None)
 					context.Reply($"<priority/> Module {script.ModuleIndex + 1} is {script.IndefiniteDescription}.");
 				script.Initialise(context);
@@ -133,6 +141,22 @@ internal static class Start {
 				return module;
 		}
 	}
+	
+	#region Log templates
+	
+	[LoggerMessage(LogLevel.Warning, "Wrong component at {Slot} - identified: {IdentifiedComponent}; actual: {ActualComponent}")]
+	private static partial void LogWrongComponent(ILogger logger, Slot slot, string? identifiedComponent, string? actualComponent);
+	
+	[LoggerMessage(LogLevel.Information, "Registering timer @ {Slot}")]
+	private static partial void LogRegisteringTimer(ILogger logger, Slot slot);
+	
+	[LoggerMessage(LogLevel.Information, "Registering module {Number}: {Name} @ {Slot}")]
+	private static partial void LogRegisteringModule(ILogger logger, int number, string name, Slot slot);
+	
+	[LoggerMessage(LogLevel.Information, "Module {Number} is solved.")]
+	private static partial void LogSolvedModule(ILogger logger, int number);
+	
+	#endregion
 }
 
 public enum SelectFaceAlignMode {

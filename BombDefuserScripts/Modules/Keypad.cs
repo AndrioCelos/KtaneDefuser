@@ -49,7 +49,7 @@ internal class Keypad : ModuleScript<BombDefuserConnector.Components.Keypad> {
 		var data = interrupt.Read(Reader);
 		GameState.Current.CurrentScript<Keypad>().symbols = data.Symbols;
 		interrupt.Context.Reply(string.Join(", ", from s in data.Symbols select SymbolDescriptions[s]));
-		interrupt.Context.AddReplies(from s in data.Symbols select new Aiml.Media.Reply(SymbolDescriptions[s], $"press {SymbolDescriptions[s]}"));
+		interrupt.Context.AddReplies(from s in data.Symbols select new AngelAiml.Media.Reply(SymbolDescriptions[s], $"press {SymbolDescriptions[s]}"));
 	}
 
 	[AimlCategory("press *")]

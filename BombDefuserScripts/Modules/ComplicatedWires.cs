@@ -1,9 +1,8 @@
-﻿using System.Text;
-using static BombDefuserConnector.Components.ComplicatedWires;
+﻿using static BombDefuserConnector.Components.ComplicatedWires;
 
 namespace BombDefuserScripts.Modules;
 [AimlInterface("ComplicatedWires")]
-internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.ComplicatedWires> {
+internal partial class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.ComplicatedWires> {
 	public override string IndefiniteDescription => "Complicated Wires";
 
 	private bool readyToRead;
@@ -22,10 +21,10 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 	}
 
 	[AimlCategory("read")]
-	internal static async Task Read(AimlAsyncContext context) {
+	internal async Task Read(AimlAsyncContext context) {
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		var data = interrupt.Read(Reader);
-		interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"Complicated wires: [{string.Join("] [", data.Wires)}]");
+		this.LogWires($"[{string.Join("] [", data.Wires)}]");
 		var module = GameState.Current.SelectedModule!;
 		var script = GameState.Current.CurrentScript<ComplicatedWires>();
 		script.wires ??= (from w in data.Wires select (w, false)).ToArray();
@@ -63,7 +62,7 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 				var buttons = new List<Button>();
 				for (var i = 0; i < toCut.Count; i++) {
 					var wireIndex = toCut[i];
-					context.RequestProcess.Log(Aiml.LogLevel.Info, $"Cutting wire {wireIndex + 1}");
+					this.LogCuttingWire(wireIndex + 1);
 					while (this.highlight < wireIndex) {
 						buttons.Add(Button.Right);
 						this.highlight++;
@@ -118,4 +117,14 @@ internal class ComplicatedWires : ModuleScript<BombDefuserConnector.Components.C
 		shouldCut[(int) script.currentFlags] = false;
 		await script.FindWiresToCut(context, false);
 	}
+	
+	#region Log templates
+	
+	[LoggerMessage(LogLevel.Information, "{Wires}")]
+	private partial void LogWires(string wires);
+	
+	[LoggerMessage(LogLevel.Information, "Cutting wire {Number}")]
+	private partial void LogCuttingWire(int number);
+	
+	#endregion
 }

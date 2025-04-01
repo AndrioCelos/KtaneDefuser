@@ -1,8 +1,11 @@
 ﻿using System.Reflection;
+using Microsoft.Extensions.Logging;
 
 namespace BombDefuserScripts;
 /// <summary>Provides the script and variables associated with a specific module.</summary>
 public abstract class ModuleScript {
+	protected readonly ILogger Logger;
+
 	private static readonly Dictionary<Type, (Type scriptType, string topic)> Scripts = new(from t in typeof(ModuleScript).Assembly.GetTypes() where t.BaseType is Type t2 && t2.IsGenericType && t2.GetGenericTypeDefinition() == typeof(ModuleScript<>)
 																							select new KeyValuePair<Type, (Type, string)>(t.BaseType!.GenericTypeArguments[0], (t, t.GetCustomAttribute<AimlInterfaceAttribute>()?.Topic ?? throw new InvalidOperationException($"Missing topic on {t.Name}"))));
 	private static readonly MethodInfo CreateMethodBase = typeof(ModuleScript).GetMethod(nameof(CreateInternal), BindingFlags.NonPublic | BindingFlags.Static)!;
@@ -23,6 +26,8 @@ public abstract class ModuleScript {
 	public NeedyState NeedyState { get; internal set; }
 
 	public static IReadOnlyCollection<Type> ScriptTypes => Scripts.Keys;
+
+	protected ModuleScript() => this.Logger = GameState.Current.LoggerFactory.CreateLogger(this.GetType().Name);
 
 	internal static ModuleScript Create(ComponentReader reader) {
 		var readerType = reader.GetType();

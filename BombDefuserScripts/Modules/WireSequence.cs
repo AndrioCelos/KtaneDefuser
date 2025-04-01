@@ -1,9 +1,8 @@
-﻿using System.Text;
-using static BombDefuserConnector.Components.WireSequence;
+﻿using static BombDefuserConnector.Components.WireSequence;
 
 namespace BombDefuserScripts.Modules;
 [AimlInterface("WireSequence")]
-internal class WireSequence : ModuleScript<BombDefuserConnector.Components.WireSequence> {
+internal partial class WireSequence : ModuleScript<BombDefuserConnector.Components.WireSequence> {
 	public override string IndefiniteDescription => "a Wire Sequence";
 
 	private bool readyToRead;
@@ -70,7 +69,7 @@ internal class WireSequence : ModuleScript<BombDefuserConnector.Components.WireS
 
 	private async Task<ReadData> ReadAsync(Interrupt interrupt) {
 		var data = interrupt.Read(Reader);
-		interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"Highlighted button: {data.HighlightedButton}; wires: {string.Join(", ", data.WireColours)}");
+		this.LogHighlightedButton(data.HighlightedButton, string.Join(", ", data.WireColours));
 		currentPageColours = data.WireColours;
 		switch (data.HighlightedButton) {
 			case -1: this.highlight = -1; break;
@@ -79,11 +78,11 @@ internal class WireSequence : ModuleScript<BombDefuserConnector.Components.WireS
 				while (data.HighlightedWire is null) {
 					// Currently we are only able to read the highlighted wire, and only when the selection highlight is within a strict range of intensities.
 					// Keep looking at the module until that condition is met.
-					interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"Reading highlighted wire...");
+					this.LogReadingHighlightedWire();
 					await Delay(0.05);
 					data = interrupt.Read(Reader);
 				}
-				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"Highlighted wire: {data.HighlightedWire}");
+				this.LogHighlightedWire(data.HighlightedWire);
 				this.highlight = data.HighlightedWire.From;
 				break;
 		}
@@ -108,4 +107,17 @@ internal class WireSequence : ModuleScript<BombDefuserConnector.Components.WireS
 	[AimlCategory("skip")]
 	[AimlCategory("next")]
 	internal static Task DoNotCut(AimlAsyncContext context) => GameState.Current.CurrentScript<WireSequence>().ActionAsync(context, false);
+	
+	#region Log templates
+
+	[LoggerMessage(LogLevel.Information, "Highlighted button: {HighlightedButton}; wires: {WireColours}")]
+	private partial void LogHighlightedButton(int highlightedButton, string wireColours);
+
+	[LoggerMessage(LogLevel.Information, "Reading highlighted wire...")]
+	private partial void LogReadingHighlightedWire();
+
+	[LoggerMessage(LogLevel.Information, "Highlighted wire: {HighlightedWire}")]
+	private partial void LogHighlightedWire(HighlightedWireData highlightedWire);
+
+	#endregion
 }

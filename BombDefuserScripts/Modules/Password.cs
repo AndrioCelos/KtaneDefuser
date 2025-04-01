@@ -2,7 +2,7 @@
 
 namespace BombDefuserScripts.Modules;
 [AimlInterface("Password")]
-internal class Password : ModuleScript<BombDefuserConnector.Components.Password> {
+internal partial class Password : ModuleScript<BombDefuserConnector.Components.Password> {
 	public override string IndefiniteDescription => "a Password";
 
 	private int highlightX;
@@ -58,7 +58,7 @@ internal class Password : ModuleScript<BombDefuserConnector.Components.Password>
 		await this.MoveToDownButtonRowAsync(interrupt);
 		for (var i = 0; i < 6; i++) {
 			var data = interrupt.Read(Reader);
-			interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"Password display: {new string(data.Display)}");
+			this.LogDisplay(new(data.Display));
 			var anyMismatch = false;
 			for (var x = 0; x < 5; x++) {
 				if (data.Display[x] != char.ToUpper(word[x])) {
@@ -118,4 +118,11 @@ internal class Password : ModuleScript<BombDefuserConnector.Components.Password>
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		await script.SubmitAsync(interrupt, $"{NATO.DecodeChar(nato1)}{NATO.DecodeChar(nato2)}{NATO.DecodeChar(nato3)}{NATO.DecodeChar(nato4)}{NATO.DecodeChar(nato5)}");
 	}
+	
+	#region Log templates
+	
+	[LoggerMessage(LogLevel.Information, "Password display: {Display}")]
+	private partial void LogDisplay(string display);
+
+	#endregion
 }

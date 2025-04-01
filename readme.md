@@ -7,6 +7,7 @@ The bot recognises specific protocols for the Expert to use to tell it what to d
 
 # Dependencies
 
-- One of my [AIML interpreters](https://github.com/AndrioCelos/AIML/) ([AIML Voice](https://github.com/AndrioCelos/AIML/tree/master/AimlVoice/) is recommended)
-- AIML C# Interface library (not yet published)
-- TAS Tools mod for _Keep Talking and Nobody Explodes_ (not yet published)
+- One of my [Angel AIML](https://github.com/AndrioCelos/AngelAiml/) interpreters.
+- The [AngelAiml.Timers](https://github.com/AndrioCelos/AngelAiml/tree/main/AngelAiml.Timers) extension.
+- The [AngelAiml.DotNetInterface](https://github.com/AndrioCelos/AngelAiml.DotNetInterface) extension.
+- The TAS Tools mod for _Keep Talking and Nobody Explodes_ (not yet published).

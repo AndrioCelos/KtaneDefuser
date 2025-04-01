@@ -1,9 +1,17 @@
 ﻿using System.Diagnostics;
 using BombDefuserConnector.DataTypes;
+using Microsoft.Extensions.Logging;
 
 namespace BombDefuserScripts;
-public class GameState {
-	public static GameState Current { get; set; } = new();
+public class GameState(ILoggerFactory loggerFactory) {
+	private static GameState? current;
+
+	public static GameState Current {
+		get => current ?? throw new InvalidOperationException("Game has not been initialised.");
+		set => current = value;
+	}
+
+	internal ILoggerFactory LoggerFactory = loggerFactory;
 
 	/// <summary>Indicates whether we are waiting for the lights to turn on at the start of the game.</summary>
 	public bool WaitingForLights { get; set; }

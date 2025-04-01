@@ -1,6 +1,5 @@
 ﻿using System.Web;
-using Aiml.Media;
-using AimlCSharpInterface;
+using AngelAiml.Media;
 using Button = BombDefuserConnectorApi.Button;
 
 namespace BombDefuserScripts;

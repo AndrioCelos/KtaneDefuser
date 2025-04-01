@@ -18,6 +18,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		readme.md = readme.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AngelAiml.DotNetInterface", "..\AngelAiml.DotNetInterface\AngelAiml.DotNetInterface\AngelAiml.DotNetInterface.csproj", "{0B8F033C-5E9D-CCB9-9B63-025654B172D0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AngelAiml", "..\AngelAiml.DotNetInterface\AngelAiml\AngelAiml\AngelAiml.csproj", "{FB77EBC0-413E-F0F1-664A-B3C61DB29BA6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,6 +44,14 @@ Global
 		{174639AF-080A-4DAF-AEE7-C3AEB803C4F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{174639AF-080A-4DAF-AEE7-C3AEB803C4F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{174639AF-080A-4DAF-AEE7-C3AEB803C4F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B8F033C-5E9D-CCB9-9B63-025654B172D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B8F033C-5E9D-CCB9-9B63-025654B172D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B8F033C-5E9D-CCB9-9B63-025654B172D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B8F033C-5E9D-CCB9-9B63-025654B172D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB77EBC0-413E-F0F1-664A-B3C61DB29BA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB77EBC0-413E-F0F1-664A-B3C61DB29BA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB77EBC0-413E-F0F1-664A-B3C61DB29BA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB77EBC0-413E-F0F1-664A-B3C61DB29BA6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

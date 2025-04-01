@@ -1,8 +1,4 @@
-﻿using System.ComponentModel.Design;
-using System.Text;
-using AimlCSharpInterface;
-
-namespace BombDefuserScripts.Modules;
+﻿namespace BombDefuserScripts.Modules;
 [AimlInterface("WhosOnFirst")]
 internal class WhosOnFirst : ModuleScript<BombDefuserConnector.Components.WhosOnFirst> {
 	public override string IndefiniteDescription => "Who's on First";

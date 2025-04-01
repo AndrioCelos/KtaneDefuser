@@ -1,10 +1,7 @@
-﻿using System.Text;
-using Aiml;
-
-namespace BombDefuserScripts.Modules;
+﻿namespace BombDefuserScripts.Modules;
 
 [AimlInterface("NeedyKnob")]
-internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKnob> {
+internal partial class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKnob> {
 	public override string IndefiniteDescription => "a Needy Knob";
 	public override PriorityCategory PriorityCategory => PriorityCategory.Needy;
 
@@ -27,9 +24,9 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 					else counts.Right++;
 				}
 			}
-			context.RequestProcess.Log(LogLevel.Info, $"Knob ({this.ModuleIndex + 1}) activated: {counts}");
-			context.RequestProcess.Log(LogLevel.Info, $"Knob:{string.Join(null, from i in Enumerable.Range(0, 6) select data.Lights[i] ? " *" : " .")}");
-			context.RequestProcess.Log(LogLevel.Info, $"Knob:{string.Join(null, from i in Enumerable.Range(0, 6) select data.Lights[6 + i] ? " *" : " .")}");
+			this.LogActivated(this.ModuleIndex + 1, counts,
+				string.Join(' ', from i in Enumerable.Range(0, 6) select data.Lights[i] ? '*' : '.'),
+				string.Join(' ', from i in Enumerable.Range(0, 6) select data.Lights[i + 6] ? '*' : '.'));
 			this.counts = counts;
 			if (correctDirections.TryGetValue(counts, out var correctPosition)) {
 				if (this.direction != correctPosition) {
@@ -112,6 +109,13 @@ internal class NeedyKnob : ModuleScript<BombDefuserConnector.Components.NeedyKno
 		}
 		return knobScript.HandleInputAsync(context, direction);
 	}
+	
+	#region Log templates
+	
+	[LoggerMessage(LogLevel.Information, "Knob ({Number}) activated: {Counts}\n{StatesLine1}\n{StatesLine2}")]
+	private partial void LogActivated(int number, Counts counts, string statesLine1, string statesLine2);
+
+	#endregion
 
 	private record struct Counts(int Left, int Right);
 }

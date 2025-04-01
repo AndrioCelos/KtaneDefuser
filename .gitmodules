@@ -1,0 +1,3 @@
+[submodule "AngelAiml.DotNetInterface"]
+	path = AngelAiml.DotNetInterface
+	url = https://github.com/AndrioCelos/AngelAiml.DotNetInterface.git

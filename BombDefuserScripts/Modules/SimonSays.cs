@@ -2,7 +2,7 @@
 
 namespace BombDefuserScripts.Modules;
 [AimlInterface("SimonSays")]
-internal class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSays> {
+internal partial class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSays> {
 	public override string IndefiniteDescription => "a Simon";
 
 	private static readonly SimonColour?[] buttonMap = new SimonColour?[4];
@@ -75,7 +75,7 @@ internal class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSay
 				continue;
 			}
 			if (coloursSeen >= this.stagesCleared) {
-				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"Read light: {data.Colour.Value}");
+				this.LogLight(data.Colour.Value);
 				return data.Colour.Value;
 			}
 			coloursSeen++;
@@ -97,4 +97,11 @@ internal class SimonSays : ModuleScript<BombDefuserConnector.Components.SimonSay
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		await script.LoopAsync(interrupt);
 	}
+	
+	#region Log templates
+	
+	[LoggerMessage(LogLevel.Information, "Read light: {Colour}")]
+	private partial void LogLight(SimonColour colour);
+
+	#endregion
 }

@@ -1,11 +1,9 @@
 ﻿using System.Collections;
-using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace BombDefuserScripts.Modules;
 
 [AimlInterface("MorseCode")]
-internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCode> {
+internal partial class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCode> {
 	public override string IndefiniteDescription => "Morse Code";
 	private static Interrupt? interrupt;
 	private static CancellationTokenSource? cancellationTokenSource;
@@ -88,41 +86,41 @@ internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCod
 			MorseCode.interrupt = interrupt;
 
 			// Wait for a space between letters.
-			interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Waiting for letter space");
+			this.LogWaitingForLetterSpace();
 			while (true) {
 				await WaitForStateAsync(interrupt, false, cancellationToken);
 				var continuedLetter = await WaitForStateAsync(interrupt, true, DASH_THRESHOLD, cancellationToken);
 				if (!continuedLetter) break;
 			}
-			interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Letter space found");
+			this.LogLetterSpaceFound();
 
 			for (var lettersRead = 0; lettersRead < 5; lettersRead++) {
 				// We've just seen a space between letters. Find out whether it is a space between words.
-				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Waiting for next letter");
+				this.LogWaitingForNextLetter();
 				var continuedWord = await WaitForStateAsync(interrupt, true, WORD_SPACE_THRESHOLD - DASH_THRESHOLD, cancellationToken);
 				if (cancellationToken.IsCancellationRequested) return;
 				if (!continuedWord && !interrupt.IsDisposed) {
-					interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Word start");
+					this.LogWordStart();
 					interrupt.Context.Reply("Word start.");
 					interrupt.Context.Reply("<reply>505</reply><reply>515</reply><reply>522</reply><reply>532</reply><reply>535</reply><reply>542</reply><reply>545</reply><reply>552</reply><reply>555</reply><reply>565</reply><reply>572</reply><reply>575</reply><reply>582</reply><reply>592</reply><reply>595</reply><reply>600</reply>");
 					await WaitForStateAsync(interrupt, true, cancellationToken);
 				}
-				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Next letter started");
+				this.LogLetterStart();
 
 				var currentLetter = new MorseLetter();
 				while (true) {
 					var isDot = await WaitForStateAsync(interrupt, false, DASH_THRESHOLD, cancellationToken);
-					interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] {(isDot ? "Dot" : "Dash")}");
+					this.LogSymbol(isDot ? "Dot" : "Dash");
 					currentLetter.Add(isDot ? MorseElement.Dot : MorseElement.Dash);
 					if (!isDot) await WaitForStateAsync(interrupt, false, cancellationToken);
 					var continuedLetter = await WaitForStateAsync(interrupt, true, DASH_THRESHOLD, cancellationToken);
 					if (!continuedLetter) break;
 				}
 				if (cancellationToken.IsCancellationRequested || interrupt.IsDisposed) return;
-				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Letter space found");
+				this.LogLetterSpaceFound();
 
 				if (decodeMorse.TryGetValue(currentLetter, out var c)) {
-					interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Decoded letter: {c}");
+					this.LogLetter(c);
 					interrupt.Context.Reply(NATO.Speak(c.ToString()));
 				} else
 					interrupt.Context.Reply(string.Join(' ', currentLetter));
@@ -137,20 +135,20 @@ internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCod
 		}
 	}
 
-	private static Task<bool> WaitForStateAsync(Interrupt interrupt, bool state, CancellationToken token) => WaitForStateAsync(interrupt, state, int.MaxValue, token);
-	private static async Task<bool> WaitForStateAsync(Interrupt interrupt, bool state, int limit, CancellationToken token) {
+	private Task<bool> WaitForStateAsync(Interrupt interrupt, bool state, CancellationToken token) => WaitForStateAsync(interrupt, state, int.MaxValue, token);
+	private async Task<bool> WaitForStateAsync(Interrupt interrupt, bool state, int limit, CancellationToken token) {
 		if (token.IsCancellationRequested) return false;
 		var count = 0;
 		do {
 			await Delay(0.075);
 			if (token.IsCancellationRequested) return false;
 			if (interrupt.IsDisposed || interrupt.Read(Reader).IsLightOn == state) {
-				interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Awaited state {state} reached after {count}");
+				this.LogAwaitedStateReached(state, count);
 				return true;
 			}
 			count++;
 		} while (count < limit);
-		interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[MorseCode] Awaited state {state} timed out after {count}");
+		this.LogAwaitedStateTimedOut(state, count);
 		return false;
 	}
 
@@ -215,6 +213,37 @@ internal class MorseCode : ModuleScript<BombDefuserConnector.Components.MorseCod
 		buttons.Add(Button.A);
 		await interrupt.SubmitAsync(buttons);
 	}
+	
+	#region Log templates
+	
+	[LoggerMessage(LogLevel.Information, "Waiting for letter space")]
+	private partial void LogWaitingForLetterSpace();
+	
+	[LoggerMessage(LogLevel.Information, "Letter space found")]
+	private partial void LogLetterSpaceFound();
+	
+	[LoggerMessage(LogLevel.Information, "Waiting for next letter")]
+	private partial void LogWaitingForNextLetter();
+		
+	[LoggerMessage(LogLevel.Information, "Word start")]
+	private partial void LogWordStart();
+		
+	[LoggerMessage(LogLevel.Information, "Next letter started")]
+	private partial void LogLetterStart();
+		
+	[LoggerMessage(LogLevel.Information, "{Symbol}")]
+	private partial void LogSymbol(string symbol);
+		
+	[LoggerMessage(LogLevel.Information, "Decoded letter: {Letter}")]
+	private partial void LogLetter(char letter);
+		
+	[LoggerMessage(LogLevel.Information, "Awaited state {State} reached after {Count}")]
+	private partial void LogAwaitedStateReached(bool state, int count);
+		
+	[LoggerMessage(LogLevel.Information, "Awaited state {State} timed out after {Count}")]
+	private partial void LogAwaitedStateTimedOut(bool state, int count);
+
+	#endregion
 
 	internal struct MorseLetter : IEquatable<MorseLetter>, IEnumerable<MorseElement> {
 		public int Bits;

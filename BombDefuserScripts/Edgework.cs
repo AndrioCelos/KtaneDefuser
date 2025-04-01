@@ -1,17 +1,20 @@
 ﻿using System.ComponentModel;
-using Aiml;
 using BombDefuserConnector.Widgets;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserScripts;
 
 [AimlInterface]
-internal static class Edgework {
+internal static partial class Edgework {
+	internal static ILogger logger = NullLogger.Instance;
+
 	internal static void RegisterWidget(AimlAsyncContext context, WidgetReader? widget, Image<Rgba32> screenshot, LightsState lightsState, Quadrilateral quadrilateral) {
 		if (widget is null) return;
 
-		context.RequestProcess.Log(LogLevel.Info, $"Registering widget: {widget.Name}");
+		LogRegisteringWidget(logger, widget.Name);
 		switch (widget) {
 			case BatteryHolder batteryHolder:
 				GameState.Current.BatteryHolderCount++;
@@ -64,7 +67,7 @@ internal static class Edgework {
 				1 => "1 battery.",
 				_ => $"{GameState.Current.BatteryCount} batteries."
 			};
-			var relevantIndicators = GameState.Current.Indicators.Where(i => i.IsLit && i.Label is "CAR" or "FRK");
+			var relevantIndicators = GameState.Current.Indicators.Where(i => i is { IsLit: true, Label: "CAR" or "FRK" });
 			var indicators = GameState.Current.Indicators.Count > 0
 				? relevantIndicators.Any()
 				? $"Indicators: {string.Join(", ", from i in relevantIndicators select $"lit {NATO.Speak(i.Label)}")}."
@@ -104,4 +107,11 @@ internal static class Edgework {
 		if (ports.HasFlag(PortTypes.Serial)) yield return PortTypes.Serial;
 		if (ports.HasFlag(PortTypes.StereoRCA)) yield return PortTypes.StereoRCA;
 	}
+
+	#region Log templates
+	
+	[LoggerMessage(LogLevel.Warning, "Registering widget: {Name}")]
+	private static partial void LogRegisteringWidget(ILogger logger, string name);
+	
+	#endregion
 }

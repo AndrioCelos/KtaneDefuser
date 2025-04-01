@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace BombDefuserScripts.Modules;
+﻿namespace BombDefuserScripts.Modules;
 [AimlInterface("NeedyVentGas")]
 internal class NeedyVentGas : ModuleScript<BombDefuserConnector.Components.NeedyVentGas> {
 	public override string IndefiniteDescription => "Needy Vent Gas";

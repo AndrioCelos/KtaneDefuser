@@ -1,6 +1,4 @@
-﻿using AimlCSharpInterface;
-
-namespace BombDefuserScripts;
+﻿namespace BombDefuserScripts;
 [AimlSet]
 public enum ModuleType {
 	[AimlSetItem("The Button"), AimlSetItem("Button")]

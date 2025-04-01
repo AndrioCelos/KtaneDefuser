@@ -1,6 +1,8 @@
+using Microsoft.Extensions.Logging;
+
 namespace BombDefuserScripts.Modules;
 [AimlInterface("ColourFlash")]
-internal class ColourFlash : ModuleScript<BombDefuserConnector.Components.ColourFlash> {
+internal partial class ColourFlash : ModuleScript<BombDefuserConnector.Components.ColourFlash> {
 	public override string IndefiniteDescription => "Colour Flash";
 
 	private static CancellationTokenSource? cancellationTokenSource;
@@ -22,7 +24,7 @@ internal class ColourFlash : ModuleScript<BombDefuserConnector.Components.Colour
 		var interrupt = await this.ModuleInterruptAsync(context);
 		try {
 			currentInterrupt = interrupt;
-			interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[Colour Flash] Waiting for start");
+			this.LogWaitingForStart();
 
 			// Wait for the start of the sequence.
 			while (true) {
@@ -32,7 +34,7 @@ internal class ColourFlash : ModuleScript<BombDefuserConnector.Components.Colour
 			}
 
 			// Read the sequence.
-			interrupt.Context.RequestProcess.Log(Aiml.LogLevel.Info, $"[Colour Flash] Reading sequence");
+			this.LogReadingSequence();
 			var sequence = new List<BombDefuserConnector.Components.ColourFlash.ReadData>(8);
 			while (true) {
 				await Delay(0.25);
@@ -119,4 +121,14 @@ internal class ColourFlash : ModuleScript<BombDefuserConnector.Components.Colour
 		var script = GameState.Current.CurrentScript<ColourFlash>();
 		return script.Submit(context, pressYes, null);
 	}
+	
+	#region Log templates
+	
+	[LoggerMessage(LogLevel.Information, "Waiting for start")]
+	private partial void LogWaitingForStart();
+	
+	[LoggerMessage(LogLevel.Information, "Reading sequence")]
+	private partial void LogReadingSequence();
+	
+	#endregion
 }

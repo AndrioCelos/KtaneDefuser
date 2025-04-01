@@ -7,7 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Aiml;
+using AngelAiml;
 using BombDefuserConnectorApi;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;

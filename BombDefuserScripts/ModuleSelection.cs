@@ -1,18 +1,20 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Reflection;
-using Aiml.Media;
-using AimlCSharpInterface;
+using AngelAiml.Media;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace BombDefuserScripts;
 [AimlInterface]
-internal static class ModuleSelection {
+internal static partial class ModuleSelection {
+	internal static ILogger logger = NullLogger.Instance;
+	
 	/// <summary>Handles switching the user's selection to the specified module.</summary>
 	internal static async Task ChangeModuleAsync(AimlAsyncContext context, int index, bool silent) {
 		GameState.Current.CurrentModule?.Script.Stopped(context);
 		GameState.Current.CurrentModuleNum = index;
 		var script = GameState.Current.CurrentModule!.Script;
-		context.RequestProcess.Log(Aiml.LogLevel.Info, $"Selected module {index + 1} ({GameState.Current.CurrentModule.Reader.Name})");
+		LogSelectedModule(logger, index + 1, GameState.Current.CurrentModule.Reader.Name);
 		context.RequestProcess.User.Topic = script.Topic;
 		context.Reply($"<oob><setgrammar>{script.Topic}</setgrammar></oob>");
 		if (!silent)
@@ -104,6 +106,13 @@ internal static class ModuleSelection {
 		context.AddReplies(Enumerable.Append(list.Skip(startIndex).Take(6).Select(f => new Reply(f.Item2, $"select {f.Item2}")),
 			new("More…", $"{nameof(SelectModuleMenu)} {(vanilla ? "vanilla" : "mods")} {(startIndex + 6 >= list.Count ? 0 : startIndex + 6)}")));
 	}
+
+	#region Log templates
+	
+	[LoggerMessage(LogLevel.Warning, "Selected module {Number} ({Name})")]
+	private static partial void LogSelectedModule(ILogger logger, int number, string name);
+	
+	#endregion
 
 	private class ModuleNameComparer : IComparer<string> {
 		public static ModuleNameComparer Instance { get; } = new();
