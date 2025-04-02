@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AngelAiml;
 using BombDefuserConnectorApi;
+using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -69,10 +70,10 @@ public class DefuserConnector : IDisposable {
 	}
 
 	/// <summary>Connects to the game or initialises a simulation.</summary>
-	public async Task ConnectAsync(bool simulation) {
+	public async Task ConnectAsync(ILoggerFactory loggerFactory, bool simulation) {
 		if (this.IsConnected) throw new InvalidOperationException("Cannot connect while already connected.");
 		if (simulation) {
-			this.simulation = new();
+			this.simulation = new(loggerFactory);
 			this.simulation.Postback += (s, m) => this.user?.Postback(m);
 		} else {
 			var tcpClient = new TcpClient();

@@ -4,13 +4,14 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Timers;
+using Microsoft.Extensions.Logging;
 using WireFlags = BombDefuserConnector.Components.ComplicatedWires.WireFlags;
 
 namespace BombDefuserConnector;
 internal partial class Simulation {
-	private static class Modules {
+	private static partial class Modules {
 #region Vanilla modules
-		public class Wires(int shouldCut, params Components.Wires.Colour[] wires) : Module<Components.Wires.ReadData>(DefuserConnector.GetComponentReader<Components.Wires>(), 1, wires.Length) {
+		public class Wires(Simulation simulation, int shouldCut, params Components.Wires.Colour[] wires) : Module<Components.Wires.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.Wires>(), 1, wires.Length) {
 			internal override Components.Wires.ReadData Details => new(this.wires);
 
 			private readonly Components.Wires.Colour[] wires = wires;
@@ -18,7 +19,7 @@ internal partial class Simulation {
 			private readonly int shouldCut = shouldCut;
 
 			public override void Interact() {
-				Message($"Cut wire {this.Y + 1}");
+				LogCutWire(this.Y + 1);
 				if (this.isCut[this.Y])
 					return;
 				this.isCut[this.Y] = true;
@@ -29,11 +30,7 @@ internal partial class Simulation {
 			}
 		}
 
-		public class ComplicatedWires(Components.ComplicatedWires.WireFlags[] wires) : Module<Components.ComplicatedWires.ReadData>(DefuserConnector.GetComponentReader<Components.ComplicatedWires>(), wires.Length, 1) {
-			internal static readonly ComplicatedWires Test1 = new([WireFlags.None, WireFlags.None, WireFlags.Blue]);
-			internal static readonly ComplicatedWires Test2 = new([WireFlags.Blue, WireFlags.Red, WireFlags.Blue | WireFlags.Light]);
-			internal static readonly ComplicatedWires Test3 = new([WireFlags.Red, WireFlags.Blue | WireFlags.Star, WireFlags.Blue | WireFlags.Light]);
-
+		public class ComplicatedWires(Simulation simulation, WireFlags[] wires) : Module<Components.ComplicatedWires.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.ComplicatedWires>(), wires.Length, 1) {
 			internal override Components.ComplicatedWires.ReadData Details => new(this.X, this.wires);
 
 			public static bool[] ShouldCut = new bool[16];
@@ -49,7 +46,7 @@ internal partial class Simulation {
 			}
 
 			public override void Interact() {
-				Message($"Cut wire {this.X + 1}");
+				LogCutWire(this.X + 1);
 				if (this.isCut[this.X])
 					return;
 				this.isCut[this.X] = true;
@@ -64,7 +61,7 @@ internal partial class Simulation {
 			}
 		}
 
-		public class Button : Module<Components.Button.ReadData> {
+		public partial class Button : Module<Components.Button.ReadData> {
 			private readonly Components.Button.Colour colour;
 			private readonly string label;
 			private Components.Button.Colour? indicatorColour;
@@ -73,7 +70,7 @@ internal partial class Simulation {
 
 			internal override Components.Button.ReadData Details => new(this.colour, this.label, this.indicatorColour);
 
-			public Button(Components.Button.Colour colour, string label) : base(DefuserConnector.GetComponentReader<Components.Button>(), 1, 1) {
+			public Button(Simulation simulation, Components.Button.Colour colour, string label) : base(simulation, DefuserConnector.GetComponentReader<Components.Button>(), 1, 1) {
 				this.colour = colour;
 				this.label = label;
 				this.pressTimer.Elapsed += this.PressTimer_Elapsed;
@@ -86,7 +83,7 @@ internal partial class Simulation {
 				if (this.indicatorColour is not null) {
 					var elapsed = TimerComponent.Instance.Elapsed;
 					var time = elapsed.Ticks;
-					Message($"Button released at {elapsed.TotalSeconds}");
+					LogButtonReleased(elapsed.TotalSeconds);
 					correct = time >= Stopwatch.Frequency * 60
 						? (time / (Stopwatch.Frequency * 600) % 10 == this.correctDigit)
 							|| (time / (Stopwatch.Frequency * 60) % 10 == this.correctDigit)
@@ -98,7 +95,7 @@ internal partial class Simulation {
 							|| (time / (Stopwatch.Frequency / 100) % 10 == this.correctDigit);
 					this.indicatorColour = null;
 				} else {
-					Message("Button tapped");
+					LogButtonTapped();
 					correct = false;
 				}
 				if (correct) this.Solve();
@@ -108,11 +105,24 @@ internal partial class Simulation {
 			private void PressTimer_Elapsed(object? sender, ElapsedEventArgs e) {
 				this.indicatorColour = Components.Button.Colour.Blue;
 				this.correctDigit = 4;
-				Message($"Button held - indicator is {this.indicatorColour}");
+				LogButtonHeld(this.indicatorColour);
 			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "Button released at {Time}.")]
+			private partial void LogButtonReleased(double time);
+
+			[LoggerMessage(LogLevel.Information, "Button tapped.")]
+			private partial void LogButtonTapped();
+
+			[LoggerMessage(LogLevel.Information, "Button held – indicator is {IndicatorColour}.")]
+			private partial void LogButtonHeld(Components.Button.Colour? indicatorColour);
+
+			#endregion
 		}
 
-		public class Keypad(Components.Keypad.Symbol[] symbols, int[] correctOrder) : Module<Components.Keypad.ReadData>(DefuserConnector.GetComponentReader<Components.Keypad>(), 2, 2) {
+		public partial class Keypad(Simulation simulation, Components.Keypad.Symbol[] symbols, int[] correctOrder) : Module<Components.Keypad.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.Keypad>(), 2, 2) {
 			internal override Components.Keypad.ReadData Details => new(this.symbols);
 
 			private readonly Components.Keypad.Symbol[] symbols = symbols;
@@ -122,7 +132,7 @@ internal partial class Simulation {
 			public override void Interact() {
 				if (this.X is < 0 or >= 2 || this.Y is < 0 or >= 2) throw new InvalidOperationException("Invalid highlight position");
 				var index = this.Y * 2 + this.X;
-				Message($"Pressed button {index}");
+				LogKeyPressed(index);
 				if (this.isPressed[index])
 					return;
 				foreach (var i in this.correctOrder) {
@@ -136,9 +146,16 @@ internal partial class Simulation {
 				if (!this.isPressed.Contains(false))
 					this.Solve();
 			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "Pressed key {Index}.")]
+			private partial void LogKeyPressed(int index);
+
+			#endregion
 		}
 
-		public class Maze : Module<Components.Maze.ReadData> {
+		public partial class Maze : Module<Components.Maze.ReadData> {
 			internal override Components.Maze.ReadData Details => new(this.position, this.goal, this.circle1, this.circle2);
 
 			private GridCell position;
@@ -146,7 +163,7 @@ internal partial class Simulation {
 			private readonly GridCell circle1;
 			private readonly GridCell circle2;
 
-			public Maze(GridCell start, GridCell goal, GridCell circle1, GridCell circle2) : base(DefuserConnector.GetComponentReader<Components.Maze>(), 3, 3) {
+			public Maze(Simulation simulation, GridCell start, GridCell goal, GridCell circle1, GridCell circle2) : base(simulation, DefuserConnector.GetComponentReader<Components.Maze>(), 3, 3) {
 				this.position = start;
 				this.goal = goal;
 				this.circle1 = circle1;
@@ -172,18 +189,28 @@ internal partial class Simulation {
 					case Direction.Left: newPosition.X--; break;
 				}
 				if (newPosition.X is < 0 or >= 6  || newPosition.Y is < 0 or >= 6) {
-					Message($"{direction} pressed; hit the boundary.");
+					LogMovedIntoBoundary(direction);
 					this.StrikeFlash();
 				} else {
 					this.position = newPosition;
-					Message($"{direction} pressed; moved to {this.position}.");
+					LogMoved(direction, newPosition);
 					if (this.position == this.goal)
 						this.Solve();
 				}
 			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "{Direction} pressed; hit the boundary.")]
+			private partial void LogMovedIntoBoundary(Direction direction);
+
+			[LoggerMessage(LogLevel.Information, "{Direction} pressed; moved to {Position}.")]
+			private partial void LogMoved(Direction direction, GridCell position);
+
+			#endregion
 		}
 
-		public class Memory : Module<Components.Memory.ReadData> {
+		public partial class Memory : Module<Components.Memory.ReadData> {
 			internal override Components.Memory.ReadData Details => !this.isAnimating ? new(this.stagesCleared, this.display, this.keyDigits) : throw new InvalidOperationException("Tried to read module while animating");
 
 			private int display;
@@ -192,7 +219,7 @@ internal partial class Simulation {
 			private bool isAnimating;
 			private readonly Timer animationTimer = new(2900) { AutoReset = false };
 
-			public Memory() : base(DefuserConnector.GetComponentReader<Components.Memory>(), 4, 1) {
+			public Memory(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.Memory>(), 4, 1) {
 				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
 				this.SetKeysAndDisplay();
 			}
@@ -215,7 +242,7 @@ internal partial class Simulation {
 
 			public override void Interact() {
 				if (this.isAnimating) throw new InvalidOperationException("Memory button pressed during animation");
-				Message($"Pressed button {this.X + 1}");
+				LogKeyPressed(this.X + 1);
 				if (this.LightState == ModuleLightState.Solved) return;
 				if (this.X != this.stagesCleared % 4) {
 					this.StrikeFlash();
@@ -229,9 +256,16 @@ internal partial class Simulation {
 						this.StartAnimation();
 				}
 			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "Pressed key {Index}.")]
+			private partial void LogKeyPressed(int index);
+
+			#endregion
 		}
 
-		public class MorseCode : Module<Components.MorseCode.ReadData> {
+		public partial class MorseCode : Module<Components.MorseCode.ReadData> {
 			internal override Components.MorseCode.ReadData Details => new(this.lightOn);
 
 			private bool lightOn;
@@ -242,7 +276,7 @@ internal partial class Simulation {
 			private int selectedFrequency;
 			private static readonly string[] allFrequencies = ["505", "515", "522", "532", "535", "542", "545", "552", "555", "565", "572", "575", "582", "592", "595", "600"];
 
-			public MorseCode() : base(DefuserConnector.GetComponentReader<Components.MorseCode>(), 2, 2) {
+			public MorseCode(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.MorseCode>(), 2, 2) {
 				this.SelectableGrid[1, 1] = false;
 				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
 				this.animationTimer.Start();
@@ -256,7 +290,7 @@ internal partial class Simulation {
 
 			public override void Interact() {
 				if (this.Y == 1) {
-					Message($"3.{allFrequencies[this.selectedFrequency]} MHz was submitted.");
+					LogSubmit($"3.{allFrequencies[this.selectedFrequency]}");
 					if (this.selectedFrequency == 9) {
 						this.Solve();
 						this.animationTimer.Stop();
@@ -273,18 +307,18 @@ internal partial class Simulation {
 			}
 		}
 
-		public class NeedyCapacitor : NeedyModule<Components.NeedyCapacitor.ReadData> {
+		public partial class NeedyCapacitor : NeedyModule<Components.NeedyCapacitor.ReadData> {
 			private readonly Stopwatch pressStopwatch = new();
 
 			public override bool AutoReset => false;
 			internal override Components.NeedyCapacitor.ReadData Details => new(this.IsActive ? (int) this.RemainingTime.TotalSeconds : null);
 
-			public NeedyCapacitor() : base(DefuserConnector.GetComponentReader<Components.NeedyCapacitor>(), 1, 1) { }
+			public NeedyCapacitor(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.NeedyCapacitor>(), 1, 1) { }
 
 			protected override void OnActivate() { }
 
 			public override void Interact() {
-				Message($"{this.Reader.Name} pressed with {this.RemainingTime} left.");
+				LogPressed(this.RemainingTime);
 				this.Timer.Stop();
 				this.pressStopwatch.Restart();
 			}
@@ -292,11 +326,21 @@ internal partial class Simulation {
 			public override void StopInteract() {
 				this.AddTime(this.pressStopwatch.Elapsed * 6, TimeSpan.FromSeconds(45));
 				this.Timer.Start();
-				Message($"{this.Reader.Name} released with {this.RemainingTime} left.");
+				LogReleased(this.RemainingTime);
 			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "Pressed with {RemainingTime} left.")]
+			private partial void LogPressed(TimeSpan remainingTime);
+
+			[LoggerMessage(LogLevel.Information, "Released with {RemainingTime} left.")]
+			private partial void LogReleased(TimeSpan remainingTime);
+
+			#endregion
 		}
 
-		public class NeedyKnob : NeedyModule<Components.NeedyKnob.ReadData> {
+		public partial class NeedyKnob : NeedyModule<Components.NeedyKnob.ReadData> {
 			private static readonly bool[] inactiveLights = new bool[12];
 			private bool[] lights = inactiveLights;
 			private int position;
@@ -310,7 +354,7 @@ internal partial class Simulation {
 
 			internal override Components.NeedyKnob.ReadData Details => new(this.DisplayedTime, this.lights);
 
-			public NeedyKnob() : base(DefuserConnector.GetComponentReader<Components.NeedyKnob>(), 1, 1) { }
+			public NeedyKnob(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.NeedyKnob>(), 1, 1) { }
 
 			protected override void OnActivate() {
 				var state = states[this.nextStateIndex];
@@ -321,7 +365,7 @@ internal partial class Simulation {
 
 			public override void Interact() {
 				this.position = (this.position + 1) % 4;
-				Message($"Moved the knob to position {this.position}");
+				LogMoved(position);
 			}
 
 			public override void OnTimerExpired() {
@@ -329,23 +373,30 @@ internal partial class Simulation {
 					this.StrikeFlash();
 				this.lights = inactiveLights;
 			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "Moved to position {Position}.")]
+			private partial void LogMoved(int position);
+
+			#endregion
 		}
 
-		public class NeedyVentGas : NeedyModule<Components.NeedyVentGas.ReadData> {
+		public partial class NeedyVentGas : NeedyModule<Components.NeedyVentGas.ReadData> {
 			private static readonly string[] messages = ["VENT GAS?", "DETONATE?"];
 			private int messageIndex = 1;
 
 			internal override Components.NeedyVentGas.ReadData Details => new(this.DisplayedTime, this.DisplayedTime is not null ? messages[this.messageIndex] : null);
 
-			public NeedyVentGas() : base(DefuserConnector.GetComponentReader<Components.NeedyVentGas>(), 2, 1) { }
+			public NeedyVentGas(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.NeedyVentGas>(), 2, 1) { }
 
 			protected override void OnActivate() {
 				this.messageIndex ^= 1;
-				Message($"Display: {messages[this.messageIndex]}");
+				LogDisplay(messages[this.messageIndex]);
 			}
 
 			public override void Interact() {
-				Message($"{(this.X == 0 ? 'Y' : 'N')} was pressed.");
+				LogKeyPressed(this.X == 0 ? 'Y' : 'N');
 				if (this.X == 0) {
 					if (this.messageIndex != 0) this.StrikeFlash();
 					this.Deactivate();
@@ -355,6 +406,16 @@ internal partial class Simulation {
 			}
 
 			public override void OnTimerExpired() => this.StrikeFlash();
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "Display: {Display}")]
+			private partial void LogDisplay(string display);
+
+			[LoggerMessage(LogLevel.Information, "{Button} was pressed.")]
+			private partial void LogKeyPressed(char button);
+
+			#endregion
 		}
 
 		public class Password : Module<Components.Password.ReadData> {
@@ -369,7 +430,7 @@ internal partial class Simulation {
 
 			internal override Components.Password.ReadData Details => new(this.columnPositions.Select((y, x) => this.columns[x, y]).ToArray());
 
-			public Password() : base(DefuserConnector.GetComponentReader<Components.Password>(), 5, 3) {
+			public Password(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.Password>(), 5, 3) {
 				this.SelectableGrid[2, 0] = false;
 				this.SelectableGrid[2, 1] = false;
 				this.SelectableGrid[2, 3] = false;
@@ -378,7 +439,7 @@ internal partial class Simulation {
 
 			public override void Interact() {
 				if (this.Y == 2) {
-					Message($"{new string(this.Details.Display)} was submitted.");
+					LogSubmit(new string(this.Details.Display));
 					if (this.columnPositions[0] == 0 && this.columnPositions[1] == 1 && this.columnPositions[2] == 3 && this.columnPositions[3] == 3 && this.columnPositions[4] == 5)
 						this.Solve();
 					else
@@ -396,7 +457,7 @@ internal partial class Simulation {
 			}
 		}
 
-		public class SimonSays : Module<Components.SimonSays.ReadData> {
+		public partial class SimonSays : Module<Components.SimonSays.ReadData> {
 			internal override Components.SimonSays.ReadData Details => new(this.litColour);
 
 			private readonly Timer timer = new(500);
@@ -405,7 +466,7 @@ internal partial class Simulation {
 			private int inputProgress;
 			private int tick;
 
-			public SimonSays() : base(DefuserConnector.GetComponentReader<Components.SimonSays>(), 3, 3) {
+			public SimonSays(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.SimonSays>(), 3, 3) {
 				this.SelectableGrid[0, 0] = false;
 				this.SelectableGrid[0, 2] = false;
 				this.SelectableGrid[1, 1] = false;
@@ -433,7 +494,7 @@ internal partial class Simulation {
 					_ => this.X == 0 ? SimonColour.Red : SimonColour.Yellow
 				};
 				this.litColour = pressedColour;
-				Message($"{pressedColour} was pressed.");
+				LogButtonPressed(pressedColour);
 				if (this.LightState == ModuleLightState.Solved) return;
 				if (pressedColour != (SimonColour) this.inputProgress) {
 					this.StrikeFlash();
@@ -451,9 +512,16 @@ internal partial class Simulation {
 					this.tick = -20;
 				}
 			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "{Colour} was pressed.")]
+			private partial void LogButtonPressed(SimonColour colour);
+
+			#endregion
 		}
 
-		public class WhosOnFirst : Module<Components.WhosOnFirst.ReadData> {
+		public partial class WhosOnFirst : Module<Components.WhosOnFirst.ReadData> {
 			internal override Components.WhosOnFirst.ReadData Details => !this.isAnimating ? new(this.stagesCleared, this.display, this.keys) : throw new InvalidOperationException("Tried to read module while animating");
 
 			private string display;
@@ -467,7 +535,7 @@ internal partial class Simulation {
 			private static readonly string[] keyStrings = [ "READY", "FIRST", "NO", "BLANK", "NOTHING", "YES", "WHAT", "UHHH", "LEFT", "RIGHT", "MIDDLE", "OKAY", "WAIT", "PRESS",
 				"YOU", "YOU ARE", "YOUR", "YOU’RE", "UR", "U", "UH HUH", "UH UH", "WHAT?", "DONE", "NEXT", "HOLD", "SURE", "LIKE" ];
 
-			public WhosOnFirst() : base(DefuserConnector.GetComponentReader<Components.WhosOnFirst>(), 2, 3) {
+			public WhosOnFirst(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.WhosOnFirst>(), 2, 3) {
 				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
 				this.SetKeysAndDisplay();
 			}
@@ -491,7 +559,7 @@ internal partial class Simulation {
 
 			public override void Interact() {
 				if (this.isAnimating) throw new InvalidOperationException("Memory button pressed during animation");
-				Message($"Pressed button {this.X + this.Y * 2 + 1}");
+				LogButtonPressed(this.X + this.Y * 2 + 1);
 				if (this.LightState == ModuleLightState.Solved) return;
 				if (this.X + this.Y * 2 != this.stagesCleared) {
 					this.StrikeFlash();
@@ -504,9 +572,16 @@ internal partial class Simulation {
 						this.StartAnimation();
 				}
 			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "Pressed button {Index}.")]
+			private partial void LogButtonPressed(int index);
+
+			#endregion
 		}
 
-		public class WireSequence : Module<Components.WireSequence.ReadData> {
+		public partial class WireSequence : Module<Components.WireSequence.ReadData> {
 			private record struct WireData(Components.WireSequence.WireColour Colour, char To);
 
 			internal override Components.WireSequence.ReadData Details {
@@ -529,7 +604,7 @@ internal partial class Simulation {
 			private int readFailSimulation;
 			private readonly Timer animationTimer = new(1200) { AutoReset = false };
 
-			public WireSequence() : base(DefuserConnector.GetComponentReader<Components.WireSequence>(), 1, 5) {
+			public WireSequence(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.WireSequence>(), 1, 5) {
 				this.animationTimer.Elapsed += this.AnimationTimer_Elapsed;
 				for (var i = 0; i < 12; i++) {
 					if (i % 4 != 0) {
@@ -563,7 +638,7 @@ internal partial class Simulation {
 					case 0:
 						if (this.currentPage == 0) throw new InvalidOperationException("Tried to move up from the first page");
 						this.currentPage--;
-						Message($"Moving to page {this.currentPage + 1}.");
+						LogPageChanged(this.currentPage + 1);
 						this.StartAnimation();
 						break;
 					case 4:
@@ -575,18 +650,18 @@ internal partial class Simulation {
 								this.stagesCleared++;
 								if (this.currentPage == 4)
 									this.Solve();
-								Message($"Moving to page {this.currentPage + 1}.");
+								LogPageChanged(this.currentPage + 1);
 								this.StartAnimation();
 							}
 						} else {
 							this.currentPage++;
-							Message($"Moving to page {this.currentPage + 1}.");
+							LogPageChanged(this.currentPage + 1);
 							this.StartAnimation();
 						}
 						break;
 					default:
 						if (this.isCut[this.currentPage * 3 + this.Y - 1]) return;
-						Message($"Cut wire {this.currentPage * 3 + this.Y}.");
+						LogCutWire(this.currentPage * 3 + this.Y);
 						this.isCut[this.currentPage * 3 + this.Y - 1] = true;
 						if (!this.shouldCut[this.currentPage * 3 + this.Y - 1])
 							this.StrikeFlash();
@@ -594,19 +669,26 @@ internal partial class Simulation {
 
 				}
 			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "Moving to page {Index}.")]
+			private partial void LogPageChanged(int index);
+
+			#endregion
 		}
 
-#endregion
+		#endregion
 
-#region Mod modules
-		public class ColourFlash : Module<Components.ColourFlash.ReadData> {
+		#region Mod modules
+		public partial class ColourFlash : Module<Components.ColourFlash.ReadData> {
 			internal override Components.ColourFlash.ReadData Details => this.index < 0 ? new(null, Components.ColourFlash.Colour.None) : this.sequence[this.index];
 
 			private int index;
 			private readonly Components.ColourFlash.ReadData[] sequence;
 			private readonly Timer animationTimer = new(750);
 
-			public ColourFlash() : base(DefuserConnector.GetComponentReader<Components.ColourFlash>(), 2, 1) {
+			public ColourFlash(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.ColourFlash>(), 2, 1) {
 				this.sequence = [ new("RED", Components.ColourFlash.Colour.Yellow), new("YELLOW", Components.ColourFlash.Colour.Green), new("GREEN", Components.ColourFlash.Colour.Blue),
 					new("BLUE", Components.ColourFlash.Colour.Magenta), new("MAGENTA", Components.ColourFlash.Colour.White), new("WHITE", Components.ColourFlash.Colour.Blue),
 					new("RED", Components.ColourFlash.Colour.Red), new("BLUE", Components.ColourFlash.Colour.Blue) ];
@@ -621,7 +703,7 @@ internal partial class Simulation {
 
 			public override void Interact() {
 				if (this.X == 0) {
-					Message($"Yes was pressed at {this.index}.");
+					LogYes(this.index);
 					if (this.index == 0) {
 						this.Solve();
 						this.animationTimer.Stop();
@@ -629,23 +711,33 @@ internal partial class Simulation {
 					} else
 						this.StrikeFlash();
 				} else if (this.X == 1) {
-					Message($"No was pressed at {this.index}.");
+					LogNo(this.index);
 					this.StrikeFlash();
 				}
 			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "Yes was pressed at {Index}.")]
+			private partial void LogNo(int index);
+
+			[LoggerMessage(LogLevel.Information, "Yes was pressed at {Index}.")]
+			private partial void LogYes(int index);
+
+			#endregion
 		}
 
-		public class PianoKeys : Module<Components.PianoKeys.ReadData> {
+		public partial class PianoKeys : Module<Components.PianoKeys.ReadData> {
 			internal override Components.PianoKeys.ReadData Details => new([Components.PianoKeys.Symbol.CutCommonTime, Components.PianoKeys.Symbol.Natural, Components.PianoKeys.Symbol.Fermata]);
 
 			private static readonly string[] labels = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 			private readonly int[] correctSequence = [4, 6, 6, 6, 6, 4, 4, 4];
 			private int index;
 
-			public PianoKeys() : base(DefuserConnector.GetComponentReader<Components.PianoKeys>(), 12, 1) { }
+			public PianoKeys(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.PianoKeys>(), 12, 1) { }
 
 			public override void Interact() {
-				Message($"{labels[this.X]} was played.");
+				LogKeyPressed(labels[this.X]);
 				if (this.index >= this.correctSequence.Length) return;
 				if (this.X == this.correctSequence[this.index]) {
 					this.index++;
@@ -656,6 +748,13 @@ internal partial class Simulation {
 					this.index = 0;
 				}
 			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "{Note} was played.")]
+			private partial void LogKeyPressed(string note);
+
+			#endregion
 		}
 
 		public class Semaphore : Module<Components.Semaphore.ReadData> {
@@ -675,7 +774,7 @@ internal partial class Simulation {
 			private int index;
 			private readonly int correctIndex = 5;
 
-			public Semaphore() : base(DefuserConnector.GetComponentReader<Components.Semaphore>(), 3, 1) { }
+			public Semaphore(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.Semaphore>(), 3, 1) { }
 
 			public override void Interact() {
 				switch (this.X) {
@@ -686,7 +785,7 @@ internal partial class Simulation {
 						if (this.index < this.signals.Length - 1) this.index++;
 						break;
 					case 1:
-						Message($"{this.Details} was submitted.");
+						LogSubmit(this.Details);
 						if (this.index == this.correctIndex)
 							this.Solve();
 						else

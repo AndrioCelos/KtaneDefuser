@@ -34,7 +34,7 @@ public class BombDefuserAimlService : IAimlExtension {
 		}));
 		AimlLoader.AddCustomOobHandler("tasconnect", this.OobAction(async (c, e, r) => {
 			c.user = r.User;
-			await c.ConnectAsync(e.Attribute("simulation") is not null);
+			await c.ConnectAsync(r.Bot.LoggerFactory, e.Attribute("simulation") is not null);
 			r.User.Postback("OOB DefuserSocketConnected");
 		}));
 #pragma warning disable CS0618 // TODO: Obsolete message types may be removed later.

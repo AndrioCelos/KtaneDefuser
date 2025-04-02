@@ -4,12 +4,15 @@ using System.Diagnostics;
 using System.Timers;
 using BombDefuserConnector.DataTypes;
 using BombDefuserConnectorApi;
+using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BombDefuserConnector;
 /// <summary>Provides a simulation of a Keep Talking and Nobody Explodes game, for testing without the real game.</summary>
 internal partial class Simulation {
+	private readonly ILoggerFactory loggerFactory;
+	private readonly ILogger logger;
 	private int roomX;
 	private readonly Timer rxTimer = new(187.5);
 	private bool rxBetweenFaces;
@@ -29,23 +32,41 @@ internal partial class Simulation {
 
 	internal event EventHandler<string>? Postback;
 
-	public Simulation() {
+	public Simulation(ILoggerFactory loggerFactory) {
+		this.loggerFactory = loggerFactory;
+		this.logger = loggerFactory.CreateLogger<Simulation>();
 		this.queueTimer.Elapsed += this.QueueTimer_Elapsed;
 		this.rxTimer.Elapsed += this.RXTimer_Elapsed;
 
 		this.moduleFaces[0] = new(new BombComponent?[,] {
-			{ TimerComponent.Instance, new Modules.Semaphore(), null },
-			{ null, null, null }
+			{
+				TimerComponent.Instance,
+				new Modules.Wires(this, 0, [Components.Wires.Colour.Black, Components.Wires.Colour.White, Components.Wires.Colour.Blue]),
+				new Modules.Keypad(this, [Components.Keypad.Symbol.QuestionMark, Components.Keypad.Symbol.HollowStar, Components.Keypad.Symbol.LeftC, Components.Keypad.Symbol.Balloon], [3, 2, 1, 0])
+			},
+			{
+				new Modules.Password(this),
+				new Modules.Button(this, Components.Button.Colour.Red, "ABORT"),
+				new Modules.ComplicatedWires(this, [Components.ComplicatedWires.WireFlags.None, Components.ComplicatedWires.WireFlags.Red, Components.ComplicatedWires.WireFlags.Blue, Components.ComplicatedWires.WireFlags.Light, Components.ComplicatedWires.WireFlags.Star])
+			}
 		});
 		this.moduleFaces[1] = new(new BombComponent?[,] {
-			{ null, null, null },
-			{ null, null, null }
+			{
+				new Modules.Maze(this, new(0, 0), new(6, 6), new(0, 1), new(5, 2)),
+				new Modules.Memory(this),
+				new Modules.MorseCode(this)
+			},
+			{
+				new Modules.SimonSays(this),
+				new Modules.WhosOnFirst(this),
+				new Modules.WireSequence(this)
+			}
 		});
 		this.widgetFaces[0] = new(new[] { Widget.Create(new Widgets.SerialNumber(), "AB3DE6"), null, null, null });
 		this.widgetFaces[1] = new(new[] { Widget.Create(new Widgets.Indicator(), new(false, "BOB")), Widget.Create(new Widgets.Indicator(), new(true, "FRQ")), null, null });
 		this.widgetFaces[2] = new(new[] { Widget.Create(new Widgets.BatteryHolder(), 2), null, null, null, null, null });
 		this.widgetFaces[3] = new(new[] { Widget.Create(new Widgets.PortPlate(), new Widgets.PortPlate.Ports(Widgets.PortPlate.PortType.Parallel | Widgets.PortPlate.PortType.Serial)), Widget.Create(new Widgets.PortPlate(), new Widgets.PortPlate.Ports(0)), null, null, null, null });
-		Message("Simulation initialised.");
+		LogInitialised();
 
 		for (var i = 0; i < this.moduleFaces.Length; i++) {
 			for (var y = 0; y < this.moduleFaces[i].Slots.GetLength(0); y++) {
@@ -65,28 +86,21 @@ internal partial class Simulation {
 	}
 
 	private void RXTimer_Elapsed(object? sender, ElapsedEventArgs e) {
-		if (rxBetweenFaces)
-			rxBetweenFaces = false;
+		if (this.rxBetweenFaces)
+			this.rxBetweenFaces = false;
 		else {
-			rxBetweenFaces = true;
+			this.rxBetweenFaces = true;
 			this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
 			var faceNum = ((int) this.currentFace + 1) / 2 % 2;
 			if (faceNum != this.selectedFaceNum) {
 				this.selectedFaceNum = faceNum;
 				if (this.focusState == FocusStates.Module) {
 					this.focusState = FocusStates.Bomb;
-					Message("Module deselected");
+					LogModuleDeselected();
 				}
 			}
-			Message($"Turned the bomb to {this.currentFace}");
+			LogBombTurned(currentFace);
 		}
-	}
-
-	/// <summary>Writes the specified message to the console with a colour and prefix.</summary>
-	private static void Message(string s) {
-		Console.ForegroundColor = ConsoleColor.Cyan;
-		Console.WriteLine($"Simulation: {s}");
-		Console.ResetColor();
 	}
 
 	private void QueueTimer_Elapsed(object? sender, ElapsedEventArgs e) => this.PopInputQueue();
@@ -120,27 +134,27 @@ internal partial class Simulation {
 							case FocusStates.Room:
 								if (buttonAction.Action != ButtonActionType.Press) break;
 								this.focusState = this.roomX == -1 ? FocusStates.AlarmClock : FocusStates.Bomb;
-								Message($"{this.focusState} selected");
+								LogFocusStateChanged(this.focusState);
 								break;
 							case FocusStates.AlarmClock:
 								if (buttonAction.Action != ButtonActionType.Press) break;
-								this.SetAlarmClock(!isAlarmClockOn);
+								this.SetAlarmClock(!this.isAlarmClockOn);
 								break;
 							case FocusStates.Bomb:
 								if (buttonAction.Action != ButtonActionType.Press) break;
 								if ((int) this.currentFace % 2 != 0) {
 									this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
 									this.rxBetweenFaces = false;
-									Message($"Aligned the bomb to {this.currentFace}");
+									LogBombAligned(this.currentFace);
 								}
 								var component = this.SelectedFace.SelectedComponent;
 								if (component == null)
-									Message("No module is highlighted.");
+									LogNoModuleHighlighted();
 								else if (component is Module module1) {
 									this.focusState = FocusStates.Module;
-									Message($"{component.Reader.Name} [{module1.ID}] ({this.SelectedFace.X + 1}, {this.SelectedFace.Y + 1}) selected");
+									LogModuleSelected(component.Reader.Name, module1.ID, this.SelectedFace.X + 1, this.SelectedFace.Y + 1);
 								} else
-									Message($"Can't select {component.Reader.Name}.");
+									LogUnselectableComponent(component.Reader.Name);
 								break;
 							case FocusStates.Module:
 								if (this.SelectedFace.SelectedComponent is Module module2) {
@@ -167,19 +181,19 @@ internal partial class Simulation {
 								if ((int) this.currentFace % 2 != 0) {
 									this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
 									this.rxBetweenFaces = false;
-									Message($"Aligned the bomb to {this.currentFace}");
+									LogBombAligned(this.currentFace);
 								}
 								this.focusState = FocusStates.Room;
 								if ((int) this.currentFace % 2 != 0) {
 									this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
 									this.rxBetweenFaces = false;
-									Message($"Aligned the bomb to {this.currentFace}");
+									LogBombAligned(this.currentFace);
 								}
-								Message("Returned to room");
+								LogFocusStateChanged(this.focusState);
 								break;
 							case FocusStates.Module:
 								this.focusState = FocusStates.Bomb;
-								Message("Returned to bomb");
+								LogFocusStateChanged(this.focusState);
 								break;
 						}
 						break;
@@ -371,10 +385,41 @@ internal partial class Simulation {
 
 	/// <summary>Triggers the alarm clock.</summary>
 	internal void SetAlarmClock(bool value) {
-		Message($"Turned alarm clock {(value ? "on" : "off")}");
-		isAlarmClockOn = value;
+		LogAlarmClockStateChanged(value ? "on" : "off");
+		this.isAlarmClockOn = value;
 		this.Postback?.Invoke(this, $"OOB AlarmClock {value}");
 	}
+
+	#region Log templates
+
+	[LoggerMessage(LogLevel.Information, "Simulation initialised.")]
+	private partial void LogInitialised();
+
+	[LoggerMessage(LogLevel.Information, "Module deselected.")]
+	private partial void LogModuleDeselected();
+
+	[LoggerMessage(LogLevel.Information, "Turned the bomb to {Face}.")]
+	private partial void LogBombTurned(BombFaces face);
+
+	[LoggerMessage(LogLevel.Information, "{FocusState} selected.")]
+	private partial void LogFocusStateChanged(FocusStates focusState);
+
+	[LoggerMessage(LogLevel.Information, "Aligned the bomb to {Face}.")]
+	private partial void LogBombAligned(BombFaces face);
+
+	[LoggerMessage(LogLevel.Warning, "A pressed while no module is highlighted.")]
+	private partial void LogNoModuleHighlighted();
+
+	[LoggerMessage(LogLevel.Information, "{Name} [{ID}] ({X}, {Y}) selected.")]
+	private partial void LogModuleSelected(string name,	int id, int x, int y);
+
+	[LoggerMessage(LogLevel.Warning, "Can't select {Name}.")]
+	private partial void LogUnselectableComponent(string name);
+
+	[LoggerMessage(LogLevel.Information, "Turned the alarm clock {NewState}.")]
+	private partial void LogAlarmClockStateChanged(string newState);
+
+	#endregion
 
 	private enum FocusStates {
 		Room,
@@ -423,7 +468,9 @@ internal partial class Simulation {
 		protected void Postback(string message) => this.PostbackSent?.Invoke(this, message);
 	}
 
-	private abstract class Module : BombComponent {
+	private abstract partial class Module : BombComponent {
+		protected readonly Simulation simulation;
+		protected readonly ILogger logger;
 		private readonly Timer ResetLightTimer = new(2000) { AutoReset = false };
 
 		private static int NextID;
@@ -437,7 +484,9 @@ internal partial class Simulation {
 
 		public event EventHandler? Strike;
 
-		public Module(ComponentReader reader, int selectableWidth, int selectableHeight) : base(reader) {
+		public Module(Simulation simulation, ComponentReader reader, int selectableWidth, int selectableHeight) : base(reader) {
+			this.simulation = simulation;
+			this.logger = simulation.loggerFactory.CreateLogger(this.GetType());
 			NextID++;
 			this.ID = NextID;
 			this.ResetLightTimer.Elapsed += this.ResetLightTimer_Elapsed;
@@ -489,13 +538,13 @@ internal partial class Simulation {
 
 		public void Solve() {
 			if (this.LightState == ModuleLightState.Solved) return;
-			Message($"{this.Reader.Name} solved.");
+			LogModuleSolved(this.Reader.Name);
 			this.LightState = ModuleLightState.Solved;
 			this.ResetLightTimer.Stop();
 		}
 
 		public void StrikeFlash() {
-			Message($"{this.Reader.Name} strike.");
+			LogModuleStrike(this.Reader.Name);
 			if (this.LightState != ModuleLightState.Solved) {
 				this.LightState = ModuleLightState.Strike;
 				this.ResetLightTimer.Stop();
@@ -504,18 +553,37 @@ internal partial class Simulation {
 			}
 		}
 
-		public virtual void Interact() => Message($"Selected ({this.X}, {this.Y}) in {this.Reader.Name}");
+		public virtual void Interact() => LogModuleInteraction(this.X, this.Y, this.Reader.Name);
 		public virtual void StopInteract() { }
+
+		#region Log templates
+
+		[LoggerMessage(LogLevel.Information, "{Answer} was submitted.")]
+		protected partial void LogSubmit(object? answer);
+
+		[LoggerMessage(LogLevel.Information, "Cut wire {Wire}.")]
+		protected partial void LogCutWire(int wire);
+
+		[LoggerMessage(LogLevel.Information, "{ModuleName} solved.")]
+		private partial void LogModuleSolved(string moduleName);
+
+		[LoggerMessage(LogLevel.Information, "{ModuleName} strike.")]
+		private partial void LogModuleStrike(string moduleName);
+
+		[LoggerMessage(LogLevel.Information, "Selected ({X}, {Y}) in {ModuleName}")]
+		private partial void LogModuleInteraction(int x, int y, string moduleName);
+
+		#endregion
 	}
 
-	private abstract class Module<TDetails>(ComponentReader<TDetails> reader, TDetails details, int selectableWidth, int selectableHeight) : Module(reader, selectableWidth, selectableHeight) where TDetails : notnull {
+	private abstract class Module<TDetails>(Simulation simulation, ComponentReader<TDetails> reader, TDetails details, int selectableWidth, int selectableHeight) : Module(simulation, reader, selectableWidth, selectableHeight) where TDetails : notnull {
 		internal virtual TDetails Details { get; } = details;
 		internal override string DetailsString => this.Details.ToString() ?? "";
 
-		protected Module(ComponentReader<TDetails> reader, int selectableWidth, int selectableHeight) : this(reader, default!, selectableWidth, selectableHeight) { }
+		protected Module(Simulation simulation, ComponentReader<TDetails> reader, int selectableWidth, int selectableHeight) : this(simulation, reader, default!, selectableWidth, selectableHeight) { }
 	}
 
-	private abstract class NeedyModule : Module {
+	private abstract partial class NeedyModule : Module {
 		private int faceNum;
 		private int x;
 		private int y;
@@ -530,7 +598,7 @@ internal partial class Simulation {
 		public int? DisplayedTime => this.IsActive ? (int?) this.RemainingTime.TotalSeconds : null;
 		protected Timer Timer { get; } = new() { AutoReset = false };
 
-		protected NeedyModule(ComponentReader reader, int selectableWidth, int selectableHeight) : base(reader, selectableWidth, selectableHeight)
+		protected NeedyModule(Simulation simulation, ComponentReader reader, int selectableWidth, int selectableHeight) : base(simulation, reader, selectableWidth, selectableHeight)
 			=> this.Timer.Elapsed += this.ReactivateTimer_Elapsed;
 
 		public void Initialise(int faceNum, int x, int y) {
@@ -547,7 +615,7 @@ internal partial class Simulation {
 			this.Timer.Interval = this.baseTime.TotalMilliseconds;
 			this.stopwatch.Restart();
 			this.IsActive = true;
-			Message($"{this.Reader.Name} activated with {this.baseTime} left.");
+			LogNeedyModuleActivated(this.Reader.Name, this.baseTime);
 			this.OnActivate();
 			this.Postback($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} Running");
 		}
@@ -558,7 +626,7 @@ internal partial class Simulation {
 			if (!this.IsActive) return;
 			this.IsActive = false;
 			this.stopwatch.Stop();
-			Message($"{this.Reader.Name} deactivated with {this.RemainingTime} left.");
+			LogNeedyModuleDeactivated(this.Reader.Name, this.RemainingTime);
 			if (this.AutoReset) {
 				this.Timer.Interval = 30000;
 				this.Postback($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} Cooldown");
@@ -585,13 +653,23 @@ internal partial class Simulation {
 				this.stopwatch.Restart();
 			}
 		}
+
+		#region Log templates
+
+		[LoggerMessage(LogLevel.Information, "{ModuleName} activated with {Time} left.")]
+		private partial void LogNeedyModuleActivated(string moduleName, TimeSpan time);
+
+		[LoggerMessage(LogLevel.Information, "{ModuleName} deactivated with {Time} left.")]
+		private partial void LogNeedyModuleDeactivated(string moduleName, TimeSpan time);
+
+		#endregion
 	}
 
-	private abstract class NeedyModule<TDetails>(ComponentReader<TDetails> reader, TDetails details, int selectableWidth, int selectableHeight) : NeedyModule(reader, selectableWidth, selectableHeight) where TDetails : notnull {
+	private abstract class NeedyModule<TDetails>(Simulation simulation, ComponentReader<TDetails> reader, TDetails details, int selectableWidth, int selectableHeight) : NeedyModule(simulation, reader, selectableWidth, selectableHeight) where TDetails : notnull {
 		internal virtual TDetails Details { get; } = details;
 		internal override string DetailsString => this.Details.ToString() ?? "";
 
-		protected NeedyModule(ComponentReader<TDetails> reader, int selectableWidth, int selectableHeight) : this(reader, default!, selectableWidth, selectableHeight) { }
+		protected NeedyModule(Simulation simulation, ComponentReader<TDetails> reader, int selectableWidth, int selectableHeight) : this(simulation, reader, default!, selectableWidth, selectableHeight) { }
 	}
 
 	private class TimerComponent : BombComponent {
