@@ -1,4 +1,4 @@
-using BombDefuserConnector;
+using KtaneDefuserConnector;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Color = System.Drawing.Color;

@@ -1,12 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <TargetFrameworks>net8.0;net35</TargetFrameworks>
     <Nullable>enable</Nullable>
-    <UseWindowsForms>true</UseWindowsForms>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Title>Image Processing Tester</Title>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <Title>Bomb Defuser Connector API</Title>
     <Authors>Andrio Celos</Authors>
     <Copyright>© 2023-2024 Andrio Celos</Copyright>
     <PackageProjectUrl>https://github.com/AndrioCelos/KtaneDefuser</PackageProjectUrl>
@@ -16,9 +15,5 @@
     <FileVersion>$(AssemblyVersion)</FileVersion>
     <PackageLicenseFile>license.md</PackageLicenseFile>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\KtaneDefuserConnector\KtaneDefuserConnector.csproj" />
-  </ItemGroup>
 
 </Project>

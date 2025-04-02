@@ -1,4 +1,4 @@
-﻿using BombDefuserConnector;
+﻿using KtaneDefuserConnector;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace ImageProcessingTester;

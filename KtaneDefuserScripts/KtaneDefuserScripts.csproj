@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Title>Bomb Defuser Scripts</Title>
+    <Authors>Andrio Celos</Authors>
+    <Copyright>© 2023-2024 Andrio Celos</Copyright>
+    <PackageProjectUrl>https://github.com/AndrioCelos/KtaneDefuser</PackageProjectUrl>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/AndrioCelos/KtaneDefuser</RepositoryUrl>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>$(AssemblyVersion)</FileVersion>
+    <PackageLicenseFile>license.md</PackageLicenseFile>
+    <LangVersion>preview</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.7" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AngelAiml.DotNetInterface\AngelAiml.DotNetInterface\AngelAiml.DotNetInterface.csproj" />
+    <ProjectReference Include="..\KtaneDefuserConnector\KtaneDefuserConnector.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="AngelAiml.DotNetInterface" />
+    <Using Include="KtaneDefuserConnector" />
+    <Using Include="KtaneDefuserConnectorApi" />
+    <Using Include="KtaneDefuserScripts.AimlTasks">
+      <Static>True</Static>
+    </Using>
+    <Using Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="..\AngelAiml.DotNetInterface\AngelAiml.InterfaceCompiler\bin\Debug\net8.0\AngelAiml.InterfaceCompiler -o ..\Bot $(OutputPath)\$(AssemblyName).dll" />
+  </Target>
+
+</Project>
