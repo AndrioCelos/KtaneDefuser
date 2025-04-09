@@ -29,6 +29,15 @@ public struct Quadrilateral {
 		this.BottomLeft = points[2];
 		this.BottomRight = points[3];
 	}
+	public Quadrilateral(IEnumerable<Point> points) {
+		ArgumentNullException.ThrowIfNull(points);
+		var enumerator = points.GetEnumerator();
+		this.TopLeft = enumerator.MoveNext() ? enumerator.Current : throw new ArgumentException("Points list must have length 4.", nameof(points));
+		this.TopRight = enumerator.MoveNext() ? enumerator.Current : throw new ArgumentException("Points list must have length 4.", nameof(points));
+		this.BottomLeft = enumerator.MoveNext() ? enumerator.Current : throw new ArgumentException("Points list must have length 4.", nameof(points));
+		this.BottomRight = enumerator.MoveNext() ? enumerator.Current : throw new ArgumentException("Points list must have length 4.", nameof(points));
+		if (enumerator.MoveNext()) throw new ArgumentException("Points list must have length 4.", nameof(points));
+	}
 
 	public Point this[int index] {
 		readonly get => index switch { 0 => this.TopLeft, 1 => this.TopRight, 2 => this.BottomLeft, 3 => this.BottomRight, _ => throw new IndexOutOfRangeException() };

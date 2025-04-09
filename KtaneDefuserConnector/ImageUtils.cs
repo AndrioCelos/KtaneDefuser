@@ -8,9 +8,11 @@ using SixLabors.ImageSharp.Processing;
 
 namespace KtaneDefuserConnector;
 public static class ImageUtils {
+	public const int StandardResolution = 256;
+
 	/// <summary>Returns an image drawn by stretching the specified quadrilateral area from another image.</summary>
 	public static Image<Rgba32> PerspectiveUndistort(Image<Rgba32> originalImage, Quadrilateral quadrilateral, InterpolationMode interpolationMode)
-		=> PerspectiveUndistort(originalImage, quadrilateral, interpolationMode, new(256, 256));
+		=> PerspectiveUndistort(originalImage, quadrilateral, interpolationMode, new(StandardResolution, StandardResolution));
 	/// <summary>Returns an image drawn by stretching the specified quadrilateral area from another image.</summary>
 	public static Image<Rgba32> PerspectiveUndistort(Image<Rgba32> originalImage, Quadrilateral quadrilateral, InterpolationMode interpolationMode, Size resolution) {
 		var bitmap = new Image<Rgba32>(resolution.Width, resolution.Height);
@@ -72,7 +74,7 @@ public static class ImageUtils {
 			var (start, dir, increment) = diagonalSweeps[n];
 			var diagonalPoint1 = start;
 			var diagonalPoint2 = start;
-			for (var i = 0; i < 256; i++) {
+			for (var i = 0; i < StandardResolution; i++) {
 				var point = diagonalPoint1;
 				for (var j = 0; j <= i; j++) {
 					if (bounds.Contains(point) && predicate(image[point.X, point.Y])) {
@@ -237,15 +239,15 @@ public static class ImageUtils {
 	// The gradient (m) and intercept (c) are multiplied by 65536 because fixed-point math is faster than floating-point math.
 	// The intercept is also offset by +32768 for rounding.
 	public static Rgba32 ColourCorrect(Rgba32 pixel, LightsState lightsState) => lightsState switch {
-		LightsState.Buzz      => new((byte) Math.Min(Math.Max(( 319305 * pixel.R +  429087) >> 16, 0), 255), (byte) Math.Min(Math.Max(( 315405 * pixel.G +  664756) >> 16, 0), 255), (byte) Math.Min(Math.Max(( 316774 * pixel.B +  663781) >> 16, 0), 255), pixel.A),
-		LightsState.Off       => new((byte) Math.Min(Math.Max((2127280 * pixel.R +  497929) >> 16, 0), 255), (byte) Math.Min(Math.Max((1964778 * pixel.G +  715096) >> 16, 0), 255), (byte) Math.Min(Math.Max((1570129 * pixel.B +  740225) >> 16, 0), 255), pixel.A),
-		LightsState.Emergency => new((byte) Math.Min(Math.Max((  53982 * pixel.R + -299830) >> 16, 0), 255), (byte) Math.Min(Math.Max((  84761 * pixel.G +  256655) >> 16, 0), 255), (byte) Math.Min(Math.Max((  85066 * pixel.B +  250049) >> 16, 0), 255), pixel.A),
+		LightsState.Buzz      => new((byte) Math.Clamp(( 319305 * pixel.R +  429087) >> 16, 0, 255), (byte) Math.Clamp(( 315405 * pixel.G +  664756) >> 16, 0, 255), (byte) Math.Clamp(( 316774 * pixel.B +  663781) >> 16, 0, 255), pixel.A),
+		LightsState.Off       => new((byte) Math.Clamp((2127280 * pixel.R +  497929) >> 16, 0, 255), (byte) Math.Clamp((1964778 * pixel.G +  715096) >> 16, 0, 255), (byte) Math.Clamp((1570129 * pixel.B +  740225) >> 16, 0, 255), pixel.A),
+		LightsState.Emergency => new((byte) Math.Clamp((  53982 * pixel.R + -299830) >> 16, 0, 255), (byte) Math.Clamp((  84761 * pixel.G +  256655) >> 16, 0, 255), (byte) Math.Clamp((  85066 * pixel.B +  250049) >> 16, 0, 255), pixel.A),
 		_ => pixel
 	};
 	public static Rgba32 ColourUncorrect(Rgba32 pixel, LightsState lightsState) => lightsState switch {
-		LightsState.Buzz      => new((byte) Math.Min(Math.Max((  13118 * pixel.R +   -2642) >> 16, 0), 255), (byte) Math.Min(Math.Max((  13099 * pixel.G +  -26052) >> 16, 0), 255), (byte) Math.Min(Math.Max((  12964 * pixel.B +  -15923) >> 16, 0), 255), pixel.A),
-		LightsState.Off       => new((byte) Math.Min(Math.Max((   1879 * pixel.R +   37662) >> 16, 0), 255), (byte) Math.Min(Math.Max((   1946 * pixel.G +   43646) >> 16, 0), 255), (byte) Math.Min(Math.Max((   2449 * pixel.B +   42723) >> 16, 0), 255), pixel.A),
-		LightsState.Emergency => new((byte) Math.Min(Math.Max((  78034 * pixel.R +  647314) >> 16, 0), 255), (byte) Math.Min(Math.Max((  50172 * pixel.G +  -70498) >> 16, 0), 255), (byte) Math.Min(Math.Max((  49926 * pixel.B +  -57006) >> 16, 0), 255), pixel.A),
+		LightsState.Buzz      => new((byte) Math.Clamp((  13118 * pixel.R +   -2642) >> 16, 0, 255), (byte) Math.Clamp((  13099 * pixel.G +  -26052) >> 16, 0, 255), (byte) Math.Clamp((  12964 * pixel.B +  -15923) >> 16, 0, 255), pixel.A),
+		LightsState.Off       => new((byte) Math.Clamp((   1879 * pixel.R +   37662) >> 16, 0, 255), (byte) Math.Clamp((   1946 * pixel.G +   43646) >> 16, 0, 255), (byte) Math.Clamp((   2449 * pixel.B +   42723) >> 16, 0, 255), pixel.A),
+		LightsState.Emergency => new((byte) Math.Clamp((  78034 * pixel.R +  647314) >> 16, 0, 255), (byte) Math.Clamp((  50172 * pixel.G +  -70498) >> 16, 0, 255), (byte) Math.Clamp((  49926 * pixel.B +  -57006) >> 16, 0, 255), pixel.A),
 		_ => pixel
 	};
 
@@ -253,8 +255,8 @@ public static class ImageUtils {
 	public static float CheckSimilarity(Image<Rgba32> subject, params Image<Rgba32>[] samples) {
 		var size = samples.First().Size;
 		int score = 0, total = 0;
-		for (int y = 0; y < size.Height; y++) {
-			for (int x = 0; x < size.Width; x++) {
+		for (var y = 0; y < size.Height; y++) {
+			for (var x = 0; x < size.Width; x++) {
 				var colour = subject[x, y];
 				var maxIncrement = 0;
 				var maxTotalIncrement = 0;
@@ -278,14 +280,14 @@ public static class ImageUtils {
 	[Obsolete("Being replaced with GetComponentFrame.")]
 	public static float CheckForNeedyFrame(Image<Rgba32> image) {
 		var yellowPixels = 0;
-		for (int y = 0; y < image.Height * 80 / 256; y++) {
-			for (int x = 0; x < image.Width; x++) {
+		for (var y = 0; y < image.Height * 5 / 16; y++) {
+			for (var x = 0; x < image.Width; x++) {
 				var hsvColor = HsvColor.FromColor(image[x, y]);
 				if (hsvColor.H is >= 30 and <= 60 && hsvColor.S >= 0.5f && hsvColor.V >= 0.4f)  // Include the stripboard on Capacitor Discharge.
 					yellowPixels++;
 			}
 		}
-		return yellowPixels / 2000f;
+		return yellowPixels / (float) (8 * StandardResolution);
 	}
 
 	public static ComponentFrameType GetComponentFrame(Image<Rgba32> image) {
@@ -328,8 +330,8 @@ public static class ImageUtils {
 	/// <summary>Returns a value indicating whether the module in the specified image looks like a blank component.</summary>
 	public static bool CheckForBlankComponent(Image<Rgba32> image) {
 		var orangePixels = 0;
-		for (int y = 0; y < image.Height; y++) {
-			for (int x = 0; x < image.Width; x++) {
+		for (var y = 0; y < image.Height; y++) {
+			for (var x = 0; x < image.Width; x++) {
 				var hsvColor = HsvColor.FromColor(image[x, y]);
 				if (hsvColor.H is >= 15 and <= 25 && hsvColor.S is >= 0.6f and <= 0.8f && hsvColor.V >= 0.35f)
 					orangePixels++;

@@ -164,9 +164,15 @@ public class DefuserConnector : IDisposable {
 
 #if DEBUG
 	internal static void SaveDebugImage(Image image, string category) {
-		var file = Path.Combine(Path.GetTempPath(), "KtaneDefuserDebug", $"{category}.{DateTime.Now:yyyy-MM-dd.HH-mm-ss}.{Guid.NewGuid()}.bmp");
+		var file = Path.Combine(Path.GetTempPath(), "KtaneDefuserDebug", $"{category}.{DateTime.Now:yyyy-MM-dd.HH-mm-ss.ffffff}.png");
 		Directory.CreateDirectory(Path.GetDirectoryName(file)!);
-		image.Save(file);
+		_ = image.SaveAsPngAsync(file);
+	}
+
+	public static void SaveTrainingImage(Image image, string category) {
+		var file = Path.Combine(Path.GetTempPath(), "KtaneDefuserTraining", category, $"{DateTime.Now:yyyy-MM-dd.HH-mm-ss.ffffff}.png");
+		Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+		_ = image.SaveAsPngAsync(file);
 	}
 #endif
 
