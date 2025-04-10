@@ -9,21 +9,21 @@ public class ColourFlash : ComponentReader<ColourFlash.ReadData> {
 	public override string Name => "Colour Flash";
 	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
-	private static readonly TextRecogniser displayRecogniser = new(new(TextRecogniser.Fonts.OSTRICH_SANS_HEAVY, 24), 0, 128, new(128, 64),
+	private static readonly TextRecogniser displayRecogniser = new(new(TextRecogniser.Fonts.OstrichSansHeavy, 24), 0, 128, new(128, 64),
 		"RED", "YELLOW", "GREEN", "BLUE", "MAGENTA", "WHITE");
 
 	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		// Colour Flash: Try to find the display and keys.
-		return ImageUtils.TryFindEdges(image, new(32, 32, 160, 96), p => p.R < 32 && p.G < 32 && p.B < 32, out var displayRect)
-			&& ImageUtils.TryFindEdges(image, new(24, 128, 100, 100), p => HsvColor.FromColor(p) is var hsv && hsv.H is >= 30 and <= 60 && hsv.S <= 0.25f && hsv.V >= 0.75f, out var keyRect1)
-			&& ImageUtils.TryFindEdges(image, new(128, 128, 100, 100), p => HsvColor.FromColor(p) is var hsv && hsv.H is >= 30 and <= 60 && hsv.S <= 0.25f && hsv.V >= 0.75f, out var keyRect2)
+		return ImageUtils.TryFindEdges(image, new(32, 32, 160, 96), p => p is { R: < 32, G: < 32, B: < 32 }, out var displayRect)
+			&& ImageUtils.TryFindEdges(image, new(24, 128, 100, 100), p => HsvColor.FromColor(p) is { H: >= 30 and <= 60, S: <= 0.25f, V: >= 0.75f }, out var keyRect1)
+			&& ImageUtils.TryFindEdges(image, new(128, 128, 100, 100), p => HsvColor.FromColor(p) is { H: >= 30 and <= 60, S: <= 0.25f, V: >= 0.75f }, out var keyRect2)
 			? Math.Min(1, Math.Max(0, 9000 - Math.Abs(displayRect.Width * displayRect.Height - 9000)) / 6000f)
 				* Math.Min(1, Math.Max(0, 5000 - Math.Abs(keyRect1.Width * keyRect1.Height - 5000)) / 3000f)
 				* Math.Min(1, Math.Max(0, 5000 - Math.Abs(keyRect2.Width * keyRect2.Height - 5000)) / 3000f)
 			: 0;
 	}
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		var displayRect = ImageUtils.FindEdges(image, new(32, 32, 144, 96), p => ImageUtils.ColourCorrect(p, lightsState) is var p2 && p2.R < 48 && p2.G < 48 && p2.B < 48);
+		var displayRect = ImageUtils.FindEdges(image, new(32, 32, 144, 96), p => ImageUtils.ColourCorrect(p, lightsState) is { R: < 48, G: < 48, B: < 48 });
 		debugImage?.Mutate(c => c.Draw(Color.Lime, 1, displayRect));
 		displayRect.Inflate(-6, -6);
 

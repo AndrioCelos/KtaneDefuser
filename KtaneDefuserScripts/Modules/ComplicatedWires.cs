@@ -1,6 +1,4 @@
-﻿using KtaneDefuserConnector;
-using KtaneDefuserConnectorApi;
-using static KtaneDefuserConnector.Components.ComplicatedWires;
+﻿using static KtaneDefuserConnector.Components.ComplicatedWires;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("ComplicatedWires")]
@@ -13,12 +11,12 @@ internal partial class ComplicatedWires : ModuleScript<KtaneDefuserConnector.Com
 	private WireFlags? currentFlags;
 	private int highlight;
 
-	protected internal override void Started(AimlAsyncContext context) => this.readyToRead = true;
+	protected internal override void Started(AimlAsyncContext context) => readyToRead = true;
 
 	protected internal override async void ModuleSelected(AimlAsyncContext context) {
-		if (this.readyToRead) {
-			this.readyToRead = false;
-			await this.Read(context);
+		if (readyToRead) {
+			readyToRead = false;
+			await Read(context);
 		}
 	}
 
@@ -26,7 +24,7 @@ internal partial class ComplicatedWires : ModuleScript<KtaneDefuserConnector.Com
 	internal async Task Read(AimlAsyncContext context) {
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		var data = interrupt.Read(Reader);
-		this.LogWires($"[{string.Join("] [", data.Wires)}]");
+		LogWires($"[{string.Join("] [", data.Wires)}]");
 		var module = GameState.Current.SelectedModule!;
 		var script = GameState.Current.CurrentScript<ComplicatedWires>();
 		script.wires ??= (from w in data.Wires select (w, false)).ToArray();
@@ -40,23 +38,23 @@ internal partial class ComplicatedWires : ModuleScript<KtaneDefuserConnector.Com
 			var toCut = new List<int>();
 			WireFlags? firstUnknown = null;
 			var allUnknownAreSame = true;
-			for (var i = 0; i < this.wires!.Length; i++) {
-				if (this.wires[i].isCut) continue;
-				var cut = shouldCut[(int) this.wires[i].flags];
+			for (var i = 0; i < wires!.Length; i++) {
+				if (wires[i].isCut) continue;
+				var cut = shouldCut[(int) wires[i].flags];
 				if (cut == true)
 					toCut.Add(i);
 				else if (cut == null) {
-					if (firstUnknown != null && firstUnknown != this.wires[i].flags)
+					if (firstUnknown != null && firstUnknown != wires[i].flags)
 						allUnknownAreSame = false;
 					else
-						firstUnknown ??= this.wires[i].flags;
+						firstUnknown ??= wires[i].flags;
 				}
 			}
 
 			if (toCut.Count == 0 && firstUnknown != null && allUnknownAreSame) {
 				// If we don't see any wires that need to be cut, but there's only one wire we still don't know about or multiple that are identical, cut those wires.
 				shouldCut[(int) firstUnknown.Value] = true;
-				toCut.AddRange(Enumerable.Range(0, this.wires.Length).Where(i => this.wires[i].flags == firstUnknown.Value));
+				toCut.AddRange(Enumerable.Range(0, wires.Length).Where(i => wires[i].flags == firstUnknown.Value));
 			}
 			if (toCut.Count > 0) {
 				using var interrupt = await Interrupt.EnterAsync(context);
@@ -64,36 +62,36 @@ internal partial class ComplicatedWires : ModuleScript<KtaneDefuserConnector.Com
 				var buttons = new List<Button>();
 				for (var i = 0; i < toCut.Count; i++) {
 					var wireIndex = toCut[i];
-					this.LogCuttingWire(wireIndex + 1);
-					while (this.highlight < wireIndex) {
+					LogCuttingWire(wireIndex + 1);
+					while (highlight < wireIndex) {
 						buttons.Add(Button.Right);
-						this.highlight++;
+						highlight++;
 					}
-					while (this.highlight > wireIndex) {
+					while (highlight > wireIndex) {
 						buttons.Add(Button.Left);
-						this.highlight--;
+						highlight--;
 					}
 					buttons.Add(Button.A);
-					this.wires[wireIndex].isCut = true;
+					wires[wireIndex].isCut = true;
 					if ((fromUserInput && i == 0) || i + 1 >= toCut.Count) {
 						// Check whether this was a strike or solve. If in response to the user saying to cut a wire, check after the first wire. Otherwise, only check after all wires for speed.
 						var result = await interrupt.SubmitAsync(buttons);
 						buttons.Clear();
 						if (result == ModuleLightState.Strike) {
-							shouldCut[(int) this.wires[wireIndex].flags] = false;
+							shouldCut[(int) wires[wireIndex].flags] = false;
 							break;
 						} else if (result == ModuleLightState.Solved)
 							return;
 					}
 				}
 			} else if (firstUnknown != null) {
-				this.currentFlags = firstUnknown.Value;
+				currentFlags = firstUnknown.Value;
 				context.Reply(firstUnknown == 0 ? "plain white" : $"{(firstUnknown.Value.HasFlag(WireFlags.Red) ? "red " : "")}{(firstUnknown.Value.HasFlag(WireFlags.Blue) ? "blue " : "")}{(firstUnknown.Value.HasFlag(WireFlags.Star) ? "star " : "")}{(firstUnknown.Value.HasFlag(WireFlags.Light) ? "light " : "")}.");
 				context.Reply("<reply>cut</reply><reply>don't cut</reply>");
 				return;
 			} else {
 				// Uh oh, we thought we knew all remaining wires shouldn't be cut, but the module isn't solved.
-				foreach (var (flags, isCut) in this.wires) {
+				foreach (var (flags, isCut) in wires) {
 					if (!isCut)
 						shouldCut[(int) flags] = null;
 				}

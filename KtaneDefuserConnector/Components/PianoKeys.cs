@@ -26,26 +26,26 @@ public class PianoKeys : ComponentReader<PianoKeys.ReadData> {
 	private static Image<Rgba32> LoadSampleImage(byte[] bytes) => Image.Load<Rgba32>(bytes);
 
 	protected internal override float IsModulePresent(Image<Rgba32> image) {
-		return ImageUtils.TryFindEdges(image, new(24, 24, 160, 64), p => HsvColor.FromColor(p) is var hsv && hsv.H is >= 40 and <= 60 && hsv.S is >= 0.2f and <= 0.3f && hsv.V >= 0.8f, out var noteRect)
+		return ImageUtils.TryFindEdges(image, new(24, 24, 160, 64), p => HsvColor.FromColor(p) is { H: >= 40 and <= 60, S: >= 0.2f and <= 0.3f, V: >= 0.8f }, out var noteRect)
 			? Math.Min(1, Math.Max(0, 7500 - Math.Abs(noteRect.Width * noteRect.Height - 7500)) / 4500f)
 			: 0;
 	}
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		var labelPoints = ImageUtils.FindCorners(image, new(0, 0, 200, 100), lightsState switch {
-			LightsState.Buzz => c => HsvColor.FromColor(c) is var hsv && hsv.H is >= 45 and <= 60 && hsv.S is >= 0.2f and <= 0.4f && hsv.V >= 0.1f,
-			LightsState.Off => c => c.R == 7 && c.G == 7 && c.B == 7,
-			LightsState.Emergency => c => HsvColor.FromColor(c) is var hsv && hsv.H is >= 15 and <= 40 && hsv.S is >= 0.2f and <= 0.4f && hsv.V >= 0.75f,
-			_ => c => HsvColor.FromColor(c) is var hsv && hsv.H is >= 45 and <= 60 && hsv.S is >= 0.2f and <= 0.4f && hsv.V >= 0.75f
+			LightsState.Buzz => c => HsvColor.FromColor(c) is { H: >= 45 and <= 60, S: >= 0.2f and <= 0.4f, V: >= 0.1f },
+			LightsState.Off => c => c is { R: 7, G: 7, B: 7 },
+			LightsState.Emergency => c => HsvColor.FromColor(c) is { H: >= 15 and <= 40, S: >= 0.2f and <= 0.4f, V: >= 0.75f },
+			_ => c => HsvColor.FromColor(c) is { H: >= 45 and <= 60, S: >= 0.2f and <= 0.4f, V: >= 0.75f }
 		}, 12);
 
 		// Find the text bounding box.
 		Predicate<Rgba32> textPredicate = lightsState switch
 		{
-			LightsState.Buzz => c => HsvColor.FromColor(c) is var hsv && hsv.V < 0.1f,
+			LightsState.Buzz => c => HsvColor.FromColor(c) is { V: < 0.1f },
 			LightsState.Off => c => c.R < 6,
-			LightsState.Emergency => c => HsvColor.FromColor(c) is var hsv && hsv.V > 0.8f,
-			_ => c => HsvColor.FromColor(c) is var hsv && hsv.V < 0.8f
+			LightsState.Emergency => c => HsvColor.FromColor(c) is { V: > 0.8f },
+			_ => c => HsvColor.FromColor(c) is { V: < 0.8f }
 		};
 		var textBB = ImageUtils.FindEdges(image, new(labelPoints.TopLeft, new(labelPoints.TopRight.X - labelPoints.TopLeft.X, labelPoints.BottomLeft.Y - labelPoints.TopLeft.Y)), textPredicate);
 		debugImage?.Mutate(c => c.Draw(Pens.Solid(Color.Cyan, 1), textBB));
@@ -80,10 +80,9 @@ public class PianoKeys : ComponentReader<PianoKeys.ReadData> {
 					var found = false;
 					var r = p.GetRowSpan(y);
 					for (var x = startX; x < endX; x++) {
-						if (textPredicate(r[x])) {
-							top = y;
-							found = true;
-						}
+						if (!textPredicate(r[x])) continue;
+						top = y;
+						found = true;
 					}
 					if (found) break;
 				}
@@ -91,25 +90,23 @@ public class PianoKeys : ComponentReader<PianoKeys.ReadData> {
 					var found = false;
 					var r = p.GetRowSpan(y);
 					for (var x = startX; x < endX; x++) {
-						if (textPredicate(r[x])) {
-							bottom = y + 1;
-							found = true;
-						}
+						if (!textPredicate(r[x])) continue;
+						bottom = y + 1;
+						found = true;
 					}
 					if (found) break;
 				}
 			});
 
-			var charImage = image.Clone(c => c.Crop(new Rectangle(startX, top, endX - startX, bottom - top)).Resize(32, 32, KnownResamplers.NearestNeighbor));
+			var charImage = image.Clone(c => c.Crop(new(startX, top, endX - startX, bottom - top)).Resize(32, 32, KnownResamplers.NearestNeighbor));
 			debugImage?.Mutate(c => c.DrawImage(charImage, new Point(32 * symbols.Count, 0), 1));
 
 			Symbol bestSymbol = 0; float bestSimilarity = 0;
 			for (var i = 0; i < referenceImages.Length; i++) {
 				var similarity = ImageUtils.CheckSimilarity(charImage, referenceImages[i]);
-				if (similarity > bestSimilarity) {
-					bestSimilarity = similarity;
-					bestSymbol = (Symbol) i;
-				}
+				if (similarity <= bestSimilarity) continue;
+				bestSimilarity = similarity;
+				bestSymbol = (Symbol) i;
 			}
 			symbols.Add(bestSymbol);
 		}
@@ -130,6 +127,6 @@ public class PianoKeys : ComponentReader<PianoKeys.ReadData> {
 	}
 
 	public record ReadData(Symbol[] Symbols) {
-		public override string ToString() => string.Join(' ', this.Symbols);
+		public override string ToString() => string.Join(' ', Symbols);
 	}
 }

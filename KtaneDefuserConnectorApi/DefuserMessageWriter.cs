@@ -7,11 +7,11 @@ public class DefuserMessageWriter(Stream baseStream, byte[] buffer) : IDisposabl
 	public Stream BaseStream { get; } = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
 
 	public void Dispose() {
-		this.BaseStream.Dispose();
+		BaseStream.Dispose();
 		GC.SuppressFinalize(this);
 	}
 
-	~DefuserMessageWriter() => this.Dispose();
+	~DefuserMessageWriter() => Dispose();
 
 	public unsafe void Write(IDefuserMessage message) {
 		lock (buffer) {
@@ -20,7 +20,7 @@ public class DefuserMessageWriter(Stream baseStream, byte[] buffer) : IDisposabl
 				var length = message.ToBuffer(buffer);
 				buffer[0] = (byte) messageType;
 				*(int*) (ptr + 1) = length;
-				this.BaseStream.Write(buffer, 0, length + 5);
+				BaseStream.Write(buffer, 0, length + 5);
 			}
 		}
 	}

@@ -1,5 +1,4 @@
-﻿using KtaneDefuserConnectorApi;
-using static KtaneDefuserConnector.Components.Semaphore;
+﻿using static KtaneDefuserConnector.Components.Semaphore;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Semaphore")]

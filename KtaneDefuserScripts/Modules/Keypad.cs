@@ -1,6 +1,4 @@
-﻿using KtaneDefuserConnector;
-using KtaneDefuserConnectorApi;
-using static KtaneDefuserConnector.Components.Keypad;
+﻿using static KtaneDefuserConnector.Components.Keypad;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Keypad")]

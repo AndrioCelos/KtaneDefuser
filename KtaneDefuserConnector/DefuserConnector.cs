@@ -47,123 +47,123 @@ public class DefuserConnector : IDisposable {
 
 	public DefuserConnector() => instance ??= this;
 
-	~DefuserConnector() => this.Dispose();
+	~DefuserConnector() => Dispose();
 
 	/// <summary>Closes the connection to the game and releases resources used by this <see cref="DefuserConnector"/>.</summary>
 	public void Dispose() {
-		this.connection?.tcpClient.Dispose();
+		connection?.tcpClient.Dispose();
 		GC.SuppressFinalize(this);
 	}
 
 	/// <summary>Starts processing callbacks to the AIML bot.</summary>
 	public void EnableCallbacks() {
-		this.CallbacksEnabled = true;
-		var thread = new Thread(this.RunCallbackThread) { IsBackground = true, Name = $"{nameof(DefuserConnector)} callback thread" };
+		CallbacksEnabled = true;
+		var thread = new Thread(RunCallbackThread) { IsBackground = true, Name = $"{nameof(DefuserConnector)} callback thread" };
 		thread.Start();
 	}
 
 	private void RunCallbackThread() {
 		while (true) {
-			var (s, user) = this.aimlNotificationQueue.Take();
+			var (s, user) = aimlNotificationQueue.Take();
 			user.Postback(s);
 		}
 	}
 
 	/// <summary>Connects to the game or initialises a simulation.</summary>
 	public async Task ConnectAsync(ILoggerFactory loggerFactory, bool simulation) {
-		if (this.IsConnected) throw new InvalidOperationException("Cannot connect while already connected.");
+		if (IsConnected) throw new InvalidOperationException("Cannot connect while already connected.");
 		if (simulation) {
 			this.simulation = new(loggerFactory);
-			this.simulation.Postback += (s, m) => this.user?.Postback(m);
+			this.simulation.Postback += (s, m) => user?.Postback(m);
 		} else {
 			var tcpClient = new TcpClient();
-			await tcpClient.ConnectAsync(new IPEndPoint(IPAddress.Loopback, PORT));
+			await tcpClient.ConnectAsync(new(IPAddress.Loopback, PORT));
 			var stream = tcpClient.GetStream();
 			var reader = new DefuserMessageReader(stream, 14745612);
-			reader.Disconnected += this.Reader_Disconnected;
-			reader.MessageReceived += this.Reader_MessageReceived;
-			this.connection = (tcpClient, reader, new(stream, new byte[1024]));
+			reader.Disconnected += Reader_Disconnected;
+			reader.MessageReceived += Reader_MessageReceived;
+			connection = (tcpClient, reader, new(stream, new byte[1024]));
 		}
-		this.IsConnected = true;
+		IsConnected = true;
 	}
 
-	private void Reader_Disconnected(object? sender, DisconnectedEventArgs e) => this.SendAimlNotification($"OOB DefuserSocketError {e.Exception?.Message ?? "nil"}");
+	private void Reader_Disconnected(object? sender, DisconnectedEventArgs e) => SendAimlNotification($"OOB DefuserSocketError {e.Exception?.Message ?? "nil"}");
 #pragma warning disable CS0618 // TODO: Obsolete message types may be removed later.
 	private void Reader_MessageReceived(object? sender, DefuserMessageEventArgs e) {
 		switch (e.Message) {
 			case LegacyEventMessage legacyEventMessage:
-				this.SendAimlNotification($"OOB DefuserSocketMessage {legacyEventMessage.Event}");
+				SendAimlNotification($"OOB DefuserSocketMessage {legacyEventMessage.Event}");
 				break;
 			case ScreenshotResponseMessage screenshotResponseMessage:
-				if (this.screenshotTaskSource is null) break;
+				if (screenshotTaskSource is null) break;
 				var image = Image.LoadPixelData<Rgba32>(screenshotResponseMessage.Data.AsSpan(8, screenshotResponseMessage.PixelDataLength), screenshotResponseMessage.Width, screenshotResponseMessage.Height);
 				image.Mutate(c => c.Flip(FlipMode.Vertical));
 #if DEBUG
 				SaveDebugImage(image, "Screenshot");
 #endif
-				this.screenshotTaskSource.SetResult(image);
+				screenshotTaskSource.SetResult(image);
 				break;
 			case CheatReadResponseMessage cheatReadResponseMessage:
-				this.readTaskSource?.SetResult(cheatReadResponseMessage.Data);
+				readTaskSource?.SetResult(cheatReadResponseMessage.Data);
 				break;
 			case CheatReadErrorMessage cheatReadErrorMessage:
-				this.readTaskSource?.SetException(new Exception($"Read failed: {cheatReadErrorMessage.Message}"));
+				readTaskSource?.SetException(new Exception($"Read failed: {cheatReadErrorMessage.Message}"));
 				break;
 			case LegacyInputCallbackMessage legacyInputCallbackMessage:
-				this.SendAimlNotification($"OOB DefuserCallback {legacyInputCallbackMessage.Token}");
+				SendAimlNotification($"OOB DefuserCallback {legacyInputCallbackMessage.Token}");
 				break;
 			case InputCallbackMessage inputCallbackMessage:
-				this.SendAimlNotification($"OOB DefuserCallback {inputCallbackMessage.Token:N}");
+				SendAimlNotification($"OOB DefuserCallback {inputCallbackMessage.Token:N}");
 				break;
 			case CheatGetModuleTypeResponseMessage cheatGetModuleTypeResponseMessage:
-				this.readTaskSource?.SetResult(cheatGetModuleTypeResponseMessage.ModuleType);
+				readTaskSource?.SetResult(cheatGetModuleTypeResponseMessage.ModuleType);
 				break;
 			case CheatGetModuleTypeErrorMessage cheatGetModuleTypeErrorMessage:
-				this.readTaskSource?.SetException(new Exception($"Read failed: {cheatGetModuleTypeErrorMessage.Message}"));
+				readTaskSource?.SetException(new Exception($"Read failed: {cheatGetModuleTypeErrorMessage.Message}"));
 				break;
-			case GameStartMessage gameStartMessage:
-				this.SendAimlNotification($"OOB GameStart");
+			case GameStartMessage:
+				SendAimlNotification("OOB GameStart");
 				break;
-			case GameEndMessage gameEndMessage:
-				this.SendAimlNotification($"OOB GameEnd");
+			case GameEndMessage:
+				SendAimlNotification("OOB GameEnd");
 				break;
 			case NewBombMessage newBombMessage:
-				this.SendAimlNotification($"OOB NewBomb {newBombMessage.NumStrikes} {newBombMessage.NumSolvableModules} {newBombMessage.NumNeedyModules} {Math.Floor(newBombMessage.Time.TotalSeconds)}");
+				SendAimlNotification($"OOB NewBomb {newBombMessage.NumStrikes} {newBombMessage.NumSolvableModules} {newBombMessage.NumNeedyModules} {Math.Floor(newBombMessage.Time.TotalSeconds)}");
 				break;
 			case StrikeMessage strikeMessage:
-				this.SendAimlNotification($"OOB Strike {strikeMessage.Slot.Bomb} {strikeMessage.Slot.Face} {strikeMessage.Slot.X} {strikeMessage.Slot.Y}");
+				SendAimlNotification($"OOB Strike {strikeMessage.Slot.Bomb} {strikeMessage.Slot.Face} {strikeMessage.Slot.X} {strikeMessage.Slot.Y}");
 				break;
 			case AlarmClockChangeMessage alarmClockChangeMessage:
-				this.SendAimlNotification($"OOB AlarmClockChange {alarmClockChangeMessage.On}");
+				SendAimlNotification($"OOB AlarmClockChange {alarmClockChangeMessage.On}");
 				break;
 			case LightsStateChangeMessage lightsStateChangeMessage:
-				this.SendAimlNotification($"OOB LightsChange {lightsStateChangeMessage.On}");
+				SendAimlNotification($"OOB LightsChange {lightsStateChangeMessage.On}");
 				break;
 			case NeedyStateChangeMessage needyStateChangeMessage:
-				this.SendAimlNotification($"OOB NeedyStateChange {needyStateChangeMessage.Slot.Bomb} {needyStateChangeMessage.Slot.Face} {needyStateChangeMessage.Slot.X} {needyStateChangeMessage.Slot.Y} {needyStateChangeMessage.State}");
+				SendAimlNotification($"OOB NeedyStateChange {needyStateChangeMessage.Slot.Bomb} {needyStateChangeMessage.Slot.Face} {needyStateChangeMessage.Slot.X} {needyStateChangeMessage.Slot.Y} {needyStateChangeMessage.State}");
 				break;
-			case BombExplodeMessage bombExplodeMessage:
-				this.SendAimlNotification($"OOB BombExplode");
+			case BombExplodeMessage:
+				SendAimlNotification("OOB BombExplode");
 				break;
 			case BombDefuseMessage bombDefuseMessage:
-				this.SendAimlNotification($"OOB BombDefuse {bombDefuseMessage.Bomb}");
+				SendAimlNotification($"OOB BombDefuse {bombDefuseMessage.Bomb}");
 				break;
 		}
 	}
 #pragma warning restore CS0618 // Type or member is obsolete
 
 	private void SendAimlNotification(string message) {
-		if (this.CallbacksEnabled)
-			this.aimlNotificationQueue.Add((message, this.user ?? throw new InvalidOperationException("No connecting user")));
+		if (CallbacksEnabled)
+			aimlNotificationQueue.Add((message, user ?? throw new InvalidOperationException("No connecting user")));
 	}
 
 	private void SendMessage(IDefuserMessage message) {
-		if (this.connection is null) throw new InvalidOperationException("Not connected.");
-		this.connection.Value.writer.Write(message);
+		if (connection is null) throw new InvalidOperationException("Not connected.");
+		connection.Value.writer.Write(message);
 	}
 
 #if DEBUG
-	internal static void SaveDebugImage(Image image, string category) {
+	private static void SaveDebugImage(Image image, string category) {
 		var file = Path.Combine(Path.GetTempPath(), "KtaneDefuserDebug", $"{category}.{DateTime.Now:yyyy-MM-dd.HH-mm-ss.ffffff}.png");
 		Directory.CreateDirectory(Path.GetDirectoryName(file)!);
 		_ = image.SaveAsPngAsync(file);
@@ -177,78 +177,78 @@ public class DefuserConnector : IDisposable {
 #endif
 
 	/// <summary>Synchronously retrieves a screenshot of the game.</summary>
-	public Image<Rgba32> TakeScreenshot() => this.TakeScreenshotAsync().Result;
+	public Image<Rgba32> TakeScreenshot() => TakeScreenshotAsync().Result;
 	/// <summary>Asynchronously retrieves a screenshot of the game.</summary>
 	public async Task<Image<Rgba32>> TakeScreenshotAsync() {
-		if (this.simulation is not null)
+		if (simulation is not null)
 			return Simulation.DummyScreenshot;
-		if (this.screenshotTaskSource is not null) throw new InvalidOperationException("Already taking a screenshot.");
+		if (screenshotTaskSource is not null) throw new InvalidOperationException("Already taking a screenshot.");
 		try {
-			this.screenshotTaskSource = new();
-			this.SendMessage(new ScreenshotCommandMessage());
-			return await this.screenshotTaskSource.Task;
+			screenshotTaskSource = new();
+			SendMessage(new ScreenshotCommandMessage());
+			return await screenshotTaskSource.Task;
 		} finally {
-			this.screenshotTaskSource = null;
+			screenshotTaskSource = null;
 		}
 	}
 
 	/// <summary>Sends the specified controller inputs to the game.</summary>
 	[Obsolete($"String input commands are being replaced with {nameof(IInputAction)}.")]
 	public void SendInputs(string inputs) {
-		if (this.simulation is not null)
+		if (simulation is not null)
 			throw new NotImplementedException();
 		else {
 			try {
-				this.SendMessage(new LegacyCommandMessage($"input {inputs}"));
+				SendMessage(new LegacyCommandMessage($"input {inputs}"));
 			} catch (Exception ex) {
-				this.user?.Postback($"OOB DefuserSocketError {ex.Message}");
+				user?.Postback($"OOB DefuserSocketError {ex.Message}");
 			}
 		}
 	}
 	/// <summary>Sends the specified controller inputs to the game.</summary>
-	public void SendInputs(params IInputAction[] actions) => this.SendInputs((IEnumerable<IInputAction>) actions);
+	public void SendInputs(params IInputAction[] actions) => SendInputs((IEnumerable<IInputAction>) actions);
 	/// <summary>Sends the specified controller inputs to the game.</summary>
 	public void SendInputs(IEnumerable<IInputAction> actions) {
-		if (this.simulation is not null)
-			this.simulation.SendInputs(actions);
+		if (simulation is not null)
+			simulation.SendInputs(actions);
 		else
-			this.SendMessage(new InputCommandMessage(actions));
+			SendMessage(new InputCommandMessage(actions));
 	}
 
 	/// <summary>Cancels any queued input actions.</summary>
 	public void CancelInputs() {
-		if (this.simulation is not null)
-			this.simulation.CancelInputs();
+		if (simulation is not null)
+			simulation.CancelInputs();
 		else
-			this.SendMessage(new CancelCommandMessage());
+			SendMessage(new CancelCommandMessage());
 	}
 
 	/// <summary>If in a simulation, solves the current module.</summary>
 	public void CheatSolve() {
-		if (this.simulation is null)
+		if (simulation is null)
 			throw new InvalidOperationException("No simulation active");
-		this.simulation.Solve();
+		simulation.Solve();
 	}
 
 	/// <summary>If in a simulation, triggers a strike on the current module.</summary>
 	public void CheatStrike() {
-		if (this.simulation is null)
+		if (simulation is null)
 			throw new InvalidOperationException("No simulation active");
-		this.simulation.Strike();
+		simulation.Strike();
 	}
 
 	/// <summary>If in a simulation, triggers the alarm clock.</summary>
 	public void CheatTriggerAlarmClock() {
-		if (this.simulation is null)
+		if (simulation is null)
 			throw new InvalidOperationException("No simulation active");
-		this.simulation.SetAlarmClock(true);
+		simulation.SetAlarmClock(true);
 	}
 
-	private static bool IsBombBacking(HsvColor hsv) => hsv.H is >= 180 and < 225 && hsv.S < 0.35f && hsv.V >= 0.35f;
+	private static bool IsBombBacking(HsvColor hsv) => hsv is { H: >= 180 and < 225, S: < 0.35f, V: >= 0.35f };
 
 	/// <summary>Returns the distance by which side widget polygons should be adjusted, in pixels to the right.</summary>
 	public int GetSideWidgetAdjustment(Image<Rgba32> screenshotBitmap) {
-		if (this.simulation is not null)
+		if (simulation is not null)
 			return 0;
 		int left;
 		for (left = 60; left < screenshotBitmap.Width - 60; left++) {
@@ -264,21 +264,19 @@ public class DefuserConnector : IDisposable {
 	}
 
 	/// <summary>Returns the lights state in the specified screenshot.</summary>
-	public LightsState GetLightsState(Image<Rgba32> screenshot) => this.simulation is not null ? LightsState.On : ImageUtils.GetLightsState(screenshot);
+	public LightsState GetLightsState(Image<Rgba32> screenshot) => simulation is not null ? LightsState.On : ImageUtils.GetLightsState(screenshot);
 
 	/// <summary>Returns the light state of the module in the specified polygon.</summary>
 	public ModuleLightState GetModuleLightState(Image<Rgba32> screenshotBitmap, Quadrilateral quadrilateral)
-		=> this.simulation is not null
-			? this.simulation.GetLightState(quadrilateral)
-			: ImageUtils.GetLightState(screenshotBitmap, quadrilateral);
+		=> simulation?.GetLightState(quadrilateral) ?? ImageUtils.GetLightState(screenshotBitmap, quadrilateral);
 
 	/// <summary>Returns the <see cref="ComponentReader"/> singleton instance of the specified type.</summary>
 	public static T GetComponentReader<T>() where T : ComponentReader => (T) componentReaders[typeof(T)];
 
 	/// <summary>Identifies the component in the specified polygon and returns the corresponding <see cref="ComponentReader"/> instance, or <see langword="null"/> if it is a blank component.</summary>
 	public ComponentReader? GetComponentReader(Image<Rgba32> screenshotBitmap, Quadrilateral quadrilateral) {
-		if (this.simulation is not null)
-			return this.simulation.GetComponentReader(quadrilateral);
+		if (simulation is not null)
+			return simulation.GetComponentReader(quadrilateral);
 
 		var bitmap = ImageUtils.PerspectiveUndistort(screenshotBitmap, quadrilateral, InterpolationMode.NearestNeighbour);
 
@@ -299,19 +297,19 @@ public class DefuserConnector : IDisposable {
 
 	/// <summary>Retrieves the type of the component in the specified polygon and returns the corresponding <see cref="ComponentReader"/> instance, or <see langword="null"/> if it is a blank component or the timer.</summary>
 	public ComponentReader? CheatGetComponentReader(Slot slot) {
-		if (this.simulation is not null)
-			return this.simulation.GetComponentReader(slot);
+		if (simulation is not null)
+			return simulation.GetComponentReader(slot);
 
-		this.readTaskSource = new();
-		this.SendMessage(new CheatGetModuleTypeCommandMessage(slot));
-		var name = this.readTaskSource.Task.Result;
-		return !string.IsNullOrEmpty(name) && typeof(ComponentReader).Assembly.GetType($"{nameof(KtaneDefuserConnector)}.{nameof(Components)}.{name}", false, true) is Type t ? componentReaders[t] : null;
+		readTaskSource = new();
+		SendMessage(new CheatGetModuleTypeCommandMessage(slot));
+		var name = readTaskSource.Task.Result;
+		return !string.IsNullOrEmpty(name) && typeof(ComponentReader).Assembly.GetType($"{nameof(KtaneDefuserConnector)}.{nameof(Components)}.{name}", false, true) is { } t ? componentReaders[t] : null;
 	}
 
 	/// <summary>Identifies the widget in the specified polygon and returns the corresponding <see cref="WidgetReader"/> instance, or <see langword="null"/> if no widget is found there.</summary>
 	public WidgetReader? GetWidgetReader(Image<Rgba32> screenshotBitmap, Quadrilateral quadrilateral) {
-		if (this.simulation is not null)
-			return this.simulation.GetWidgetReader(quadrilateral);
+		if (simulation is not null)
+			return simulation.GetWidgetReader(quadrilateral);
 
 		var bitmap = ImageUtils.PerspectiveUndistort(screenshotBitmap, quadrilateral, InterpolationMode.NearestNeighbour);
 		var pixelCounts = WidgetReader.GetPixelCounts(bitmap, 0);
@@ -326,8 +324,8 @@ public class DefuserConnector : IDisposable {
 
 	/// <summary>Reads component data from the module in the specified polygon using the specified <see cref="ComponentReader"/>.</summary>
 	public T ReadComponent<T>(Image<Rgba32> screenshot, LightsState lightsState, ComponentReader<T> reader, Quadrilateral quadrilateral) where T : notnull {
-		if (this.simulation is not null)
-			return this.simulation.ReadComponent<T>(quadrilateral);
+		if (simulation is not null)
+			return simulation.ReadComponent<T>(quadrilateral);
 		var image = ImageUtils.PerspectiveUndistort(screenshot, quadrilateral, InterpolationMode.NearestNeighbour);
 #if DEBUG
 		SaveDebugImage(image, reader.Name);
@@ -338,8 +336,8 @@ public class DefuserConnector : IDisposable {
 
 	/// <summary>Reads widget data from the widget in the specified polygon using the specified <see cref="WidgetReader"/>.</summary>
 	public T ReadWidget<T>(Image<Rgba32> screenshot, LightsState lightsState, WidgetReader<T> reader, Quadrilateral quadrilateral) where T : notnull {
-		if (this.simulation is not null)
-			return this.simulation.ReadWidget<T>(quadrilateral);
+		if (simulation is not null)
+			return simulation.ReadWidget<T>(quadrilateral);
 		var image = ImageUtils.PerspectiveUndistort(screenshot, quadrilateral, InterpolationMode.NearestNeighbour);
 #if DEBUG
 		SaveDebugImage(image, reader.Name);
@@ -348,28 +346,29 @@ public class DefuserConnector : IDisposable {
 		return reader.Process(image, lightsState, ref debugImage);
 	}
 
-	/// <summary>Retrieves the value of an internal field in the module in the specified slot.</summary>
+	/// <summary>Retrieves the value of an internal field in the component in the specified slot.</summary>
+	/// <param name="slot">The position of the component slot to read.</param>
 	/// <param name="members">
 	/// A list of chained specifiers indicating what to read.
-	/// May be a field or property name, an <see cref="IEnumerable{T}"/> index in square brackets, or a component type name in braces.
+	/// This may be a field or property name, an <see cref="IEnumerable{T}"/> index in square brackets, or a component type name in braces.
 	/// If the component type name is prefixed with a <c>*</c>, it instead reads a collection of that type of component in the current game object and its descendants.
 	/// </param>
 	public string? CheatRead(Slot slot, params string[] members) {
-		if (this.simulation is not null)
+		if (simulation is not null)
 			throw new NotImplementedException();
 
-		this.readTaskSource = new();
-		this.SendMessage(new CheatReadCommandMessage(slot, members));
-		return this.readTaskSource.Task.Result;
+		readTaskSource = new();
+		SendMessage(new CheatReadCommandMessage(slot, members));
+		return readTaskSource.Task.Result;
 	}
 
 	[Obsolete($"This method is being replaced with {nameof(ReadComponent)} and {nameof(ReadWidget)}.")]
 	internal string? Read(string readerName, Image<Rgba32> screenshot, Quadrilateral quadrilateral) {
-		if (this.simulation is not null)
-			return typeof(ComponentReader).Assembly.GetType($"{nameof(KtaneDefuserConnector)}.{nameof(Components)}.{readerName}", false, true) is Type t
-				? this.simulation.ReadModule(t.Name, quadrilateral)
-				: typeof(WidgetReader).Assembly.GetType($"{nameof(KtaneDefuserConnector)}.{nameof(Widgets)}.{readerName}", false, true) is Type t2
-				? this.simulation.ReadWidget(t2.Name, quadrilateral)
+		if (simulation is not null)
+			return typeof(ComponentReader).Assembly.GetType($"{nameof(KtaneDefuserConnector)}.{nameof(Components)}.{readerName}", false, true) is { } t
+				? simulation.ReadModule(t.Name, quadrilateral)
+				: typeof(WidgetReader).Assembly.GetType($"{nameof(KtaneDefuserConnector)}.{nameof(Widgets)}.{readerName}", false, true) is { } t2
+				? simulation.ReadWidget(t2.Name, quadrilateral)
 				: throw new ArgumentException($"No such command, module or widget is known: {readerName}");
 
 		var lightsState = ImageUtils.GetLightsState(screenshot);
@@ -381,11 +380,11 @@ public class DefuserConnector : IDisposable {
 
 		var type = typeof(ComponentReader).Assembly.GetType($"{nameof(KtaneDefuserConnector)}.{nameof(Components)}.{readerName}");
 		if (type is not null)
-			return componentReaders[type].ProcessNonGeneric(image, lightsState, ref debugImage)?.ToString();
+			return componentReaders[type].ProcessNonGeneric(image, lightsState, ref debugImage).ToString();
 
 		type = typeof(WidgetReader).Assembly.GetType($"{nameof(KtaneDefuserConnector)}.{nameof(Widgets)}.{readerName}");
 		return type is not null
-			? widgetReaders[type].ProcessNonGeneric(image, lightsState, ref debugImage)?.ToString()
+			? widgetReaders[type].ProcessNonGeneric(image, lightsState, ref debugImage).ToString()
 			: throw new ArgumentException($"No such command, component or widget is known: {readerName}");
 	}
 }

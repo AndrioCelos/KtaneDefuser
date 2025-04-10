@@ -21,23 +21,23 @@ public class Semaphore : ComponentReader<Semaphore.ReadData> {
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0042:Deconstruct variable declaration")]
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		if (!TryGetDisplayPoints(image, LightsState.On, out var points)) throw new ArgumentException("Couldn't find the display", nameof(image));
-		if (debugImage is not null) ImageUtils.DebugDrawPoints(debugImage, points);
+		debugImage?.DebugDrawPoints(points);
 
 		var displayBitmap = ImageUtils.PerspectiveUndistort(image, points, InterpolationMode.NearestNeighbour, new(180, 142));
 		debugImage?.Mutate(c => c.DrawImage(displayBitmap, 1));
 
 		Predicate<Rgba32> isWhite = lightsState switch {
-			LightsState.Buzz => c => c.R >= 32 && c.B >= 32,
-			LightsState.Off => c => c.R >= 7 && c.B >= 7,
-			LightsState.Emergency => c => c.R >= 160 && c.B >= 160,
+			LightsState.Buzz => c => c is { R: >= 32, B: >= 32 },
+			LightsState.Off => c => c is { R: >= 7, B: >= 7 },
+			LightsState.Emergency => c => c is { R: >= 160, B: >= 160 },
 			_ => c => c.G >= 224
 		};
 
 		Predicate<Rgba32> isBlue = lightsState switch {
-			LightsState.Buzz => c => c.R < 20 && c.G is >= 20 and < 30 && c.B >= 30,
-			LightsState.Off => c => c.R < 2 && c.B >= 8,
-			LightsState.Emergency => c => c.R < 16 && c.B >= 160,
-			_ => c => c.R < 64 && c.B >= 192
+			LightsState.Buzz => c => c is { R: < 20, G: >= 20 and < 30, B: >= 30 },
+			LightsState.Off => c => c is { R: < 2, B: >= 8 },
+			LightsState.Emergency => c => c is { R: < 16, B: >= 160 },
+			_ => c => c is { R: < 64, B: >= 192 }
 		};
 
 		// Find the white and blue triangles that are parts of a flag.
@@ -135,25 +135,23 @@ public class Semaphore : ComponentReader<Semaphore.ReadData> {
 			if (edge < 2) {
 				var x2 = edge == 0 ? rectangle.Left : rectangle.Right;
 				for (var y2 = rectangle.Top; y2 < rectangle.Bottom; y2++) {
-					if (predicate(pixelAccessor.GetRowSpan(y2)[x2])) {
-						found = true;
-						break;
-					}
+					if (!predicate(pixelAccessor.GetRowSpan(y2)[x2])) continue;
+					found = true;
+					break;
 				}
 				if (found) {
 					if (edge == 0) rectangle.X--;
 					rectangle.Width++;
 				}
 			} else {
-				var r = pixelAccessor.GetRowSpan(edge == 0 ? rectangle.Top : rectangle.Bottom);
+				var r = pixelAccessor.GetRowSpan(edge == 2 ? rectangle.Top : rectangle.Bottom);
 				for (var x2 = rectangle.Left; x2 < rectangle.Right; x2++) {
-					if (predicate(r[x2])) {
-						found = true;
-						break;
-					}
+					if (!predicate(r[x2])) continue;
+					found = true;
+					break;
 				}
 				if (found) {
-					if (edge == 0) rectangle.Y--;
+					if (edge == 2) rectangle.Y--;
 					rectangle.Height++;
 				}
 			}
@@ -172,23 +170,22 @@ public class Semaphore : ComponentReader<Semaphore.ReadData> {
 		for (var y2 = rectangle.Top; y2 < rectangle.Bottom; y2++) {
 			var r = pixelAccessor.GetRowSpan(y2);
 			for (var x2 = rectangle.Left; x2 < rectangle.Right; x2++) {
-				if (predicate(r[x2])) {
-					sx += x2;
-					sy += y2;
-					count++;
-				}
+				if (!predicate(r[x2])) continue;
+				sx += x2;
+				sy += y2;
+				count++;
 			}
 		}
 
-		return (new(sx / count, sy / count), rectangle);
+		return count > 0 ? (new(sx / count, sy / count), rectangle) : (new(0, 0), rectangle);
 	}
 
 	private static bool TryGetDisplayPoints(Image<Rgba32> image, LightsState lightsState, out Quadrilateral points)
 		=> ImageUtils.TryFindCorners(image, new(12, 48, 200, 180), lightsState switch {
-			LightsState.Buzz => c => HsvColor.FromColor(c) is var hsv && hsv.S < 0.25f && hsv.V < 0.05f,
-			LightsState.Off => c => c.R < 2 && c.G < 2 && c.B < 2,
-			LightsState.Emergency => c => HsvColor.FromColor(c) is var hsv && hsv.H < 15 && hsv.S < 0.6f && hsv.V < 0.2f,
-			_ => c => HsvColor.FromColor(c) is var hsv && hsv.V < 0.15f
+			LightsState.Buzz => c => HsvColor.FromColor(c) is { S: < 0.25f, V: < 0.05f },
+			LightsState.Off => c => c is { R: < 2, G: < 2, B: < 2 },
+			LightsState.Emergency => c => HsvColor.FromColor(c) is { H: < 15, S: < 0.6f, V: < 0.2f },
+			_ => c => HsvColor.FromColor(c) is { V: < 0.15f }
 		}, 12, out points);
 
 	public enum Direction {

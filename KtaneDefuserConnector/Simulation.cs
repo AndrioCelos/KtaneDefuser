@@ -28,17 +28,17 @@ internal partial class Simulation {
 
 	internal static Image<Rgba32> DummyScreenshot { get; } = new(1, 1);
 
-	private ComponentFace SelectedFace => this.moduleFaces[this.selectedFaceNum];
+	private ComponentFace SelectedFace => moduleFaces[selectedFaceNum];
 
 	internal event EventHandler<string>? Postback;
 
 	public Simulation(ILoggerFactory loggerFactory) {
 		this.loggerFactory = loggerFactory;
-		this.logger = loggerFactory.CreateLogger<Simulation>();
-		this.queueTimer.Elapsed += this.QueueTimer_Elapsed;
-		this.rxTimer.Elapsed += this.RXTimer_Elapsed;
+		logger = loggerFactory.CreateLogger<Simulation>();
+		queueTimer.Elapsed += QueueTimer_Elapsed;
+		rxTimer.Elapsed += RXTimer_Elapsed;
 
-		this.moduleFaces[0] = new(new BombComponent?[,] {
+		moduleFaces[0] = new(new BombComponent?[,] {
 			{
 				TimerComponent.Instance,
 				new Modules.Wires(this, 0, [Components.Wires.Colour.Black, Components.Wires.Colour.White, Components.Wires.Colour.Blue]),
@@ -50,7 +50,7 @@ internal partial class Simulation {
 				new Modules.ComplicatedWires(this, [Components.ComplicatedWires.WireFlags.None, Components.ComplicatedWires.WireFlags.Red, Components.ComplicatedWires.WireFlags.Blue, Components.ComplicatedWires.WireFlags.Light, Components.ComplicatedWires.WireFlags.Star])
 			}
 		});
-		this.moduleFaces[1] = new(new BombComponent?[,] {
+		moduleFaces[1] = new(new BombComponent?[,] {
 			{
 				new Modules.Maze(this, new(0, 0), new(6, 6), new(0, 1), new(5, 2)),
 				new Modules.Memory(this),
@@ -62,40 +62,41 @@ internal partial class Simulation {
 				new Modules.WireSequence(this)
 			}
 		});
-		this.widgetFaces[0] = new(new[] { Widget.Create(new Widgets.SerialNumber(), "AB3DE6"), null, null, null });
-		this.widgetFaces[1] = new(new[] { Widget.Create(new Widgets.Indicator(), new(false, "BOB")), Widget.Create(new Widgets.Indicator(), new(true, "FRQ")), null, null });
-		this.widgetFaces[2] = new(new[] { Widget.Create(new Widgets.BatteryHolder(), 2), null, null, null, null, null });
-		this.widgetFaces[3] = new(new[] { Widget.Create(new Widgets.PortPlate(), new Widgets.PortPlate.Ports(Widgets.PortPlate.PortType.Parallel | Widgets.PortPlate.PortType.Serial)), Widget.Create(new Widgets.PortPlate(), new Widgets.PortPlate.Ports(0)), null, null, null, null });
+		widgetFaces[0] = new([Widget.Create(new Widgets.SerialNumber(), "AB3DE6"), null, null, null]);
+		widgetFaces[1] = new([Widget.Create(new Widgets.Indicator(), new(false, "BOB")), Widget.Create(new Widgets.Indicator(), new(true, "FRQ")), null, null
+		]);
+		widgetFaces[2] = new([Widget.Create(new Widgets.BatteryHolder(), 2), null, null, null, null, null]);
+		widgetFaces[3] = new([Widget.Create(new Widgets.PortPlate(), new(Widgets.PortPlate.PortType.Parallel | Widgets.PortPlate.PortType.Serial)), Widget.Create(new Widgets.PortPlate(), new(0)), null, null, null, null]);
 		LogInitialised();
 
-		for (var i = 0; i < this.moduleFaces.Length; i++) {
-			for (var y = 0; y < this.moduleFaces[i].Slots.GetLength(0); y++) {
-				for (var x = 0; x < this.moduleFaces[i].Slots.GetLength(1); x++) {
-					if (this.moduleFaces[i].Slots[y, x] is BombComponent component)
-						component.PostbackSent += (s, m) => this.Postback?.Invoke(this, m);
-					if (this.moduleFaces[i].Slots[y, x] is Module module) {
-						var slot = new Slot(0, i, x, y);
-						module.Strike += (_, _) => this.Postback?.Invoke(this, $"OOB Strike {slot.Bomb} {slot.Face} {slot.X} {slot.Y}");
-						module.InitialiseHighlight();
-						if (module is NeedyModule needyModule)
-							needyModule.Initialise(i, x, y);
-					}
+		for (var i = 0; i < moduleFaces.Length; i++) {
+			for (var y = 0; y < moduleFaces[i].Slots.GetLength(0); y++) {
+				for (var x = 0; x < moduleFaces[i].Slots.GetLength(1); x++) {
+					if (moduleFaces[i].Slots[y, x] is not { } component) continue;
+					component.PostbackSent += (_, m) => Postback?.Invoke(this, m);
+					if (component is not Module module) continue;
+					var slot = new Slot(0, i, x, y);
+					module.Strike += (_, _)
+						=> Postback?.Invoke(this, $"OOB Strike {slot.Bomb} {slot.Face} {slot.X} {slot.Y}");
+					module.InitialiseHighlight();
+					if (module is NeedyModule needyModule)
+						needyModule.Initialise(i, x, y);
 				}
 			}
 		}
 	}
 
 	private void RXTimer_Elapsed(object? sender, ElapsedEventArgs e) {
-		if (this.rxBetweenFaces)
-			this.rxBetweenFaces = false;
+		if (rxBetweenFaces)
+			rxBetweenFaces = false;
 		else {
-			this.rxBetweenFaces = true;
-			this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
-			var faceNum = ((int) this.currentFace + 1) / 2 % 2;
-			if (faceNum != this.selectedFaceNum) {
-				this.selectedFaceNum = faceNum;
-				if (this.focusState == FocusStates.Module) {
-					this.focusState = FocusStates.Bomb;
+			rxBetweenFaces = true;
+			currentFace = (BombFaces) (((int) currentFace + 1) % 4);
+			var faceNum = ((int) currentFace + 1) / 2 % 2;
+			if (faceNum != selectedFaceNum) {
+				selectedFaceNum = faceNum;
+				if (focusState == FocusStates.Module) {
+					focusState = FocusStates.Bomb;
 					LogModuleDeselected();
 				}
 			}
@@ -103,61 +104,61 @@ internal partial class Simulation {
 		}
 	}
 
-	private void QueueTimer_Elapsed(object? sender, ElapsedEventArgs e) => this.PopInputQueue();
+	private void QueueTimer_Elapsed(object? sender, ElapsedEventArgs e) => PopInputQueue();
 
 	private void PopInputQueue() {
-		if (!this.actionQueue.TryDequeue(out var action)) {
-			this.queueTimer.Stop();
+		if (!actionQueue.TryDequeue(out var action)) {
+			queueTimer.Stop();
 			return;
 		}
 		switch (action) {
 			case CallbackAction callbackAction:
-				this.Postback?.Invoke(this, $"OOB DefuserCallback {callbackAction.Token:N}");
+				Postback?.Invoke(this, $"OOB DefuserCallback {callbackAction.Token:N}");
 				break;
 			case AxisAction axisAction:
 				switch (axisAction.Axis) {
 					case Axis.RightStickX:
 						if (axisAction.Value > 0)
-							this.rxTimer.Start();
+							rxTimer.Start();
 						else
-							this.rxTimer.Stop();
+							rxTimer.Stop();
 						break;
 					case Axis.RightStickY:
-						this.ry = axisAction.Value;
+						ry = axisAction.Value;
 						break;
 				}
 				break;
 			case ButtonAction buttonAction:
 				switch (buttonAction.Button) {
 					case Button.A:
-						switch (this.focusState) {
+						switch (focusState) {
 							case FocusStates.Room:
 								if (buttonAction.Action != ButtonActionType.Press) break;
-								this.focusState = this.roomX == -1 ? FocusStates.AlarmClock : FocusStates.Bomb;
-								LogFocusStateChanged(this.focusState);
+								focusState = roomX == -1 ? FocusStates.AlarmClock : FocusStates.Bomb;
+								LogFocusStateChanged(focusState);
 								break;
 							case FocusStates.AlarmClock:
 								if (buttonAction.Action != ButtonActionType.Press) break;
-								this.SetAlarmClock(!this.isAlarmClockOn);
+								SetAlarmClock(!isAlarmClockOn);
 								break;
 							case FocusStates.Bomb:
 								if (buttonAction.Action != ButtonActionType.Press) break;
-								if ((int) this.currentFace % 2 != 0) {
-									this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
-									this.rxBetweenFaces = false;
-									LogBombAligned(this.currentFace);
+								if ((int) currentFace % 2 != 0) {
+									currentFace = (BombFaces) (((int) currentFace + 1) % 4);
+									rxBetweenFaces = false;
+									LogBombAligned(currentFace);
 								}
-								var component = this.SelectedFace.SelectedComponent;
+								var component = SelectedFace.SelectedComponent;
 								if (component == null)
 									LogNoModuleHighlighted();
 								else if (component is Module module1) {
-									this.focusState = FocusStates.Module;
-									LogModuleSelected(component.Reader.Name, module1.ID, this.SelectedFace.X + 1, this.SelectedFace.Y + 1);
+									focusState = FocusStates.Module;
+									LogModuleSelected(component.Reader.Name, module1.ID, SelectedFace.X + 1, SelectedFace.Y + 1);
 								} else
 									LogUnselectableComponent(component.Reader.Name);
 								break;
 							case FocusStates.Module:
-								if (this.SelectedFace.SelectedComponent is Module module2) {
+								if (SelectedFace.SelectedComponent is Module module2) {
 									switch (buttonAction.Action) {
 										case ButtonActionType.Hold:
 											module2.Interact();
@@ -175,81 +176,81 @@ internal partial class Simulation {
 						}
 						break;
 					case Button.B:
-						switch (this.focusState) {
+						switch (focusState) {
 							case FocusStates.AlarmClock:
 							case FocusStates.Bomb:
-								if ((int) this.currentFace % 2 != 0) {
-									this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
-									this.rxBetweenFaces = false;
-									LogBombAligned(this.currentFace);
+								if ((int) currentFace % 2 != 0) {
+									currentFace = (BombFaces) (((int) currentFace + 1) % 4);
+									rxBetweenFaces = false;
+									LogBombAligned(currentFace);
 								}
-								this.focusState = FocusStates.Room;
-								if ((int) this.currentFace % 2 != 0) {
-									this.currentFace = (BombFaces) (((int) this.currentFace + 1) % 4);
-									this.rxBetweenFaces = false;
-									LogBombAligned(this.currentFace);
+								focusState = FocusStates.Room;
+								if ((int) currentFace % 2 != 0) {
+									currentFace = (BombFaces) (((int) currentFace + 1) % 4);
+									rxBetweenFaces = false;
+									LogBombAligned(currentFace);
 								}
-								LogFocusStateChanged(this.focusState);
+								LogFocusStateChanged(focusState);
 								break;
 							case FocusStates.Module:
-								this.focusState = FocusStates.Bomb;
-								LogFocusStateChanged(this.focusState);
+								focusState = FocusStates.Bomb;
+								LogFocusStateChanged(focusState);
 								break;
 						}
 						break;
 					case Button.Left:
-						switch (this.focusState) {
+						switch (focusState) {
 							case FocusStates.Room:
-								if (this.roomX == 0) this.roomX = -1;
+								if (roomX == 0) roomX = -1;
 								break;
 							case FocusStates.Bomb:
 								do {
-									this.SelectedFace.X--;
-								} while (this.SelectedFace.SelectedComponent is not Module);
+									SelectedFace.X--;
+								} while (SelectedFace.SelectedComponent is not Module);
 								break;
 							case FocusStates.Module:
-								if (this.SelectedFace.SelectedComponent is Module module)
-									module.MoveHighlight(DataTypes.Direction.Left);
+								if (SelectedFace.SelectedComponent is Module module)
+									module.MoveHighlight(Direction.Left);
 								break;
 						}
 						break;
 					case Button.Right:
-						switch (this.focusState) {
+						switch (focusState) {
 							case FocusStates.Room:
-								if (this.roomX == -1) this.roomX = 0;
+								if (roomX == -1) roomX = 0;
 								break;
 							case FocusStates.Bomb:
 								do {
-									this.SelectedFace.X++;
-								} while (this.SelectedFace.SelectedComponent is not Module);
+									SelectedFace.X++;
+								} while (SelectedFace.SelectedComponent is not Module);
 								break;
 							case FocusStates.Module:
-								if (this.SelectedFace.SelectedComponent is Module module)
-									module.MoveHighlight(DataTypes.Direction.Right);
+								if (SelectedFace.SelectedComponent is Module module)
+									module.MoveHighlight(Direction.Right);
 								break;
 						}
 						break;
 					case Button.Up:
-						switch (this.focusState) {
+						switch (focusState) {
 							case FocusStates.Bomb:
-								this.SelectedFace.Y--;
-								this.FindNearestModule();
+								SelectedFace.Y--;
+								FindNearestModule();
 								break;
 							case FocusStates.Module:
-								if (this.SelectedFace.SelectedComponent is Module module)
-									module.MoveHighlight(DataTypes.Direction.Up);
+								if (SelectedFace.SelectedComponent is Module module)
+									module.MoveHighlight(Direction.Up);
 								break;
 						}
 						break;
 					case Button.Down:
-						switch (this.focusState) {
+						switch (focusState) {
 							case FocusStates.Bomb:
-								this.SelectedFace.Y++;
-								this.FindNearestModule();
+								SelectedFace.Y++;
+								FindNearestModule();
 								break;
 							case FocusStates.Module:
-								if (this.SelectedFace.SelectedComponent is Module module)
-									module.MoveHighlight(DataTypes.Direction.Down);
+								if (SelectedFace.SelectedComponent is Module module)
+									module.MoveHighlight(Direction.Down);
 								break;
 						}
 						break;
@@ -260,12 +261,12 @@ internal partial class Simulation {
 
 	/// <summary>Handles moving the selection to the correct module after changing rows.</summary>
 	private void FindNearestModule() {
-		if (this.SelectedFace.SelectedComponent is Module) return;
+		if (SelectedFace.SelectedComponent is Module) return;
 		for (var d = 1; d <= 2; d++) {
 			for (var dir = 0; dir < 2; dir++) {
-				var x = dir == 0 ? this.SelectedFace.X - d : this.SelectedFace.X + d;
-				if (x >= 0 && x < this.SelectedFace.Slots.GetLength(1) && this.SelectedFace.Slots[this.SelectedFace.Y, x] is Module) {
-					this.SelectedFace.X = x;
+				var x = dir == 0 ? SelectedFace.X - d : SelectedFace.X + d;
+				if (x >= 0 && x < SelectedFace.Slots.GetLength(1) && SelectedFace.Slots[SelectedFace.Y, x] is Module) {
+					SelectedFace.X = x;
 					return;
 				}
 			}
@@ -275,27 +276,27 @@ internal partial class Simulation {
 	/// <summary>Simulates the specified controller input actions.</summary>
 	public void SendInputs(IEnumerable<IInputAction> actions) {
 		foreach (var action in actions)
-			this.actionQueue.Enqueue(action);
-		if (!this.queueTimer.Enabled) {
-			this.queueTimer.Start();
-			this.PopInputQueue();
+			actionQueue.Enqueue(action);
+		if (!queueTimer.Enabled) {
+			queueTimer.Start();
+			PopInputQueue();
 		}
 	}
 
 	/// <summary>Cancels any queued input actions.</summary>
 	public void CancelInputs() {
-		this.actionQueue.Clear();
-		this.queueTimer.Stop();
+		actionQueue.Clear();
+		queueTimer.Stop();
 	}
 
 	/// <summary>Returns the <see cref="ComponentReader"/> instance that handles the component at the specified point.</summary>
-	public ComponentReader? GetComponentReader(Quadrilateral quadrilateral) => this.GetComponent(quadrilateral)?.Reader;
+	public ComponentReader? GetComponentReader(Quadrilateral quadrilateral) => GetComponent(quadrilateral)?.Reader;
 	/// <summary>Returns the <see cref="ComponentReader"/> instance that handles the component in the specified slot.</summary>
-	public ComponentReader? GetComponentReader(Slot slot) => this.moduleFaces[slot.Face].Slots[slot.Y, slot.X]?.Reader;
+	public ComponentReader? GetComponentReader(Slot slot) => moduleFaces[slot.Face].Slots[slot.Y, slot.X]?.Reader;
 
 	/// <summary>Reads component data of the specified type from the component at the specified point.</summary>
 	public T ReadComponent<T>(Quadrilateral quadrilateral) where T : notnull {
-		var component = this.GetComponent(quadrilateral) ?? throw new ArgumentException("Attempted to read an empty component slot.");
+		var component = GetComponent(quadrilateral) ?? throw new ArgumentException("Attempted to read an empty component slot.");
 		return component is TimerComponent timerComponent
 			? timerComponent.Details is T t ? t : throw new ArgumentException("Wrong type for specified component.")
 			: component switch {
@@ -306,54 +307,54 @@ internal partial class Simulation {
 	}
 	[Obsolete("This method is being replaced with the generic overload.")]
 	public string ReadModule(string type, Quadrilateral quadrilateral) {
-		var component = this.GetComponent(quadrilateral) ?? throw new ArgumentException("Attempt to read blank component");
+		var component = GetComponent(quadrilateral) ?? throw new ArgumentException("Attempt to read blank component");
 		return component.Reader.GetType().Name.Equals(type, StringComparison.OrdinalIgnoreCase)
 			? component.DetailsString
 			: throw new ArgumentException("Wrong type for specified component.");
 	}
 
 	/// <summary>Returns the light state of the module at the specified point.</summary>
-	public ModuleLightState GetLightState(Quadrilateral quadrilateral) => this.GetComponent(quadrilateral) is Module module && module is not NeedyModule ? module.LightState : ModuleLightState.Off;
+	public ModuleLightState GetLightState(Quadrilateral quadrilateral) => GetComponent(quadrilateral) is Module module and not NeedyModule ? module.LightState : ModuleLightState.Off;
 
 	private BombComponent? GetComponent(Quadrilateral quadrilateral) {
-		switch (this.focusState) {
+		switch (focusState) {
 			case FocusStates.Bomb: {
-				var face = this.currentFace switch { BombFaces.Face1 => this.moduleFaces[0], BombFaces.Face2 => this.moduleFaces[1], _ => throw new InvalidOperationException($"Can't identify modules from face {this.currentFace}.") };
+				var face = currentFace switch { BombFaces.Face1 => moduleFaces[0], BombFaces.Face2 => moduleFaces[1], _ => throw new InvalidOperationException($"Can't identify modules from face {currentFace}.") };
 				var slotX = quadrilateral.TopLeft.X switch { 558 or 572 => 0, 848 or 852 => 1, 1127 or 1134 => 2, _ => throw new ArgumentException($"Unknown x coordinate: {quadrilateral.TopLeft.X}") };
 				var slotY = quadrilateral.TopLeft.Y switch { 291 or 292 => 0, 558 => 1, _ => throw new ArgumentException($"Unknown y coordinate: {quadrilateral.TopLeft.Y}") };
 				return face.Slots[slotY, slotX];
 			}
 			case FocusStates.Module: {
-				var face = this.SelectedFace;
+				var face = SelectedFace;
 				var slotDX = quadrilateral.TopLeft.X switch { <= 220 => -2, <= 535 => -1, <= 840 => 0, <= 1164 => 1, _ => 2 };
 				var slotDY = quadrilateral.TopLeft.Y switch { <= 102 => -1, <= 393 => 0, _ => 1 };
 				return face.Slots[face.Y + slotDY, face.X + slotDX];
 			}
 			default:
-				throw new InvalidOperationException($"Can't identify modules from state {this.focusState}.");
+				throw new InvalidOperationException($"Can't identify modules from state {focusState}.");
 		}
 	}
 
 	/// <summary>Returns the <see cref="WidgetReader"/> instance that handles the widget at the specified point.</summary>
-	public WidgetReader? GetWidgetReader(Quadrilateral quadrilateral) => this.GetWidget(quadrilateral)?.Reader;
+	public WidgetReader? GetWidgetReader(Quadrilateral quadrilateral) => GetWidget(quadrilateral)?.Reader;
 
 	/// <summary>Reads widget data of the specified type from the widget at the specified point.</summary>
 	public T ReadWidget<T>(Quadrilateral quadrilateral) where T : notnull {
-		var widget = this.GetWidget(quadrilateral) ?? throw new ArgumentException("Attempt to read blank widget.");
+		var widget = GetWidget(quadrilateral) ?? throw new ArgumentException("Attempt to read blank widget.");
 		return widget is Widget<T> widget2 ? widget2.Details : throw new ArgumentException("Wrong type for specified widget.");
 	}
 	[Obsolete("This method is being replaced with the generic overload.")]
 	public string ReadWidget(string type, Quadrilateral quadrilateral) {
-		var widget = this.GetWidget(quadrilateral) ?? throw new ArgumentException("Attempt to read blank widget.");
+		var widget = GetWidget(quadrilateral) ?? throw new ArgumentException("Attempt to read blank widget.");
 		return widget.Reader.GetType().Name.Equals(type, StringComparison.OrdinalIgnoreCase)
 			? widget.DetailsString
 			: throw new ArgumentException("Wrong type for specified widget.");
 	}
 
 	private Widget? GetWidget(Quadrilateral quadrilateral) {
-		switch (this.focusState) {
+		switch (focusState) {
 			case FocusStates.Bomb: {
-				var face = this.currentFace switch { BombFaces.Side1 => this.widgetFaces[0], BombFaces.Side2 => this.widgetFaces[1], _ => this.ry switch { < -0.5f => this.widgetFaces[2], >= 0.5f => this.widgetFaces[3], _ => throw new InvalidOperationException($"Can't identify widgets from face {this.currentFace}.") } };
+				var face = currentFace switch { BombFaces.Side1 => widgetFaces[0], BombFaces.Side2 => widgetFaces[1], _ => ry switch { < -0.5f => widgetFaces[2], >= 0.5f => widgetFaces[3], _ => throw new InvalidOperationException($"Can't identify widgets from face {currentFace}.") } };
 				int slot;
 				if (face.Slots.Length == 4) {
 					var slotX = quadrilateral.TopLeft.X switch { < 900 => 0, _ => 1 };
@@ -367,27 +368,27 @@ internal partial class Simulation {
 				return face.Slots[slot];
 			}
 			default:
-				throw new InvalidOperationException($"Can't identify widgets from state {this.focusState}.");
+				throw new InvalidOperationException($"Can't identify widgets from state {focusState}.");
 		}
 	}
 
 	/// <summary>Disarms the selected module.</summary>
 	public void Solve() {
-		if (this.SelectedFace.SelectedComponent is Module module)
+		if (SelectedFace.SelectedComponent is Module module)
 			module.Solve();
 	}
 
 	/// <summary>Triggers a strike on the selected module.</summary>
 	public void Strike() {
-		if (this.SelectedFace.SelectedComponent is Module module)
+		if (SelectedFace.SelectedComponent is Module module)
 			module.StrikeFlash();
 	}
 
 	/// <summary>Triggers the alarm clock.</summary>
 	internal void SetAlarmClock(bool value) {
 		LogAlarmClockStateChanged(value ? "on" : "off");
-		this.isAlarmClockOn = value;
-		this.Postback?.Invoke(this, $"OOB AlarmClock {value}");
+		isAlarmClockOn = value;
+		Postback?.Invoke(this, $"OOB AlarmClock {value}");
 	}
 
 	#region Log templates
@@ -440,15 +441,15 @@ internal partial class Simulation {
 		internal int Y;
 		internal readonly BombComponent?[,] Slots;
 
-		public BombComponent? SelectedComponent => this.Slots[this.Y, this.X];
+		public BombComponent? SelectedComponent => Slots[Y, X];
 
 		public ComponentFace(BombComponent?[,] slots) {
-			this.Slots = slots ?? throw new ArgumentNullException(nameof(slots));
+			Slots = slots ?? throw new ArgumentNullException(nameof(slots));
 			for (var y = 0; y < slots.GetLength(0); y++) {
 				for (var x = 0; x < slots.GetLength(1); x++) {
 					if (slots[y, x] is Module) {
-						this.X = x;
-						this.Y = y;
+						X = x;
+						Y = y;
 						return;
 					}
 				}
@@ -456,7 +457,7 @@ internal partial class Simulation {
 		}
 	}
 
-	private class WidgetFace(Simulation.Widget?[] slots) {
+	private class WidgetFace(Widget?[] slots) {
 		internal readonly Widget?[] Slots = slots ?? throw new ArgumentNullException(nameof(slots));
 	}
 
@@ -465,70 +466,68 @@ internal partial class Simulation {
 		internal abstract string DetailsString { get; }
 		public event EventHandler<string>? PostbackSent;
 
-		protected void Postback(string message) => this.PostbackSent?.Invoke(this, message);
+		protected void Postback(string message) => PostbackSent?.Invoke(this, message);
 	}
 
 	private abstract partial class Module : BombComponent {
-		protected readonly Simulation simulation;
-		protected readonly ILogger logger;
-		private readonly Timer ResetLightTimer = new(2000) { AutoReset = false };
+		protected readonly ILogger Logger;
+		private readonly Timer resetLightTimer = new(2000) { AutoReset = false };
 
-		private static int NextID;
+		private static int nextId;
 
 		internal int ID { get; }
 		public ModuleLightState LightState { get; private set; }
 
-		public int X;
-		public int Y;
+		protected int X;
+		protected int Y;
 		protected bool[,] SelectableGrid { get; }
 
 		public event EventHandler? Strike;
 
-		public Module(Simulation simulation, ComponentReader reader, int selectableWidth, int selectableHeight) : base(reader) {
-			this.simulation = simulation;
-			this.logger = simulation.loggerFactory.CreateLogger(this.GetType());
-			NextID++;
-			this.ID = NextID;
-			this.ResetLightTimer.Elapsed += this.ResetLightTimer_Elapsed;
-			this.SelectableGrid = new bool[selectableHeight, selectableWidth];
+		protected Module(Simulation simulation, ComponentReader reader, int selectableWidth, int selectableHeight) : base(reader) {
+			Logger = simulation.loggerFactory.CreateLogger(GetType());
+			nextId++;
+			ID = nextId;
+			resetLightTimer.Elapsed += ResetLightTimer_Elapsed;
+			SelectableGrid = new bool[selectableHeight, selectableWidth];
 			for (var y = 0; y < selectableHeight; y++)
 				for (var x = 0; x < selectableWidth; x++)
-					this.SelectableGrid[y, x] = true;
+					SelectableGrid[y, x] = true;
 		}
 
-		private void ResetLightTimer_Elapsed(object? sender, ElapsedEventArgs e) => this.LightState = ModuleLightState.Off;
+		private void ResetLightTimer_Elapsed(object? sender, ElapsedEventArgs e) => LightState = ModuleLightState.Off;
 
 		public void InitialiseHighlight() {
-			for (var y = 0; y < this.SelectableGrid.GetLength(0); y++) {
-				for (var x = 0; x < this.SelectableGrid.GetLength(1); x++) {
-					if (this.SelectableGrid[y, x]) {
-						this.X = x;
-						this.Y = y;
+			for (var y = 0; y < SelectableGrid.GetLength(0); y++) {
+				for (var x = 0; x < SelectableGrid.GetLength(1); x++) {
+					if (SelectableGrid[y, x]) {
+						X = x;
+						Y = y;
 						return;
 					}
 				}
 			}
 		}
 
-		public void MoveHighlight(DataTypes.Direction direction) {
+		public void MoveHighlight(Direction direction) {
 			for (var side = 0; side < 3; side++) {
 				for (var forward = 1; forward < 3; forward++) {
 					var (x1, y1, x2, y2) = direction switch {
-						DataTypes.Direction.Up => (this.X - side, this.Y - forward, this.X + side, this.Y - forward),
-						DataTypes.Direction.Right => (this.X + forward, this.Y - side, this.X + forward, this.Y + side),
-						DataTypes.Direction.Down => (this.X - side, this.Y + forward, this.X + side, this.Y + forward),
-						_ => (this.X - forward, this.Y - side, this.X - forward, this.Y + side)
+						Direction.Up => (X - side, Y - forward, X + side, Y - forward),
+						Direction.Right => (X + forward, Y - side, X + forward, Y + side),
+						Direction.Down => (X - side, Y + forward, X + side, Y + forward),
+						_ => (X - forward, Y - side, X - forward, Y + side)
 					};
-					if (x1 >= 0 && x1 < this.SelectableGrid.GetLength(1) && y1 >= 0 && y1 < this.SelectableGrid.GetLength(0)
-						&& this.SelectableGrid[y1, x1]) {
-						this.X = x1;
-						this.Y = y1;
+					if (x1 >= 0 && x1 < SelectableGrid.GetLength(1) && y1 >= 0 && y1 < SelectableGrid.GetLength(0)
+						&& SelectableGrid[y1, x1]) {
+						X = x1;
+						Y = y1;
 						return;
 					}
-					if (x2 >= 0 && x2 < this.SelectableGrid.GetLength(1) && y2 >= 0 && y2 < this.SelectableGrid.GetLength(0)
-						&& this.SelectableGrid[y2, x2]) {
-						this.X = x2;
-						this.Y = y2;
+					if (x2 >= 0 && x2 < SelectableGrid.GetLength(1) && y2 >= 0 && y2 < SelectableGrid.GetLength(0)
+						&& SelectableGrid[y2, x2]) {
+						X = x2;
+						Y = y2;
 						return;
 					}
 				}
@@ -537,23 +536,22 @@ internal partial class Simulation {
 		}
 
 		public void Solve() {
-			if (this.LightState == ModuleLightState.Solved) return;
-			LogModuleSolved(this.Reader.Name);
-			this.LightState = ModuleLightState.Solved;
-			this.ResetLightTimer.Stop();
+			if (LightState == ModuleLightState.Solved) return;
+			LogModuleSolved(Reader.Name);
+			LightState = ModuleLightState.Solved;
+			resetLightTimer.Stop();
 		}
 
 		public void StrikeFlash() {
-			LogModuleStrike(this.Reader.Name);
-			if (this.LightState != ModuleLightState.Solved) {
-				this.LightState = ModuleLightState.Strike;
-				this.ResetLightTimer.Stop();
-				this.ResetLightTimer.Start();
-				this.Strike?.Invoke(this, EventArgs.Empty);
-			}
+			LogModuleStrike(Reader.Name);
+			if (LightState == ModuleLightState.Solved) return;
+			LightState = ModuleLightState.Strike;
+			resetLightTimer.Stop();
+			resetLightTimer.Start();
+			Strike?.Invoke(this, EventArgs.Empty);
 		}
 
-		public virtual void Interact() => LogModuleInteraction(this.X, this.Y, this.Reader.Name);
+		public virtual void Interact() => LogModuleInteraction(X, Y, Reader.Name);
 		public virtual void StopInteract() { }
 
 		#region Log templates
@@ -578,7 +576,7 @@ internal partial class Simulation {
 
 	private abstract class Module<TDetails>(Simulation simulation, ComponentReader<TDetails> reader, TDetails details, int selectableWidth, int selectableHeight) : Module(simulation, reader, selectableWidth, selectableHeight) where TDetails : notnull {
 		internal virtual TDetails Details { get; } = details;
-		internal override string DetailsString => this.Details.ToString() ?? "";
+		internal override string DetailsString => Details.ToString() ?? "";
 
 		protected Module(Simulation simulation, ComponentReader<TDetails> reader, int selectableWidth, int selectableHeight) : this(simulation, reader, default!, selectableWidth, selectableHeight) { }
 	}
@@ -590,68 +588,67 @@ internal partial class Simulation {
 		private TimeSpan baseTime;
 		private readonly Stopwatch stopwatch = new();
 
-		public virtual TimeSpan StartingTime => TimeSpan.FromSeconds(45);
-		public virtual bool AutoReset => true;
+		protected virtual TimeSpan StartingTime => TimeSpan.FromSeconds(45);
+		protected virtual bool AutoReset => true;
 
-		public bool IsActive { get; private set; }
-		public TimeSpan RemainingTime => this.stopwatch is not null ? this.baseTime - this.stopwatch.Elapsed : TimeSpan.Zero;
-		public int? DisplayedTime => this.IsActive ? (int?) this.RemainingTime.TotalSeconds : null;
+		protected bool IsActive { get; private set; }
+		protected TimeSpan RemainingTime => baseTime - stopwatch.Elapsed;
+		protected int? DisplayedTime => IsActive ? (int?) RemainingTime.TotalSeconds : null;
 		protected Timer Timer { get; } = new() { AutoReset = false };
 
 		protected NeedyModule(Simulation simulation, ComponentReader reader, int selectableWidth, int selectableHeight) : base(simulation, reader, selectableWidth, selectableHeight)
-			=> this.Timer.Elapsed += this.ReactivateTimer_Elapsed;
+			=> Timer.Elapsed += ReactivateTimer_Elapsed;
 
 		public void Initialise(int faceNum, int x, int y) {
 			this.faceNum = faceNum;
 			this.x = x;
 			this.y = y;
-			this.Postback($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} AwaitingActivation");
-			this.Timer.Interval = 10000;
-			this.Timer.Start();
+			Postback($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} AwaitingActivation");
+			Timer.Interval = 10000;
+			Timer.Start();
 		}
 
-		public void Activate() {
-			this.baseTime = this.StartingTime;
-			this.Timer.Interval = this.baseTime.TotalMilliseconds;
-			this.stopwatch.Restart();
-			this.IsActive = true;
-			LogNeedyModuleActivated(this.Reader.Name, this.baseTime);
-			this.OnActivate();
-			this.Postback($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} Running");
+		private void Activate() {
+			baseTime = StartingTime;
+			Timer.Interval = baseTime.TotalMilliseconds;
+			stopwatch.Restart();
+			IsActive = true;
+			LogNeedyModuleActivated(Reader.Name, baseTime);
+			OnActivate();
+			Postback($"OOB NeedyStateChange {faceNum} {x} {y} Running");
 		}
 
 		protected abstract void OnActivate();
 
-		public void Deactivate() {
-			if (!this.IsActive) return;
-			this.IsActive = false;
-			this.stopwatch.Stop();
-			LogNeedyModuleDeactivated(this.Reader.Name, this.RemainingTime);
-			if (this.AutoReset) {
-				this.Timer.Interval = 30000;
-				this.Postback($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} Cooldown");
+		protected void Deactivate() {
+			if (!IsActive) return;
+			IsActive = false;
+			stopwatch.Stop();
+			LogNeedyModuleDeactivated(Reader.Name, RemainingTime);
+			if (AutoReset) {
+				Timer.Interval = 30000;
+				Postback($"OOB NeedyStateChange {faceNum} {x} {y} Cooldown");
 			} else {
-				this.Timer.Stop();
-				this.Postback($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} Terminated");
+				Timer.Stop();
+				Postback($"OOB NeedyStateChange {faceNum} {x} {y} Terminated");
 			}
 		}
 
-		public virtual void OnTimerExpired() => this.StrikeFlash();
+		protected virtual void OnTimerExpired() => StrikeFlash();
 
 		private void ReactivateTimer_Elapsed(object? sender, ElapsedEventArgs e) {
-			if (this.IsActive) {
-				this.OnTimerExpired();
-				this.Deactivate();
+			if (IsActive) {
+				OnTimerExpired();
+				Deactivate();
 			} else
-				this.Activate();
+				Activate();
 		}
 
-		public void AddTime(TimeSpan time, TimeSpan max) {
-			this.baseTime += time;
-			if (this.RemainingTime > max) {
-				this.baseTime = max;
-				this.stopwatch.Restart();
-			}
+		protected void AddTime(TimeSpan time, TimeSpan max) {
+			baseTime += time;
+			if (RemainingTime <= max) return;
+			baseTime = max;
+			stopwatch.Restart();
 		}
 
 		#region Log templates
@@ -667,13 +664,13 @@ internal partial class Simulation {
 
 	private abstract class NeedyModule<TDetails>(Simulation simulation, ComponentReader<TDetails> reader, TDetails details, int selectableWidth, int selectableHeight) : NeedyModule(simulation, reader, selectableWidth, selectableHeight) where TDetails : notnull {
 		internal virtual TDetails Details { get; } = details;
-		internal override string DetailsString => this.Details.ToString() ?? "";
+		internal override string DetailsString => Details.ToString() ?? "";
 
 		protected NeedyModule(Simulation simulation, ComponentReader<TDetails> reader, int selectableWidth, int selectableHeight) : this(simulation, reader, default!, selectableWidth, selectableHeight) { }
 	}
 
 	private class TimerComponent : BombComponent {
-		public TimeSpan Elapsed => this.stopwatch.Elapsed;
+		public TimeSpan Elapsed => stopwatch.Elapsed;
 
 		internal static TimerComponent Instance { get; } = new();
 
@@ -681,12 +678,12 @@ internal partial class Simulation {
 
 		internal Components.Timer.ReadData Details {
 			get {
-				var elapsed = this.stopwatch.ElapsedTicks;
+				var elapsed = stopwatch.ElapsedTicks;
 				var seconds = elapsed / Stopwatch.Frequency;
 				return new(GameMode.Zen, (int) seconds, seconds < 60 ? (int) (elapsed / (Stopwatch.Frequency / 100) % 100) : 0, 0);
 			}
 		}
-		internal override string DetailsString => this.Details.ToString();
+		internal override string DetailsString => Details.ToString();
 
 		private TimerComponent() : base(new Components.Timer()) { }
 	}
@@ -700,6 +697,6 @@ internal partial class Simulation {
 
 	private class Widget<T>(WidgetReader<T> reader, T details) : Widget(reader) where T : notnull {
 		internal T Details { get; } = details;
-		internal override string DetailsString => this.Details.ToString() ?? "";
+		internal override string DetailsString => Details.ToString() ?? "";
 	}
 }

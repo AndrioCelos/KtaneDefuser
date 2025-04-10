@@ -14,6 +14,6 @@ internal static class WinFormsImageUtils {
 		using var ms = new MemoryStream();
 		image.Save(ms, new BmpEncoder());
 		ms.Position = 0;
-		return new Bitmap(ms);
+		return new(ms);
 	}
 }

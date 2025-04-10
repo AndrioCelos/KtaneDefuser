@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using AngelAiml.DotNetInterface;
 
 namespace KtaneDefuserScripts;
 [AimlInterface]
@@ -60,7 +59,7 @@ public static class NATO {
 
 	/// <summary>Decodes the specified NATO code words and/or characters.</summary>
 	[AimlCategory("DecodeNato *")]
-	public static string DecodeNato(string phrase) => string.Join(null, phrase.Split((char[]?) null, StringSplitOptions.RemoveEmptyEntries).Select(NATO.DecodeChar));
+	public static string DecodeNato(string phrase) => string.Join(null, phrase.Split((char[]?) null, StringSplitOptions.RemoveEmptyEntries).Select(DecodeChar));
 
 	/// <summary>Returns OOB tags that read the specified characters using the NATO phonetic alphabet.</summary>
 	public static string Speak(IEnumerable<char> chars) {

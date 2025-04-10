@@ -6,16 +6,16 @@ using SixLabors.ImageSharp.Processing;
 
 namespace KtaneDefuserConnector.Components;
 public class Button : ComponentReader<Button.ReadData> {
-	private static readonly TextRecogniser labelRecogniser = new(new(TextRecogniser.Fonts.OSTRICH_SANS_HEAVY, 24), 160, 44, new(128, 64),
+	private static readonly TextRecogniser labelRecogniser = new(new(TextRecogniser.Fonts.OstrichSansHeavy, 24), 160, 44, new(128, 64),
 		  "ABORT", "DETONATE", "HOLD", "PRESS");
 
 	public override string Name => "The Button";
 	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
-	private static bool IsCoveredRed(HsvColor hsv) => hsv.H is >= 330 or <= 15 && hsv.S is >= 0.2f and <= 0.4f && hsv.V >= 0.5f;
-	private static bool IsCoveredYellow(HsvColor hsv) => hsv.H is >= 45 and <= 90 && hsv.S is >= 0.2f and <= 0.4f && hsv.V >= 0.5f;
-	private static bool IsCoveredBlue(HsvColor hsv) => hsv.H is >= 210 and <= 220 && hsv.S is >= 0.30f and <= 0.55f && hsv.V >= 0.5f;
-	private static bool IsCoveredWhite(HsvColor hsv) => hsv.H is >= 150 and <= 180 && hsv.S <= 0.15f && hsv.V >= 0.5f;
+	private static bool IsCoveredRed(HsvColor hsv) => hsv is { H: >= 330 or <= 15, S: >= 0.2f and <= 0.4f, V: 0.5f };
+	private static bool IsCoveredYellow(HsvColor hsv) => hsv is { H: >= 45 and <= 90, S: >= 0.2f and <= 0.4f, V: >= 0.5f };
+	private static bool IsCoveredBlue(HsvColor hsv) => hsv is { H: >= 210 and <= 220, S: >= 0.30f and <= 0.55f, V: 0.5f };
+	private static bool IsCoveredWhite(HsvColor hsv) => hsv is { H: >= 150 and <= 180, S: <= 0.15f, V: >= 0.5f };
 
 	private static bool CheckPixel(Image<Rgba32> image, int x, int y, Predicate<HsvColor> predicate)
 		=> x is >= 0 and < 256 && y is >= 0 and < 256 && predicate(HsvColor.FromColor(image[x, y]));
@@ -77,19 +77,20 @@ public class Button : ComponentReader<Button.ReadData> {
 
 		// Check for the indicator.
 		hsv = HsvColor.FromColor(image[218, 164]);
-		Colour? indicatorColour =
-			hsv.S < 0.05f && hsv.V >= 0.75f ? Colour.White
-			: hsv.S >= 0.75f && hsv.V >= 0.75f && hsv.H is >= 350 or <= 10 ? Colour.Red
-			: hsv.S >= 0.75f && hsv.V >= 0.65f && hsv.H is >= 210 and <= 225 ? Colour.Blue
-			: hsv.S >= 0.75f && hsv.V >= 0.65f && hsv.H is >= 45 and <= 60 ? Colour.Yellow
-			: hsv.V <= 0.05f ? null
-			: throw new ArgumentException("Couldn't recognise the indicator colour");
+		Colour? indicatorColour = hsv switch {
+			{ S: < 0.05f, V: >= 0.75f } => Colour.White,
+			{ S: >= 0.75f, V: >= 0.75f, H: >= 350 or <= 10 } => Colour.Red,
+			{ S: >= 0.75f, V: >= 0.65f, H: >= 210 and <= 225 } => Colour.Blue,
+			{ S: >= 0.75f, V: >= 0.65f, H: >= 45 and <= 60 } => Colour.Yellow,
+			{ V: <= 0.05f } => null,
+			_ => throw new ArgumentException("Couldn't recognise the indicator colour")
+		};
 
 		if (lightsState == LightsState.Off && colour is Colour.Red or Colour.Blue)
 			return new(colour, null, indicatorColour);  // The game hides a white label when the lights are off because of the use of an Unlit shader.
 
 		Predicate<Rgba32> labelPredicate = colour is Colour.Red or Colour.Blue
-			? p => HsvColor.FromColor(p) is HsvColor hsv && hsv.S <= 0.25f && hsv.V >= 0.75f
+			? p => HsvColor.FromColor(p) is { S: <= 0.25f, V: >= 0.75f }
 			: p => HsvColor.FromColor(ImageUtils.ColourCorrect(p, lightsState)).V <= 0.25f;
 
 		var textRect = ImageUtils.FindEdges(image, new(32, 128, 144, 48), labelPredicate);

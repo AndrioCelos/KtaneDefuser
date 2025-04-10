@@ -24,10 +24,9 @@ public abstract class ComponentReader {
 		for (var y = 80; y < 224; y++) {
 			var hsv = HsvColor.FromColor(image[218, y]);
 			if (hsv.H is >= 60 and <= 135 && hsv.S >= 0.25f) {
-				if (!lastState) {
-					lastState = true;
-					count++;
-				}
+				if (lastState) continue;
+				lastState = true;
+				count++;
 			} else
 				lastState = false;
 		}
@@ -36,7 +35,7 @@ public abstract class ComponentReader {
 
 	/// <summary>Returns the number displayed on the module's needy timer, or null if it is blank.</summary>
 	protected static int? ReadNeedyTimer(Image<Rgba32> image, LightsState lightsState, Image<Rgba32>? debugImage) {
-		var bezelCorners = ImageUtils.FindCorners(image, new(80, 16, 96, 64), c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is var hsv && hsv.H >= (lightsState == LightsState.Emergency ? 15 : 45) && hsv.H <= 150 && hsv.S <= 0.25f && hsv.V is >= 0.3f and <= 0.9f, 4);
+		var bezelCorners = ImageUtils.FindCorners(image, new(80, 16, 96, 64), c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is var hsv && hsv.H >= (lightsState == LightsState.Emergency ? 15 : 45) && hsv is { H: <= 150, S: <= 0.25f, V: >= 0.3f and <= 0.9f }, 4);
 		debugImage?.DebugDrawPoints(bezelCorners);
 		var left = Math.Min(bezelCorners.TopLeft.X, bezelCorners.BottomLeft.X);
 		var top = Math.Min(bezelCorners.TopLeft.Y, bezelCorners.TopRight.Y);
@@ -50,7 +49,7 @@ public abstract class ComponentReader {
 		var displayImage = ImageUtils.PerspectiveUndistort(image, displayCorners, InterpolationMode.NearestNeighbour, new(128, 64));
 		debugImage?.Mutate(p => p.DrawImage(displayImage, 0));
 
-		bool checkRectangle(Image<Rgba32> image, Rectangle rectangle) {
+		bool CheckRectangle(Image<Rgba32> image, Rectangle rectangle) {
 			for (var dy = 0; dy < rectangle.Height; dy++) {
 				for (var dx = 0; dx < rectangle.Width; dx++) {
 					var p = image[rectangle.Left + dx, rectangle.Top + dy];
@@ -59,15 +58,15 @@ public abstract class ComponentReader {
 			}
 			return false;
 		}
-		int? readDigit(Image<Rgba32> image, int x) {
+		int? ReadDigit(Image<Rgba32> image, int x) {
 			var segments =
-				(checkRectangle(image, new(x + 0, 0, 1, 16)) ? (1 << 0) : 0) |
-				(checkRectangle(image, new(x + 0, 18, 16, 1)) ? (1 << 1) : 0) |
-				(checkRectangle(image, new(x + 0, 46, 16, 1)) ? (1 << 2) : 0) |
-				(checkRectangle(image, new(x + 0, 48, 1, 16)) ? (1 << 3) : 0) |
-				(checkRectangle(image, new(x - 16, 46, 16, 1)) ? (1 << 4) : 0) |
-				(checkRectangle(image, new(x - 16, 18, 16, 1)) ? (1 << 5) : 0) |
-				(checkRectangle(image, new(x + 0, 25, 1, 16)) ? (1 << 6) : 0);
+				(CheckRectangle(image, new(x + 0, 0, 1, 16)) ? (1 << 0) : 0) |
+				(CheckRectangle(image, new(x + 0, 18, 16, 1)) ? (1 << 1) : 0) |
+				(CheckRectangle(image, new(x + 0, 46, 16, 1)) ? (1 << 2) : 0) |
+				(CheckRectangle(image, new(x + 0, 48, 1, 16)) ? (1 << 3) : 0) |
+				(CheckRectangle(image, new(x - 16, 46, 16, 1)) ? (1 << 4) : 0) |
+				(CheckRectangle(image, new(x - 16, 18, 16, 1)) ? (1 << 5) : 0) |
+				(CheckRectangle(image, new(x + 0, 25, 1, 16)) ? (1 << 6) : 0);
 			return segments switch {
 				0b0111111 => 0,
 				0b0000110 => 1,
@@ -84,8 +83,8 @@ public abstract class ComponentReader {
 			};
 		}
 
-		var d0 = readDigit(displayImage, 88);
-		var d1 = readDigit(displayImage, 42);
+		var d0 = ReadDigit(displayImage, 88);
+		var d1 = ReadDigit(displayImage, 42);
 		return d0 is null && d1 is null
 			? null
 			: d0 is not null
@@ -98,9 +97,10 @@ public abstract class ComponentReader {
 public abstract class ComponentReader<T> : ComponentReader where T : notnull {
 	/// <summary>When overridden, reads component data from the specified image.</summary>
 	/// <param name="image">The image to read component data from.</param>
+	/// <param name="lightsState">The lights state in the provided image.</param>
 	/// <param name="debugImage">An image variable to draw debug annotations to. The image may be replaced with a larger one. May be a variable containing <see langword="null"/> to disable debug annotations.</param>
 	protected internal abstract T Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage);
 
 	protected internal override object ProcessNonGeneric(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage)
-		=> this.Process(image, lightsState, ref debugImage);
+		=> Process(image, lightsState, ref debugImage);
 }

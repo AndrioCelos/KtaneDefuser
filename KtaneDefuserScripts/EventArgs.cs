@@ -1,6 +1,4 @@
-﻿using KtaneDefuserConnectorApi;
-
-namespace KtaneDefuserScripts;
+﻿namespace KtaneDefuserScripts;
 
 public class AimlInterfaceEventArgs(AimlAsyncContext context) : EventArgs {
 	public AimlAsyncContext Context { get; set; } = context ?? throw new ArgumentNullException(nameof(context));

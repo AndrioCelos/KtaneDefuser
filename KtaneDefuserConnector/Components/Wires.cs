@@ -80,14 +80,14 @@ public class Wires : ComponentReader<Wires.ReadData> {
 		return new([.. colours]);
 	}
 
-	private static Colour? GetColour(HsvColor hsv) {
-		return hsv.V < 0.1f ? Colour.Black
-			: hsv.H is >= 330 or <= 15 && hsv.S >= 0.8f && hsv.V >= 0.5f ? Colour.Red
-			: hsv.H is >= 210 and < 255 && hsv.S >= 0.5f && hsv.V >= 0.35f ? Colour.Blue
-			: hsv.H is >= 30 and < 90 && hsv.S >= 0.5f && hsv.V >= 0.35f ? Colour.Yellow
-			: (hsv.S <= 0.2f && hsv.V >= 0.75f) || (hsv.H < 60 && hsv.S <= 0.2f) ? Colour.White
-			: null;
-	}
+	private static Colour? GetColour(HsvColor hsv) => hsv switch {
+		{ V: < 0.1f } => Colour.Black,
+		{ H: >= 330 or <= 15, S: >= 0.8f, V: >= 0.5f } => Colour.Red,
+		{ H: >= 210 and < 255, S: >= 0.5f, V: >= 0.35f } => Colour.Blue,
+		{ H: >= 30 and < 90, S: >= 0.5f, V: >= 0.35f } => Colour.Yellow,
+		{ S: <= 0.2f, V: >= 0.75f } or { H: < 60, S: <= 0.2f } => Colour.White,
+		_ => null
+	};
 
 	public enum Colour {
 		Red,
@@ -98,6 +98,6 @@ public class Wires : ComponentReader<Wires.ReadData> {
 	}
 
 	public record ReadData(Colour[] Colours) {
-		public override string ToString() => string.Join(' ', this.Colours);
+		public override string ToString() => string.Join(' ', Colours);
 	}
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using KtaneDefuserConnector.Properties;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -77,23 +76,21 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 	}
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		bool isKeyBackground(Rgba32 c) {
-			var hsv = HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState));
-			return hsv.H is > 0 and <= 150 && hsv.S <= 0.6f && hsv.V >= 0.35f;
-		}
+		bool IsKeyBackground(Rgba32 c) => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is { H: > 0 and <= 150, S: <= 0.6f, V: >= 0.35f };
 
-		debugImage?.Mutate(c => c.Brightness(0.5f));
-		for (var y = 0; y < image.Width; y++) {
-			for (var x = 0; x < image.Width; x++) {
-				var color = image[x, y];
-				if (isKeyBackground(color)) {
+		if (debugImage is not null) {
+			debugImage.Mutate(c => c.Brightness(0.5f));
+			for (var y = 0; y < image.Width; y++) {
+				for (var x = 0; x < image.Width; x++) {
+					var color = image[x, y];
+					if (!IsKeyBackground(color)) continue;
 					if (debugImage is not null) debugImage[x, y] = color;
 				}
 			}
 		}
 
-		var keypadCorners = ImageUtils.FindCorners(image, new(0, 48, 208, 208), isKeyBackground, 12);
-		if (debugImage is not null) ImageUtils.DebugDrawPoints(debugImage, keypadCorners);
+		var keypadCorners = ImageUtils.FindCorners(image, new(0, 48, 208, 208), IsKeyBackground, 12);
+		debugImage?.DebugDrawPoints(keypadCorners);
 
 		var keysBitmap = ImageUtils.PerspectiveUndistort(image, keypadCorners, InterpolationMode.Bilinear, new(256, 256));
 		keysBitmap.ColourCorrect(lightsState);
@@ -174,13 +171,12 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 					}
 				}
 				symbolGuesses[i].Add((symbol, dist));
-				if (dist < bestDist) {
-					bestDist = dist;
-					symbols[i] = symbol;
-				}
+				if (dist >= bestDist) continue;
+				bestDist = dist;
+				symbols[i] = symbol;
 			}
 		}
-		var keysSummary = string.Join("\r\n", symbolGuesses.Select((l, i) => $"{i + 1}: {string.Join(", ", l.OrderBy(g => g.dist).Take(3).Select(g => $"{g.symbol} ({g.dist:#,##0})"))}"));
+
 		return new(symbols);
 	}
 
@@ -219,6 +215,6 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 	}
 
 	public record ReadData(Symbol[] Symbols) {
-		public override string ToString() => string.Join(' ', this.Symbols);
+		public override string ToString() => string.Join(' ', Symbols);
 	}
 }

@@ -7,7 +7,7 @@ public partial class ColourRangeForm : Form {
 	private Rectangle imageRectangle;
 	private bool autoRedraw = true;
 
-	public ColourRangeForm() => this.InitializeComponent();
+	public ColourRangeForm() => InitializeComponent();
 
 	public void RecalculateAverage() {
 		if (originalImage is null) return;
@@ -110,10 +110,10 @@ public partial class ColourRangeForm : Form {
 	private void PasteButton_Click(object sender, EventArgs e) {
 		var image = Clipboard.GetImage();
 		if (image is null) {
-			MessageBox.Show(this, "There is no usable image on the Clipboard.", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+			MessageBox.Show(this, "There is no usable image on the Clipboard.", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
 			return;
 		}
-		this.originalImage = new Bitmap(image);
+		originalImage = new(image);
 		RecalculateAverage();
 		Redraw();
 	}
@@ -125,7 +125,7 @@ public partial class ColourRangeForm : Form {
 		if (x >= 0 && x < originalImage.Width && y >= 0 && y < originalImage.Height) {
 			var pixel = originalImage.GetPixel(x, y);
 			if (e.Button == MouseButtons.Left) {
-				this.StatusLabel.Text = this.ModeBox.SelectedIndex == 1 ? HsvColor.FromColor(pixel).ToString() : pixel.ToString();
+				StatusLabel.Text = ModeBox.SelectedIndex == 1 ? HsvColor.FromColor(pixel).ToString() : pixel.ToString();
 			} else if (e.Button == MouseButtons.Right) {
 				autoRedraw = false;
 				switch (ModeBox.SelectedIndex) {

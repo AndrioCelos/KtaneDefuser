@@ -62,17 +62,14 @@ public class Password : ComponentReader<Password.ReadData> {
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		static Rectangle GetLetterBounds(PixelAccessor<Rgba32> a, int x) {
-			int top, bottom, left, right, misses;
-
-			misses = 0;
+			int top, bottom, left, right, misses = 0;
 			for (top = 55; top >= 0; top--) {
 				var r = a.GetRowSpan(top);
 				misses++;
 				for (var dx = -24; dx < 24; dx++) {
-					if (r[x + dx] is Rgba32 p && p.G < 96 && p.B < 24) {
-						misses = 0;
-						break;
-					}
+					if (r[x + dx] is not { G: < 96, B: < 24 }) continue;
+					misses = 0;
+					break;
 				}
 				if (misses >= 4) break;
 			}
@@ -83,10 +80,9 @@ public class Password : ComponentReader<Password.ReadData> {
 				var r = a.GetRowSpan(bottom);
 				misses++;
 				for (var dx = -24; dx < 24; dx++) {
-					if (r[x + dx] is Rgba32 p && p.G < 96 && p.B < 24) {
-						misses = 0;
-						break;
-					}
+					if (r[x + dx] is not { G: < 96, B: < 24 }) continue;
+					misses = 0;
+					break;
 				}
 				if (misses >= 4) break;
 			}
@@ -96,10 +92,9 @@ public class Password : ComponentReader<Password.ReadData> {
 			for (left = x; ; left--) {
 				misses++;
 				for (var y = top; y < bottom; y++) {
-					if (left >= 0 && a.GetRowSpan(y)[left] is Rgba32 p && p.G < 96 && p.B < 24) {
-						misses = 0;
-						break;
-					}
+					if (left < 0 || a.GetRowSpan(y)[left] is not { G: < 96, B: < 24 }) continue;
+					misses = 0;
+					break;
 				}
 				if (misses >= 4) break;
 			}
@@ -108,10 +103,9 @@ public class Password : ComponentReader<Password.ReadData> {
 			for (right = x; ; right++) {
 				misses++;
 				for (var y = top; y < bottom; y++) {
-					if (right < a.Width && a.GetRowSpan(y)[right] is Rgba32 p && p.G < 96 && p.B < 24) {
-						misses = 0;
-						break;
-					}
+					if (right >= a.Width || a.GetRowSpan(y)[right] is not { G: < 96, B: < 24 }) continue;
+					misses = 0;
+					break;
 				}
 				if (misses >= 4) break;
 			}
@@ -120,11 +114,11 @@ public class Password : ComponentReader<Password.ReadData> {
 			return new(left, top, right - left, bottom - top);
 		}
 
-		var displayCorners = ImageUtils.FindCorners(image, new(16, 64, 224, 128), c => HsvColor.FromColor(c) is HsvColor hsv && hsv.H is >= 75 and < 120 && hsv.S >= 0.8f && hsv.V >= 0.5f, 12);
+		var displayCorners = ImageUtils.FindCorners(image, new(16, 64, 224, 128), c => HsvColor.FromColor(c) is { H: >= 75 and < 120, S: >= 0.8f, V: >= 0.5f }, 12);
 		using var displayImage = ImageUtils.PerspectiveUndistort(image, displayCorners, InterpolationMode.NearestNeighbour, new(256, 110));
 		if (debugImage is not null) {
 			debugImage.Mutate(c => c.DrawImage(displayImage, 1));
-			ImageUtils.DebugDrawPoints(debugImage, displayCorners);
+			debugImage.DebugDrawPoints(displayCorners);
 		}
 
 		var chars = new char[5];
@@ -147,8 +141,9 @@ public class Password : ComponentReader<Password.ReadData> {
 						if (r[px].G < 96) {
 							if (debugImage2 is not null) debugImage2[px, py] = Color.Red;
 							pattern[1 << (y * 5 + x)] = true;
-						} else
+						} else {
 							if (debugImage2 is not null) debugImage2[px, py] = Color.White;
+						}
 					}
 				}
 				chars[i] = charPatterns[pattern];
@@ -159,6 +154,6 @@ public class Password : ComponentReader<Password.ReadData> {
 	}
 
 	public record ReadData(char[] Display) {
-		public override string ToString() => new(this.Display);
+		public override string ToString() => new(Display);
 	}
 }

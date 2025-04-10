@@ -14,10 +14,10 @@ public class Maze : ComponentReader<Maze.ReadData> {
 		for (var y = 60; y < 208; y++) {
 			for (var x = 40; x < 180; x++) {
 				var color = image[x, y];
-				if (color.R >= 128) count += ImageUtils.ColorProximity(color, 214, 0, refB: 0, 40);
-				else {
+				if (color.R >= 128)
+					count += ImageUtils.ColorProximity(color, 214, 0, refB: 0, 40);
+				else
 					count += ImageUtils.ColorProximity(color, 5, 12, 33, 24, 70, 90, 40);
-				}
 			}
 		}
 
@@ -25,8 +25,8 @@ public class Maze : ComponentReader<Maze.ReadData> {
 	}
 
 	private static bool IsMarking(Rgba32 pixel, LightsState lightsState) => lightsState switch {
-		LightsState.Buzz => HsvColor.FromColor(pixel) is var hsv && hsv.H <= 190 && hsv.V <= 0.25f,
-		LightsState.Off => HsvColor.FromColor(pixel) is var hsv && hsv.H <= 215 && hsv.V <= 0.1f,
+		LightsState.Buzz => HsvColor.FromColor(pixel) is { H: <= 190, V: <= 0.25f },
+		LightsState.Off => HsvColor.FromColor(pixel) is { H: <= 215, V: <= 0.1f },
 		_ => pixel.G >= 85
 	};
 
@@ -53,32 +53,29 @@ public class Maze : ComponentReader<Maze.ReadData> {
 					// Look left for a marking.
 					var found = false;
 					for (var dx = 0; dx < 8; dx++) {
-						if (IsMarking(row[58 - 16 + 23 * x + dx], lightsState)) {
-							found = true;
-							break;
-						}
+						if (!IsMarking(row[58 - 16 + 23 * x + dx], lightsState)) continue;
+						found = true;
+						break;
 					}
 					if (!found) continue;
 					// Look right for a marking.
 					found = false;
 					for (var dx = 0; dx < 8; dx++) {
-						if (IsMarking(row[58 + 8 + 23 * x + dx], lightsState)) {
-							found = true;
-							break;
-						}
+						if (!IsMarking(row[58 + 8 + 23 * x + dx], lightsState)) continue;
+						found = true;
+						break;
 					}
 					if (!found) continue;
 					// Look up for a marking.
 					var row2 = a.GetRowSpan(65 + 23 * y);
 					for (var dx = 0; dx < 8; dx++) {
-						if (IsMarking(row2[58 - 4 + 23 * x + dx], lightsState)) {
-							if (debugImage2 is not null) debugImage2[x + 1, y] = Color.Green;
-							if (circle1 is null)
-								circle1 = new(x, y);
-							else
-								circle2 = circle2 is null ? new(x, y) : throw new ArgumentException("Found more than two circle locations.");
-							break;
-						}
+						if (!IsMarking(row2[58 - 4 + 23 * x + dx], lightsState)) continue;
+						if (debugImage2 is not null) debugImage2[x + 1, y] = Color.Green;
+						if (circle1 is null)
+							circle1 = new(x, y);
+						else
+							circle2 = circle2 is null ? new(x, y) : throw new ArgumentException("Found more than two circle locations.");
+						break;
 					}
 				}
 			}

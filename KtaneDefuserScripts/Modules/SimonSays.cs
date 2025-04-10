@@ -1,6 +1,4 @@
-﻿using KtaneDefuserConnector;
-using KtaneDefuserConnector.DataTypes;
-using KtaneDefuserConnectorApi;
+﻿using KtaneDefuserConnector.DataTypes;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("SimonSays")]
@@ -17,17 +15,17 @@ internal partial class SimonSays : ModuleScript<KtaneDefuserConnector.Components
 
 	protected internal override void Initialise(AimlAsyncContext context) => GameState.Current.Strike += (_, _) => Array.Clear(buttonMap);  // A strike invalidates the whole mapping.
 
-	protected internal override void Started(AimlAsyncContext context) => this.readyToRead = true;
+	protected internal override void Started(AimlAsyncContext context) => readyToRead = true;
 
 	protected internal override async void ModuleSelected(AimlAsyncContext context) {
-		if (this.readyToRead) {
-			this.readyToRead = false;
-			using var interrupt = await this.ModuleInterruptAsync(context);
-			if (this.pattern.Count == 0) {
-				var colour = await this.ReadLastColourAsync(interrupt);
-				this.pattern.Add(colour);
+		if (readyToRead) {
+			readyToRead = false;
+			using var interrupt = await ModuleInterruptAsync(context);
+			if (pattern.Count == 0) {
+				var colour = await ReadLastColourAsync(interrupt);
+				pattern.Add(colour);
 			}
-			await this.LoopAsync(interrupt);
+			await LoopAsync(interrupt);
 		}
 	}
 
@@ -35,10 +33,10 @@ internal partial class SimonSays : ModuleScript<KtaneDefuserConnector.Components
 		var buttons = new List<Button>();
 		while (true) {
 			var highlight = this.highlight;
-			foreach (var patternColour in this.pattern) {
+			foreach (var patternColour in pattern) {
 				var correctColour = buttonMap[(int) patternColour];
 				if (correctColour is null) {
-					this.currentColour = patternColour;
+					currentColour = patternColour;
 					interrupt.Context.Reply(patternColour.ToString());
 					interrupt.Context.AddReplies("red", "yellow", "green", "blue");
 					return;
@@ -57,12 +55,12 @@ internal partial class SimonSays : ModuleScript<KtaneDefuserConnector.Components
 			this.highlight = highlight;
 			var result = await interrupt.SubmitAsync(buttons);
 			if (result != ModuleLightState.Strike) {
-				this.stagesCleared++;
+				stagesCleared++;
 				if (result == ModuleLightState.Solved) return;
 
 				await Delay(1);
-				var colour = await this.ReadLastColourAsync(interrupt);
-				this.pattern.Add(colour);
+				var colour = await ReadLastColourAsync(interrupt);
+				pattern.Add(colour);
 			}
 			buttons.Clear();
 		}
@@ -76,8 +74,8 @@ internal partial class SimonSays : ModuleScript<KtaneDefuserConnector.Components
 				await Delay(0.125);
 				continue;
 			}
-			if (coloursSeen >= this.stagesCleared) {
-				this.LogLight(data.Colour.Value);
+			if (coloursSeen >= stagesCleared) {
+				LogLight(data.Colour.Value);
 				return data.Colour.Value;
 			}
 			coloursSeen++;

@@ -1,6 +1,6 @@
 ﻿namespace ImageProcessingTester;
 public partial class MainForm : Form {
-	public MainForm() => this.InitializeComponent();
+	public MainForm() => InitializeComponent();
 
 	private void TransformationButton_Click(object sender, EventArgs e) => new TransformationForm().Show();
 

@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using KtaneDefuserConnectorApi;
 
 namespace KtaneDefuserScripts.Modules;
 
@@ -11,9 +10,9 @@ internal class NeedyCapacitor : ModuleScript<KtaneDefuserConnector.Components.Ne
 	protected internal override async void NeedyStateChanged(AimlAsyncContext context, NeedyState newState) {
 		if (newState != NeedyState.Running) return;
 		var stopwatch = Stopwatch.StartNew();
-		while (this.NeedyState == NeedyState.Running) {
+		while (NeedyState == NeedyState.Running) {
 			await Delay(25);
-			using var interrupt = await this.ModuleInterruptAsync(context, false);
+			using var interrupt = await ModuleInterruptAsync(context, false);
 			context = interrupt.Context;
 			context.Reply("Discharging the capacitor.");
 			interrupt.SendInputs(new ButtonAction(Button.A, ButtonActionType.Hold));

@@ -1,7 +1,4 @@
-﻿using KtaneDefuserConnector;
-using KtaneDefuserConnectorApi;
-
-namespace KtaneDefuserScripts.Modules;
+﻿namespace KtaneDefuserScripts.Modules;
 [AimlInterface("WhosOnFirst")]
 internal class WhosOnFirst : ModuleScript<KtaneDefuserConnector.Components.WhosOnFirst> {
 	public override string IndefiniteDescription => "Who's on First";
@@ -10,24 +7,24 @@ internal class WhosOnFirst : ModuleScript<KtaneDefuserConnector.Components.WhosO
 	private Phrase[] keyLabels = new Phrase[6];
 	private int highlight;
 
-	protected internal override void Started(AimlAsyncContext context) => this.readyToRead = true;
+	protected internal override void Started(AimlAsyncContext context) => readyToRead = true;
 
 	protected internal override async void ModuleSelected(AimlAsyncContext context) {
-		if (this.readyToRead) {
-			this.readyToRead = false;
-			using var interrupt = await this.ModuleInterruptAsync(context);
-			this.Read(interrupt);
+		if (readyToRead) {
+			readyToRead = false;
+			using var interrupt = await ModuleInterruptAsync(context);
+			Read(interrupt);
 		}
 	}
 
 	private async Task WaitRead(Interrupt interrupt) {
 		await Delay(3);
-		this.Read(interrupt);
+		Read(interrupt);
 	}
 
 	private void Read(Interrupt interrupt) {
 		var data = interrupt.Read(Reader);
-		this.keyLabels = data.Keys.Select(s => AimlInterface.TryParseSetEnum<Phrase>(s.Replace('’', '\''), out var p) ? p : throw new ArgumentException("Unknown button label")).ToArray();
+		keyLabels = data.Keys.Select(s => AimlInterface.TryParseSetEnum<Phrase>(s.Replace('’', '\''), out var p) ? p : throw new ArgumentException("Unknown button label")).ToArray();
 		if (data.Display == "")
 			interrupt.Context.Reply("The display is literally empty.");
 		else
@@ -36,7 +33,7 @@ internal class WhosOnFirst : ModuleScript<KtaneDefuserConnector.Components.WhosO
 	}
 
 	public void ReadButton(AimlAsyncContext context, int keyIndex) {
-		context.Reply(PronouncePhrase(this.keyLabels[keyIndex]));
+		context.Reply(PronouncePhrase(keyLabels[keyIndex]));
 		context.Reply("<reply>press …</reply>");
 	}
 
@@ -89,9 +86,9 @@ internal class WhosOnFirst : ModuleScript<KtaneDefuserConnector.Components.WhosO
 		}
 		buttons.Add(Button.A);
 		this.highlight = highlight;
-		using var interrupt = await this.ModuleInterruptAsync(context);
+		using var interrupt = await ModuleInterruptAsync(context);
 		var result = await interrupt.SubmitAsync(buttons);
-		if (result != ModuleLightState.Solved) await this.WaitRead(interrupt);
+		if (result != ModuleLightState.Solved) await WaitRead(interrupt);
 	}
 
 	private static string PronouncePhrase(Phrase phrase) => phrase switch {

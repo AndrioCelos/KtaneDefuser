@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel;
-using KtaneDefuserConnector;
 using KtaneDefuserConnector.Widgets;
 using Microsoft.Extensions.Logging.Abstractions;
 using SixLabors.ImageSharp;
@@ -18,28 +17,28 @@ internal static partial class Edgework {
 		switch (widget) {
 			case BatteryHolder batteryHolder:
 				GameState.Current.BatteryHolderCount++;
-				GameState.Current.BatteryCount += KtaneDefuserConnector.DefuserConnector.Instance.ReadWidget(screenshot, lightsState, batteryHolder, quadrilateral);
+				GameState.Current.BatteryCount += DefuserConnector.Instance.ReadWidget(screenshot, lightsState, batteryHolder, quadrilateral);
 				break;
 			case Indicator indicator:
-				var data = KtaneDefuserConnector.DefuserConnector.Instance.ReadWidget(screenshot, lightsState, indicator, quadrilateral);
+				var data = DefuserConnector.Instance.ReadWidget(screenshot, lightsState, indicator, quadrilateral);
 				GameState.Current.Indicators.Add(new(data.IsLit, data.Label));
 				break;
 			case PortPlate portPlate:
-				var ports = KtaneDefuserConnector.DefuserConnector.Instance.ReadWidget(screenshot, lightsState, portPlate, quadrilateral);
+				var ports = DefuserConnector.Instance.ReadWidget(screenshot, lightsState, portPlate, quadrilateral);
 				GameState.Current.PortPlates.Add((PortTypes) ports.Value);
 				break;
 			case SerialNumber serialNumber:
-				GameState.Current.SerialNumber = KtaneDefuserConnector.DefuserConnector.Instance.ReadWidget(screenshot, lightsState, serialNumber, quadrilateral);
+				GameState.Current.SerialNumber = DefuserConnector.Instance.ReadWidget(screenshot, lightsState, serialNumber, quadrilateral);
 				break;
 		}
 	}
 
 	internal static void RegisterWidgets(AimlAsyncContext context, bool isSide, Image<Rgba32> screenshot) {
-		var lightsState = KtaneDefuserConnector.DefuserConnector.Instance.GetLightsState(screenshot);
+		var lightsState = DefuserConnector.Instance.GetLightsState(screenshot);
 		if (lightsState != LightsState.On) throw new ArgumentException($"Can't identify widgets on lights state {lightsState}.");
 		Quadrilateral[] quadrilaterals;
 		if (isSide) {
-			var adjustment = KtaneDefuserConnector.DefuserConnector.Instance.GetSideWidgetAdjustment(screenshot);
+			var adjustment = DefuserConnector.Instance.GetSideWidgetAdjustment(screenshot);
 			quadrilaterals = new Quadrilateral[4];
 			for (int i = 0; i < quadrilaterals.Length; i++) {
 				var quadrilateral = Utils.sideWidgetAreas[i];
@@ -51,7 +50,7 @@ internal static partial class Edgework {
 			}
 		} else
 			quadrilaterals = Utils.topBottomWidgetAreas;
-		var widgets = quadrilaterals.Select(p => KtaneDefuserConnector.DefuserConnector.Instance.GetWidgetReader(screenshot, p)).ToList();
+		var widgets = quadrilaterals.Select(p => DefuserConnector.Instance.GetWidgetReader(screenshot, p)).ToList();
 		for (var i = 0; i < widgets.Count; i++) {
 			var widget = widgets[i];
 			RegisterWidget(context, widget, screenshot, lightsState, quadrilaterals[i]);  // TODO: This assumes the vanilla bomb layout. It will need to be updated for other layouts.

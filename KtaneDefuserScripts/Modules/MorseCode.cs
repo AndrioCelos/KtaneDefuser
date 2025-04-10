@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using KtaneDefuserConnectorApi;
 
 namespace KtaneDefuserScripts.Modules;
 
@@ -82,46 +81,46 @@ internal partial class MorseCode : ModuleScript<KtaneDefuserConnector.Components
 	}
 
 	private async Task ReadAsync(AimlAsyncContext context, CancellationToken cancellationToken) {
-		var interrupt = await this.ModuleInterruptAsync(context);
+		var interrupt = await ModuleInterruptAsync(context);
 		try {
 			MorseCode.interrupt = interrupt;
 
 			// Wait for a space between letters.
-			this.LogWaitingForLetterSpace();
+			LogWaitingForLetterSpace();
 			while (true) {
-				await this.WaitForStateAsync(interrupt, false, cancellationToken);
-				var continuedLetter = await this.WaitForStateAsync(interrupt, true, DASH_THRESHOLD, cancellationToken);
+				await WaitForStateAsync(interrupt, false, cancellationToken);
+				var continuedLetter = await WaitForStateAsync(interrupt, true, DASH_THRESHOLD, cancellationToken);
 				if (!continuedLetter) break;
 			}
-			this.LogLetterSpaceFound();
+			LogLetterSpaceFound();
 
 			for (var lettersRead = 0; lettersRead < 5; lettersRead++) {
 				// We've just seen a space between letters. Find out whether it is a space between words.
-				this.LogWaitingForNextLetter();
-				var continuedWord = await this.WaitForStateAsync(interrupt, true, WORD_SPACE_THRESHOLD - DASH_THRESHOLD, cancellationToken);
+				LogWaitingForNextLetter();
+				var continuedWord = await WaitForStateAsync(interrupt, true, WORD_SPACE_THRESHOLD - DASH_THRESHOLD, cancellationToken);
 				if (cancellationToken.IsCancellationRequested) return;
 				if (!continuedWord && !interrupt.IsDisposed) {
-					this.LogWordStart();
+					LogWordStart();
 					interrupt.Context.Reply("Word start.");
 					interrupt.Context.Reply("<reply>505</reply><reply>515</reply><reply>522</reply><reply>532</reply><reply>535</reply><reply>542</reply><reply>545</reply><reply>552</reply><reply>555</reply><reply>565</reply><reply>572</reply><reply>575</reply><reply>582</reply><reply>592</reply><reply>595</reply><reply>600</reply>");
-					await this.WaitForStateAsync(interrupt, true, cancellationToken);
+					await WaitForStateAsync(interrupt, true, cancellationToken);
 				}
-				this.LogLetterStart();
+				LogLetterStart();
 
 				var currentLetter = new MorseLetter();
 				while (true) {
-					var isDot = await this.WaitForStateAsync(interrupt, false, DASH_THRESHOLD, cancellationToken);
-					this.LogSymbol(isDot ? "Dot" : "Dash");
+					var isDot = await WaitForStateAsync(interrupt, false, DASH_THRESHOLD, cancellationToken);
+					LogSymbol(isDot ? "Dot" : "Dash");
 					currentLetter.Add(isDot ? MorseElement.Dot : MorseElement.Dash);
-					if (!isDot) await this.WaitForStateAsync(interrupt, false, cancellationToken);
-					var continuedLetter = await this.WaitForStateAsync(interrupt, true, DASH_THRESHOLD, cancellationToken);
+					if (!isDot) await WaitForStateAsync(interrupt, false, cancellationToken);
+					var continuedLetter = await WaitForStateAsync(interrupt, true, DASH_THRESHOLD, cancellationToken);
 					if (!continuedLetter) break;
 				}
 				if (cancellationToken.IsCancellationRequested || interrupt.IsDisposed) return;
-				this.LogLetterSpaceFound();
+				LogLetterSpaceFound();
 
 				if (decodeMorse.TryGetValue(currentLetter, out var c)) {
-					this.LogLetter(c);
+					LogLetter(c);
 					interrupt.Context.Reply(NATO.Speak(c.ToString()));
 				} else
 					interrupt.Context.Reply(string.Join(' ', currentLetter));
@@ -136,7 +135,7 @@ internal partial class MorseCode : ModuleScript<KtaneDefuserConnector.Components
 		}
 	}
 
-	private Task<bool> WaitForStateAsync(Interrupt interrupt, bool state, CancellationToken token) => this.WaitForStateAsync(interrupt, state, int.MaxValue, token);
+	private Task<bool> WaitForStateAsync(Interrupt interrupt, bool state, CancellationToken token) => WaitForStateAsync(interrupt, state, int.MaxValue, token);
 	private async Task<bool> WaitForStateAsync(Interrupt interrupt, bool state, int limit, CancellationToken token) {
 		if (token.IsCancellationRequested) return false;
 		var count = 0;
@@ -144,12 +143,12 @@ internal partial class MorseCode : ModuleScript<KtaneDefuserConnector.Components
 			await Delay(0.075);
 			if (token.IsCancellationRequested) return false;
 			if (interrupt.IsDisposed || interrupt.Read(Reader).IsLightOn == state) {
-				this.LogAwaitedStateReached(state, count);
+				LogAwaitedStateReached(state, count);
 				return true;
 			}
 			count++;
 		} while (count < limit);
-		this.LogAwaitedStateTimedOut(state, count);
+		LogAwaitedStateTimedOut(state, count);
 		return false;
 	}
 
@@ -183,33 +182,33 @@ internal partial class MorseCode : ModuleScript<KtaneDefuserConnector.Components
 		cancellationTokenSource?.Cancel();
 		cancellationTokenSource?.Dispose();
 		cancellationTokenSource = null;
-		using var interrupt = MorseCode.interrupt ?? await this.ModuleInterruptAsync(context);
+		using var interrupt = MorseCode.interrupt ?? await ModuleInterruptAsync(context);
 		interrupt.Context = context;
 		var buttons = new List<Button>();
-		if (frequency < this.selectedFrequency) {
-			switch (this.highlight) {
+		if (frequency < selectedFrequency) {
+			switch (highlight) {
 				case 1: buttons.Add(Button.Left); break;
 				case 2: buttons.Add(Button.Up); break;
 			}
-			this.highlight = 0;
+			highlight = 0;
 			do {
 				buttons.Add(Button.A);
-				this.selectedFrequency--;
-			} while (frequency < this.selectedFrequency);
+				selectedFrequency--;
+			} while (frequency < selectedFrequency);
 		}
-		if (frequency > this.selectedFrequency) {
-			if (this.highlight != 1) {
+		if (frequency > selectedFrequency) {
+			if (highlight != 1) {
 				buttons.Add(Button.Right);
-				this.highlight = 1;
+				highlight = 1;
 			}
 			do {
 				buttons.Add(Button.A);
-				this.selectedFrequency++;
-			} while (frequency > this.selectedFrequency);
+				selectedFrequency++;
+			} while (frequency > selectedFrequency);
 		}
-		if (this.highlight != 2) {
+		if (highlight != 2) {
 			buttons.Add(Button.Down);
-			this.highlight = 2;
+			highlight = 2;
 		}
 		buttons.Add(Button.A);
 		await interrupt.SubmitAsync(buttons);
@@ -251,42 +250,42 @@ internal partial class MorseCode : ModuleScript<KtaneDefuserConnector.Components
 		public int Length;
 
 		public MorseLetter(MorseElement e1) {
-			this.Length = 1;
-			this.Bits = (int) e1;
+			Length = 1;
+			Bits = (int) e1;
 		}
 		public MorseLetter(MorseElement e1, MorseElement e2) {
-			this.Length = 2;
-			this.Bits = (int) e1 | (int) e2 << 1;
+			Length = 2;
+			Bits = (int) e1 | (int) e2 << 1;
 		}
 		public MorseLetter(MorseElement e1, MorseElement e2, MorseElement e3) {
-			this.Length = 3;
-			this.Bits = (int) e1 | (int) e2 << 1 | (int) e3 << 2;
+			Length = 3;
+			Bits = (int) e1 | (int) e2 << 1 | (int) e3 << 2;
 		}
 		public MorseLetter(MorseElement e1, MorseElement e2, MorseElement e3, MorseElement e4) {
-			this.Length = 4;
-			this.Bits = (int) e1 | (int) e2 << 1 | (int) e3 << 2 | (int) e4 << 3;
+			Length = 4;
+			Bits = (int) e1 | (int) e2 << 1 | (int) e3 << 2 | (int) e4 << 3;
 		}
 		public MorseLetter(MorseElement e1, MorseElement e2, MorseElement e3, MorseElement e4, MorseElement e5) {
-			this.Length = 5;
-			this.Bits = (int) e1 | (int) e2 << 1 | (int) e3 << 2 | (int) e4 << 3 | (int) e5 << 4;
+			Length = 5;
+			Bits = (int) e1 | (int) e2 << 1 | (int) e3 << 2 | (int) e4 << 3 | (int) e5 << 4;
 		}
 
 		public void Add(MorseElement element) {
-			if (element != MorseElement.Dot) this.Bits |= 1 << this.Length;
-			this.Length++;
+			if (element != MorseElement.Dot) Bits |= 1 << Length;
+			Length++;
 		}
 
-		public readonly bool Equals(MorseLetter other) => this.Bits == other.Bits && this.Length == other.Length;
-		public override readonly bool Equals(object? obj) => obj is MorseLetter letter && this.Equals(letter);
+		public readonly bool Equals(MorseLetter other) => Bits == other.Bits && Length == other.Length;
+		public override readonly bool Equals(object? obj) => obj is MorseLetter letter && Equals(letter);
 		public static bool operator ==(MorseLetter v1, MorseLetter v2) => v1.Equals(v2);
 		public static bool operator !=(MorseLetter v1, MorseLetter v2) => !v1.Equals(v2);
 
-		public override readonly int GetHashCode() => HashCode.Combine(this.Bits, this.Length);
+		public override readonly int GetHashCode() => HashCode.Combine(Bits, Length);
 		public readonly IEnumerator<MorseElement> GetEnumerator() {
-			for (var i = 0; i < this.Length; i++)
-				yield return (this.Bits & 1 << i) == 0 ? MorseElement.Dot : MorseElement.Dash;
+			for (var i = 0; i < Length; i++)
+				yield return (Bits & 1 << i) == 0 ? MorseElement.Dot : MorseElement.Dash;
 		}
-		readonly IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+		readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 	}
 
 	internal enum MorseElement {

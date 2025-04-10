@@ -11,7 +11,7 @@ public class BatteryHolder : WidgetReader<int> {
 		// This is the only widget with yellow pixels.
 		=> pixelCounts.Yellow / 2048f;
 
-	private static bool IsRed(HsvColor hsv) => hsv.S >= 0.4f && hsv.H is >= 345 or <= 90;
+	private static bool IsRed(HsvColor hsv) => hsv is { S: >= 0.4f, H: >= 345 or <= 90 };
 
 	protected internal override int Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		debugImage?.Mutate(c => c.Brightness(0.5f));
@@ -31,10 +31,9 @@ public class BatteryHolder : WidgetReader<int> {
 				if (IsRed(hsv)) {
 					if (debugImage != null)
 						debugImage[x, y] = new(255, 0, 0);
-					if (!inBattery) {
-						batteryCount++;
-						inBattery = true;
-					}
+					if (inBattery) continue;
+					batteryCount++;
+					inBattery = true;
 				} else
 					inBattery = false;
 			}

@@ -38,21 +38,20 @@ public class SimonSays : ComponentReader<SimonSays.ReadData> {
 				var right = 230 - Math.Abs(y - 122);
 				for (var x = left; x < right; x++) {
 					var hsv = HsvColor.FromColor(r[x]);
-					if (hsv.V >= 0.75f && hsv.S >= 0.55f) {
-						var rx = y + x;
-						var ry = y - x;
-						if (ry < -6) {
-							if (rx < 248) {
-								if (hsv.H is >= 180 and <= 240) blue++;
-							} else {
-								if (hsv.H is >= 30 and <= 90) yellow++;
-							}
+					if (hsv is not { V: >= 0.75f, S: >= 0.55f }) continue;
+					var rx = y + x;
+					var ry = y - x;
+					if (ry < -6) {
+						if (rx < 248) {
+							if (hsv.H is >= 180 and <= 240) blue++;
 						} else {
-							if (rx < 248) {
-								if (hsv.H is >= 330 or <= 30) red++;
-							} else {
-								if (hsv.H is >= 90 and <= 180) green++;
-							}
+							if (hsv.H is >= 30 and <= 90) yellow++;
+						}
+					} else {
+						if (rx < 248) {
+							if (hsv.H is >= 330 or <= 30) red++;
+						} else {
+							if (hsv.H is >= 90 and <= 180) green++;
 						}
 					}
 				}

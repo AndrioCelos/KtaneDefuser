@@ -13,19 +13,17 @@ public class PortPlate : WidgetReader<PortPlate.Ports> {
 		// This has many dark grey pixels.
 		=> Math.Max(0, pixelCounts.Grey - 4096) / 8192f;
 
-	private static bool IsGrey(HsvColor hsv) => (hsv.S < 0.08f && hsv.V < 0.5f) || (hsv.H < 120 && hsv.S < 0.12f && hsv.V >= 0.8f);  // Also include the pale cream bezel on RJ-45 ports.
-	private static bool IsPink(HsvColor hsv) => hsv.H >= 330 && hsv.S is >= 0.4f and < 0.6f && hsv.V >= 0.65f;
-	private static bool IsTeal(HsvColor hsv) => hsv.H is >= 180 and < 210 && hsv.S is >= 0.4f and < 0.7f && hsv.V >= 0.4f;
-	private static bool IsRcaRed(HsvColor hsv) => hsv.H < 15 && hsv.S >= 0.75f && hsv.V >= 0.25f;
-	private static bool IsDviRed(HsvColor hsv) => hsv.H is >= 345 or < 30 && hsv.S is >= 0.4f and < 0.75f && hsv.V is >= 0.25f and < 0.75f;
-	private static bool IsGreen(HsvColor hsv) => hsv.H is >= 120 and < 150 && hsv.S is >= 0.3f and < 0.6f && hsv.V is >= 0.5f and < 0.75f;
+	private static bool IsGrey(HsvColor hsv) => hsv is { S: < 0.08f, V: < 0.5f } or { H: < 120, S: < 0.12f, V: >= 0.8f };  // Also include the pale cream bezel on RJ-45 ports.
+	private static bool IsPink(HsvColor hsv) => hsv is { H: >= 330, S: >= 0.4f and < 0.6f, V: >= 0.65f };
+	private static bool IsTeal(HsvColor hsv) => hsv is { H: >= 180 and < 210, S: >= 0.4f and < 0.7f, V: >= 0.4f };
+	private static bool IsRcaRed(HsvColor hsv) => hsv is { H: < 15, S: >= 0.75f, V: >= 0.25f };
+	private static bool IsDviRed(HsvColor hsv) => hsv is { H: >= 345 or < 30, S: >= 0.4f and < 0.75f, V: >= 0.25f and < 0.75f };
+	private static bool IsGreen(HsvColor hsv) => hsv is { H: >= 120 and < 150, S: >= 0.3f and < 0.6f, V: >= 0.5f and < 0.75f };
 
 	protected internal override Ports Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		var corners = ImageUtils.FindCorners(image, new(8, 8, 240, 240), c => IsGrey(HsvColor.FromColor(c)), 12);
 		var plateImage = ImageUtils.PerspectiveUndistort(image, corners, InterpolationMode.NearestNeighbour, new(256, 128));
-		if (debugImage is not null)
-			ImageUtils.DebugDrawPoints(debugImage, corners);
-
+		debugImage?.DebugDrawPoints(corners);
 		debugImage?.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }).DrawImage(plateImage, new Point(0, 256), 1));
 
 		int pinkCount = 0, tealCount = 0;
@@ -60,32 +58,32 @@ public class PortPlate : WidgetReader<PortPlate.Ports> {
 		return new(ports);
 	}
 
-	public struct Ports(PortPlate.PortType value) : IReadOnlyCollection<PortType> {
-		public PortType Value = value;
+	public readonly struct Ports(PortType value) : IReadOnlyCollection<PortType> {
+		public readonly PortType Value = value;
 
-		public readonly bool Contains(PortType portType) => this.Value.HasFlag(portType);
+		public bool Contains(PortType portType) => Value.HasFlag(portType);
 
-		public readonly int Count {
+		public int Count {
 			get {
 				var count = 0;
-				var enumerator = this.GetEnumerator();
+				using var enumerator = GetEnumerator();
 				while (enumerator.MoveNext()) count++;
 				return count;
 			}
 		}
 
-		public readonly IEnumerator<PortType> GetEnumerator() {
-			if (this.Value.HasFlag(PortType.Parallel)) yield return PortType.Parallel;
-			if (this.Value.HasFlag(PortType.Serial)) yield return PortType.Serial;
-			if (this.Value.HasFlag(PortType.StereoRCA)) yield return PortType.StereoRCA;
-			if (this.Value.HasFlag(PortType.DviD)) yield return PortType.DviD;
-			if (this.Value.HasFlag(PortType.PS2)) yield return PortType.PS2;
-			if (this.Value.HasFlag(PortType.RJ45)) yield return PortType.RJ45;
+		public IEnumerator<PortType> GetEnumerator() {
+			if (Value.HasFlag(PortType.Parallel)) yield return PortType.Parallel;
+			if (Value.HasFlag(PortType.Serial)) yield return PortType.Serial;
+			if (Value.HasFlag(PortType.StereoRCA)) yield return PortType.StereoRCA;
+			if (Value.HasFlag(PortType.DviD)) yield return PortType.DviD;
+			if (Value.HasFlag(PortType.PS2)) yield return PortType.PS2;
+			if (Value.HasFlag(PortType.RJ45)) yield return PortType.RJ45;
 		}
 
-		readonly IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-		public override readonly string ToString() => this.Value != 0 ? string.Join(' ', this) : "nil";
+		public override string ToString() => Value != 0 ? string.Join(' ', this) : "nil";
 	} 
 
 	[Flags]

@@ -1,5 +1,3 @@
-using KtaneDefuserConnectorApi;
-
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("ColourFlash")]
 internal partial class ColourFlash : ModuleScript<KtaneDefuserConnector.Components.ColourFlash> {
@@ -21,10 +19,10 @@ internal partial class ColourFlash : ModuleScript<KtaneDefuserConnector.Componen
 	}
 
 	private async Task ReadAsync(AimlAsyncContext context, CancellationToken cancellationToken) {
-		var interrupt = await this.ModuleInterruptAsync(context);
+		var interrupt = await ModuleInterruptAsync(context);
 		try {
 			currentInterrupt = interrupt;
-			this.LogWaitingForStart();
+			LogWaitingForStart();
 
 			// Wait for the start of the sequence.
 			while (true) {
@@ -34,7 +32,7 @@ internal partial class ColourFlash : ModuleScript<KtaneDefuserConnector.Componen
 			}
 
 			// Read the sequence.
-			this.LogReadingSequence();
+			LogReadingSequence();
 			var sequence = new List<KtaneDefuserConnector.Components.ColourFlash.ReadData>(8);
 			while (true) {
 				await Delay(0.25);
@@ -60,15 +58,15 @@ internal partial class ColourFlash : ModuleScript<KtaneDefuserConnector.Componen
 		cancellationTokenSource?.Cancel();
 		cancellationTokenSource?.Dispose();
 		cancellationTokenSource = null;
-		using var interrupt = currentInterrupt ?? await this.ModuleInterruptAsync(context);
+		using var interrupt = currentInterrupt ?? await ModuleInterruptAsync(context);
 		interrupt.Context = context;
 
-		if (pressYes && this.highlight == 1) {
+		if (pressYes && highlight == 1) {
 			interrupt.SendInputs(Button.Left);
-			this.highlight = 0;
-		} else if (!pressYes && this.highlight == 0) {
+			highlight = 0;
+		} else if (!pressYes && highlight == 0) {
 			interrupt.SendInputs(Button.Right);
-			this.highlight = 1;
+			highlight = 1;
 		}
 
 		if (index != null) {
@@ -80,13 +78,13 @@ internal partial class ColourFlash : ModuleScript<KtaneDefuserConnector.Componen
 					currentIndex = -1;
 					break;
 				}
-				if (this.sequence != null) {
-					currentIndex = this.sequence.IndexOf(state);
+				if (sequence != null) {
+					currentIndex = sequence.IndexOf(state);
 					if (currentIndex < 0) {
 						// Shouldn't happen, but treat this as if we no longer know the sequence.
-						this.sequence = null;
+						sequence = null;
 					} else {
-						if (this.sequence.IndexOf(state, currentIndex + 1) < 0) {
+						if (sequence.IndexOf(state, currentIndex + 1) < 0) {
 							// This is a unique element in the sequence, so we know where we are now.
 							break;
 						}

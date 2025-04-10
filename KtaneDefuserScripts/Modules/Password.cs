@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using KtaneDefuserConnectorApi;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Password")]
@@ -14,23 +13,23 @@ internal partial class Password : ModuleScript<KtaneDefuserConnector.Components.
 	protected internal override void Started(AimlAsyncContext context) => context.Reply("<reply>column 1</reply><reply><text>2</text><postback>column 2</postback></reply><reply><text>3</text><postback>column 3</postback></reply><reply><text>4</text><postback>column 4</postback></reply><reply><text>5</text><postback>column 5</postback></reply>");
 
 	private async Task ReadColumn(AimlAsyncContext context, int column) {
-		using var interrupt = await this.ModuleInterruptAsync(context);
+		using var interrupt = await ModuleInterruptAsync(context);
 		var builder = new StringBuilder();
 		var letters = new char[6];
-		await this.MoveToDownButtonRowAsync(interrupt);
+		await MoveToDownButtonRowAsync(interrupt);
 		for (var i = 0; i < 6; i++) {
-			if (i > 0) await this.CycleColumnAsync(interrupt, column);
+			if (i > 0) await CycleColumnAsync(interrupt, column);
 			var data = interrupt.Read(Reader);
 			letters[i] = data.Display[column];
 		}
-		this.columns[column] = letters;
-		this.columnPositions[column] = 5;
+		columns[column] = letters;
+		columnPositions[column] = 5;
 		interrupt.Context.Reply(NATO.Speak(letters));
 		interrupt.Context.Reply("<reply>submit …</reply><reply>column 1</reply><reply><text>2</text><postback>column 2</postback></reply><reply><text>3</text><postback>column 3</postback></reply><reply><text>4</text><postback>column 4</postback></reply><reply><text>5</text><postback>column 5</postback></reply>");
 	}
 
 	private async Task MoveToDownButtonRowAsync(Interrupt interrupt) {
-		switch (this.highlightY) {
+		switch (highlightY) {
 			case 0:
 				await interrupt.SendInputsAsync(Button.Down);
 				break;
@@ -38,40 +37,40 @@ internal partial class Password : ModuleScript<KtaneDefuserConnector.Components.
 				await interrupt.SendInputsAsync(Button.Up);
 				break;
 		}
-		this.highlightY = 1;
+		highlightY = 1;
 	}
 
 	private async Task CycleColumnAsync(Interrupt interrupt, int column) {
 		var buttons = new List<Button>();
-		while (column < this.highlightX) {
+		while (column < highlightX) {
 			buttons.Add(Button.Left);
-			this.highlightX--;
+			highlightX--;
 		}
-		while (column > this.highlightX) {
+		while (column > highlightX) {
 			buttons.Add(Button.Right);
-			this.highlightX++;
+			highlightX++;
 		}
 		buttons.Add(Button.A);
 		await interrupt.SendInputsAsync(buttons);
 	}
 
 	private async Task SubmitAsync(Interrupt interrupt, string word) {
-		await this.MoveToDownButtonRowAsync(interrupt);
+		await MoveToDownButtonRowAsync(interrupt);
 		for (var i = 0; i < 6; i++) {
 			var data = interrupt.Read(Reader);
-			this.LogDisplay(new(data.Display));
+			LogDisplay(new(data.Display));
 			var anyMismatch = false;
 			for (var x = 0; x < 5; x++) {
 				if (data.Display[x] != char.ToUpper(word[x])) {
 					anyMismatch = true;
-					await this.CycleColumnAsync(interrupt, x);
-					this.columnPositions[x]++;
-					if (this.columnPositions[x] >= 6) this.columnPositions[x] = 0;
+					await CycleColumnAsync(interrupt, x);
+					columnPositions[x]++;
+					if (columnPositions[x] >= 6) columnPositions[x] = 0;
 				}
 			}
 			if (!anyMismatch) {
-				this.highlightX = 2;
-				this.highlightY = 2;
+				highlightX = 2;
+				highlightY = 2;
 				await interrupt.SubmitAsync(Button.Down, Button.A);
 				return;
 			}

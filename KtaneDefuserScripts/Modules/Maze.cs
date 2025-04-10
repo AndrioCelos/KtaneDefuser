@@ -1,6 +1,4 @@
-﻿using KtaneDefuserConnector;
-using KtaneDefuserConnector.DataTypes;
-using KtaneDefuserConnectorApi;
+﻿using KtaneDefuserConnector.DataTypes;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Maze")]
@@ -34,7 +32,7 @@ internal class Maze : ModuleScript<KtaneDefuserConnector.Components.Maze> {
 	private async Task ProcessInputAsync(AimlAsyncContext context, string s) {
 		var buttons = new List<Button>();
 		var tokens = s.Split((char[]?) null, StringSplitOptions.RemoveEmptyEntries);
-		var currentHighlight = this.highlight;
+		var currentHighlight = highlight;
 		for (var i = 0; i < tokens.Length; i++) {
 			var token = tokens[i].ToLowerInvariant();
 			if (token is "time" or "times" or "step" or "steps" or "space" or "spaces") continue;
@@ -58,8 +56,8 @@ internal class Maze : ModuleScript<KtaneDefuserConnector.Components.Maze> {
 			for (; count > 0; count--)
 				buttons.Add(Button.A);
 		}
-		this.highlight = currentHighlight;
-		using var interrupt = await this.ModuleInterruptAsync(context);
+		highlight = currentHighlight;
+		using var interrupt = await ModuleInterruptAsync(context);
 		var result = await interrupt.SubmitAsync(buttons);
 		if (result == ModuleLightState.Solved) return;
 

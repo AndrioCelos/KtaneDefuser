@@ -7,23 +7,21 @@ namespace KtaneDefuserConnector.Widgets;
 public class Indicator : WidgetReader<Indicator.ReadData> {
 	public override string Name => "Indicator";
 
-	private static readonly TextRecogniser textRecogniser = new(new(TextRecogniser.Fonts.OSTRICH_SANS_HEAVY, 48), 0, 255, new(128, 64),
+	private static readonly TextRecogniser textRecogniser = new(new(TextRecogniser.Fonts.OstrichSansHeavy, 48), 0, 255, new(128, 64),
 		"SND", "CLR", "CAR", "IND", "FRQ", "SIG", "NSA", "MSA", "TRN", "BOB", "FRK", "NLL");
 
 	protected internal override float IsWidgetPresent(Image<Rgba32> image, LightsState lightsState, PixelCounts pixelCounts)
 		// This has many red pixels, few white pixels and no yellow pixels.
 		=> Math.Max(0, pixelCounts.Red - pixelCounts.Yellow * 2 - Math.Max(0, pixelCounts.White - 4096) * 2) / 8192f;
 
-	private static bool IsRed(HsvColor hsv) => hsv.H is >= 345 or < 15 && hsv.S >= 0.25f;
+	private static bool IsRed(HsvColor hsv) => hsv is { H: >= 345 or < 15, S: >= 0.25f };
 	private static bool IsLit(HsvColor hsv) => hsv.V >= 1;
-	private static bool IsUnlit(HsvColor hsv) => hsv.H >= 30 && hsv.S < 0.15f && hsv.V is >= 0.05f and < 0.2f;
+	private static bool IsUnlit(HsvColor hsv) => hsv is { H: >= 30, S: < 0.15f, V: >= 0.05f and < 0.2f };
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		var corners = ImageUtils.FindCorners(image, image.Bounds, c => IsRed(HsvColor.FromColor(c)), 12);
 		var indicatorImage = ImageUtils.PerspectiveUndistort(image, corners, InterpolationMode.NearestNeighbour, new(256, 112));
-		if (debugImage is not null)
-			ImageUtils.DebugDrawPoints(debugImage, corners);
-
+		debugImage?.DebugDrawPoints(corners);
 		debugImage?.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }).DrawImage(indicatorImage, new Point(0, 256), 1));
 
 		bool ledIsOnRight, isLit;
@@ -59,6 +57,6 @@ public class Indicator : WidgetReader<Indicator.ReadData> {
 	}
 
 	public record ReadData(bool IsLit, string Label) {
-		public override string ToString() => $"{(this.IsLit ? "Lit" : "Unlit")} {this.Label}";
+		public override string ToString() => $"{(IsLit ? "Lit" : "Unlit")} {Label}";
 	}
 }

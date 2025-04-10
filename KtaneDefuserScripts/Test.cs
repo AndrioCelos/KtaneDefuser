@@ -1,6 +1,4 @@
-﻿using KtaneDefuserConnector;
-using KtaneDefuserConnectorApi;
-using SixLabors.ImageSharp.Formats.Bmp;
+﻿using SixLabors.ImageSharp.Formats.Bmp;
 
 namespace KtaneDefuserScripts;
 
@@ -47,15 +45,15 @@ internal class Test {
 
 	[AimlCategory("test screenshot")]
 	public static void TestScreenshot(AimlAsyncContext context) {
-		var image = KtaneDefuserConnector.DefuserConnector.Instance.TakeScreenshot();
+		var image = DefuserConnector.Instance.TakeScreenshot();
 		using var fileStream = File.OpenWrite(Path.Combine(Path.GetTempPath(), "test.bmp"));
 		image.Save(fileStream, new BmpEncoder() { BitsPerPixel = BmpBitsPerPixel.Pixel24 });
 		context.Reply("Done.");
 	}
 
 	[AimlCategory("test getmoduletype * * *")]
-	public static void TestGetModuleType(AimlAsyncContext context, int face, int x, int y) => context.Reply(KtaneDefuserConnector.DefuserConnector.Instance.CheatGetComponentReader(new(0, face, x, y))?.Name ?? "nil");
+	public static void TestGetModuleType(AimlAsyncContext context, int face, int x, int y) => context.Reply(DefuserConnector.Instance.CheatGetComponentReader(new(0, face, x, y))?.Name ?? "nil");
 
 	[AimlCategory("test read * * * *")]
-	public static void TestRead(AimlAsyncContext context, int face, int x, int y, string members) => context.Reply(KtaneDefuserConnector.DefuserConnector.Instance.CheatRead(new(0, face, x, y), members.Split((char[]?) null, StringSplitOptions.RemoveEmptyEntries)) ?? "nil");
+	public static void TestRead(AimlAsyncContext context, int face, int x, int y, string members) => context.Reply(DefuserConnector.Instance.CheatRead(new(0, face, x, y), members.Split((char[]?) null, StringSplitOptions.RemoveEmptyEntries)) ?? "nil");
 }

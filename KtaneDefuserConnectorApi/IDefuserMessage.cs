@@ -14,7 +14,7 @@ public struct LegacyCommandMessage(string command) : IDefuserMessage {
 	public string Command = command ?? throw new ArgumentNullException(nameof(command));
 
 	readonly MessageType IDefuserMessage.MessageType => MessageType.LegacyCommand;
-	readonly int IDefuserMessage.ToBuffer(byte[] buffer) => Encoding.UTF8.GetBytes(this.Command, 0, this.Command.Length, buffer, 5);
+	readonly int IDefuserMessage.ToBuffer(byte[] buffer) => Encoding.UTF8.GetBytes(Command, 0, Command.Length, buffer, 5);
 }
 
 [Obsolete($"This message type is being replaced by specific event messages.")]
@@ -22,7 +22,7 @@ public struct LegacyEventMessage(string eventMessage) : IDefuserMessage {
 	public string Event = eventMessage ?? throw new ArgumentNullException(nameof(eventMessage));
 
 	readonly MessageType IDefuserMessage.MessageType => MessageType.LegacyEvent;
-	readonly int IDefuserMessage.ToBuffer(byte[] buffer) => Encoding.UTF8.GetBytes(this.Event, 0, this.Event.Length, buffer, 5);
+	readonly int IDefuserMessage.ToBuffer(byte[] buffer) => Encoding.UTF8.GetBytes(Event, 0, Event.Length, buffer, 5);
 }
 
 /// <summary>The response to a <see cref="ScreenshotCommandMessage"/>.</summary>
@@ -34,20 +34,20 @@ public struct ScreenshotResponseMessage(int pixelDataLength, byte[] data) : IDef
 	/// <summary>Returns the pixel width of the image.</summary>
 	public readonly unsafe int Width {
 		get {
-			fixed (byte* ptr = this.Data)
+			fixed (byte* ptr = Data)
 				return *(int*) ptr;
 		}
 	}
 	/// <summary>Returns the pixel height of the image.</summary>
 	public readonly unsafe int Height {
 		get {
-			fixed (byte* ptr = this.Data)
+			fixed (byte* ptr = Data)
 				return *(int*) (ptr + 4);
 		}
 	}
 
 	readonly MessageType IDefuserMessage.MessageType => MessageType.ScreenshotResponse;
-	public readonly unsafe int ToBuffer(byte[] buffer) => this.PixelDataLength + 8;  // The caller should handle encoding the image data.
+	public readonly unsafe int ToBuffer(byte[] buffer) => PixelDataLength + 8;  // The caller should handle encoding the image data.
 }
 
 /// <summary>The response to a <see cref="CheatReadCommandMessage"/>.</summary>
@@ -56,7 +56,7 @@ public struct CheatReadResponseMessage(string? data) : IDefuserMessage {
 	public string? Data = data;
 
 	readonly MessageType IDefuserMessage.MessageType => MessageType.CheatReadResponse;
-	readonly int IDefuserMessage.ToBuffer(byte[] buffer) => this.Data is not null ? Encoding.UTF8.GetBytes(this.Data, 0, this.Data.Length, buffer, 5) : 0;
+	readonly int IDefuserMessage.ToBuffer(byte[] buffer) => Data is not null ? Encoding.UTF8.GetBytes(Data, 0, Data.Length, buffer, 5) : 0;
 }
 
 /// <summary>The response to a <see cref="CheatReadCommandMessage"/> if an error occurs.</summary>
@@ -64,7 +64,7 @@ public struct CheatReadErrorMessage(string message) : IDefuserMessage {
 	public string Message = message ?? throw new ArgumentNullException(nameof(message));
 
 	readonly MessageType IDefuserMessage.MessageType => MessageType.CheatReadError;
-	readonly int IDefuserMessage.ToBuffer(byte[] buffer) => Encoding.UTF8.GetBytes(this.Message, 0, this.Message.Length, buffer, 5);
+	readonly int IDefuserMessage.ToBuffer(byte[] buffer) => Encoding.UTF8.GetBytes(Message, 0, Message.Length, buffer, 5);
 }
 
 [Obsolete($"This message is being replaced with {nameof(InputCallbackMessage)}")]
@@ -72,7 +72,7 @@ public struct LegacyInputCallbackMessage(string token) : IDefuserMessage {
 	public string Token = token ?? throw new ArgumentNullException(nameof(token));
 
 	readonly MessageType IDefuserMessage.MessageType => MessageType.LegacyInputCallback;
-	readonly int IDefuserMessage.ToBuffer(byte[] buffer) => Encoding.UTF8.GetBytes(this.Token, 0, this.Token.Length, buffer, 5);
+	readonly int IDefuserMessage.ToBuffer(byte[] buffer) => Encoding.UTF8.GetBytes(Token, 0, Token.Length, buffer, 5);
 }
 
 /// <summary>A command that sends controller inputs to the game.</summary>
@@ -83,7 +83,7 @@ public struct InputCommandMessage(IEnumerable<IInputAction> actions) : IDefuserM
 	public readonly unsafe int ToBuffer(byte[] buffer) {
 		var length = 0;
 		fixed (byte* ptr = buffer) {
-			foreach (var action in this.Actions) {
+			foreach (var action in Actions) {
 				var ptr2 = ptr + 5;
 				switch (action) {
 					case NoOpAction:
@@ -133,9 +133,9 @@ public struct InputCallbackMessage(Guid token) : IDefuserMessage {
 	readonly MessageType IDefuserMessage.MessageType => MessageType.InputCallback;
 	readonly int IDefuserMessage.ToBuffer(byte[] buffer) {
 #if NET6_0_OR_GREATER
-		this.Token.TryWriteBytes(buffer.AsSpan(5));
+		Token.TryWriteBytes(buffer.AsSpan(5));
 #else
-		Array.Copy(this.Token.ToByteArray(), 0, buffer, 5, 16);
+		Array.Copy(Token.ToByteArray(), 0, buffer, 5, 16);
 #endif
 		return 16;
 	}
@@ -159,10 +159,10 @@ public struct CheatGetModuleTypeCommandMessage(Slot slot) : IDefuserMessage {
 
 	readonly MessageType IDefuserMessage.MessageType => MessageType.CheatGetModuleTypeCommand;
 	readonly int IDefuserMessage.ToBuffer(byte[] buffer) {
-		buffer[5] = (byte) this.Slot.Bomb;
-		buffer[6] = (byte) this.Slot.Face;
-		buffer[7] = (byte) this.Slot.X;
-		buffer[8] = (byte) this.Slot.Y;
+		buffer[5] = (byte) Slot.Bomb;
+		buffer[6] = (byte) Slot.Face;
+		buffer[7] = (byte) Slot.X;
+		buffer[8] = (byte) Slot.Y;
 		return 4;
 	}
 }
@@ -172,7 +172,7 @@ public struct CheatGetModuleTypeResponseMessage(string? moduleType) : IDefuserMe
 	public string? ModuleType = moduleType;
 
 	readonly MessageType IDefuserMessage.MessageType => MessageType.CheatGetModuleTypeResponse;
-	readonly int IDefuserMessage.ToBuffer(byte[] buffer) => this.ModuleType is not null ? Encoding.UTF8.GetBytes(this.ModuleType, 0, this.ModuleType.Length, buffer, 5) : 0;
+	readonly int IDefuserMessage.ToBuffer(byte[] buffer) => ModuleType is not null ? Encoding.UTF8.GetBytes(ModuleType, 0, ModuleType.Length, buffer, 5) : 0;
 }
 
 /// <summary>The response to a <see cref="CheatGetModuleTypeCommandMessage"/> if an error occurs.</summary>
@@ -180,7 +180,7 @@ public struct CheatGetModuleTypeErrorMessage(string message) : IDefuserMessage {
 	public string Message = message ?? throw new ArgumentNullException(nameof(message));
 
 	readonly MessageType IDefuserMessage.MessageType => MessageType.CheatGetModuleTypeError;
-	readonly int IDefuserMessage.ToBuffer(byte[] buffer) => Encoding.UTF8.GetBytes(this.Message, 0, this.Message.Length, buffer, 5);
+	readonly int IDefuserMessage.ToBuffer(byte[] buffer) => Encoding.UTF8.GetBytes(Message, 0, Message.Length, buffer, 5);
 }
 
 /// <summary>A command that reads internal data from a module.</summary>
@@ -190,12 +190,12 @@ public struct CheatReadCommandMessage(Slot slot, IList<string> members) : IDefus
 
 	readonly MessageType IDefuserMessage.MessageType => MessageType.CheatReadCommand;
 	readonly int IDefuserMessage.ToBuffer(byte[] buffer) {
-		buffer[5] = (byte) this.Slot.Bomb;
-		buffer[6] = (byte) this.Slot.Face;
-		buffer[7] = (byte) this.Slot.X;
-		buffer[8] = (byte) this.Slot.Y;
+		buffer[5] = (byte) Slot.Bomb;
+		buffer[6] = (byte) Slot.Face;
+		buffer[7] = (byte) Slot.X;
+		buffer[8] = (byte) Slot.Y;
 		var n = 9;
-		foreach (var member in this.Members) {
+		foreach (var member in Members) {
 			buffer[n] = (byte) member.Length;
 			n++;
 			n += Encoding.UTF8.GetBytes(member, 0, member.Length, buffer, n);
@@ -224,10 +224,10 @@ public struct NewBombMessage(int numStrikes, int numSolvableModules, int numNeed
 	readonly MessageType IDefuserMessage.MessageType => MessageType.NewBomb;
 	readonly unsafe int IDefuserMessage.ToBuffer(byte[] buffer) {
 		fixed (byte* ptr = buffer) {
-			buffer[5] = (byte) this.NumStrikes;
-			*(short*) (ptr + 6) = (short) this.NumSolvableModules;
-			*(short*) (ptr + 8) = (short) this.NumNeedyModules;
-			*(long*) (ptr + 10) = this.Time.Ticks;
+			buffer[5] = (byte) NumStrikes;
+			*(short*) (ptr + 6) = (short) NumSolvableModules;
+			*(short*) (ptr + 8) = (short) NumNeedyModules;
+			*(long*) (ptr + 10) = Time.Ticks;
 		}
 		return 13;
 	}
@@ -238,10 +238,10 @@ public struct StrikeMessage(Slot slot) : IDefuserMessage {
 
 	readonly MessageType IDefuserMessage.MessageType => MessageType.Strike;
 	readonly int IDefuserMessage.ToBuffer(byte[] buffer) {
-		buffer[5] = (byte) this.Slot.Bomb;
-		buffer[6] = (byte) this.Slot.Face;
-		buffer[7] = (byte) this.Slot.X;
-		buffer[8] = (byte) this.Slot.Y;
+		buffer[5] = (byte) Slot.Bomb;
+		buffer[6] = (byte) Slot.Face;
+		buffer[7] = (byte) Slot.X;
+		buffer[8] = (byte) Slot.Y;
 		return 4;
 	}
 }
@@ -250,14 +250,14 @@ public struct AlarmClockChangeMessage(bool on) : IDefuserMessage {
 	public bool On = on;
 
 	readonly MessageType IDefuserMessage.MessageType => MessageType.AlarmClockChange;
-	readonly int IDefuserMessage.ToBuffer(byte[] buffer) { buffer[5] = this.On ? (byte) 1 : (byte) 0; return 1; }
+	readonly int IDefuserMessage.ToBuffer(byte[] buffer) { buffer[5] = On ? (byte) 1 : (byte) 0; return 1; }
 }
 /// <summary>An event message that is sent when the state of the lights has changed.</summary>
 public struct LightsStateChangeMessage(bool on) : IDefuserMessage {
 	public bool On = on;
 
 	readonly MessageType IDefuserMessage.MessageType => MessageType.LightsStateChange;
-	readonly int IDefuserMessage.ToBuffer(byte[] buffer) { buffer[5] = this.On ? (byte) 1 : (byte) 0; return 1; }
+	readonly int IDefuserMessage.ToBuffer(byte[] buffer) { buffer[5] = On ? (byte) 1 : (byte) 0; return 1; }
 }
 /// <summary>An event message that is sent when the state of a needy module has changed.</summary>
 public struct NeedyStateChangeMessage(Slot slot, NeedyState state) : IDefuserMessage {
@@ -266,11 +266,11 @@ public struct NeedyStateChangeMessage(Slot slot, NeedyState state) : IDefuserMes
 
 	readonly MessageType IDefuserMessage.MessageType => MessageType.NeedyStateChange;
 	readonly int IDefuserMessage.ToBuffer(byte[] buffer) {
-		buffer[5] = (byte) this.Slot.Bomb;
-		buffer[6] = (byte) this.Slot.Face;
-		buffer[7] = (byte) this.Slot.X;
-		buffer[8] = (byte) this.Slot.Y;
-		buffer[9] = (byte) this.State;
+		buffer[5] = (byte) Slot.Bomb;
+		buffer[6] = (byte) Slot.Face;
+		buffer[7] = (byte) Slot.X;
+		buffer[8] = (byte) Slot.Y;
+		buffer[9] = (byte) State;
 		return 5;
 	}
 }
@@ -284,5 +284,5 @@ public struct BombDefuseMessage(int bomb) : IDefuserMessage {
 	public int Bomb = bomb;
 
 	readonly MessageType IDefuserMessage.MessageType => MessageType.BombDefuse;
-	readonly int IDefuserMessage.ToBuffer(byte[] buffer) { buffer[5] = (byte) this.Bomb; return 1; }
+	readonly int IDefuserMessage.ToBuffer(byte[] buffer) { buffer[5] = (byte) Bomb; return 1; }
 }

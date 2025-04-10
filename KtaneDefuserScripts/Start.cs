@@ -1,8 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using AngelAiml;
-using KtaneDefuserConnector;
-using KtaneDefuserConnectorApi;
 using Microsoft.Extensions.Logging.Abstractions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -46,12 +44,12 @@ internal static partial class Start {
 		interrupt.SendInputs(Button.A);
 		await Delay(1);  // Wait for modules to initialise.
 		// 2. Identify components on the bomb.
-		using (var ss = KtaneDefuserConnector.DefuserConnector.Instance.TakeScreenshot())
+		using (var ss = DefuserConnector.Instance.TakeScreenshot())
 			await RegisterComponentsAsync(context, ss);
 		// 3. Turn the bomb around and identify widgets on the side.
 		await Utils.SelectFaceAsync(interrupt, 1, SelectFaceAlignMode.CheckWidgets);
 		// 4. Repeat steps 2-3 for the other faces.
-		using (var ss = KtaneDefuserConnector.DefuserConnector.Instance.TakeScreenshot())
+		using (var ss = DefuserConnector.Instance.TakeScreenshot())
 			await RegisterComponentsAsync(context, ss);
 		await Utils.SelectFaceAsync(interrupt, 0, SelectFaceAlignMode.CheckWidgets);
 		// 5. Turn the bomb to the bottom face.
@@ -59,13 +57,13 @@ internal static partial class Start {
 		interrupt.SendInputs(new AxisAction(Axis.RightStickY, -0.875f));
 		await Delay(0.5);
 		// 6. Identify widgets on the bottom face.
-		using (var ss = KtaneDefuserConnector.DefuserConnector.Instance.TakeScreenshot())
+		using (var ss = DefuserConnector.Instance.TakeScreenshot())
 			Edgework.RegisterWidgets(context, false, ss);
 		// 7. Turn the bomb to the top face.
 		interrupt.SendInputs(new AxisAction(Axis.RightStickY, 1));
 		await Delay(0.5);
 		// 8. Identify widgets on the top face.
-		using (var ss = KtaneDefuserConnector.DefuserConnector.Instance.TakeScreenshot())
+		using (var ss = DefuserConnector.Instance.TakeScreenshot())
 			Edgework.RegisterWidgets(context, false, ss);
 		// 9. Reset the bomb tilt.
 		interrupt.SendInputs(new AxisAction(Axis.RightStickY, 0));
@@ -74,15 +72,15 @@ internal static partial class Start {
 	}
 
 	private static async Task RegisterComponentsAsync(AimlAsyncContext context, Image<Rgba32> screenshot) {
-		var lightsState = KtaneDefuserConnector.DefuserConnector.Instance.GetLightsState(screenshot);
+		var lightsState = DefuserConnector.Instance.GetLightsState(screenshot);
 		if (lightsState != LightsState.On) throw new ArgumentException($"Can't identify components on lights state {lightsState}.");
 		var needTimerRead = false;
 		var anyModules = false;
 		for (var i = 0; i < 6; i++) {
 			var points = Utils.GetPoints(new(0, GameState.Current.SelectedFaceNum, i % 3, i / 3));
-			var component = KtaneDefuserConnector.DefuserConnector.Instance.GetComponentReader(screenshot, points);
+			var component = DefuserConnector.Instance.GetComponentReader(screenshot, points);
 			var slot = new Slot(0, GameState.Current.SelectedFaceNum, i % 3, i / 3);
-			var actualComponent = KtaneDefuserConnector.DefuserConnector.Instance.CheatGetComponentReader(slot);
+			var actualComponent = DefuserConnector.Instance.CheatGetComponentReader(slot);
 			if (actualComponent != component && !(actualComponent is null && component is KtaneDefuserConnector.Components.Timer)) {
 				LogWrongComponent(logger, slot, component?.Name, actualComponent?.Name);
 				component = actualComponent;
@@ -95,7 +93,7 @@ internal static partial class Start {
 			}
 			var module = RegisterComponent(context, slot, component);  // TODO: This assumes the vanilla bomb layout. It will need to be updated for other layouts.
 			if (module is not null) {
-				var lightState = KtaneDefuserConnector.DefuserConnector.Instance.GetModuleLightState(screenshot, points);
+				var lightState = DefuserConnector.Instance.GetModuleLightState(screenshot, points);
 				if (lightState == ModuleLightState.Solved) {
 					LogSolvedModule(logger, module.Script.ModuleIndex + 1);
 					module.IsSolved = true;

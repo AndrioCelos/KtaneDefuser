@@ -1,5 +1,4 @@
 ﻿using System.Text.RegularExpressions;
-using KtaneDefuserConnectorApi;
 using static KtaneDefuserConnector.Components.PianoKeys;
 
 namespace KtaneDefuserScripts.Modules;

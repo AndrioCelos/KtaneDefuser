@@ -30,16 +30,16 @@ public struct HsvColor(float h, float s, float v, byte a) {
 		var max = Math.Max(Math.Max(r, g), b) / 255f;
 		var delta = max - min;
 
-		var H = delta == 0 ? 0
+		var h = delta == 0 ? 0
 			: rf == max ? 60 * (gf - bf) / delta
 			: gf == max ? 60 * ((bf - rf) / delta + 2)
 			: 60 * ((rf - gf) / delta + 4);
-		if (H < 0) H += 360;
-		var S = max == 0 ? 0 : delta / max;
-		var V = max;
+		if (h < 0) h += 360;
+		var s = max == 0 ? 0 : delta / max;
+		var v = max;
 
-		return new(H, S, V, a);
+		return new(h, s, v, a);
 	}
 
-	public override readonly string ToString() => $"{nameof(HsvColor)} [ H={this.H:N1}, S={this.S:N2}, V={this.V:N2} ]";
+	public override readonly string ToString() => $"{nameof(HsvColor)} [ H={H:N1}, S={S:N2}, V={V:N2} ]";
 }

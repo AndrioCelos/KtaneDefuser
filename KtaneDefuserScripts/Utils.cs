@@ -1,7 +1,5 @@
 ﻿using System.Web;
 using AngelAiml.Media;
-using KtaneDefuserConnector;
-using KtaneDefuserConnectorApi;
 using Button = KtaneDefuserConnectorApi.Button;
 
 namespace KtaneDefuserScripts;
@@ -82,7 +80,7 @@ internal static class Utils {
 		if (alignMode == SelectFaceAlignMode.CheckWidgets) {
 			await Delay(0.375);
 			interrupt.SendInputs(new AxisAction(Axis.RightStickX, 0));
-			using var ss = KtaneDefuserConnector.DefuserConnector.Instance.TakeScreenshot();
+			using var ss = DefuserConnector.Instance.TakeScreenshot();
 			Edgework.RegisterWidgets(interrupt.Context, true, ss);
 			interrupt.SendInputs(new AxisAction(Axis.RightStickX, 1));
 			await Delay(0.125);

@@ -55,11 +55,19 @@ public static class ImageUtils {
 		=> hsv.H is >= 180 and < 255 && hsv.S is >= 0.025f and < 0.25f && hsv.V is >= 0.45f and < 0.75f;
 
 	/// <summary>Finds a point closest to each corner of the specified rectangle of the area meeting the specified predicate.</summary>
+	/// <param name="image">The image to search.</param>
+	/// <param name="bounds">The bounds within the image to search within.</param>
+	/// <param name="predicate">The condition to search for.</param>
 	/// <param name="continuitySize">The number out of 16 further pixels along the inward diagonal that must also match.</param>
 	public static Quadrilateral FindCorners(Image<Rgba32> image, Rectangle bounds, Predicate<Rgba32> predicate, int continuitySize)
 		=> TryFindCorners(image, bounds, predicate, continuitySize, out var quadrilateral) ? quadrilateral : throw new ArgumentException("No area matching the specified condition was found.");
+
 	/// <summary>Finds a point closest to each corner of the specified rectangle of the area meeting the specified predicate.</summary>
+	/// <param name="image">The image to search.</param>
+	/// <param name="bounds">The bounds within the image to search within.</param>
+	/// <param name="predicate">The condition to search for.</param>
 	/// <param name="continuitySize">The number out of 16 further pixels along the inward diagonal that must also match.</param>
+	/// <param name="quadrilateral">Returns a quadrilateral consisting of the found corners.</param>
 	public static bool TryFindCorners(Image<Rgba32> image, Rectangle bounds, Predicate<Rgba32> predicate, int continuitySize, out Quadrilateral quadrilateral) {
 		quadrilateral = new();
 		var diagonalSweeps = new (Point start, Size dir, Size increment)[] {
@@ -235,19 +243,19 @@ public static class ImageUtils {
 	}
 
 	// The following lines were calculated using a linear least squares regression on sample images.
-	// The linear function is defined by a gradient and y-intercent: y = m * x + c
+	// The linear function is defined by a gradient and y-intercept: y = m * x + c
 	// The gradient (m) and intercept (c) are multiplied by 65536 because fixed-point math is faster than floating-point math.
 	// The intercept is also offset by +32768 for rounding.
 	public static Rgba32 ColourCorrect(Rgba32 pixel, LightsState lightsState) => lightsState switch {
 		LightsState.Buzz      => new((byte) Math.Clamp(( 319305 * pixel.R +  429087) >> 16, 0, 255), (byte) Math.Clamp(( 315405 * pixel.G +  664756) >> 16, 0, 255), (byte) Math.Clamp(( 316774 * pixel.B +  663781) >> 16, 0, 255), pixel.A),
 		LightsState.Off       => new((byte) Math.Clamp((2127280 * pixel.R +  497929) >> 16, 0, 255), (byte) Math.Clamp((1964778 * pixel.G +  715096) >> 16, 0, 255), (byte) Math.Clamp((1570129 * pixel.B +  740225) >> 16, 0, 255), pixel.A),
-		LightsState.Emergency => new((byte) Math.Clamp((  53982 * pixel.R + -299830) >> 16, 0, 255), (byte) Math.Clamp((  84761 * pixel.G +  256655) >> 16, 0, 255), (byte) Math.Clamp((  85066 * pixel.B +  250049) >> 16, 0, 255), pixel.A),
+		LightsState.Emergency => new((byte) Math.Clamp((  53982 * pixel.R -  299830) >> 16, 0, 255), (byte) Math.Clamp((  84761 * pixel.G +  256655) >> 16, 0, 255), (byte) Math.Clamp((  85066 * pixel.B +  250049) >> 16, 0, 255), pixel.A),
 		_ => pixel
 	};
 	public static Rgba32 ColourUncorrect(Rgba32 pixel, LightsState lightsState) => lightsState switch {
-		LightsState.Buzz      => new((byte) Math.Clamp((  13118 * pixel.R +   -2642) >> 16, 0, 255), (byte) Math.Clamp((  13099 * pixel.G +  -26052) >> 16, 0, 255), (byte) Math.Clamp((  12964 * pixel.B +  -15923) >> 16, 0, 255), pixel.A),
+		LightsState.Buzz      => new((byte) Math.Clamp((  13118 * pixel.R -    2642) >> 16, 0, 255), (byte) Math.Clamp((  13099 * pixel.G -   26052) >> 16, 0, 255), (byte) Math.Clamp((  12964 * pixel.B -   15923) >> 16, 0, 255), pixel.A),
 		LightsState.Off       => new((byte) Math.Clamp((   1879 * pixel.R +   37662) >> 16, 0, 255), (byte) Math.Clamp((   1946 * pixel.G +   43646) >> 16, 0, 255), (byte) Math.Clamp((   2449 * pixel.B +   42723) >> 16, 0, 255), pixel.A),
-		LightsState.Emergency => new((byte) Math.Clamp((  78034 * pixel.R +  647314) >> 16, 0, 255), (byte) Math.Clamp((  50172 * pixel.G +  -70498) >> 16, 0, 255), (byte) Math.Clamp((  49926 * pixel.B +  -57006) >> 16, 0, 255), pixel.A),
+		LightsState.Emergency => new((byte) Math.Clamp((  78034 * pixel.R +  647314) >> 16, 0, 255), (byte) Math.Clamp((  50172 * pixel.G -   70498) >> 16, 0, 255), (byte) Math.Clamp((  49926 * pixel.B -   57006) >> 16, 0, 255), pixel.A),
 		_ => pixel
 	};
 
@@ -262,12 +270,11 @@ public static class ImageUtils {
 				var maxTotalIncrement = 0;
 				foreach (var sample in samples) {
 					var sampleColour = sample[x, y];
-					if (sampleColour.A > 0) {
-						var increment = Math.Max(127 - Math.Abs(colour.R - sampleColour.R) - Math.Abs(colour.G - sampleColour.G) - Math.Abs(colour.B - sampleColour.B), 0) * sampleColour.A;
-						var totalIncrement = 127 * sampleColour.A;
-						if (increment > maxIncrement) maxIncrement = increment;
-						if (totalIncrement > maxTotalIncrement) maxTotalIncrement = totalIncrement;
-					}
+					if (sampleColour.A <= 0) continue;
+					var increment = Math.Max(127 - Math.Abs(colour.R - sampleColour.R) - Math.Abs(colour.G - sampleColour.G) - Math.Abs(colour.B - sampleColour.B), 0) * sampleColour.A;
+					var totalIncrement = 127 * sampleColour.A;
+					if (increment > maxIncrement) maxIncrement = increment;
+					if (totalIncrement > maxTotalIncrement) maxTotalIncrement = totalIncrement;
 				}
 				score += maxIncrement;
 				total += maxTotalIncrement;
@@ -282,8 +289,7 @@ public static class ImageUtils {
 		var yellowPixels = 0;
 		for (var y = 0; y < image.Height * 5 / 16; y++) {
 			for (var x = 0; x < image.Width; x++) {
-				var hsvColor = HsvColor.FromColor(image[x, y]);
-				if (hsvColor.H is >= 30 and <= 60 && hsvColor.S >= 0.5f && hsvColor.V >= 0.4f)  // Include the stripboard on Capacitor Discharge.
+				if (HsvColor.FromColor(image[x, y]) is { H: >= 30 and <= 60, S: >= 0.5f, V: >= 0.4f })  // Include the stripboard on Needy Capacitors.
 					yellowPixels++;
 			}
 		}
@@ -291,7 +297,12 @@ public static class ImageUtils {
 	}
 
 	public static ComponentFrameType GetComponentFrame(Image<Rgba32> image) {
-		var rectangles = new Rectangle[] { new(0, 0, image.Width, image.Height / 4), new(0, 0, image.Width / 4, image.Height), new(0, image.Height * 3 / 4, image.Width, image.Height / 4), new(image.Width * 3 / 4, 0, image.Width / 4, image.Height) };
+		var rectangles = new Rectangle[] {
+			new(0, 0, image.Width, image.Height / 4),
+			new(0, 0, image.Width / 4, image.Height),
+			new(0, image.Height * 3 / 4, image.Width, image.Height / 4),
+			new(image.Width * 3 / 4, 0, image.Width / 4, image.Height)
+		};
 		var total = 0;
 		var match = new int[3];
 		image.ProcessPixelRows(p => {
@@ -302,21 +313,22 @@ public static class ImageUtils {
 					for (var x = rect.Left; x < rect.Right; x++) {
 						total++;
 
-						var hsv = HsvColor.FromColor(r[x]);
-						if (hsv.H is >= 180 and < 240 && hsv.S < 0.5f && hsv.V is >= 0.15f and < 0.5f)
-							match[1]++;  // Needy background
-						else if (i == 0 && hsv.H is >= 30 and < 60 && hsv.S >= 0.5f && hsv.V is >= 0.3f and < 0.75f)
-							match[1]++;  // Needy yellow stripes
-						else if (i == 0 && hsv.H >= 240 && hsv.S is >= 0.25f and < 0.5f && hsv.V is >= 0.1f and < 0.2f)
-							match[1]++;  // Needy black stripes
-						else if (hsv.H is >= 150 and < 240 && hsv.S < 0.5f && hsv.V >= 0.5f)
-							match[0]++;  // Solvable background
-						else if (hsv.S < 0.25f && hsv.V < 0.2f)
-							match[2]++;  // Timer background
-						else if (hsv.S < 0.25f && hsv.V < 0.2f)
-							match[2]++;  // Timer background
-						else if (hsv.H < 60 && hsv.S >= 0.5f && hsv.V < 0.2f)
-							match[2] += 2;  // Timer display background
+						switch (HsvColor.FromColor(r[x])) {
+							case { H: >= 180 and < 240, S: < 0.5f, V: >= 0.15f and < 0.5f }:  // Needy background
+							case { H: >= 30 and < 60, S: >= 0.5f, V: >= 0.3f and < 0.75f} when i == 0:  // Needy yellow stripes
+							case { H: >= 240, S: >= 0.25f and < 0.5f, V: >= 0.1f and < 0.2f } when i == 0:  // Needy black stripes
+								match[1]++; 
+								break;
+							case { H: >= 150 and < 240, S: < 0.5f, V: >= 0.5f }:
+								match[0]++; // Solvable background
+								break;
+							case { S: < 0.25f, V: < 0.2f }:
+								match[2]++; // Timer background
+								break;
+							case { H: < 60, S: >= 0.5f, V: < 0.2f }:
+								match[2] += 2; // Timer display background
+								break;
+						}
 					}
 				}
 			}
@@ -344,12 +356,11 @@ public static class ImageUtils {
 	public static ModuleLightState GetLightState(Image<Rgba32> image, Quadrilateral points) {
 		var x = (int) Math.Round(points.TopRight.X + (points.BottomLeft.X - points.TopRight.X) * 0.1015625);
 		var y = (int) Math.Round(points.TopRight.Y + (points.BottomLeft.Y - points.TopRight.Y) * 0.1015625);
-		var hsv = HsvColor.FromColor(image[x, y]);
-		return hsv.S >= 0.85f && hsv.H is >= 105 and <= 150 && hsv.V >= 0.5f
-			? ModuleLightState.Solved
-			: hsv.S >= 0.65f && hsv.H is >= 330 or <= 30 && hsv.V >= 0.75f
-			? ModuleLightState.Strike
-			: ModuleLightState.Off;
+		return HsvColor.FromColor(image[x, y]) switch {
+			{ S: >= 0.85f, H: >= 105 and <= 150, V: >= 0.5f } => ModuleLightState.Solved,
+			{ S: >= 0.65f, H: >= 330 or <= 30, V: >= 0.75f } => ModuleLightState.Strike,
+			_ => ModuleLightState.Off
+		};
 	}
 
 	private static readonly Rectangle[] lightsStateSearchRects = [new(96, 48, 16, 16), new(960, 48, 16, 16), new(1748, 236, 16, 16)];
@@ -388,10 +399,10 @@ public static class ImageUtils {
 							dist += Math.Abs((p.R << 8) - refColour.R) + Math.Abs((p.G << 8) - refColour.G) + Math.Abs((p.B << 8) - refColour.B);
 						}
 					}
-					if (dist < lightsStateSearchTolerances[i]) {
-						result = (LightsState) i;
-						return;
-					}
+
+					if (dist >= lightsStateSearchTolerances[i]) continue;
+					result = (LightsState) i;
+					return;
 				}
 			}
 		});

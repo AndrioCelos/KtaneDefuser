@@ -1,4 +1,5 @@
 using KtaneDefuserConnector;
+using Microsoft.Extensions.Logging.Abstractions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Color = System.Drawing.Color;
@@ -17,7 +18,7 @@ public partial class TransformationForm : Form {
 	private int? draggingPoint;
 
 	private void SetScreenImage(Image<Rgba32>? value) {
-		this.screenImage = value;
+		screenImage = value;
 		if (value != null) {
 			screenBitmap = value.ToWinFormsImage();
 			points[1].X = Math.Min(points[1].X, value.Width);
@@ -57,7 +58,7 @@ public partial class TransformationForm : Form {
 				e.Graphics.FillEllipse(brush, new(point.X - 5, point.Y - 5, 11, 11));
 			}
 			if (draggingPoint != null) {
-				var point = this.points[this.draggingPoint.Value];
+				var point = points[draggingPoint.Value];
 				var displayPoint = ToDisplayPoint(point);
 				e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
 				var destRect = new Rectangle(displayPoint.X + 16, displayPoint.Y + 16, 144, 144);
@@ -65,17 +66,17 @@ public partial class TransformationForm : Form {
 					for (int x = 0; x < 9; x++) {
 						var x2 = point.X + x - 4;
 						var y2 = point.Y + y - 4;
-						if (x2 >= 0 && y2 >= 0 && x2 < this.screenImage.Width && y2 < this.screenImage.Height) {
-							var pixel = this.screenImage[x2, y2];
-							e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(pixel.R, pixel.G, pixel.B)), new Rectangle(displayPoint.X + 16 + x * 16, displayPoint.Y + 16 + y * 16, 16, 16));
+						if (x2 >= 0 && y2 >= 0 && x2 < screenImage.Width && y2 < screenImage.Height) {
+							var pixel = screenImage[x2, y2];
+							e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(pixel.R, pixel.G, pixel.B)), new(displayPoint.X + 16 + x * 16, displayPoint.Y + 16 + y * 16, 16, 16));
 						}
 					}
 				}
 				e.Graphics.DrawRectangle(Pens.LightGray, destRect);
-				e.Graphics.FillRectangle(Brushes.White, new Rectangle(displayPoint.X + 16 + 72, displayPoint.Y + 16 + 72, 1, 1));
+				e.Graphics.FillRectangle(Brushes.White, new(displayPoint.X + 16 + 72, displayPoint.Y + 16 + 72, 1, 1));
 				var rectangle = new Rectangle(destRect.Left, destRect.Bottom, 72, 24);
 				e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(192, 0, 0, 0)), rectangle);
-				e.Graphics.DrawString($"({point.X}, {point.Y})", this.Font, Brushes.Magenta, rectangle.Location);
+				e.Graphics.DrawString($"({point.X}, {point.Y})", Font, Brushes.Magenta, rectangle.Location);
 			}
 		}
 	}
@@ -99,7 +100,7 @@ public partial class TransformationForm : Form {
 			var point = FromDisplayPoint(e.Location);
 			point.X = Math.Min(Math.Max(point.X, 0), screenImage.Width);
 			point.Y = Math.Min(Math.Max(point.Y, 0), screenImage.Height);
-			this.points[this.draggingPoint.Value] = point;
+			points[draggingPoint.Value] = point;
 			presetBox.SelectedIndex = -1;
 			screenshotPictureBox.Refresh();
 			RedrawTransformedImage();
@@ -118,7 +119,7 @@ public partial class TransformationForm : Form {
 		if (screenImage == null) return;
 		var size = new SizeF(panel1.ClientSize.Width, (float) panel1.ClientSize.Width * screenImage.Height / screenImage.Width);
 		if (size.Height > panel1.ClientSize.Height)
-			size = new SizeF((float) panel1.ClientSize.Height * screenImage.Width / screenImage.Height, panel1.ClientSize.Height);
+			size = new((float) panel1.ClientSize.Height * screenImage.Width / screenImage.Height, panel1.ClientSize.Height);
 		screenshotPictureBox.Size = new((int) size.Width, (int) size.Height);
 		screenshotPictureBox.Location = new((panel1.Width - screenshotPictureBox.Width) / 2, (panel1.Height - screenshotPictureBox.Height) / 2);
 		screenshotPictureBox.Refresh();
@@ -275,7 +276,7 @@ public partial class TransformationForm : Form {
 
 	private async void GetFromGameButton_Click(object sender, EventArgs e) {
 		using var connector = new DefuserConnector();
-		await connector.ConnectAsync(false);
+		await connector.ConnectAsync(NullLoggerFactory.Instance, false);
 		var image = await connector.TakeScreenshotAsync();
 		SetScreenImage(image);
 	}
@@ -300,8 +301,8 @@ public partial class TransformationForm : Form {
 	private void PresetBox_KeyDown(object sender, KeyEventArgs e) {
 		switch (e.KeyCode) {
 			case Keys.W:
-				if (this.draggingPoint.HasValue) {
-					this.points[this.draggingPoint.Value].Y--;
+				if (draggingPoint.HasValue) {
+					points[draggingPoint.Value].Y--;
 					presetBox.SelectedIndex = -1;
 					screenshotPictureBox.Refresh();
 					RedrawTransformedImage();
@@ -310,8 +311,8 @@ public partial class TransformationForm : Form {
 				}
 				break;
 			case Keys.S:
-				if (this.draggingPoint.HasValue) {
-					this.points[this.draggingPoint.Value].Y++;
+				if (draggingPoint.HasValue) {
+					points[draggingPoint.Value].Y++;
 					presetBox.SelectedIndex = -1;
 					screenshotPictureBox.Refresh();
 					RedrawTransformedImage();
@@ -320,8 +321,8 @@ public partial class TransformationForm : Form {
 				}
 				break;
 			case Keys.A:
-				if (this.draggingPoint.HasValue) {
-					this.points[this.draggingPoint.Value].X--;
+				if (draggingPoint.HasValue) {
+					points[draggingPoint.Value].X--;
 					presetBox.SelectedIndex = -1;
 					screenshotPictureBox.Refresh();
 					RedrawTransformedImage();
@@ -330,8 +331,8 @@ public partial class TransformationForm : Form {
 				}
 				break;
 			case Keys.D:
-				if (this.draggingPoint.HasValue) {
-					this.points[this.draggingPoint.Value].X++;
+				if (draggingPoint.HasValue) {
+					points[draggingPoint.Value].X++;
 					presetBox.SelectedIndex = -1;
 					screenshotPictureBox.Refresh();
 					RedrawTransformedImage();

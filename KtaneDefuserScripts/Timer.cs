@@ -1,5 +1,4 @@
-﻿using KtaneDefuserConnector;
-using KtaneDefuserConnector.DataTypes;
+﻿using KtaneDefuserConnector.DataTypes;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -11,7 +10,7 @@ internal static class Timer {
 		int? lastSeconds = null;
 		// Keep watching the timer until it ticks over to get sub-second precision.
 		while (true) {
-			var data = KtaneDefuserConnector.DefuserConnector.Instance.ReadComponent(screenshot, KtaneDefuserConnector.DefuserConnector.Instance.GetLightsState(screenshot), KtaneDefuserConnector.DefuserConnector.TimerReader, polygon);
+			var data = DefuserConnector.Instance.ReadComponent(screenshot, DefuserConnector.Instance.GetLightsState(screenshot), DefuserConnector.TimerReader, polygon);
 			screenshot.Dispose();
 			GameState.Current.GameMode = data.GameMode;
 			if (timerHasNotStartedYet) {  // TimerBaseTime is now the time as of 2 seconds before the timer starts.
@@ -29,7 +28,7 @@ internal static class Timer {
 			}
 			lastSeconds = data.Time;
 			await Delay(0.1);
-			screenshot = KtaneDefuserConnector.DefuserConnector.Instance.TakeScreenshot();
+			screenshot = DefuserConnector.Instance.TakeScreenshot();
 		}
 	}
 

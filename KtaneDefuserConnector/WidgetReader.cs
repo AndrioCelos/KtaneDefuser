@@ -41,7 +41,7 @@ public abstract class WidgetReader {
 							break;
 						default:
 							switch (hsv.V) {
-								case >= 0.7f when hsv.S < 0.15f && hsv.H < 180: white++; break;
+								case >= 0.7f when hsv is { S: < 0.15f, H: < 180 }: white++; break;
 								case >= 0.25f and <= 0.4f when hsv.H < 180: grey++; break;
 							}
 							break;
@@ -71,10 +71,11 @@ public abstract class WidgetReader {
 public abstract class WidgetReader<T> : WidgetReader where T : notnull {
 	/// <summary>When overridden, reads widget data from the specified image.</summary>
 	/// <param name="image">The image to read widget data from.</param>
-	/// <param name="debugImage">An image variable to draw debug annotations to. The image may be replaced with a larger one. May be a variable containing <see langword="null"/> to disable debug annotations.</param>
+	/// <param name="lightsState">The lights state in the provided image.</param>
+	/// <param name="debugImage">An image variable to draw debug annotations to. The image may be replaced with a larger one. This may be a variable containing <see langword="null"/> to disable debug annotations.</param>
 	// This will probably only need to work under normal lighting, because widgets are only read at the start of the game, except if we support things like Two Factor later.
 	protected internal abstract T Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage);
 
 	protected internal override object ProcessNonGeneric(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage)
-		=> this.Process(image, lightsState, ref debugImage);
+		=> Process(image, lightsState, ref debugImage);
 }

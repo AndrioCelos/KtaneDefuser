@@ -9,10 +9,10 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 	public override string Name => "Who's on First";
 	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
-	private static readonly TextRecogniser displayRecogniser = new(new(TextRecogniser.Fonts.CABIN_MEDIUM, 24), 88, 255, new(256, 64),
+	private static readonly TextRecogniser displayRecogniser = new(new(TextRecogniser.Fonts.CabinMedium, 24), 88, 255, new(256, 64),
 		"YES", "FIRST", "DISPLAY", "OKAY", "SAYS", "NOTHING", "BLANK", "NO", "LED", "LEAD", "READ", "RED", "REED", "LEED",
 		"HOLD ON", "YOU", "YOU ARE", "YOUR", "YOU'RE", "UR", "THERE", "THEY'RE", "THEIR", "THEY ARE", "SEE", "C", "CEE");
-	private static readonly TextRecogniser keyRecogniser = new(new(TextRecogniser.Fonts.OSTRICH_SANS_HEAVY, 24), 160, 44, new(128, 64),
+	private static readonly TextRecogniser keyRecogniser = new(new(TextRecogniser.Fonts.OstrichSansHeavy, 24), 160, 44, new(128, 64),
 		"READY", "FIRST", "NO", "BLANK", "NOTHING", "YES", "WHAT", "UHHH", "LEFT", "RIGHT", "MIDDLE", "OKAY", "WAIT", "PRESS",
 		"YOU", "YOU ARE", "YOUR", "YOU’RE", "UR", "U", "UH HUH", "UH UH", "WHAT?", "DONE", "NEXT", "HOLD", "SURE", "LIKE");
 
@@ -43,7 +43,7 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 		return count / 192 + count2 / 2240;
 	}
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		var displayBorderRect = ImageUtils.FindEdges(image, new(28, 22, 140, 50), c => c.R < 44 && c.G < 44 && c.B < 44);
+		var displayBorderRect = ImageUtils.FindEdges(image, new(28, 22, 140, 50), c => c is { R: < 44, G: < 44, B: < 44 });
 		displayBorderRect.Inflate(-4, -4);
 
 		string displayText;
@@ -53,28 +53,20 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 		} else
 			displayText = "";
 
-		bool isKeyBackground(Rgba32 c) => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is HsvColor hsv && hsv.H is >= 30 and <= 45 && hsv.S is >= 0.2f and <= 0.4f;
+		bool IsKeyBackground(Rgba32 c) => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is { H: >= 30 and <= 45, S: >= 0.2f and <= 0.4f };
 
-		var baseRects = new[] {
-			ImageUtils.FindEdges(image, new(31, 90, 80, 48), isKeyBackground),
-			ImageUtils.FindEdges(image, new(105, 90, 80, 48), isKeyBackground),
-			ImageUtils.FindEdges(image, new(31, 134, 80, 48), isKeyBackground),
-			ImageUtils.FindEdges(image, new(105, 134, 80, 48), isKeyBackground),
-			ImageUtils.FindEdges(image, new(31, 175, 80, 48), isKeyBackground),
-			ImageUtils.FindEdges(image, new(105, 175, 80, 48), isKeyBackground),
-		};
 		var keyLabels = new string[6];
-		for (int i = 0; i < 6; i++) {
+		for (var i = 0; i < 6; i++) {
 			var keyRect = i switch {
-				0 => new Rectangle(24, 90, 74, 44),
-				1 => new Rectangle(104, 90, 74, 44),
-				2 => new Rectangle(24, 134, 74, 44),
-				3 => new Rectangle(104, 134, 74, 44),
-				4 => new Rectangle(24, 178, 74, 44),
+				0 => new(24, 90, 74, 44),
+				1 => new(104, 90, 74, 44),
+				2 => new(24, 134, 74, 44),
+				3 => new(104, 134, 74, 44),
+				4 => new(24, 178, 74, 44),
 				_ => new Rectangle(104, 178, 74, 44)
 			};
 			debugImage?.ColourCorrect(lightsState, keyRect);
-			keyRect = ImageUtils.FindEdges(image, keyRect, isKeyBackground);
+			keyRect = ImageUtils.FindEdges(image, keyRect, IsKeyBackground);
 			textRect = Rectangle.Inflate(keyRect, -3, -5);
 			textRect = ImageUtils.FindEdges(image, textRect, c => ImageUtils.ColourCorrect(c, lightsState).R < 128);
 			debugImage?.Mutate(c => c.Draw(Color.Yellow, 1, keyRect).Draw(Color.Green, 1, textRect));
@@ -86,6 +78,6 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 	}
 
 	public record ReadData(int StagesCleared, string Display, string[] Keys) {
-		public override string ToString() => $"ReadData {{ StagesCleared = {this.StagesCleared}, Display = {this.Display}, Keys = {{ {string.Join(", ", this.Keys)} }} }}";
+		public override string ToString() => $"ReadData {{ StagesCleared = {StagesCleared}, Display = {Display}, Keys = {{ {string.Join(", ", Keys)} }} }}";
 	}
 }

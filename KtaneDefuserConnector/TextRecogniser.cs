@@ -12,8 +12,8 @@ internal class TextRecogniser {
 	internal static class Fonts {
 		private static readonly FontCollection fontCollection = new();
 
-		internal static readonly FontFamily CABIN_MEDIUM = LoadFontFamily(Properties.Resources.CabinMedium);
-		internal static readonly FontFamily OSTRICH_SANS_HEAVY = LoadFontFamily(Properties.Resources.OstrichSansHeavy);
+		internal static readonly FontFamily CabinMedium = LoadFontFamily(Properties.Resources.CabinMedium);
+		internal static readonly FontFamily OstrichSansHeavy = LoadFontFamily(Properties.Resources.OstrichSansHeavy);
 
 		private static FontFamily LoadFontFamily(byte[] fontFile) {
 			using var ms = new MemoryStream(fontFile);
@@ -40,7 +40,7 @@ internal class TextRecogniser {
 	public TextRecogniser(Font font, byte backgroundValue, byte foregroundValue, Size resolution, params string[] strings) {
 		this.backgroundValue = backgroundValue;
 		this.foregroundValue = foregroundValue;
-		this.samples = new (Image<L8>, float, string)[strings.Length];
+		samples = new (Image<L8>, float, string)[strings.Length];
 		var textOptions = new RichTextOptions(font) { Dpi = 96, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Origin = new(resolution.Width / 2, resolution.Height / 2) };
 		for (var i = 0; i < strings.Length; i++) {
 			var image = new Image<L8>(resolution.Width, resolution.Height, new(0));
@@ -51,12 +51,12 @@ internal class TextRecogniser {
 			if (textBoundingBox.Left <= 0 || textBoundingBox.Right >= image.Width)
 				throw new ArgumentException("Sample text width went out of the specified bounds.");
 			image.Mutate(c => c.Crop(textBoundingBox).Resize(resolution, KnownResamplers.NearestNeighbor, false));
-			this.samples[i] = (image, (float) textBoundingBox.Width / textBoundingBox.Height, strings[i]);
+			samples[i] = (image, (float) textBoundingBox.Width / textBoundingBox.Height, strings[i]);
 		}
 	}
 
 	/// <summary>Identifies the text in the specified bounding box of the specified image.</summary>
-	public string Recognise(Image<Rgba32> image, Rectangle rectangle) => this.Recognise(image, rectangle, this.backgroundValue, this.foregroundValue);
+	public string Recognise(Image<Rgba32> image, Rectangle rectangle) => Recognise(image, rectangle, backgroundValue, foregroundValue);
 	/// <summary>Identifies the text in the specified bounding box of the specified image.</summary>
 	public string Recognise(Image<Rgba32> image, Rectangle rectangle, byte backgroundValue, byte foregroundValue) {
 		var denominator = foregroundValue - backgroundValue;
@@ -77,7 +77,7 @@ internal class TextRecogniser {
 			}
 		});
 		*/
-		foreach (var (refImage, refRatio, s) in this.samples) {
+		foreach (var (refImage, refRatio, s) in samples) {
 			if (Math.Abs(checkRatio - refRatio) > 1) continue;  // Skip strings that are way too narrow or too wide to match this rectangle.
 			refImage.ProcessPixelRows(image, (ar, ac) => {
 				var dist = 0;

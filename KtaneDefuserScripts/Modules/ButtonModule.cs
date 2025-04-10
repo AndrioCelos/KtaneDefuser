@@ -1,5 +1,4 @@
-﻿using KtaneDefuserConnectorApi;
-using Button = KtaneDefuserConnector.Components.Button;
+﻿using Button = KtaneDefuserConnector.Components.Button;
 
 namespace KtaneDefuserScripts.Modules;
 

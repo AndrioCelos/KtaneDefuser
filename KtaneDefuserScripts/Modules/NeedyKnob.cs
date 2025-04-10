@@ -1,7 +1,4 @@
-﻿using KtaneDefuserConnector;
-using KtaneDefuserConnectorApi;
-
-namespace KtaneDefuserScripts.Modules;
+﻿namespace KtaneDefuserScripts.Modules;
 
 [AimlInterface("NeedyKnob")]
 internal partial class NeedyKnob : ModuleScript<KtaneDefuserConnector.Components.NeedyKnob> {
@@ -16,10 +13,10 @@ internal partial class NeedyKnob : ModuleScript<KtaneDefuserConnector.Components
 
 	protected internal override async void NeedyStateChanged(AimlAsyncContext context, NeedyState newState) {
 		if (newState == NeedyState.Running) { 
-			using var interrupt = await this.PrepareToReadAsync(context);
+			using var interrupt = await PrepareToReadAsync(context);
 			if (interrupt is not null) context = interrupt.Context;
-			using var ss = KtaneDefuserConnector.DefuserConnector.Instance.TakeScreenshot();
-			var data = KtaneDefuserConnector.DefuserConnector.Instance.ReadComponent(ss, KtaneDefuserConnector.DefuserConnector.Instance.GetLightsState(ss), Reader, Utils.GetPoints(GameState.Current.Modules[this.ModuleIndex].Slot));
+			using var ss = DefuserConnector.Instance.TakeScreenshot();
+			var data = DefuserConnector.Instance.ReadComponent(ss, DefuserConnector.Instance.GetLightsState(ss), Reader, Utils.GetPoints(GameState.Current.Modules[ModuleIndex].Slot));
 			var counts = new Counts();
 			for (var i = 0; i < 12; i++) {
 				if (data.Lights[i]) {
@@ -27,22 +24,22 @@ internal partial class NeedyKnob : ModuleScript<KtaneDefuserConnector.Components
 					else counts.Right++;
 				}
 			}
-			this.LogActivated(this.ModuleIndex + 1, counts,
+			LogActivated(ModuleIndex + 1, counts,
 				string.Join(' ', from i in Enumerable.Range(0, 6) select data.Lights[i] ? '*' : '.'),
 				string.Join(' ', from i in Enumerable.Range(0, 6) select data.Lights[i + 6] ? '*' : '.'));
 			this.counts = counts;
 			if (correctDirections.TryGetValue(counts, out var correctPosition)) {
-				if (this.direction != correctPosition) {
-					using var interrupt2 = interrupt ?? await this.ModuleInterruptAsync(context);
-					await this.TurnAsync(interrupt2, correctPosition);
+				if (direction != correctPosition) {
+					using var interrupt2 = interrupt ?? await ModuleInterruptAsync(context);
+					await TurnAsync(interrupt2, correctPosition);
 				}
 			} else {
-				this.isHandled = false;
-				context.Reply($"<priority/> Knob {this.ModuleIndex + 1} is active. Counts: {counts.Left}, {counts.Right}");
-				context.AddReply("up", $"knob {this.ModuleIndex + 1} is up");
-				context.AddReply("down", $"knob {this.ModuleIndex + 1} is down");
-				context.AddReply("left", $"knob {this.ModuleIndex + 1} is left");
-				context.AddReply("right", $"knob {this.ModuleIndex + 1} is right");
+				isHandled = false;
+				context.Reply($"<priority/> Knob {ModuleIndex + 1} is active. Counts: {counts.Left}, {counts.Right}");
+				context.AddReply("up", $"knob {ModuleIndex + 1} is up");
+				context.AddReply("down", $"knob {ModuleIndex + 1} is down");
+				context.AddReply("left", $"knob {ModuleIndex + 1} is left");
+				context.AddReply("right", $"knob {ModuleIndex + 1} is right");
 				context.Reply(".");
 			}
 		} else
@@ -50,22 +47,22 @@ internal partial class NeedyKnob : ModuleScript<KtaneDefuserConnector.Components
 	}
 
 	private async Task<Interrupt?> PrepareToReadAsync(AimlAsyncContext context) {
-		if (Utils.CanReadModuleImmediately(this.ModuleIndex)) return null;
-		var interrupt = await this.ModuleInterruptAsync(context);
+		if (Utils.CanReadModuleImmediately(ModuleIndex)) return null;
+		var interrupt = await ModuleInterruptAsync(context);
 		return interrupt;
 	}
 
 	private async Task HandleInputAsync(AimlAsyncContext context, Direction direction) {
-		if (this.counts is null) {
+		if (counts is null) {
 			context.Reply("It is not active.");
 			return;
 		}
 		context.Reply("Roger.");
-		correctDirections[this.counts.Value] = direction;
-		this.isHandled = true;
+		correctDirections[counts.Value] = direction;
+		isHandled = true;
 		if (this.direction != direction) {
-			using var interrupt = await this.ModuleInterruptAsync(context, false);
-			await this.TurnAsync(interrupt, direction);
+			using var interrupt = await ModuleInterruptAsync(context, false);
+			await TurnAsync(interrupt, direction);
 		}
 	}
 
@@ -73,7 +70,7 @@ internal partial class NeedyKnob : ModuleScript<KtaneDefuserConnector.Components
 		var presses = direction - this.direction;
 		if (presses < 0) presses += 4;
 		this.direction = direction;
-		await Utils.SelectModuleAsync(interrupt, this.ModuleIndex, false);
+		await Utils.SelectModuleAsync(interrupt, ModuleIndex, false);
 		await interrupt.SendInputsAsync(Enumerable.Repeat(Button.A, presses));
 	}
 

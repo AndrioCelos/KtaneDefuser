@@ -1,7 +1,4 @@
-﻿using KtaneDefuserConnector;
-using KtaneDefuserConnectorApi;
-
-namespace KtaneDefuserScripts;
+﻿namespace KtaneDefuserScripts;
 /// <summary>Represents a context for performing a task that cannot be interrupted by other bot actions.</summary>
 /// <remarks>
 /// All inputs and all reading of a focused module require an interrupt. To perform one of these actions when another interrupt is in progress, it is necessary to wait for that interrupt to end first.
@@ -27,7 +24,7 @@ public class Interrupt : IDisposable {
 	private CancellationTokenSource? submitCancellationTokenSource;
 	private Slot submitCurrentSlot;
 
-	private Interrupt(AimlAsyncContext context) => this.Context = context ?? throw new ArgumentNullException(nameof(context));
+	private Interrupt(AimlAsyncContext context) => Context = context ?? throw new ArgumentNullException(nameof(context));
 
 	/// <summary>Attempts to enter a new interrupt on the interrupt queue and creates a <see cref="Task"/> that completes when the interrupt is entered.</summary>
 	/// <remarks>This will return an already-completed task if the interrupt queue was empty. <paramref name="context"/> is no longer valid after calling this method; the created <see cref="Interrupt"/> instance's <see cref="Context"/> must be used instead.</remarks>
@@ -72,65 +69,65 @@ public class Interrupt : IDisposable {
 
 	/// <summary>Reads data from the currently-focused module using the specified <see cref="ComponentReader"/.></summary>
 	public T Read<T>(ComponentReader<T> reader) where T : notnull {
-		ObjectDisposedException.ThrowIf(this.IsDisposed, this);
-		using var ss = KtaneDefuserConnector.DefuserConnector.Instance.TakeScreenshot();
-		return KtaneDefuserConnector.DefuserConnector.Instance.ReadComponent(ss, KtaneDefuserConnector.DefuserConnector.Instance.GetLightsState(ss), reader, Utils.CurrentModuleArea);
+		ObjectDisposedException.ThrowIf(IsDisposed, this);
+		using var ss = DefuserConnector.Instance.TakeScreenshot();
+		return DefuserConnector.Instance.ReadComponent(ss, DefuserConnector.Instance.GetLightsState(ss), reader, Utils.CurrentModuleArea);
 	}
 
 	[Obsolete("String inputs are being replaced with IInputAction")]
 	public AimlTask SendInputsAsync(string inputs) => sendInputs.CallAsync(inputs);
 	[Obsolete("String inputs are being replaced with IInputAction")]
-	public void SendInputs(string inputs) => this.Context.Reply($"<oob><sendinputs>{inputs}</sendinputs></oob>");
+	public void SendInputs(string inputs) => Context.Reply($"<oob><sendinputs>{inputs}</sendinputs></oob>");
 
 	/// <summary>Presses the specified buttons in sequence.</summary>
-	public void SendInputs(params Button[] buttons) => this.SendInputs(from b in buttons select new ButtonAction(b));
+	public void SendInputs(params Button[] buttons) => SendInputs(from b in buttons select new ButtonAction(b));
 	/// <summary>Presses the specified buttons in sequence.</summary>
-	public void SendInputs(IEnumerable<Button> buttons) => this.SendInputs(from b in buttons select new ButtonAction(b));
+	public void SendInputs(IEnumerable<Button> buttons) => SendInputs(from b in buttons select new ButtonAction(b));
 	/// <summary>Performs the specified input actions in sequence.</summary>
-	public void SendInputs(params IInputAction[] actions) => this.SendInputs((IEnumerable<IInputAction>) actions);
+	public void SendInputs(params IInputAction[] actions) => SendInputs((IEnumerable<IInputAction>) actions);
 	/// <summary>Performs the specified input actions in sequence.</summary>
 	public void SendInputs(IEnumerable<IInputAction> actions) {
-		ObjectDisposedException.ThrowIf(this.IsDisposed, this);
-		KtaneDefuserConnector.DefuserConnector.Instance.SendInputs(actions);
+		ObjectDisposedException.ThrowIf(IsDisposed, this);
+		DefuserConnector.Instance.SendInputs(actions);
 	}
 	/// <summary>Creates an <see cref="AimlTask"/> that presses the specified buttons in sequence and completes after this is complete.</summary>
-	public AimlTask SendInputsAsync(params Button[] buttons) => this.SendInputsAsync(from b in buttons select new ButtonAction(b));
+	public AimlTask SendInputsAsync(params Button[] buttons) => SendInputsAsync(from b in buttons select new ButtonAction(b));
 	/// <summary>Creates an <see cref="AimlTask"/> that presses the specified buttons in sequence and completes after this is complete.</summary>
-	public AimlTask SendInputsAsync(IEnumerable<Button> buttons, CancellationToken cancellationToken = default) => this.SendInputsAsync(from b in buttons select new ButtonAction(b), cancellationToken);
+	public AimlTask SendInputsAsync(IEnumerable<Button> buttons, CancellationToken cancellationToken = default) => SendInputsAsync(from b in buttons select new ButtonAction(b), cancellationToken);
 	/// <summary>Creates an <see cref="AimlTask"/> that performs the specified input actions in sequence and completes after this is complete.</summary>
-	public AimlTask SendInputsAsync(params IInputAction[] actions) => this.SendInputsAsync((IEnumerable<IInputAction>) actions);
+	public AimlTask SendInputsAsync(params IInputAction[] actions) => SendInputsAsync((IEnumerable<IInputAction>) actions);
 	/// <summary>Creates an <see cref="AimlTask"/> that performs the specified input actions in sequence and completes after this is complete.</summary>
 	public AimlTask SendInputsAsync(IEnumerable<IInputAction> actions, CancellationToken cancellationToken = default) {
-		ObjectDisposedException.ThrowIf(this.IsDisposed, this);
-		cancellationToken.Register(KtaneDefuserConnector.DefuserConnector.Instance.CancelInputs);
+		ObjectDisposedException.ThrowIf(IsDisposed, this);
+		cancellationToken.Register(DefuserConnector.Instance.CancelInputs);
 		var guid = Guid.NewGuid();
-		var task = inputCallback.CallAsync(this.Context, guid, cancellationToken);
-		KtaneDefuserConnector.DefuserConnector.Instance.SendInputs(actions.Concat(new[] { new CallbackAction(guid) }));
+		var task = inputCallback.CallAsync(Context, guid, cancellationToken);
+		DefuserConnector.Instance.SendInputs(actions.Concat(new[] { new CallbackAction(guid) }));
 		return task;
 	}
 
 	/// <summary>Performs the specified input actions, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
-	public Task<ModuleLightState> SubmitAsync(params Button[] buttons) => this.SubmitAsync(from b in buttons select new ButtonAction(b));
+	public Task<ModuleLightState> SubmitAsync(params Button[] buttons) => SubmitAsync(from b in buttons select new ButtonAction(b));
 	/// <summary>Performs the specified input actions, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
-	public Task<ModuleLightState> SubmitAsync(IEnumerable<Button> buttons) => this.SubmitAsync(from b in buttons select new ButtonAction(b));
+	public Task<ModuleLightState> SubmitAsync(IEnumerable<Button> buttons) => SubmitAsync(from b in buttons select new ButtonAction(b));
 	/// <summary>Performs the specified input actions, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
-	public Task<ModuleLightState> SubmitAsync(params IInputAction[] actions) => this.SubmitAsync((IEnumerable<IInputAction>) actions);
+	public Task<ModuleLightState> SubmitAsync(params IInputAction[] actions) => SubmitAsync((IEnumerable<IInputAction>) actions);
 	/// <summary>Performs the specified input actions, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
 	public async Task<ModuleLightState> SubmitAsync(IEnumerable<IInputAction> actions) {
-		ObjectDisposedException.ThrowIf(this.IsDisposed, this);
-		if (this.submitCancellationTokenSource is not null) throw new InvalidOperationException("Already submitting.");
+		ObjectDisposedException.ThrowIf(IsDisposed, this);
+		if (submitCancellationTokenSource is not null) throw new InvalidOperationException("Already submitting.");
 		if (GameState.Current.CurrentModuleNum is null) throw new InvalidOperationException("No current module.");
 		var module = GameState.Current.Modules[GameState.Current.CurrentModuleNum.Value];
 		var context = AimlAsyncContext.Current ?? throw new InvalidOperationException("No current request");
 
-		this.submitCancellationTokenSource = new CancellationTokenSource();
-		this.submitCurrentSlot = module.Slot;
-		GameState.Current.Strike += this.GameState_Strike;
+		submitCancellationTokenSource = new();
+		submitCurrentSlot = module.Slot;
+		GameState.Current.Strike += GameState_Strike;
 		try {
-			await this.SendInputsAsync(actions, this.submitCancellationTokenSource.Token);
+			await SendInputsAsync(actions, submitCancellationTokenSource.Token);
 			await Delay(0.5);  // Wait for the interaction punch to end.
-			using var ss = KtaneDefuserConnector.DefuserConnector.Instance.TakeScreenshot();
-			var result = KtaneDefuserConnector.DefuserConnector.Instance.GetModuleLightState(ss, Utils.CurrentModuleArea);
+			using var ss = DefuserConnector.Instance.TakeScreenshot();
+			var result = DefuserConnector.Instance.GetModuleLightState(ss, Utils.CurrentModuleArea);
 			if (result == ModuleLightState.Solved) {
 				var isDefused = GameState.Current.TryMarkModuleSolved(context, GameState.Current.CurrentModuleNum.Value);
 				if (isDefused)
@@ -149,25 +146,25 @@ public class Interrupt : IDisposable {
 		} catch (TaskCanceledException) {
 			return ModuleLightState.Strike;
 		} finally {
-			this.submitCancellationTokenSource?.Dispose();
-			this.submitCancellationTokenSource = null;
+			submitCancellationTokenSource?.Dispose();
+			submitCancellationTokenSource = null;
 		}
 	}
 
 	private void GameState_Strike(object? sender, StrikeEventArgs e) {
-		if (e.Slot == this.submitCurrentSlot) {
-			this.Context = e.Context;
-			this.submitCancellationTokenSource?.Cancel();
+		if (e.Slot == submitCurrentSlot) {
+			Context = e.Context;
+			submitCancellationTokenSource?.Cancel();
 		}
 	}
 
 	/// <summary>Exits this interrupt, allowing the bot to enter another interrupt. After calling this method, this instance is no longer usable.</summary>
-	public void Exit() => this.Dispose();
+	public void Exit() => Dispose();
 
 	/// <summary>Exits this interrupt, allowing the bot to enter another interrupt. After calling this method, this instance is no longer usable.</summary>
 	public void Dispose() {
-		if (!this.IsDisposed) {
-			this.IsDisposed = true;
+		if (!IsDisposed) {
+			IsDisposed = true;
 			Exit(AimlAsyncContext.Current ?? throw new InvalidOperationException("No current request"));
 			GC.SuppressFinalize(this);
 		}

@@ -1,7 +1,4 @@
-﻿using KtaneDefuserConnector;
-using KtaneDefuserConnectorApi;
-
-namespace KtaneDefuserScripts.Modules;
+﻿namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Memory")]
 internal class Memory : ModuleScript<KtaneDefuserConnector.Components.Memory> {
 	public override string IndefiniteDescription => "Memory";
@@ -10,24 +7,24 @@ internal class Memory : ModuleScript<KtaneDefuserConnector.Components.Memory> {
 	private int[] keyLabels = new int[4];
 	private int highlight;
 
-	protected internal override void Started(AimlAsyncContext context) => this.readyToRead = true;
+	protected internal override void Started(AimlAsyncContext context) => readyToRead = true;
 
 	protected internal override async void ModuleSelected(AimlAsyncContext context) {
-		if (this.readyToRead) {
-			this.readyToRead = false;
-			using var interrupt = await this.ModuleInterruptAsync(context);
-			this.Read(interrupt);
+		if (readyToRead) {
+			readyToRead = false;
+			using var interrupt = await ModuleInterruptAsync(context);
+			Read(interrupt);
 		}
 	}
 
 	private async Task WaitRead(Interrupt interrupt) {
 		await Delay(3);
-		this.Read(interrupt);
+		Read(interrupt);
 	}
 
 	private void Read(Interrupt interrupt) {
 		var data = interrupt.Read(Reader);
-		this.keyLabels = data.Keys;
+		keyLabels = data.Keys;
 		interrupt.Context.Reply(data.Display.ToString());
 		interrupt.Context.Reply("<reply>position 1</reply><reply><text>2</text><postback>position 2</postback></reply><reply><text>3</text><postback>position 3</postback></reply><reply><text>4</text><postback>position 4</postback></reply>");
 		interrupt.Context.Reply("<reply>label 1</reply><reply><text>2</text><postback>label 2</postback></reply><reply><text>3</text><postback>label 3</postback></reply><reply><text>4</text><postback>label 4</postback></reply>");
@@ -71,13 +68,13 @@ internal class Memory : ModuleScript<KtaneDefuserConnector.Components.Memory> {
 			buttons.Add(Button.Right);
 		}
 		buttons.Add(Button.A);
-		using var interrupt = await this.ModuleInterruptAsync(context);
+		using var interrupt = await ModuleInterruptAsync(context);
 		this.highlight = highlight;
 		var result = await interrupt.SubmitAsync(buttons);
 		if (result != ModuleLightState.Solved) {
 			if (result == ModuleLightState.Off)
-				interrupt.Context.Reply(fromLabel ? $"The position was {index + 1}." : $"The label was {this.keyLabels[index]}.");
-			await this.WaitRead(interrupt);
+				interrupt.Context.Reply(fromLabel ? $"The position was {index + 1}." : $"The label was {keyLabels[index]}.");
+			await WaitRead(interrupt);
 		}
 	}
 }

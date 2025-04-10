@@ -53,7 +53,7 @@ public class NeedyKnob : ComponentReader<NeedyKnob.ReadData> {
 		var time = ReadNeedyTimer(image, lightsState, debugImage);
 		var lights = new bool[12];
 
-		static bool isRectangleLit(PixelAccessor<Rgba32> a, Rectangle rectangle) {
+		static bool IsRectangleLit(PixelAccessor<Rgba32> a, Rectangle rectangle) {
 			var count = 0;
 			for (var dy = 0; dy < rectangle.Height; dy++) {
 				var r = a.GetRowSpan(rectangle.Y + dy);
@@ -71,20 +71,18 @@ public class NeedyKnob : ComponentReader<NeedyKnob.ReadData> {
 		}
 
 		image.ProcessPixelRows(a => {
-			for (var i = 0; i < 12; i++) {
-				lights[i] = isRectangleLit(a, rectangles[i]);
-			}
+			for (var i = 0; i < 12; i++)
+				lights[i] = IsRectangleLit(a, rectangles[i]);
 		});
-		if (debugImage != null) {
-			for (var i = 0; i < 12; i++) {
-				debugImage.Mutate(p => p.Draw(lights[i] ? Color.Lime : Color.Grey, 1, rectangles[i]));
-			}
-		}
+		debugImage?.Mutate(p => {
+			for (var i = 0; i < 12; i++)
+				p.Draw(lights[i] ? Color.Lime : Color.Grey, 1, rectangles[i]);
+		});
 
 		return new(time, lights);
 	}
 
 	public record ReadData(int? Time, bool[] Lights) {
-		public override string ToString() => $"ReadData {{ Time = {this.Time}, Lights = ({string.Join(", ", this.Lights)}) }}";
+		public override string ToString() => $"ReadData {{ Time = {Time}, Lights = ({string.Join(", ", Lights)}) }}";
 	}
 }

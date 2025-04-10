@@ -1,6 +1,4 @@
-﻿using KtaneDefuserConnectorApi;
-
-namespace KtaneDefuserScripts.Modules;
+﻿namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Wires")]
 internal class Wires : ModuleScript<KtaneDefuserConnector.Components.Wires> {
 	public override string IndefiniteDescription => "Wires";

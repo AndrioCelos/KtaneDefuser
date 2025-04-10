@@ -10,16 +10,16 @@ public class Memory : ComponentReader<Memory.ReadData> {
 	public override string Name => "Memory";
 	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
-	private static readonly TextRecogniser displayRecogniser = new(new(TextRecogniser.Fonts.CABIN_MEDIUM, 48), 70, 255, new(64, 64),
+	private static readonly TextRecogniser displayRecogniser = new(new(TextRecogniser.Fonts.CabinMedium, 48), 70, 255, new(64, 64),
 		"1", "2", "3", "4");
-	private static readonly TextRecogniser keyRecogniser = new(new(TextRecogniser.Fonts.OSTRICH_SANS_HEAVY, 48), 160, 44, new(64, 64),
+	private static readonly TextRecogniser keyRecogniser = new(new(TextRecogniser.Fonts.OstrichSansHeavy, 48), 160, 44, new(64, 64),
 		"1", "2", "3", "4");
 
 	protected internal override float IsModulePresent(Image<Rgba32> image) {
 		var minDist = int.MaxValue;
 		var referenceColour = new Rgba32(55, 95, 81);
-		for (int x = image.Width / 4 - 10; x < image.Width / 4 + 10; x++) {
-			for (int y = image.Height / 4 - 10; y < image.Height / 4 + 10; y++) {
+		for (var x = image.Width / 4 - 10; x < image.Width / 4 + 10; x++) {
+			for (var y = image.Height / 4 - 10; y < image.Height / 4 + 10; y++) {
 				var pixel = image[x, y];
 				var dist = Math.Abs(pixel.R - referenceColour.R) + Math.Abs(pixel.G - referenceColour.G) + Math.Abs(pixel.B - referenceColour.B);
 				minDist = Math.Min(minDist, dist);
@@ -51,19 +51,19 @@ public class Memory : ComponentReader<Memory.ReadData> {
 	}
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		var displayBorderRect = ImageUtils.FindEdges(image, new(50, 40, 108, 80), c => c.R < 44 && c.G < 44 && c.B < 44);
+		var displayBorderRect = ImageUtils.FindEdges(image, new(50, 40, 108, 80), c => c is { R: < 44, G: < 44, B: < 44 });
 		displayBorderRect.Inflate(-4, -4);
 		var textRect = ImageUtils.FindEdges(image, displayBorderRect, c => c.G >= 192);
 
 		debugImage?.Mutate(c => c.Draw(Color.Red, 1, displayBorderRect).Draw(Color.Lime, 1, textRect));
 		var displayText = displayRecogniser.Recognise(image, textRect);
 
-		var keypadRect = ImageUtils.FindEdges(image, new(20, 148, 164, 72), c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is var hsv && hsv.H is >= 30 and <= 45 && hsv.S is >= 0.2f and <= 0.4f);
+		var keypadRect = ImageUtils.FindEdges(image, new(20, 148, 164, 72), c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is { H: >= 30 and <= 45, S: >= 0.2f and <= 0.4f });
 		image.ColourCorrect(lightsState, keypadRect);
 		debugImage?.ColourCorrect(lightsState, keypadRect);
 		debugImage?.Mutate(c => c.Draw(Color.Yellow, 1, keypadRect));
 		var keyLabels = new int[4];
-		for (int i = 0; i < 4; i++) {
+		for (var i = 0; i < 4; i++) {
 			var rect = new Rectangle(keypadRect.X + keypadRect.Width * i / 4, keypadRect.Y, keypadRect.Width / 4, keypadRect.Height);
 			rect = Rectangle.Inflate(rect, -4, -4);
 
@@ -71,7 +71,7 @@ public class Memory : ComponentReader<Memory.ReadData> {
 			while (HsvColor.FromColor(image[rect.Right - 1, rect.Top]) is var hsv && !(hsv.H is >= 30 and <= 45 && hsv.S is >= 0.2f and <= 0.4f))
 				rect.Width--;
 
-			rect = ImageUtils.FindEdges(image, rect, c => HsvColor.FromColor(c) is var hsv && hsv.H <= 60 && hsv.V < 0.25f);
+			rect = ImageUtils.FindEdges(image, rect, c => HsvColor.FromColor(c) is { H: <= 60, V: < 0.25f });
 			debugImage?.Mutate(c => c.Draw(Color.Lime, 1, rect));
 			keyLabels[i] = keyRecogniser.Recognise(image, rect)[0] - '0';
 		}
@@ -82,6 +82,6 @@ public class Memory : ComponentReader<Memory.ReadData> {
 	}
 
 	public record ReadData(int StagesCleared, int Display, int[] Keys) {
-		public override string ToString() => $"ReadData {{ StagesCleared = {this.StagesCleared}, Display = {this.Display}, Keys = {{ {string.Join(", ", this.Keys)} }} }}";
+		public override string ToString() => $"ReadData {{ StagesCleared = {StagesCleared}, Display = {Display}, Keys = {{ {string.Join(", ", Keys)} }} }}";
 	}
 }

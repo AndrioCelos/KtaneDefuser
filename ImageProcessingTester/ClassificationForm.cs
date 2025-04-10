@@ -1,5 +1,4 @@
-﻿using System.Data;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using KtaneDefuserConnector;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -24,10 +23,10 @@ public partial class ClassificationForm : Form {
 	private void PasteButton_Click(object sender, EventArgs e) {
 		var image = Clipboard.GetImage();
 		if (image is null) {
-			MessageBox.Show(this, "There is no usable image on the Clipboard.", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+			MessageBox.Show(this, "There is no usable image on the Clipboard.", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
 			return;
 		}
-		this.screenImage = image.ToImage<Rgba32>();
+		screenImage = image.ToImage<Rgba32>();
 		PictureBox.Image = screenImage.ToWinFormsImage();
 		ReadModeBox_SelectedIndexChanged(sender, EventArgs.Empty);
 	}
@@ -147,7 +146,7 @@ public partial class ClassificationForm : Form {
 			} else if (hasImage) {
 				var image = dataObject.GetImage();
 				if (image is not null) {
-					this.screenImage = image.ToImage<Rgba32>();
+					screenImage = image.ToImage<Rgba32>();
 					PictureBox.Image = screenImage.ToWinFormsImage();
 					ReadModeBox_SelectedIndexChanged(sender, EventArgs.Empty);
 					e.Effect = DragDropEffects.Copy;

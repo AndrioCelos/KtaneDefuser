@@ -17,18 +17,18 @@ public struct Slot(int bomb, int face, int x, int y) : IEquatable<Slot> {
 	public readonly bool Equals(Slot other) => this == other;
 	public override readonly bool Equals(object? other) => other is Slot slot && this == slot;
 
-	public override readonly string ToString() => $"({this.Bomb}, {this.Face}, {this.X}, {this.Y})";
+	public override readonly string ToString() => $"({Bomb}, {Face}, {X}, {Y})";
 
 	public override readonly int GetHashCode()
 #if NET6_0_OR_GREATER
-		=> HashCode.Combine(this.X, this.Y, this.Face, this.Bomb);
+		=> HashCode.Combine(X, Y, Face, Bomb);
 #else
 	{
 		var result = 17;
-		result = result * 23 + this.X;
-		result = result * 23 + this.Y;
-		result = result * 23 + this.Face;
-		result = result * 23 + this.Bomb;
+		result = result * 23 + X;
+		result = result * 23 + Y;
+		result = result * 23 + Face;
+		result = result * 23 + Bomb;
 		return result;
 	}
 #endif

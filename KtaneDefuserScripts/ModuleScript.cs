@@ -1,6 +1,4 @@
 ﻿using System.Reflection;
-using KtaneDefuserConnector;
-using KtaneDefuserConnectorApi;
 
 namespace KtaneDefuserScripts;
 /// <summary>Provides the script and variables associated with a specific module.</summary>
@@ -14,7 +12,7 @@ public abstract class ModuleScript {
 
 	private protected string? topic;
 	/// <summary>Returns the AIML topic associated with this script.</summary>
-	public string Topic => this.topic ?? throw new InvalidOperationException("Script not yet initialised");
+	public string Topic => topic ?? throw new InvalidOperationException("Script not yet initialised");
 
 	/// <summary>When overridden, returns a string used to describe an instance of the module to the user.</summary>
 	public abstract string IndefiniteDescription { get; }
@@ -28,7 +26,7 @@ public abstract class ModuleScript {
 
 	public static IReadOnlyCollection<Type> ScriptTypes => Scripts.Keys;
 
-	protected ModuleScript() => this.Logger = GameState.Current.LoggerFactory.CreateLogger(this.GetType().Name);
+	protected ModuleScript() => Logger = GameState.Current.LoggerFactory.CreateLogger(GetType().Name);
 
 	internal static ModuleScript Create(ComponentReader reader) {
 		var readerType = reader.GetType();
@@ -68,12 +66,12 @@ public abstract class ModuleScript {
 	protected static Task<Interrupt> CurrentModuleInterruptAsync(AimlAsyncContext context, bool waitForFocus) => (GameState.Current.CurrentModule ?? throw new InvalidOperationException("No current module")).Script.ModuleInterruptAsync(context, true);
 
 	/// <summary>Enters a new interrupt, ensuring that this module is focused before completing.</summary>
-	protected Task<Interrupt> ModuleInterruptAsync(AimlAsyncContext context) => this.ModuleInterruptAsync(context, true);
+	protected Task<Interrupt> ModuleInterruptAsync(AimlAsyncContext context) => ModuleInterruptAsync(context, true);
 	/// <summary>Enters a new interrupt, ensuring that this module is selected before completing.</summary>
 	/// <param name="waitForFocus">Whether to also wait until the module focusing animation has finished before completing.</param>
 	protected async Task<Interrupt> ModuleInterruptAsync(AimlAsyncContext context, bool waitForFocus) {
 		var interrupt = await Interrupt.EnterAsync(context);
-		await Utils.SelectModuleAsync(interrupt, this.ModuleIndex, waitForFocus);
+		await Utils.SelectModuleAsync(interrupt, ModuleIndex, waitForFocus);
 		return interrupt;
 	}
 }
@@ -81,7 +79,7 @@ public abstract class ModuleScript {
 /// <summary>Represents a <see cref="ModuleScript"/> that uses a specified <see cref="ComponentReader"/> type to read its module.</summary>
 public abstract class ModuleScript<TReader> : ModuleScript where TReader : ComponentReader {
 	/// <summary>Returns the <see cref="ComponentReader"/> instance matching this module type.</summary>
-	protected static TReader Reader => KtaneDefuserConnector.DefuserConnector.GetComponentReader<TReader>();
+	protected static TReader Reader => DefuserConnector.GetComponentReader<TReader>();
 }
 
 internal class UnknownModuleScript : ModuleScript {
