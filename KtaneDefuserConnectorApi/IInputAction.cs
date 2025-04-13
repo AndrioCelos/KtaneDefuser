@@ -7,11 +7,9 @@ public interface IInputAction { }
 public sealed class NoOpAction : IInputAction { }
 
 /// <summary>An action that presses, starts holding or releases a controller button.</summary>
-public sealed class ButtonAction(Button button, ButtonActionType action) : IInputAction {
+public sealed class ButtonAction(Button button, ButtonActionType action = ButtonActionType.Press) : IInputAction {
 	public Button Button { get; set; } = button;
 	public ButtonActionType Action { get; set; } = action;
-
-	public ButtonAction(Button button) : this(button, ButtonActionType.Press) { }
 }
 
 /// <summary>An action that moves a controller stick or trigger axis.</summary>

@@ -1,0 +1,51 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:api="using:KtaneDefuserConnectorApi"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="VisionTester.Views.InputTestWindow"
+        Loaded="OnLoaded"
+        Title="InputTestWindow">
+    <StackPanel>
+        <Label Name="StatusLabel">Status</Label>
+        <Label>Axes</Label>
+        <Grid ColumnDefinitions="Auto, *, Auto, *" RowDefinitions="Auto, Auto, Auto">
+            <Button Name="LTButton" Grid.Column="0" Grid.Row="0">LT</Button>
+            <Slider Name="LTSlider" Grid.Column="1" Grid.Row="0" Minimum="0" Maximum="1"/>
+            <Button Name="LXButton" Grid.Column="0" Grid.Row="1">LX</Button>
+            <Slider Name="LXSlider" Grid.Column="1" Grid.Row="1" Minimum="-1" Maximum="1"/>
+            <Button Name="LYButton" Grid.Column="0" Grid.Row="2">LY</Button>
+            <Slider Name="LYSlider" Grid.Column="1" Grid.Row="2" Minimum="-1" Maximum="1"/>
+            <Button Name="RTButton" Grid.Column="2" Grid.Row="0">RT</Button>
+            <Slider Name="RTSlider" Grid.Column="3" Grid.Row="0" Minimum="0" Maximum="1"/>
+            <Button Name="RXButton" Grid.Column="2" Grid.Row="1">RX</Button>
+            <Slider Name="RXSlider" Grid.Column="3" Grid.Row="1" Minimum="-1" Maximum="1"/>
+            <Button Name="RYButton" Grid.Column="2" Grid.Row="2">RY</Button>
+            <Grid Grid.Column="3" Grid.Row="2" ColumnDefinitions="*, Auto">
+                <Slider Name="RYSlider" Grid.Column="0" Minimum="-1" Maximum="1"/>
+                <NumericUpDown Name="RYBox" Grid.Column="1" Minimum="-1" Maximum="1" Value="0" Width="120" Increment="0.01" FormatString="0.00"/>
+            </Grid>
+        </Grid>
+        <Label>Buttons</Label>
+        <Grid Name="ButtonsGrid" ColumnDefinitions="*, *, *, *, *, *, *" RowDefinitions="Auto, Auto, Auto, Auto">
+            <Button Grid.Column="0" Grid.Row="0">LB</Button>
+            <Button Grid.Column="6" Grid.Row="0">RB</Button>
+            <Button Grid.Column="0" Grid.Row="2">←</Button>
+            <Button Grid.Column="2" Grid.Row="2">→</Button>
+            <Button Grid.Column="1" Grid.Row="1">↑</Button>
+            <Button Grid.Column="1" Grid.Row="3">↓</Button>
+            <Button Grid.Column="5" Grid.Row="3">A</Button>
+            <Button Grid.Column="6" Grid.Row="2">B</Button>
+            <Button Grid.Column="4" Grid.Row="2">X</Button>
+            <Button Grid.Column="5" Grid.Row="1">Y</Button>
+            <Button Grid.Column="3" Grid.Row="0">Start</Button>
+        </Grid>
+        <Label>Zoom</Label>
+        <Grid ColumnDefinitions="*, Auto, Auto">
+            <Slider Grid.Column="0" Name="ZoomSlider" Minimum="-10" Maximum="10" Value="0"/>
+            <NumericUpDown Name="ZoomBox" Grid.Column="1" Minimum="-10" Maximum="10" Value="0" Width="120" FormatString="0.00"/>
+            <Button Name="ZoomButton" Grid.Column="2">Set</Button>
+        </Grid>
+    </StackPanel>
+</Window>

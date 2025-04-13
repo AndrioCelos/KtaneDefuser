@@ -1,0 +1,76 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:dc="using:KtaneDefuserConnector"
+		xmlns:v="using:VisionTester.Views"
+		xmlns:vm="using:VisionTester.ViewModels"
+		mc:Ignorable="d" d:DesignWidth="1024" d:DesignHeight="600"
+		x:Class="VisionTester.Views.TransformationWindow"
+		x:DataType="vm:TransformationViewModel"
+		Title="TransformationWindow">
+	<Design.DataContext>
+		<vm:TransformationViewModel/>
+	</Design.DataContext>
+	<Grid ColumnDefinitions="2*, Auto, *" RowDefinitions="*">
+		<DockPanel Grid.Column="0">
+			<WrapPanel DockPanel.Dock="Top">
+				<SplitButton Command="{Binding LoadImageCommand}" Content="{Binding LoadImageLabel}">
+					<SplitButton.Flyout>
+						<MenuFlyout>
+							<MenuItem Header="Load file..." Command="{Binding LoadImageFileCommand}"/>
+							<MenuItem Header="Paste" Command="{Binding PasteImageCommand}"/>
+							<MenuItem Header="From game" Command="{Binding LoadImageFromGameCommand}"/>
+						</MenuFlyout>
+					</SplitButton.Flyout>
+				</SplitButton>
+				<Button Command="{Binding SaveInputImageFile}">Save file...</Button>
+				<Label>Preset:</Label>
+				<ComboBox ItemsSource="{Binding Presets}" SelectedItem="{Binding SelectedPreset}">
+					<ComboBox.ItemTemplate>
+						<DataTemplate DataType="vm:TransformationViewModel+Preset">
+							<TextBlock Text="{Binding Name}"/>
+						</DataTemplate>
+					</ComboBox.ItemTemplate>
+				</ComboBox>
+				<Button Command="{Binding CopyPresetCode}">Copy</Button>
+				<Label>Interpolation:</Label>
+				<ComboBox Name="InterpolationBox" SelectedItem="{Binding InterpolationMode}">
+					<dc:InterpolationMode>NearestNeighbour</dc:InterpolationMode>
+					<dc:InterpolationMode>Bilinear</dc:InterpolationMode>
+				</ComboBox>
+				<Label Content="{Binding LightsState, StringFormat=Lights: {0}}"/>
+			</WrapPanel>
+			<v:QuadrilateralSelector VerticalAlignment="Center" Source="{Binding ScreenImage}" Quadrilateral="{Binding Quadrilateral, Mode=TwoWay}"/>
+		</DockPanel>
+		<GridSplitter Grid.Column="1"/>
+		<DockPanel Grid.Column="2">
+			<WrapPanel DockPanel.Dock="Top">
+                <SplitButton Command="{Binding SaveImageCommand}" Content="{Binding SaveImageLabel}">
+					<SplitButton.Flyout>
+						<MenuFlyout>
+							<MenuItem IsChecked="True" Header="Save file..." Command="{Binding SaveImageFileCommand}"/>
+							<MenuItem IsChecked="True" Header="Copy" Command="{Binding CopyImageCommand}"/>
+						</MenuFlyout>
+					</SplitButton.Flyout>
+				</SplitButton>
+				<SplitButton Command="{Binding Analyse}">
+					Analyse
+					<SplitButton.Flyout>
+						<MenuFlyout>
+							<MenuItem Header="Auto" Command="{Binding ToggleAutoAnalyse}"/>
+						</MenuFlyout>
+					</SplitButton.Flyout>
+				</SplitButton>
+				 <Label>Simulate:</Label>
+				<ComboBox SelectedItem="{Binding LightsSimulation}">
+					<dc:LightsState>On</dc:LightsState>
+					<dc:LightsState>Buzz</dc:LightsState>
+					<dc:LightsState>Off</dc:LightsState>
+					<dc:LightsState>Emergency</dc:LightsState>
+				</ComboBox>
+			</WrapPanel>
+			<Image Source="{Binding OutputAvaloniaImage}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+		</DockPanel>
+	</Grid>
+</Window>

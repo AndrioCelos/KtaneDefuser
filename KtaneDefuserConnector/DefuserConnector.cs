@@ -99,7 +99,7 @@ public class DefuserConnector : IDisposable {
 				var image = Image.LoadPixelData<Rgba32>(screenshotResponseMessage.Data.AsSpan(8, screenshotResponseMessage.PixelDataLength), screenshotResponseMessage.Width, screenshotResponseMessage.Height);
 				image.Mutate(c => c.Flip(FlipMode.Vertical));
 #if DEBUG
-				SaveDebugImage(image, "Screenshot");
+				//SaveDebugImage(image, "Screenshot");  // Removed due to blocking the method for over a second.
 #endif
 				screenshotTaskSource.SetResult(image);
 				break;

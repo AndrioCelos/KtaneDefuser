@@ -1,0 +1,47 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:VisionTester.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="1024" d:DesignHeight="600"
+        x:Class="VisionTester.Views.ColourRangeWindow"
+        x:DataType="vm:ColourRangeViewModel"
+        Title="ColourRangeWindow">
+    <Design.DataContext>
+        <vm:ColourRangeViewModel/>
+    </Design.DataContext>
+    <DockPanel>
+        <WrapPanel DockPanel.Dock="Top">
+            <SplitButton Content="Load file..." Command="{Binding LoadImageCommand}">
+                <SplitButton.Flyout>
+                    <MenuFlyout>
+                        <MenuItem Header="Load file..." Command="{Binding LoadImageFileCommand}"/>
+                        <MenuItem Header="Paste" Command="{Binding PasteImageCommand}"/>
+                    </MenuFlyout>
+                </SplitButton.Flyout>
+            </SplitButton>
+            <ComboBox Name="ModeBox" SelectedItem="{Binding SelectedRangeType}"/>
+            <StackPanel Orientation="Horizontal" IsVisible="{Binding Label1, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <Label Content="{Binding Label1}"/>
+                <NumericUpDown Minimum="0" Maximum="{Binding Limit1}" Value="{Binding Min1}" Increment="1" Width="115" TextAlignment="Right"/>
+                <NumericUpDown Minimum="0" Maximum="{Binding Limit1}" Value="{Binding Max1}" Increment="1" Width="115" TextAlignment="Right" IsVisible="{Binding !UseDistance}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" IsVisible="{Binding Label2, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <Label Content="{Binding Label2}"/>
+                <NumericUpDown Minimum="0" Maximum="{Binding Limit2}" Value="{Binding Min2}" Increment="1" Width="115" TextAlignment="Right"/>
+                <NumericUpDown Minimum="0" Maximum="{Binding Limit2}" Value="{Binding Max2}" Increment="1" Width="115" TextAlignment="Right" IsVisible="{Binding !UseDistance}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" IsVisible="{Binding Label3, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <Label Content="{Binding Label3}"/>
+                <NumericUpDown Minimum="0" Maximum="{Binding Limit3}" Value="{Binding Min3}" Increment="1" Width="115" TextAlignment="Right"/>
+                <NumericUpDown Minimum="0" Maximum="{Binding Limit3}" Value="{Binding Max3}" Increment="1" Width="115" TextAlignment="Right" IsVisible="{Binding !UseDistance}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" IsVisible="{Binding UseDistance}">
+                <Label Content="D"/>
+                <NumericUpDown Minimum="0" Maximum="360" Value="{Binding MaxDistance}" Increment="1" Width="115" TextAlignment="Right"></NumericUpDown>
+            </StackPanel>
+            <Label Content="{Binding AverageLabel}"/>
+        </WrapPanel>
+        <Image Name="ImageControl" Source="{Binding OutputAvaloniaImage}" Stretch="Uniform"/>
+    </DockPanel>
+</Window>
