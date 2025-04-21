@@ -16,7 +16,7 @@ public class DefuserMessageReader : IDisposable {
 		BaseStream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
 		buffer = new byte[bufferSize];
 #if NET6_0_OR_GREATER
-		_ = ReadLoopAsync(baseStream);
+		System.Threading.Tasks.Task.Run(() => ReadLoopAsync(baseStream));
 #else
 		baseStream.BeginRead(buffer, 0, 5, BaseStream_Read, null);
 #endif

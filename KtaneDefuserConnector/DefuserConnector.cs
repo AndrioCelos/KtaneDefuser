@@ -19,13 +19,16 @@ namespace KtaneDefuserConnector;
 public class DefuserConnector : IDisposable {
 	private static readonly Dictionary<Type, ComponentReader> componentReaders
 		= (from t in typeof(ComponentReader).Assembly.GetTypes() where !t.IsAbstract && typeof(ComponentReader).IsAssignableFrom(t) select t).ToDictionary(t => t, t => (ComponentReader) Activator.CreateInstance(t)!);
+	private static readonly Dictionary<string, ComponentReader> componentReadersByName;
 	private static readonly Dictionary<Type, WidgetReader> widgetReaders
 		= (from t in typeof(WidgetReader).Assembly.GetTypes() where !t.IsAbstract && typeof(WidgetReader).IsAssignableFrom(t) select t).ToDictionary(t => t, t => (WidgetReader) Activator.CreateInstance(t)!);
 
 	private (TcpClient tcpClient, DefuserMessageReader reader, DefuserMessageWriter writer)? connection;
 
+	private static readonly MlComponentIdentifier componentIdentifier = new();
 	private TaskCompletionSource<Image<Rgba32>>? screenshotTaskSource;
 	private TaskCompletionSource<string?>? readTaskSource;
+	private TaskCompletionSource<Guid>? callbackTaskSource;
 	internal User? user;
 	private readonly BlockingCollection<(string, User)> aimlNotificationQueue = [];
 	private Simulation? simulation;
@@ -43,7 +46,10 @@ public class DefuserConnector : IDisposable {
 
 	private const int PORT = 8086;
 
-	static DefuserConnector() => TimerReader = GetComponentReader<Components.Timer>();
+	static DefuserConnector() {
+		TimerReader = GetComponentReader<Components.Timer>();
+		componentReadersByName = componentReaders.ToDictionary(e => e.Key.Name, e => e.Value, StringComparer.OrdinalIgnoreCase);
+	}
 
 	public DefuserConnector() => instance ??= this;
 
@@ -113,6 +119,7 @@ public class DefuserConnector : IDisposable {
 				SendAimlNotification($"OOB DefuserCallback {legacyInputCallbackMessage.Token}");
 				break;
 			case InputCallbackMessage inputCallbackMessage:
+				callbackTaskSource?.SetResult(inputCallbackMessage.Token);
 				SendAimlNotification($"OOB DefuserCallback {inputCallbackMessage.Token:N}");
 				break;
 			case CheatGetModuleTypeResponseMessage cheatGetModuleTypeResponseMessage:
@@ -166,13 +173,13 @@ public class DefuserConnector : IDisposable {
 	private static void SaveDebugImage(Image image, string category) {
 		var file = Path.Combine(Path.GetTempPath(), "KtaneDefuserDebug", $"{category}.{DateTime.Now:yyyy-MM-dd.HH-mm-ss.ffffff}.png");
 		Directory.CreateDirectory(Path.GetDirectoryName(file)!);
-		_ = image.SaveAsPngAsync(file);
+		image.SaveAsPng(file);
 	}
 
 	public static void SaveTrainingImage(Image image, string category) {
-		var file = Path.Combine(Path.GetTempPath(), "KtaneDefuserTraining", category, $"{DateTime.Now:yyyy-MM-dd.HH-mm-ss.ffffff}.png");
+		var file = Path.Combine("KtaneDefuserTraining", category, $"{DateTime.Now:yyyy-MM-dd.HH-mm-ss.ffffff}.png");
 		Directory.CreateDirectory(Path.GetDirectoryName(file)!);
-		_ = image.SaveAsPngAsync(file);
+		image.SaveAsPng(file);
 	}
 #endif
 
@@ -213,6 +220,21 @@ public class DefuserConnector : IDisposable {
 			simulation.SendInputs(actions);
 		else
 			SendMessage(new InputCommandMessage(actions));
+	}
+
+	public async Task SendInputsAsync(params IEnumerable<IInputAction> actions) {
+		if (callbackTaskSource is not null) throw new InvalidOperationException("Already sending inputs.");
+		var token = Guid.NewGuid();
+		SendMessage(new InputCommandMessage([.. actions, new CallbackAction(token)]));
+		try {
+			while (true) {
+				callbackTaskSource = new();
+				var token2 = await callbackTaskSource.Task;
+				if (token2 == token) return;
+			}
+		} finally {
+			callbackTaskSource = null;
+		}
 	}
 
 	/// <summary>Cancels any queued input actions.</summary>
@@ -278,21 +300,12 @@ public class DefuserConnector : IDisposable {
 		if (simulation is not null)
 			return simulation.GetComponentReader(quadrilateral);
 
+		// Extract an image of the component from the screenshot.
 		var bitmap = ImageUtils.PerspectiveUndistort(screenshotBitmap, quadrilateral, InterpolationMode.NearestNeighbour);
-
-		if (ImageUtils.CheckForBlankComponent(bitmap))
-			return null;
-
-		var frameType = ImageUtils.GetComponentFrame(bitmap);
-
-		var ratings = new List<(ComponentReader reader, float rating)>();
-		foreach (var reader in componentReaders.Values) {
-			if (reader.FrameType == frameType)
-				ratings.Add((reader, reader.IsModulePresent(bitmap)));
-		}
-
-		ratings.Sort((e1, e2) => e2.rating.CompareTo(e1.rating));
-		return ratings[0].reader;
+		
+		// Identify the component.
+		var name = componentIdentifier.Identify(bitmap);
+		return name is not null ? componentReadersByName[name] : null;
 	}
 
 	/// <summary>Retrieves the type of the component in the specified polygon and returns the corresponding <see cref="ComponentReader"/> instance, or <see langword="null"/> if it is a blank component or the timer.</summary>
@@ -304,6 +317,15 @@ public class DefuserConnector : IDisposable {
 		SendMessage(new CheatGetModuleTypeCommandMessage(slot));
 		var name = readTaskSource.Task.Result;
 		return !string.IsNullOrEmpty(name) && typeof(ComponentReader).Assembly.GetType($"{nameof(KtaneDefuserConnector)}.{nameof(Components)}.{name}", false, true) is { } t ? componentReaders[t] : null;
+	}
+
+	public async Task<string?> CheatGetComponentNameAsync(Slot slot) {
+		if (simulation is not null)
+			return simulation.GetComponentReader(slot)?.GetType().Name;
+
+		readTaskSource = new();
+		SendMessage(new CheatGetModuleTypeCommandMessage(slot));
+		return await readTaskSource.Task;
 	}
 
 	/// <summary>Identifies the widget in the specified polygon and returns the corresponding <see cref="WidgetReader"/> instance, or <see langword="null"/> if no widget is found there.</summary>
@@ -328,7 +350,7 @@ public class DefuserConnector : IDisposable {
 			return simulation.ReadComponent<T>(quadrilateral);
 		var image = ImageUtils.PerspectiveUndistort(screenshot, quadrilateral, InterpolationMode.NearestNeighbour);
 #if DEBUG
-		SaveDebugImage(image, reader.Name);
+		Task.Run(() => SaveDebugImage(image, reader.Name));
 #endif
 		Image<Rgba32>? debugImage = null;
 		return reader.Process(image, lightsState, ref debugImage);
