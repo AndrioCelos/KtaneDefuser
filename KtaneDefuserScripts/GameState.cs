@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using KtaneDefuserConnector.DataTypes;
 
 namespace KtaneDefuserScripts;
@@ -12,6 +13,8 @@ public class GameState(ILoggerFactory loggerFactory) {
 
 	internal ILoggerFactory LoggerFactory = loggerFactory;
 
+	/// <summary>Indicates the tyoe of the bomb casing.</summary>
+	public BombType BombType { get; set; }
 	/// <summary>Indicates whether we are waiting for the lights to turn on at the start of the game.</summary>
 	public bool WaitingForLights { get; set; }
 	/// <summary>The current number of strikes. In Time mode, this is always zero.</summary>
@@ -101,6 +104,11 @@ public class GameState(ILoggerFactory loggerFactory) {
 	}
 
 	internal void OnStrike(StrikeEventArgs e) => Strike?.Invoke(this, e);
+}
+
+public enum BombType {
+	Standard,
+	Centurion
 }
 
 public struct IndicatorData(bool isLit, string label) {

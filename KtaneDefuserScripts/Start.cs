@@ -40,17 +40,19 @@ internal static partial class Start {
 		// 1. Pick up the bomb
 		GameState.Current.TimerStopwatch.Restart();
 		using var interrupt = await Interrupt.EnterAsync(context);
+		using (var ss = DefuserConnector.Instance.TakeScreenshot())
+			GameState.Current.BombType = ImageUtils.IsCenturion(ss) ? BombType.Centurion : BombType.Standard;
 		interrupt.SendInputs(new ButtonAction(Button.A, ButtonActionType.Release), new AxisAction(Axis.RightStickX, 0), new AxisAction(Axis.RightStickY, 0));
 		interrupt.SendInputs(Button.A);
 		await Delay(1);  // Wait for modules to initialise.
 		// 2. Identify components on the bomb.
 		using (var ss = DefuserConnector.Instance.TakeScreenshot())
-			await RegisterComponentsAsync(context, ss);
+			await RegisterComponentsAsync(interrupt, context, ss);
 		// 3. Turn the bomb around and identify widgets on the side.
 		await Utils.SelectFaceAsync(interrupt, 1, SelectFaceAlignMode.CheckWidgets);
 		// 4. Repeat steps 2-3 for the other faces.
 		using (var ss = DefuserConnector.Instance.TakeScreenshot())
-			await RegisterComponentsAsync(context, ss);
+			await RegisterComponentsAsync(interrupt, context, ss);
 		await Utils.SelectFaceAsync(interrupt, 0, SelectFaceAlignMode.CheckWidgets);
 		// 5. Turn the bomb to the bottom face.
 		GameState.Current.LookingAtSide = true;
@@ -71,15 +73,26 @@ internal static partial class Start {
 		context.Reply("Ready. <reply>edgework</reply><reply>first module</reply><reply>vanilla modules</reply><reply>specific module…</reply>");
 	}
 
-	private static async Task RegisterComponentsAsync(AimlAsyncContext context, Image<Rgba32> screenshot) {
+	private static async Task RegisterComponentsAsync(Interrupt interrupt, AimlAsyncContext context, Image<Rgba32> screenshot) {
 		var lightsState = DefuserConnector.Instance.GetLightsState(screenshot);
 		if (lightsState != LightsState.On) throw new ArgumentException($"Can't identify components on lights state {lightsState}.");
+		if (GameState.Current.BombType == BombType.Centurion) {
+			var anyModules = false;
+			foreach (var (centre, group) in CenturionUtil.SlotGroups[GameState.Current.SelectedFaceNum]) {
+				await Utils.SelectSlotAsync(interrupt, centre, true);
+				anyModules = await ReadComponentSlotsAsync(context, screenshot, group, anyModules);
+			}
+		} else {
+			var slots = from y in Enumerable.Range(0, 2) from x in Enumerable.Range(0, 3) select new Slot(0, GameState.Current.SelectedFaceNum, x, y);
+			await ReadComponentSlotsAsync(context, screenshot, slots, false);
+		}
+	}
+
+	private static async Task<bool> ReadComponentSlotsAsync(AimlAsyncContext context, Image<Rgba32> screenshot, IEnumerable<Slot> slots, bool anyModules) {
 		var needTimerRead = false;
-		var anyModules = false;
-		for (var i = 0; i < 6; i++) {
-			var points = Utils.GetPoints(new(0, GameState.Current.SelectedFaceNum, i % 3, i / 3));
+		foreach (var slot in slots) {
+			var points = Utils.GetPoints(slot);
 			var component = DefuserConnector.Instance.GetComponentReader(screenshot, points);
-			var slot = new Slot(0, GameState.Current.SelectedFaceNum, i % 3, i / 3);
 			var actualComponent = DefuserConnector.Instance.CheatGetComponentReader(slot);
 			if (actualComponent != component && !(actualComponent is null && component is KtaneDefuserConnector.Components.Timer)) {
 				LogWrongComponent(logger, slot, component?.Name, actualComponent?.Name);
@@ -107,6 +120,8 @@ internal static partial class Start {
 			await Timer.ReadTimerAsync(screenshot, startDelayStopwatch is not null && startDelayStopwatch.Elapsed < TimeSpan.FromSeconds(2));
 			startDelayStopwatch = null;
 		}
+
+		return anyModules;
 	}
 
 	private static ModuleState? RegisterComponent(AimlAsyncContext context, Slot slot, ComponentReader? component) {

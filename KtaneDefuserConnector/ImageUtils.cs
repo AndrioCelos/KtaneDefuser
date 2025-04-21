@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
@@ -404,6 +405,96 @@ public static class ImageUtils {
 					result = (LightsState) i;
 					return;
 				}
+			}
+		});
+		return result;
+	}
+
+	private static bool IsBombCasing(Rgba32 pixel) => HsvColor.FromColor(pixel) is { S: < 0.12f, V: >= 0.33f };
+
+	public static IEnumerable<Rectangle> GetCenturionTopWidgetBounds(Image<Rgba32> image, Rectangle baseRectangle) {
+		for (var line = 0; line < 2; line++) {
+			var lineY = baseRectangle.Top + baseRectangle.Height * (1 + line * 2) / 4;
+			var x = baseRectangle.Left;
+			while (x < baseRectangle.Right) {
+				if (!IsBombCasing(image[x, lineY])) {
+					int x1 = x, y1 = lineY, y2 = lineY;
+					while (x < baseRectangle.Right) {
+						while (y1 > baseRectangle.Top && !IsBombCasing(image[x, y1 - 1]))
+							y1--;
+						while (y2 < baseRectangle.Bottom && !IsBombCasing(image[x, y2 + 1]))
+							y2++;
+						if (Enumerable.Range(y1, y2 - y1).All(y => IsBombCasing(image[x, y]))) break;
+						x++;
+					}
+
+					var width = x - x1;
+					var height = y2 - y1;
+					if (width >= 30 && height >= 30) {
+						if (width >= height * 3) {
+							// This is likely multiple widgets, so separate them.
+							var numRectangles = (int) Math.Round((double) width / height / 2.25);
+							var width2 = width / numRectangles;
+							for (var i = 0; i < numRectangles; i++)
+								yield return new(x1 + width * i / numRectangles, y1, width2, height);
+						} else {
+							yield return new(x1, y1, width, height);
+						}
+					}
+				}
+				x++;
+			}
+		}
+	}
+	
+	public static IEnumerable<Rectangle> GetCenturionSideWidgetBounds(Image<Rgba32> image, Rectangle baseRectangle) {
+		for (var line = 0; line < 2; line++) {
+			var lineX = baseRectangle.Left + baseRectangle.Width * (1 + line * 2) / 4;
+			var y = baseRectangle.Top;
+			while (y < baseRectangle.Bottom) {
+				if (!IsBombCasing(image[lineX, y])) {
+					int y1 = y, x1 = lineX, x2 = lineX;
+					while (y < baseRectangle.Bottom) {
+						while (x1 > baseRectangle.Left && !IsBombCasing(image[x1 - 1, y]))
+							x1--;
+						while (x2 < baseRectangle.Right && !IsBombCasing(image[x2 + 1, y]))
+							x2++;
+						if (Enumerable.Range(x1, x2 - x1).All(x => IsBombCasing(image[x, y]))) break;
+						y++;
+					}
+
+					var width = x2 - x1;
+					var height = y - y1;
+					if (width >= 30 && height >= 30) {
+						if (height >= width * 3) {
+							// This is likely multiple widgets, so separate them.
+							var numRectangles = (int) Math.Round((double) height / width / 2.25);
+							var height2 = height / numRectangles;
+							for (var i = 0; i < numRectangles; i++)
+								yield return new(x1, y1 + height * i / numRectangles, width, height2);
+						} else {
+							yield return new(x1, y1, width, height);
+						}
+					}
+				}
+				y++;
+			}
+		}
+	}
+
+	public static bool IsCenturion(Image<Rgba32> image) {
+		if (image.Height == 1) return false;
+		// Search an area of the table that's covered by the Centurion, but not the vanilla bomb case.
+		// TODO: Currently only works with the default gameplay room.
+		var result = false;
+		image.ProcessPixelRows(p => {
+			var row = p.GetRowSpan(p.Height * 840 / 1080);
+			for (var x = p.Width / 2 - 200; x < p.Width / 2 + 200; x++) {
+				if (row[x] is { R: 7 or 8, G: 7 or 8, B: 7 or 8 }  // Lights off
+					|| HsvColor.FromColor(row[x]) is { H: >= 15 and <= 30, S: >= 0.25f and < 0.5f })  // Lights on
+					continue;
+				result = true;
+				return;
 			}
 		});
 		return result;

@@ -3,7 +3,7 @@ using AngelAiml.Media;
 using Button = KtaneDefuserConnectorApi.Button;
 
 namespace KtaneDefuserScripts;
-internal static class Utils {
+public static class Utils {
 	public static Quadrilateral CurrentModuleArea { get; } = new( 836,  390, 1120,  390,  832,  678, 1124,  678);
 	private static readonly Quadrilateral[] moduleAreas = [
 		new( 220,  100,  496,  100,  193,  359,  479,  359),
@@ -47,6 +47,7 @@ internal static class Utils {
 
 	/// <summary>Returns the quadrilateral representing the location of the specified slot on the screen. The slot should be on the side of the bomb we're already looking at.</summary>
 	public static Quadrilateral GetPoints(Slot slot) {
+		if (GameState.Current.BombType == BombType.Centurion) return CenturionUtil.GetPoints(slot);
 		if (GameState.Current.FocusState == FocusState.Module) {
 			var selectedSlot = GameState.Current.SelectedFace.SelectedSlot;
 			var dx = slot.X - selectedSlot.X;
@@ -110,10 +111,14 @@ internal static class Utils {
 	/// <summary>Selects the specified module.</summary>
 	/// <param name="waitForFocus">If true, waits for the module focusing animation to finish before completing; otherwise completes as soon as controller input is able to be sent to the module.</param>
 	internal static async Task SelectModuleAsync(Interrupt interrupt, int moduleNum, bool waitForFocus) {
-		if (GameState.Current.SelectedModuleNum == moduleNum)
-			return;  // The requested module is already selected.
-		var buttons = new List<Button>();
+		if (GameState.Current.SelectedModuleNum == moduleNum) return;  // The requested module is already selected.
 		var slot = GameState.Current.Modules[moduleNum].Slot;
+		await SelectSlotAsync(interrupt, slot, waitForFocus);
+		GameState.Current.SelectedModuleNum = moduleNum;
+	}
+
+	internal static async Task SelectSlotAsync(Interrupt interrupt, Slot slot, bool waitForFocus) {
+		var buttons = new List<Button>();
 		await SelectFaceAsync(interrupt, slot.Face, SelectFaceAlignMode.None);
 		// If another module is selected, deselect it first.
 		if (GameState.Current.SelectedModuleNum is not null)
@@ -152,7 +157,6 @@ internal static class Utils {
 		if (waitForFocus) await Delay(0.75);
 
 		GameState.Current.SelectedFace.SelectedSlot = slot;
-		GameState.Current.SelectedModuleNum = moduleNum;
 		GameState.Current.FocusState = FocusState.Module;
 	}
 
