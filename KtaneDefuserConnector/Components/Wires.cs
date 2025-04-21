@@ -51,6 +51,7 @@ public class Wires : ComponentReader<Wires.ReadData> {
 		debugImage?.Mutate(c => c.Brightness(0.5f));
 
 		var inWire = 0;
+		var seenFirstValidPixel = false;
 		var added = false;
 		var colours = new List<Colour>();
 		for (var y = 32; y < 232; y++) {
@@ -61,6 +62,7 @@ public class Wires : ComponentReader<Wires.ReadData> {
 			var hsv = HsvColor.FromColor(pixel);
 			var colour = GetColour(hsv);
 			if (colour is null) {
+				seenFirstValidPixel = false;
 				if (inWire > 0) {
 					inWire--;
 					if (inWire == 0) {
@@ -70,6 +72,11 @@ public class Wires : ComponentReader<Wires.ReadData> {
 					}
 				}
 			} else {
+				if (!seenFirstValidPixel) {
+					// Filter out single pixels.
+					seenFirstValidPixel = true;
+					continue;
+				}
 				if (!added && colour != Colour.Red) {
 					added = true;
 					colours.Add(colour.Value);

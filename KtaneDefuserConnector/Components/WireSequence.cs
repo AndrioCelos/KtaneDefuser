@@ -68,14 +68,18 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 				: hsv is { H: >= 5 and <= 15, S: >= 0.95f, V: >= 0.9f };
 		static (int x, bool isStrictMatch)? GetSelectionHighlight(Image<Rgba32> image, Rectangle textRect, LightsState lightsState) {
 			var x = textRect.Right;
+			var xFirstMatch = 0;
 			while (true) {
 				for (var y = textRect.Top; y < textRect.Bottom; y++) {
 					var hsv = HsvColor.FromColor(image[x, y]);
 					var hsvCorrected = HsvColor.FromColor(ImageUtils.ColourCorrect(image[x, y], lightsState));
-					if (IsSelectionHighlight(hsv))
-						return (x, IsSelectionHighlightStrict(hsv, lightsState));
+					if (IsSelectionHighlight(hsv)) {
+						var isStrictMatch = IsSelectionHighlightStrict(hsv, lightsState);
+						if (isStrictMatch) return (x, true);
+						if (xFirstMatch == 0) xFirstMatch = x;
+					}
 					if (lightsState == LightsState.Off || hsvCorrected is { H: >= 180 and <= 240, S: >= 0.05f and <= 0.2f, V: >= 0.2f and <= 0.4f })
-						return null;
+						return xFirstMatch > 0 ? (xFirstMatch, false) : null;
 				}
 				x++;
 			}
