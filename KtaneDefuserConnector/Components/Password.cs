@@ -100,6 +100,7 @@ public class Password : ComponentReader<Password.ReadData> {
 			}
 			left += 4;
 
+			misses = 0;
 			for (right = x; ; right++) {
 				misses++;
 				for (var y = top; y < bottom; y++) {
@@ -146,7 +147,7 @@ public class Password : ComponentReader<Password.ReadData> {
 						}
 					}
 				}
-				chars[i] = charPatterns[pattern];
+				chars[i] = charPatterns.GetValueOrDefault(pattern, '\0');
 			}
 		});
 
