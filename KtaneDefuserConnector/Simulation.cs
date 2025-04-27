@@ -21,7 +21,7 @@ internal partial class Simulation {
 	private int selectedFaceNum;
 	private BombFaces currentFace;
 	private readonly Queue<IInputAction> actionQueue = new();
-	private readonly Timer queueTimer = new(1000 / 6);
+	private readonly Timer queueTimer = new(167);
 	private readonly ComponentFace[] moduleFaces = new ComponentFace[2];
 	private readonly WidgetFace[] widgetFaces = new WidgetFace[4];
 	private bool isAlarmClockOn;
@@ -603,7 +603,7 @@ internal partial class Simulation {
 			this.faceNum = faceNum;
 			this.x = x;
 			this.y = y;
-			Postback($"OOB NeedyStateChange {this.faceNum} {this.x} {this.y} AwaitingActivation");
+			Postback($"OOB NeedyStateChange 0 {this.faceNum} {this.x} {this.y} {nameof(NeedyState.AwaitingActivation)}");
 			Timer.Interval = 10000;
 			Timer.Start();
 		}
@@ -615,7 +615,7 @@ internal partial class Simulation {
 			IsActive = true;
 			LogNeedyModuleActivated(Reader.Name, baseTime);
 			OnActivate();
-			Postback($"OOB NeedyStateChange {faceNum} {x} {y} Running");
+			Postback($"OOB NeedyStateChange 0 {faceNum} {x} {y} {nameof(NeedyState.Running)}");
 		}
 
 		protected abstract void OnActivate();
@@ -627,10 +627,10 @@ internal partial class Simulation {
 			LogNeedyModuleDeactivated(Reader.Name, RemainingTime);
 			if (AutoReset) {
 				Timer.Interval = 30000;
-				Postback($"OOB NeedyStateChange {faceNum} {x} {y} Cooldown");
+				Postback($"OOB NeedyStateChange 0 {faceNum} {x} {y} {nameof(NeedyState.Cooldown)}");
 			} else {
 				Timer.Stop();
-				Postback($"OOB NeedyStateChange {faceNum} {x} {y} Terminated");
+				Postback($"OOB NeedyStateChange 0 {faceNum} {x} {y} {nameof(NeedyState.Terminated)}");
 			}
 		}
 

@@ -1,4 +1,5 @@
-﻿using SixLabors.ImageSharp;
+﻿using JetBrains.Annotations;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using static KtaneDefuserConnector.LightsState;
 
@@ -8,12 +9,7 @@ public abstract class WidgetReader {
 	/// <summary>When overridden, returns the name of the widget handled by this class.</summary>
 	public abstract string Name { get; }
 
-	/// <summary>Returns a value indicating how much the specified image looks like this widget type.</summary>
-	/// <returns>Generally this will range from 0 to 1, though it isn't strictly bounded. The image should always be under normal lighting because this is used at the start of the game.</returns>
-	protected internal abstract float IsWidgetPresent(Image<Rgba32> image, LightsState lightsState, PixelCounts pixelCounts);
-
-	protected internal abstract object ProcessNonGeneric(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage);
-
+	[Pure]
 	internal static PixelCounts GetPixelCounts(Image<Rgba32> image, LightsState lightsState) {
 		int red = 0, yellow = 0, grey = 0, white = 0;
 		for (var y = 0; y < image.Width; y++) {
@@ -74,8 +70,6 @@ public abstract class WidgetReader<T> : WidgetReader where T : notnull {
 	/// <param name="lightsState">The lights state in the provided image.</param>
 	/// <param name="debugImage">An image variable to draw debug annotations to. The image may be replaced with a larger one. This may be a variable containing <see langword="null"/> to disable debug annotations.</param>
 	// This will probably only need to work under normal lighting, because widgets are only read at the start of the game, except if we support things like Two Factor later.
+	[MustUseReturnValue]
 	protected internal abstract T Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage);
-
-	protected internal override object ProcessNonGeneric(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage)
-		=> Process(image, lightsState, ref debugImage);
 }

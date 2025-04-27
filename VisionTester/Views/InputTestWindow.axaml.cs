@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
-using Avalonia.Markup.Xaml;
 using KtaneDefuserConnector;
 using KtaneDefuserConnectorApi;
 using Microsoft.Extensions.Logging.Abstractions;

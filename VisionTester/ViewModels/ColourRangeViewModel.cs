@@ -143,6 +143,7 @@ public partial class ColourRangeViewModel : ViewModelBase {
 		}
 		
 		OutputAvaloniaImage = outputImage.ToAvaloniaImage();
+		RecalculateAverage();
 	}
 
 	public void MouseClick(PixelPoint point, bool rightButton, KeyModifiers keyModifiers) {
@@ -190,6 +191,33 @@ public partial class ColourRangeViewModel : ViewModelBase {
 			autoRedraw = true;
 			Redraw();
 		}
+	}
+
+	public void RecalculateAverage() {
+		if (InputImage is null) return;
+		long r = 0, g = 0, b = 0, a = 0;
+		InputImage.ProcessPixelRows(p => {
+			for (int y = 0; y < p.Height; y++) {
+				var row = p.GetRowSpan(y);
+				for (int x = 0; x < p.Width; x++) {
+					var color = row[x];
+					if (color.A > 0 && (color.R > 0 || color.G > 0 || color.B > 0)) {
+						if (color.A == 255) {
+							r += color.R;
+							g += color.G;
+							b += color.B;
+							a += 255;
+						} else {
+							r += color.R * 255 / color.A;
+							g += color.G * 255 / color.A;
+							b += color.B * 255 / color.A;
+							a += color.A;
+						}
+					}
+				}
+			}
+		});
+		AverageLabel = $"Average: ({r * 255 / a}, {g * 255 / a}, {b * 255 / a})";
 	}
 
 	public enum RangeType {

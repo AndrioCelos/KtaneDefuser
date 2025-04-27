@@ -25,14 +25,100 @@
 					</SplitButton.Flyout>
 				</SplitButton>
 				<Button Command="{Binding SaveInputImageFile}">Save file...</Button>
-				<Label>Preset:</Label>
-				<ComboBox ItemsSource="{Binding Presets}" SelectedItem="{Binding SelectedPreset}">
-					<ComboBox.ItemTemplate>
-						<DataTemplate DataType="vm:TransformationViewModel+Preset">
-							<TextBlock Text="{Binding Name}"/>
-						</DataTemplate>
-					</ComboBox.ItemTemplate>
-				</ComboBox>
+				<DropDownButton Name="PresetButton">
+					Preset
+					<DropDownButton.Flyout>
+						<Flyout>
+							<TabControl>
+								<TabItem Header="Module">
+									<StackPanel Orientation="Horizontal" Spacing="30">
+										<Grid ColumnDefinitions="30, 30, 30" RowDefinitions="30, 30">
+											<Button CommandParameter="Module 1" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module 2" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module 3" Grid.Column="2" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module 4" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module 5" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module 6" Grid.Column="2" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+										</Grid>
+										<Grid ColumnDefinitions="30, 30, 30, 30, 30" RowDefinitions="30, 30, 30">
+											<Button CommandParameter="Module -2 -1" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module -1 -1" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module  0 -1" Grid.Column="2" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module +1 -1" Grid.Column="3" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module +2 -1" Grid.Column="4" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module -2  0" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module -1  0" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module  0  0" Grid.Column="2" Grid.Row="1" Background="Purple" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module +1  0" Grid.Column="3" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module +2  0" Grid.Column="4" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module -2 +1" Grid.Column="0" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module -1 +1" Grid.Column="1" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module  0 +1" Grid.Column="2" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module +1 +1" Grid.Column="3" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Module +2 +1" Grid.Column="4" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+										</Grid>
+									</StackPanel>
+								</TabItem>
+								<TabItem Header="Widget">
+									<StackPanel Orientation="Horizontal" Spacing="30">
+										<Grid ColumnDefinitions="30, 30" RowDefinitions="30, 30">
+											<Button CommandParameter="Side widget 1" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Side widget 2" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Side widget 3" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Side widget 4" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+										</Grid>
+										<Grid ColumnDefinitions="30, 30, 30" RowDefinitions="30, 30">
+											<Button CommandParameter="Top widget 1" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Top widget 2" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Top widget 3" Grid.Column="2" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Top widget 4" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Top widget 5" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Top widget 6" Grid.Column="2" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+										</Grid>
+									</StackPanel>
+								</TabItem>
+								<TabItem Header="Centurion">
+									<StackPanel Orientation="Horizontal" Spacing="30">
+										<Grid ColumnDefinitions="30, 30, 30, 30, 30" RowDefinitions="30, 30, 30">
+											<Button CommandParameter="Centurion -2 -1" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion -1 -1" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion  0 -1" Grid.Column="2" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion +1 -1" Grid.Column="3" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion +2 -1" Grid.Column="4" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion -2  0" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion -1  0" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion  0  0" Grid.Column="2" Grid.Row="1" Background="Purple" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion +1  0" Grid.Column="3" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion +2  0" Grid.Column="4" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion -2 +1" Grid.Column="0" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion -1 +1" Grid.Column="1" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion  0 +1" Grid.Column="2" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion +1 +1" Grid.Column="3" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion +2 +1" Grid.Column="4" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+										</Grid>
+										<Grid ColumnDefinitions="15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15" RowDefinitions="30, 30, 30">
+											<Button CommandParameter="Centurion -2.5 -1" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion -1.5 -1" Grid.Column="2" Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion -0.5 -1" Grid.Column="4" Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion +0.5 -1" Grid.Column="6" Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion +1.5 -1" Grid.Column="8" Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion -2  0" Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion -1  0" Grid.Column="3" Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion  0  0" Grid.Column="5" Grid.Row="1" Grid.ColumnSpan="2" Background="Purple" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion +1  0" Grid.Column="7" Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion +2  0" Grid.Column="9" Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion -1.5 +1" Grid.Column="2" Grid.Row="2" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion -0.5 +1" Grid.Column="4" Grid.Row="2" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion +0.5 +1" Grid.Column="6" Grid.Row="2" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+											<Button CommandParameter="Centurion +1.5 +1" Grid.Column="8" Grid.Row="2" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding SetPresetByName}"/>
+										</Grid>
+										<Button CommandParameter="Centurion top/bottom widgets" Command="{Binding SetPresetByName}"/>
+									</StackPanel>
+								</TabItem>
+							</TabControl>
+						</Flyout>
+					</DropDownButton.Flyout>
+				</DropDownButton>
 				<Button Command="{Binding CopyPresetCode}">Copy</Button>
 				<Label>Interpolation:</Label>
 				<ComboBox Name="InterpolationBox" SelectedItem="{Binding InterpolationMode}">

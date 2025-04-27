@@ -1,4 +1,5 @@
 ﻿using System;
+using JetBrains.Annotations;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -8,16 +9,9 @@ namespace KtaneDefuserConnector;
 public abstract class ComponentReader {
 	/// <summary>When overridden, returns the name of the component handled by this class.</summary>
 	public abstract string Name { get; }
-	/// <summary>When overridden, returns a value indicating whether the component handled by this class uses the needy module frame.</summary>
-	protected internal abstract ComponentFrameType FrameType { get; }
-
-	/// <summary>Returns a value indicating how much the specified image looks like this component type.</summary>
-	/// <returns>Generally this will range from 0 to 1, though it isn't strictly bounded. The image should always be under normal lighting because this is used at the start of the game.</returns>
-	protected internal abstract float IsModulePresent(Image<Rgba32> image);
-
-	protected internal abstract object ProcessNonGeneric(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage);
 
 	/// <summary>Returns the number of lit lights on the module's stage indicator.</summary>
+	[Pure]
 	protected static int ReadStageIndicator(Image<Rgba32> image) {
 		var count = 0;
 		var lastState = false;
@@ -34,6 +28,7 @@ public abstract class ComponentReader {
 	}
 
 	/// <summary>Returns the number displayed on the module's needy timer, or null if it is blank.</summary>
+	[MustUseReturnValue]
 	protected static int? ReadNeedyTimer(Image<Rgba32> image, LightsState lightsState, Image<Rgba32>? debugImage) {
 		var bezelCorners = ImageUtils.FindCorners(image, new(80, 16, 96, 64), c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is var hsv && hsv.H >= (lightsState == LightsState.Emergency ? 15 : 45) && hsv is { H: <= 150, S: <= 0.25f, V: >= 0.3f and <= 0.9f }, 4);
 		debugImage?.DebugDrawPoints(bezelCorners);
@@ -43,7 +38,7 @@ public abstract class ComponentReader {
 		var bottom = Math.Max(bezelCorners.BottomLeft.Y, bezelCorners.BottomRight.Y);
 		var bezelRectangle = new Rectangle(left, top, right - left, bottom - top);
 		bezelRectangle.Inflate(-4, -4);
-		var displayCorners = ImageUtils.FindCorners(image, bezelRectangle, c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is var hsv && (hsv.H is >= 345 or <= 15 && hsv.S >= 0.75f) || hsv.V <= 0.10f, 4);
+		var displayCorners = ImageUtils.FindCorners(image, bezelRectangle, c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is { H: >= 345 or <= 15, S: >= 0.75f } or { V: <= 0.10f}, 4);
 		debugImage?.DebugDrawPoints(displayCorners);
 
 		var displayImage = ImageUtils.PerspectiveUndistort(image, displayCorners, InterpolationMode.NearestNeighbour, new(128, 64));
@@ -98,9 +93,7 @@ public abstract class ComponentReader<T> : ComponentReader where T : notnull {
 	/// <summary>When overridden, reads component data from the specified image.</summary>
 	/// <param name="image">The image to read component data from.</param>
 	/// <param name="lightsState">The lights state in the provided image.</param>
-	/// <param name="debugImage">An image variable to draw debug annotations to. The image may be replaced with a larger one. May be a variable containing <see langword="null"/> to disable debug annotations.</param>
+	/// <param name="debugImage">An image variable to draw debug annotations to. The image may be replaced with a larger one. It may be a variable containing <see langword="null"/> to disable debug annotations.</param>
+	[MustUseReturnValue]
 	protected internal abstract T Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage);
-
-	protected internal override object ProcessNonGeneric(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage)
-		=> Process(image, lightsState, ref debugImage);
 }

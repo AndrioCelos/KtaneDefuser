@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.Messaging;
 using SixLabors.ImageSharp;
@@ -60,5 +61,9 @@ public partial class TransformationWindow : Window {
 		image.SaveAsPng(ms);
 		dataObject.Set("PNG", ms.ToArray());
 		clipboard.SetDataObjectAsync(dataObject);
+	}
+
+	private void PresetButton_Click(object? sender, RoutedEventArgs e) {
+		PresetButton.Flyout!.Hide();
 	}
 }

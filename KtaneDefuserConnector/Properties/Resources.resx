@@ -121,35 +121,8 @@
   <data name="AnonymousProBold" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Fonts\AnonymousPro-Bold.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="ButtonAbort" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\The Button\ButtonAbort.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="ButtonDetonate" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\The Button\ButtonDetonate.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="ButtonHold" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\The Button\ButtonHold.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="ButtonPress" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\The Button\ButtonPress.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
   <data name="CabinMedium" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Fonts\Cabin-Medium.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="CapacitorDischarge1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\CapacitorDischarge1.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="CapacitorDischarge2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\CapacitorDischarge2.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="ComplicatedWires1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\ComplicatedWires1.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="ComplicatedWires2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\ComplicatedWires2.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="Keypad" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\Keypad.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="KeypadAe" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Keypad\KeypadAe.bmp;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
@@ -250,41 +223,8 @@
   <data name="KeypadWeirdNose" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Keypad\KeypadWeirdNose.bmp;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="Knob1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\Knob1.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="Knob2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\Knob2.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="Maze" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\Maze.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="Memory" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\Memory.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="MorseCode1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\MorseCode1.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="MorseCode2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\MorseCode2.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="NeedyFrame1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\NeedyFrame1.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="NeedyFrame2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\NeedyFrame2.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="NeedyFramePart" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\NeedyFramePart.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
   <data name="OstrichSansHeavy" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Fonts\OstrichSans-Heavy.otf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="Password1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\Password1.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="Password2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\Password2.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="PianoKeysCClef" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Piano Keys\CClef.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
@@ -312,53 +252,5 @@
   </data>
   <data name="PianoKeysTurn" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Piano Keys\Turn.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="SimonSays" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\SimonSays.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="TheButton1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\TheButton1.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="TheButton2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\TheButton2.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="TheButton3" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\TheButton3.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="TheButton4" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\TheButton4.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="TheButton5" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\TheButton5.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="TheButton6" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\TheButton6.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="TheButton7" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\TheButton7.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="TheButton8" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\TheButton8.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="Timer1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\Timer1.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="Timer2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\Timer2.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="VentingGas" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\VentingGas.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="WhosOnFirst1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\WhosOnFirst1.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="WhosOnFirst2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\WhosOnFirst2.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="Wires" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\Wires.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="WireSequence" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ComponentSamples\WireSequence.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
 </root>

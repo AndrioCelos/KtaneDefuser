@@ -9,39 +9,7 @@ using SixLabors.ImageSharp.Processing;
 namespace KtaneDefuserConnector.Components;
 public class ComplicatedWires : ComponentReader<ComplicatedWires.ReadData> {
 	public override string Name => "Complicated Wires";
-	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
-	protected internal override float IsModulePresent(Image<Rgba32> image) {
-		// Complicated Wires: look for vertical wires crossing the centre
-		var inWire = 0;
-		var numWires = 0;
-		var numPixels = 0;
-		var pixelScore = 0f;
-		for (var x = 16; x < 224; x++) {
-			var color = image[x, 128];
-			var hsv = HsvColor.FromColor(color);
-			var colour = GetColour(hsv);
-			if (colour != Colour.None) {
-				if (inWire == 0)
-					numWires++;
-				inWire = 4;
-				numPixels++;
-				pixelScore += colour switch {
-					Colour.White => hsv.V,
-					Colour.Red or Colour.Highlight => hsv.S * Math.Max(0, 1 - Math.Abs(hsv.H >= 180 ? hsv.H - 360 : hsv.H) * 0.05f),
-					Colour.Blue => Math.Min(1, hsv.S * 1.25f) * (1 - Math.Abs(225 - hsv.H) * 0.05f),
-					_ => 0
-				};
-			} else {
-				// There shouldn't be any colour other than the backing here.
-				numPixels++;
-				if (ImageUtils.IsModuleBack(color, LightsState.On)) pixelScore++;
-				if (inWire > 0)
-					inWire--;
-			}
-		}
-		return numWires is >= 3 and <= 6 ? pixelScore * 1.5f / numPixels : 0;
-	}
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		debugImage?.Mutate(c => c.Brightness(0.5f));
 
@@ -82,6 +50,7 @@ public class ComplicatedWires : ComponentReader<ComplicatedWires.ReadData> {
 								for (var x = stickerRect.Left; x < stickerRect.Right; x++) {
 									if (!(HsvColor.FromColor(ImageUtils.ColourCorrect(row[x], lightsState)).V < 0.3f))
 										continue;
+									// ReSharper disable once AccessToModifiedClosure
 									currentFlags |= WireFlags.Star;
 									return;
 								}

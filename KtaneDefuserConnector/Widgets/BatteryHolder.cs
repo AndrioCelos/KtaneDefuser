@@ -7,10 +7,6 @@ namespace KtaneDefuserConnector.Widgets;
 public class BatteryHolder : WidgetReader<int> {
 	public override string Name => "Battery Holder";
 
-	protected internal override float IsWidgetPresent(Image<Rgba32> image, LightsState lightsState, PixelCounts pixelCounts)
-		// This is the only widget with yellow pixels.
-		=> pixelCounts.Yellow / 2048f;
-
 	private static bool IsRed(HsvColor hsv) => hsv is { S: >= 0.4f, H: >= 345 or <= 90 };
 
 	protected internal override int Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {

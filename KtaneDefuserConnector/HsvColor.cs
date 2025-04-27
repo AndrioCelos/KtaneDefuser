@@ -1,26 +1,24 @@
 ﻿using System;
-using System.Drawing;
+using JetBrains.Annotations;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace KtaneDefuserConnector;
 /// <summary>Represents a colour in HSVA coordinates.</summary>
 public struct HsvColor(float h, float s, float v, byte a) {
 	/// <summary>The hue in degrees, between 0 and 360.</summary>
-	public float H = h;
+	[PublicAPI] public float H = h;
 	/// <summary>The saturation, between 0 and 1.</summary>
-	public float S = s;
+	[PublicAPI] public float S = s;
 	/// <summary>The brightness, between 0 and 1.</summary>
-	public float V = v;
+	[PublicAPI] public float V = v;
 	/// <summary>The opacity, between 0 and 255.</summary>
-	public byte A = a;
+	[PublicAPI] public byte A = a;
 
-	/// <summary>Converts a <see cref="Color"/> to a <see cref="HsvColor"/>.</summary>
-	public static HsvColor FromColor(Color color)
-		=> FromArgb(color.A, color.R, color.G, color.B);
 	/// <summary>Converts a <see cref="Rgba32"/> pixel to a <see cref="HsvColor"/>.</summary>
-	public static HsvColor FromColor(Rgba32 pixel)
-		=> FromArgb(pixel.A, pixel.R, pixel.G, pixel.B);
+	[PublicAPI]
+	public static HsvColor FromColor(Rgba32 pixel) => FromArgb(pixel.A, pixel.R, pixel.G, pixel.B);
 	/// <summary>Converts a colour in ARGB format to a <see cref="HsvColor"/>.</summary>
+	[PublicAPI]
 	public static HsvColor FromArgb(byte a, byte r, byte g, byte b) {
 		var rf = r / 255f;
 		var gf = g / 255f;

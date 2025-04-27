@@ -10,7 +10,7 @@ using WireFlags = KtaneDefuserConnector.Components.ComplicatedWires.WireFlags;
 namespace KtaneDefuserConnector;
 internal partial class Simulation {
 	private static partial class Modules {
-#region Vanilla modules
+		#region Vanilla modules
 		public class Wires(Simulation simulation, int shouldCut, params Components.Wires.Colour[] wires) : Module<Components.Wires.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.Wires>(), 1, wires.Length) {
 			internal override Components.Wires.ReadData Details => new(wires);
 
@@ -78,14 +78,14 @@ internal partial class Simulation {
 					var time = elapsed.Ticks;
 					LogButtonReleased(elapsed.TotalSeconds);
 					correct = time >= Stopwatch.Frequency * 60
-						? (time / (Stopwatch.Frequency * 600) % 10 == correctDigit)
-							|| (time / (Stopwatch.Frequency * 60) % 10 == correctDigit)
-							|| (time / (Stopwatch.Frequency * 10) % 10 == correctDigit)
-							|| (time / Stopwatch.Frequency % 10 == correctDigit)
-						: (time / (Stopwatch.Frequency * 10) % 10 == correctDigit)
-							|| (time / Stopwatch.Frequency % 10 == correctDigit)
-							|| (time / (Stopwatch.Frequency / 10) % 10 == correctDigit)
-							|| (time / (Stopwatch.Frequency / 100) % 10 == correctDigit);
+						? time / (Stopwatch.Frequency * 600) % 10 == correctDigit
+							|| time / (Stopwatch.Frequency * 60) % 10 == correctDigit
+							|| time / (Stopwatch.Frequency * 10) % 10 == correctDigit
+							|| time / Stopwatch.Frequency % 10 == correctDigit
+						: time / (Stopwatch.Frequency * 10) % 10 == correctDigit
+							|| time / Stopwatch.Frequency % 10 == correctDigit
+							|| time / (Stopwatch.Frequency / 10) % 10 == correctDigit
+							|| time / (Stopwatch.Frequency / 100) % 10 == correctDigit;
 					indicatorColour = null;
 				} else {
 					LogButtonTapped();
@@ -415,7 +415,7 @@ internal partial class Simulation {
 			};
 			private readonly int[] columnPositions = new int[5];
 
-			internal override Components.Password.ReadData Details => new(columnPositions.Select((y, x) => columns[x, y]).ToArray());
+			internal override Components.Password.ReadData Details => new([.. columnPositions.Select((y, x) => columns[x, y])]);
 
 			public Password(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.Password>(), 5, 3) {
 				SelectableGrid[2, 0] = false;

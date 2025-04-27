@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using SixLabors.ImageSharp;
 
 namespace KtaneDefuserConnector;
@@ -32,7 +31,7 @@ public struct Quadrilateral : IEquatable<Quadrilateral> {
 	}
 	public Quadrilateral(IEnumerable<Point> points) {
 		ArgumentNullException.ThrowIfNull(points);
-		var enumerator = points.GetEnumerator();
+		using var enumerator = points.GetEnumerator();
 		TopLeft = enumerator.MoveNext() ? enumerator.Current : throw new ArgumentException("Points list must have length 4.", nameof(points));
 		TopRight = enumerator.MoveNext() ? enumerator.Current : throw new ArgumentException("Points list must have length 4.", nameof(points));
 		BottomLeft = enumerator.MoveNext() ? enumerator.Current : throw new ArgumentException("Points list must have length 4.", nameof(points));

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using KtaneDefuserConnector.Properties;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -51,30 +52,8 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 	}
 
 	public override string Name => "Keypad";
-	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
-	protected internal override float IsModulePresent(Image<Rgba32> image) {
-		// Keypad: look for white keys and gray bezel
-		var referenceColour = new Rgba32(136, 140, 150);
-		var referenceColour2 = new Rgba32(232, 217, 194);
-		var count = 0f;
-
-		for (var y = 32; y <= 224; y += 16) {
-			for (var x = 32; x <= 224; x += 16) {
-				var pixel = image[x, y];
-				if (y < 60 || x > 200) {
-					var dist = Math.Abs(pixel.R - referenceColour.R) + Math.Abs(pixel.G - referenceColour.G) + Math.Abs(pixel.B - referenceColour.B);
-					count += Math.Max(0, 1 - dist / 80f);
-				} else {
-					var dist = Math.Abs(pixel.R - referenceColour2.R) + Math.Abs(pixel.G - referenceColour2.G) + Math.Abs(pixel.B - referenceColour2.B);
-					count += Math.Max(0, 1 - dist / 80f);
-				}
-			}
-		}
-
-		return Math.Min(1, count / 100f);
-	}
-
+	[SuppressMessage("ReSharper", "AccessToModifiedClosure")]
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		bool IsKeyBackground(Rgba32 c) => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is { H: > 0 and <= 150, S: <= 0.6f, V: >= 0.35f };
 
@@ -114,7 +93,7 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 				rect.Height -= 2;
 				while (true) {
 					var r = a.GetRowSpan(rect.Bottom - 1);
-					if (HsvColor.FromColor(r[(rect.Left + rect.Right) / 2]) is HsvColor hsv && hsv.V >= 0.5f && hsv.S < 0.5f) break;
+					if (HsvColor.FromColor(r[(rect.Left + rect.Right) / 2]) is { V: >= 0.5f, S: < 0.5f }) break;
 					rect.Height--;
 				}
 				rect.Height -= 2;
@@ -122,10 +101,9 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 					var found = false;
 					for (var y = rect.Top; y < rect.Bottom; y++) {
 						var hsv = HsvColor.FromColor(a.GetRowSpan(y)[rect.Right - 1]);
-						if (hsv.V < 0.5f || hsv.S >= 0.5f) {
-							found = true;
-							break;
-						}
+						if (!(hsv.V < 0.5f) && !(hsv.S >= 0.5f)) continue;
+						found = true;
+						break;
 					}
 					if (!found) break;
 					rect.Width--;
@@ -140,7 +118,7 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 		}
 
 		if (debugImage is not null) {
-			debugImage.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }).DrawImage(keysBitmap, new Point(0, 256), 1));
+			debugImage.Mutate(c => c.Resize(new ResizeOptions { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }).DrawImage(keysBitmap, new Point(0, 256), 1));
 			foreach (var rect in keyRectangles) {
 				rect.Offset(0, 256);
 				debugImage.Mutate(c => c.Draw(Pens.Solid(Color.Lime, 1), rect));
@@ -180,6 +158,7 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 		return new(symbols);
 	}
 
+	[SuppressMessage("ReSharper", "InconsistentNaming")]
 	public enum Symbol {
 		Ae,
 		Balloon,

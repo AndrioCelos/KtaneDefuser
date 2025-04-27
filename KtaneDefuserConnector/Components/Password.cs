@@ -9,9 +9,8 @@ using SixLabors.ImageSharp.Processing;
 namespace KtaneDefuserConnector.Components;
 public class Password : ComponentReader<Password.ReadData> {
 	public override string Name => "Password";
-	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
-	private static readonly Dictionary<BitVector32, char> charPatterns = new() {
+	private static readonly Dictionary<BitVector32, char> CharPatterns = new() {
 		{ new(0b0100101001011110100100110), 'A' },
 		{ new(0b0011101001001110100100111), 'B' },
 		{ new(0b0011001001000010100100110), 'C' },
@@ -39,26 +38,6 @@ public class Password : ComponentReader<Password.ReadData> {
 		{ new(0b0010000100001000101010001), 'Y' },
 		{ new(0b0011100001000100010000111), 'Z' }
 	};
-
-	protected internal override float IsModulePresent(Image<Rgba32> image) {
-		// Password: look for the display in the correct Y range
-		var count = 0f;
-		var count2 = 0f;
-
-		for (var y = 32; y < 224; y += 16) {
-			for (var x = 24; x < 208; x += 4) {
-				var pixel = image[x, y];
-				var n = ImageUtils.ColorProximity(pixel, 165, 240, 10, 123, 205, 21, 60);
-				if (y is > 80 and < 176)
-					count += n;
-				else
-					count2 += n;
-				count2 += Math.Max(0, count / 200 - count2 / 100);
-			}
-		}
-
-		return Math.Min(1, Math.Max(0, count / 200 - count2 / 100));
-	}
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		static Rectangle GetLetterBounds(PixelAccessor<Rgba32> a, int x) {
@@ -147,7 +126,7 @@ public class Password : ComponentReader<Password.ReadData> {
 						}
 					}
 				}
-				chars[i] = charPatterns.GetValueOrDefault(pattern, '\0');
+				chars[i] = CharPatterns.GetValueOrDefault(pattern, '\0');
 			}
 		});
 

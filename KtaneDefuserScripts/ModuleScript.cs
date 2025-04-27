@@ -5,7 +5,7 @@ namespace KtaneDefuserScripts;
 public abstract class ModuleScript {
 	protected readonly ILogger Logger;
 
-	private static readonly Dictionary<Type, (Type scriptType, string topic)> Scripts = new(from t in typeof(ModuleScript).Assembly.GetTypes() where t.BaseType is Type t2 && t2.IsGenericType && t2.GetGenericTypeDefinition() == typeof(ModuleScript<>)
+	private static readonly Dictionary<Type, (Type scriptType, string topic)> Scripts = new(from t in typeof(ModuleScript).Assembly.GetTypes() where t.BaseType is { IsGenericType: true } t2 && t2.GetGenericTypeDefinition() == typeof(ModuleScript<>)
 																							select new KeyValuePair<Type, (Type, string)>(t.BaseType!.GenericTypeArguments[0], (t, t.GetCustomAttribute<AimlInterfaceAttribute>()?.Topic ?? throw new InvalidOperationException($"Missing topic on {t.Name}"))));
 	private static readonly MethodInfo CreateMethodBase = typeof(ModuleScript).GetMethod(nameof(CreateInternal), BindingFlags.NonPublic | BindingFlags.Static)!;
 	private static readonly Dictionary<Type, MethodInfo> CreateMethodCache = [];
@@ -62,12 +62,14 @@ public abstract class ModuleScript {
 	/// <summary>Enters a new interrupt, ensuring that the current module is focused before completing.</summary>
 	protected static Task<Interrupt> CurrentModuleInterruptAsync(AimlAsyncContext context) => (GameState.Current.CurrentModule ?? throw new InvalidOperationException("No current module")).Script.ModuleInterruptAsync(context, true);
 	/// <summary>Enters a new interrupt, ensuring that the current module is focused before completing.</summary>
+	/// <param name="context">The <see cref="AimlAsyncContext"/> to use to enter an interrupt.</param>
 	/// <param name="waitForFocus">Whether to also wait until the module focusing animation has finished before completing.</param>
 	protected static Task<Interrupt> CurrentModuleInterruptAsync(AimlAsyncContext context, bool waitForFocus) => (GameState.Current.CurrentModule ?? throw new InvalidOperationException("No current module")).Script.ModuleInterruptAsync(context, true);
 
 	/// <summary>Enters a new interrupt, ensuring that this module is focused before completing.</summary>
 	protected Task<Interrupt> ModuleInterruptAsync(AimlAsyncContext context) => ModuleInterruptAsync(context, true);
 	/// <summary>Enters a new interrupt, ensuring that this module is selected before completing.</summary>
+	/// <param name="context">The <see cref="AimlAsyncContext"/> to use to enter an interrupt.</param>
 	/// <param name="waitForFocus">Whether to also wait until the module focusing animation has finished before completing.</param>
 	protected async Task<Interrupt> ModuleInterruptAsync(AimlAsyncContext context, bool waitForFocus) {
 		var interrupt = await Interrupt.EnterAsync(context);

@@ -1,15 +1,15 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Text;
+﻿using System.Text;
+using JetBrains.Annotations;
 
 namespace KtaneDefuserScripts;
 [AimlInterface]
 public static class NATO {
-	private static readonly Dictionary<char, string> encodeMap = new(new CaseInsensitiveCharComparer());
-	private static readonly Dictionary<string, char> decodeMap = new(StringComparer.CurrentCultureIgnoreCase);
+	private static readonly Dictionary<char, string> EncodeMap = new(new CaseInsensitiveCharComparer());
+	private static readonly Dictionary<string, char> DecodeMap = new(StringComparer.CurrentCultureIgnoreCase);
 
 	private static void Map(char c, string codeWord) {
-		encodeMap.TryAdd(c, codeWord);
-		decodeMap[codeWord] = c;
+		EncodeMap.TryAdd(c, codeWord);
+		DecodeMap[codeWord] = c;
 	}
 
 	static NATO() {
@@ -55,21 +55,24 @@ public static class NATO {
 	}
 
 	/// <summary>Returns the character represented by the specified NATO code word, or if it's a single character already, returns that character.</summary>
-	public static char DecodeChar(string natoWord) => natoWord.Length == 1 ? natoWord[0] : decodeMap[natoWord];
+	[PublicAPI]
+	public static char DecodeChar(string natoWord) => natoWord.Length == 1 ? natoWord[0] : DecodeMap[natoWord];
 
 	/// <summary>Decodes the specified NATO code words and/or characters.</summary>
-	[AimlCategory("DecodeNato *")]
+	[AimlCategory("DecodeNato *"), PublicAPI]
 	public static string DecodeNato(string phrase) => string.Join(null, phrase.Split((char[]?) null, StringSplitOptions.RemoveEmptyEntries).Select(DecodeChar));
 
 	/// <summary>Returns OOB tags that read the specified characters using the NATO phonetic alphabet.</summary>
+	[PublicAPI]
 	public static string Speak(IEnumerable<char> chars) {
 		var builder = new StringBuilder();
 		Speak(builder, chars);
 		return builder.ToString();
 	}
 	/// <summary>Appends OOB tags that read the specified characters using the NATO phonetic alphabet to the specified <see cref="StringBuilder"/>.</summary>
+	[PublicAPI]
 	public static void Speak(StringBuilder builder, IEnumerable<char> chars) {
-		builder.Append("<speak><s>");
+		builder.Append("<speak>");
 		var any = false;
 		foreach (var c in chars) {
 			if (char.IsWhiteSpace(c)) continue;
@@ -80,16 +83,16 @@ public static class NATO {
 
 			if (c is >= '0' and <= '9')
 				builder.Append($"<say-as interpret-as='number'>{c}</say-as>");
-			else if (encodeMap.TryGetValue(c, out var codeWord))
+			else if (EncodeMap.TryGetValue(c, out var codeWord))
 				builder.Append(codeWord);
 			else
 				builder.Append(c);
 		}
-		builder.Append($"</s><alt>{(chars is string s ? s : string.Join(null, chars))}</alt></speak>");
+		builder.Append($"<alt>{chars as string ?? string.Join(null, chars)}</alt></speak>");
 	}
 
 	private class CaseInsensitiveCharComparer : IEqualityComparer<char> {
 		public bool Equals(char x, char y) => char.ToLower(x) == char.ToLower(y);
-		public int GetHashCode([DisallowNull] char c) => char.ToLower(c).GetHashCode();
+		public int GetHashCode(char c) => char.ToLower(c).GetHashCode();
 	}
 }

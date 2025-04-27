@@ -6,14 +6,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace KtaneDefuserScripts;
 [AimlInterface]
 internal static partial class ModuleSelection {
-	internal static ILogger logger = NullLogger.Instance;
+	internal static ILogger Logger = NullLogger.Instance;
 	
 	/// <summary>Handles switching the user's selection to the specified module.</summary>
 	internal static async Task ChangeModuleAsync(AimlAsyncContext context, int index, bool silent) {
 		GameState.Current.CurrentModule?.Script.Stopped(context);
 		GameState.Current.CurrentModuleNum = index;
 		var script = GameState.Current.CurrentModule!.Script;
-		LogSelectedModule(logger, index + 1, GameState.Current.CurrentModule.Reader.Name);
+		LogSelectedModule(Logger, index + 1, GameState.Current.CurrentModule.Reader.Name);
 		context.RequestProcess.User.Topic = script.Topic;
 		context.Reply($"<oob><setgrammar>{script.Topic}</setgrammar></oob>");
 		if (!silent)
@@ -27,18 +27,19 @@ internal static partial class ModuleSelection {
 		}
 	}
 
-	/// <summary>Populates the user selection queue with all modules that match the specified precidate and are not already solved. The 'next module' command will then cycle through these first.</summary>
-	internal static async Task QueueModulesAsync(AimlAsyncContext context, Func<ModuleState, bool> predicate) {
+	/// <summary>Populates the user selection queue with all modules that match the specified predicate and are not solved. The 'next module' command will then cycle through these first.</summary>
+	private static async Task QueueModulesAsync(AimlAsyncContext context, Func<ModuleState, bool> predicate) {
 		var modules = GameState.Current.Modules.Where(predicate);
 		if (!modules.Any()) {
 			context.Reply("No such modules.");
 			return;
-		} else if (modules.All(m => m.IsSolved)) {
+		}
+		if (modules.All(m => m.IsSolved)) {
 			context.Reply("All of those modules are solved.");
 			return;
 		}
 		GameState.Current.NextModuleNums.Clear();
-		foreach (var i in Enumerable.Range(0, GameState.Current.Modules.Count).Where(i => GameState.Current.Modules[i] is var module && !module.IsSolved && predicate(module)))
+		foreach (var i in Enumerable.Range(0, GameState.Current.Modules.Count).Where(i => GameState.Current.Modules[i] is { IsSolved: false } module && predicate(module)))
 			GameState.Current.NextModuleNums.Enqueue(i);
 		if (GameState.Current.NextModuleNums.Count > 1)
 			context.Reply($"{GameState.Current.NextModuleNums.Count} of those remain.");
@@ -74,7 +75,7 @@ internal static partial class ModuleSelection {
 	[AimlCategory("next module"), AimlCategory("next", That = "MODULE COMPLETE ^"), EditorBrowsable(EditorBrowsableState.Never)]
 	public static async Task SelectModuleNext(AimlAsyncContext context) {
 		if (!GameState.Current.NextModuleNums.TryDequeue(out var index))
-			index =  GameState.Current.Modules.FindIndex(GameState.Current.SelectedModuleNum is int i ? i + 1 : 0, m => m.Script.PriorityCategory != PriorityCategory.Needy && !m.IsSolved);
+			index =  GameState.Current.Modules.FindIndex(GameState.Current.SelectedModuleNum is { } i ? i + 1 : 0, m => m.Script.PriorityCategory != PriorityCategory.Needy && !m.IsSolved);
 		if (index < 0) {
 			context.Reply("Could not find any more modules.");
 			return;
@@ -99,11 +100,10 @@ internal static partial class ModuleSelection {
 	public static void SelectModuleMenuMods(AimlAsyncContext context, int startIndex) => SelectModuleMenu(context, false, startIndex);
 
 	private static void SelectModuleMenu(AimlAsyncContext context, bool vanilla, int startIndex) {
-		var list = (from f in typeof(ModuleType).GetFields() where f.IsStatic && (vanilla ? (ModuleType) f.GetValue(null)! <= ModuleType.WireSequence : (ModuleType) f.GetValue(null)! > ModuleType.WireSequence)
-					select (f, f.GetCustomAttributes<AimlSetItemAttribute>().FirstOrDefault() is AimlSetItemAttribute attr ? attr.Phrase : f.Name)).ToList();
+		var list = (from f in typeof(ModuleType).GetFields() where f.IsStatic && (vanilla ? (ModuleType) f.GetValue(null)! is >= 0 and <= ModuleType.WireSequence : (ModuleType) f.GetValue(null)! > ModuleType.WireSequence)
+					select (f, f.GetCustomAttributes<AimlSetItemAttribute>().FirstOrDefault() is { } attr ? attr.Phrase : f.Name)).ToList();
 		list.Sort((x, y) => ModuleNameComparer.Instance.Compare(x.Item2, y.Item2));
-		context.AddReplies(Enumerable.Append(list.Skip(startIndex).Take(6).Select(f => new Reply(f.Item2, $"select {f.Item2}")),
-			new("More…", $"{nameof(SelectModuleMenu)} {(vanilla ? "vanilla" : "mods")} {(startIndex + 6 >= list.Count ? 0 : startIndex + 6)}")));
+		context.AddReplies(list.Skip(startIndex).Take(6).Select(f => new Reply(f.Item2, $"select {f.Item2}")).Append(new("More…", $"{nameof(SelectModuleMenu)} {(vanilla ? "vanilla" : "mods")} {(startIndex + 6 >= list.Count ? 0 : startIndex + 6)}")));
 	}
 
 	#region Log templates

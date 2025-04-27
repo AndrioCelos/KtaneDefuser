@@ -6,25 +6,10 @@ using SixLabors.ImageSharp.Processing;
 namespace KtaneDefuserConnector.Components;
 public class NeedyVentGas : ComponentReader<NeedyVentGas.ReadData> {
 	public override string Name => "Needy Vent Gas";
-	protected internal override ComponentFrameType FrameType => ComponentFrameType.Needy;
 
-	private static readonly TextRecogniser displayRecogniser = new(new(TextRecogniser.Fonts.CabinMedium, 24), 0, 128, new(256, 64),
+	private static readonly TextRecogniser DisplayRecogniser = new(new(TextRecogniser.Fonts.CabinMedium, 24), 0, 128, new(256, 64),
 		"VENT GAS?", "DETONATE?");
 
-	protected internal override float IsModulePresent(Image<Rgba32> image) {
-		// Look for the brown lever frame.
-		var count = 0;
-		image.ProcessPixelRows(a => {
-			for (var y = 80; y < 256; y++) {
-				var row = a.GetRowSpan(y);
-				for (var x = 16; x < 240; x++) {
-					if (HsvColor.FromColor(row[x]) is { H: >= 15 and <= 60, S: >= 0.15f and <= 0.5f } or { H: >= 90 and <= 135, S: >= 0.25f })
-						count++;
-				}
-			}
-		});
-		return count / 36000f;
-	}
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		var time = ReadNeedyTimer(image, lightsState, debugImage);
 		if (time == null) return new(null, null);
@@ -59,7 +44,7 @@ public class NeedyVentGas : ComponentReader<NeedyVentGas.ReadData> {
 
 		var textRect = ImageUtils.FindEdges(image, new(64, top, 128, bottom - top), c => HsvColor.FromColor(c) is { H: >= 90 and <= 135, V: >= 0.5f });
 		debugImage?.Mutate(c => c.Draw(Color.Cyan, 1, textRect));
-		return new(time, displayRecogniser.Recognise(image, textRect));
+		return new(time, DisplayRecogniser.Recognise(image, textRect));
 	}
 
 	public record ReadData(int? Time, string? Message);

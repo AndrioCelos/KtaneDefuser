@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using JetBrains.Annotations;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using SixLabors.ImageSharp;
@@ -13,7 +14,7 @@ public class MlComponentIdentifier : IDisposable {
 	private const float Mean = 117;
 	private const string NullLabel = "_";
 
-	private PredictionEngine<ImagePixelData, ImagePrediction> predictor; 
+	private readonly PredictionEngine<ImagePixelData, ImagePrediction> predictor;
 
 	public MlComponentIdentifier() {
 		var mlContext = new MLContext();
@@ -45,8 +46,10 @@ public class MlComponentIdentifier : IDisposable {
 		return prediction.PredictedLabelValue == NullLabel ? null : prediction.PredictedLabelValue;
 	}
 
+	[UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
 	private record ImagePixelData([property: ColumnName("input"), VectorType(ImageWidth, ImageHeight, 3)] float[] Input, string? Label);
 
+	[UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
 	private class ImagePrediction {
 		public float[]? Score { get; set; }
 		public string? PredictedLabelValue { get; set; }

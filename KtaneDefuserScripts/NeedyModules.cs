@@ -4,10 +4,9 @@ namespace KtaneDefuserScripts;
 [AimlInterface]
 internal class NeedyModules {
 	[AimlCategory("OOB NeedyStateChange * * * * *"), EditorBrowsable(EditorBrowsableState.Never)]
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "The signature must be this for interoperability. This parameter may be used in a future update.")]
 	public static void NeedyStateChange(AimlAsyncContext context, int bombNum, int faceNum, int x, int y, NeedyState newState) {
 		var module = GameState.Current.Faces[faceNum][x, y];
-		if (module?.Script is ModuleScript script) {
+		if (module?.Script is { } script) {
 			script.NeedyState = newState;
 			script.NeedyStateChanged(context, newState);
 		} else {

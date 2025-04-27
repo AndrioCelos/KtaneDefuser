@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -12,52 +12,48 @@ namespace KtaneDefuserConnector.Widgets;
 public class SerialNumber : WidgetReader<string> {
 	public override string Name => "SerialNumber";
 
-	private static readonly Font FONT;
+	private static readonly Font Font;
+	private static readonly (Image<Rgba32> image, char c)[] ReferenceImages;
 
 	static SerialNumber() {
 		using var ms = new MemoryStream(Properties.Resources.AnonymousProBold);
 		var fontCollection = new FontCollection();
 		var fontFamily = fontCollection.Add(ms);
-		FONT = new(fontFamily, 72);
+		Font = new(fontFamily, 72);
 
-		referenceImages = new (Image<Rgba32> image, char c)[36];
+		ReferenceImages = new (Image<Rgba32> image, char c)[36];
 		for (var i = 0; i < 10; i++)
-			referenceImages[i] = CreateSampleImage((char) ('0' + i));
+			ReferenceImages[i] = CreateSampleImage((char) ('0' + i));
 		for (var i = 0; i < 26; i++)
-			referenceImages[10 + i] = CreateSampleImage((char) ('A' + i));  // I know that the letters 'O' and 'Y' never appear in the serial number normally, but I'm including all letters for simplicity.
+			ReferenceImages[10 + i] = CreateSampleImage((char) ('A' + i));  // I know that the letters 'O' and 'Y' never appear in the serial number normally, but I'm including all letters for simplicity.
 	}
 
 	private static (Image<Rgba32> image, char c) CreateSampleImage(char c) {
 		var image = new Image<Rgba32>(128, 128, Color.White);
-		image.Mutate(ctx => ctx.DrawText(new(FONT) { Dpi = 96, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Origin = new(64, 64) }, c.ToString(), Color.Black));
-		var charBB = ImageUtils.FindEdges(image, image.Bounds, c => c.B < 128);
-		image.Mutate(ctx => ctx.Crop(charBB).Resize(64, 64, KnownResamplers.NearestNeighbor));
+		image.Mutate(ctx => ctx.DrawText(new(Font) { Dpi = 96, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Origin = new(64, 64) }, c.ToString(), Color.Black));
+		var charBounds = ImageUtils.FindEdges(image, image.Bounds, c => c.B < 128);
+		image.Mutate(ctx => ctx.Crop(charBounds).Resize(64, 64, KnownResamplers.NearestNeighbor));
 		return (image, c);
 	}
 
-	private static readonly (Image<Rgba32> image, char c)[] referenceImages;
-
-	protected internal override float IsWidgetPresent(Image<Rgba32> image, LightsState lightsState, PixelCounts pixelCounts)
-		// This has many red pixels and white pixels.
-		=> Math.Max(0, Math.Min(pixelCounts.Red, pixelCounts.White) - 4096) / 8192f;
-
 	private static bool IsBlack(HsvColor hsv) => hsv is { H: < 180, S: < 0.2f, V: <= 0.2f };
 
+	[SuppressMessage("ReSharper", "AccessToModifiedClosure")]
 	protected internal override string Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		debugImage?.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }));
+		debugImage?.Mutate(c => c.Resize(new ResizeOptions { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }));
 
 		// Find the text bounding box.
-		var textBB = ImageUtils.FindEdges(image, image.Bounds, c => IsBlack(HsvColor.FromColor(c)));
+		var textBounds = ImageUtils.FindEdges(image, image.Bounds, c => IsBlack(HsvColor.FromColor(c)));
 
 		// Find out whether the image is upside-down or not.
 		bool? isUpsideDown = null;
 		image.ProcessPixelRows(a => {
 			for (var i = 1; i < 256; i++) {
 				for (var rowNumber = 0; rowNumber < 2; rowNumber++) {
-					var y = rowNumber == 0 ? textBB.Top - i : textBB.Bottom + i;
+					var y = rowNumber == 0 ? textBounds.Top - i : textBounds.Bottom + i;
 					if (y < 0 || y >= a.Height) continue;
 					var r = a.GetRowSpan(y);
-					for (var x = textBB.Left; x <= textBB.Right; x++) {
+					for (var x = textBounds.Left; x <= textBounds.Right; x++) {
 						if (r[x].R < 96 || r[x].G >= 32 || r[x].B >= 32) continue;
 						isUpsideDown = rowNumber != 0;
 						return;
@@ -67,16 +63,16 @@ public class SerialNumber : WidgetReader<string> {
 			throw new InvalidOperationException("Can't find the serial number heading");
 		});
 
-		debugImage?.Mutate(c => c.Draw(isUpsideDown!.Value ? Color.Yellow : Color.Lime, 1, textBB));
+		debugImage?.Mutate(c => c.Draw(isUpsideDown!.Value ? Color.Yellow : Color.Lime, 1, textBounds));
 
 		var charImages = new List<Image<Rgba32>>();
 		var lastX = 0;
 		int? charStart = null;
-		for (var i = 0; i < textBB.Width; i++) {
-			for (; i < textBB.Width; i++) {
-				var x = isUpsideDown!.Value ? textBB.Right - 1 - i : textBB.Left + i;
+		for (var i = 0; i < textBounds.Width; i++) {
+			for (; i < textBounds.Width; i++) {
+				var x = isUpsideDown!.Value ? textBounds.Right - 1 - i : textBounds.Left + i;
 				var anyPixels = false;
-				for (var y = textBB.Top; y < textBB.Bottom; y++) {
+				for (var y = textBounds.Top; y < textBounds.Bottom; y++) {
 					if (image[x, y].B >= 128) continue;
 					anyPixels = true;
 					break;
@@ -93,7 +89,7 @@ public class SerialNumber : WidgetReader<string> {
 			}
 
 			if (!charStart.HasValue) continue;
-			var charImage = image.Clone(c => c.Crop(new(Math.Min(charStart.Value, lastX), textBB.Y, Math.Abs(lastX - charStart.Value) + 1, textBB.Height)).Resize(64, 64, KnownResamplers.NearestNeighbor));
+			var charImage = image.Clone(c => c.Crop(new(Math.Min(charStart.Value, lastX), textBounds.Y, Math.Abs(lastX - charStart.Value) + 1, textBounds.Height)).Resize(64, 64, KnownResamplers.NearestNeighbor));
 			if (isUpsideDown == true)
 				charImage.Mutate(c => c.Rotate(RotateMode.Rotate180));
 			charImages.Add(charImage);
@@ -112,7 +108,7 @@ public class SerialNumber : WidgetReader<string> {
 			var chars = new char[6];
 			for (var i = 0; i < 6; i++) {
 				var bestDist = int.MaxValue;
-				foreach (var (refImage, c) in referenceImages) {
+				foreach (var (refImage, c) in ReferenceImages) {
 					var dist = 0;
 					for (var y = 0; y < refImage.Height; y++) {
 						for (var x = 0; x < refImage.Width; x++) {

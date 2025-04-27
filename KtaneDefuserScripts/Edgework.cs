@@ -8,12 +8,12 @@ namespace KtaneDefuserScripts;
 
 [AimlInterface]
 internal static partial class Edgework {
-	internal static ILogger logger = NullLogger.Instance;
+	internal static ILogger Logger = NullLogger.Instance;
 
-	internal static void RegisterWidget(AimlAsyncContext context, WidgetReader? widget, Image<Rgba32> screenshot, LightsState lightsState, Quadrilateral quadrilateral) {
+	private static void RegisterWidget(WidgetReader? widget, Image<Rgba32> screenshot, LightsState lightsState, Quadrilateral quadrilateral) {
 		if (widget is null) return;
 
-		LogRegisteringWidget(logger, widget.Name);
+		LogRegisteringWidget(Logger, widget.Name);
 		switch (widget) {
 			case BatteryHolder batteryHolder:
 				GameState.Current.BatteryHolderCount++;
@@ -40,8 +40,8 @@ internal static partial class Edgework {
 		if (isSide) {
 			var adjustment = DefuserConnector.Instance.GetSideWidgetAdjustment(screenshot);
 			quadrilaterals = new Quadrilateral[4];
-			for (int i = 0; i < quadrilaterals.Length; i++) {
-				var quadrilateral = Utils.sideWidgetAreas[i];
+			for (var i = 0; i < quadrilaterals.Length; i++) {
+				var quadrilateral = Utils.SideWidgetAreas[i];
 				quadrilateral.TopLeft.X += adjustment;
 				quadrilateral.TopRight.X += adjustment;
 				quadrilateral.BottomLeft.X += adjustment;
@@ -49,11 +49,11 @@ internal static partial class Edgework {
 				quadrilaterals[i] = quadrilateral;
 			}
 		} else
-			quadrilaterals = Utils.topBottomWidgetAreas;
+			quadrilaterals = Utils.TopBottomWidgetAreas;
 		var widgets = quadrilaterals.Select(p => DefuserConnector.Instance.GetWidgetReader(screenshot, p)).ToList();
 		for (var i = 0; i < widgets.Count; i++) {
 			var widget = widgets[i];
-			RegisterWidget(context, widget, screenshot, lightsState, quadrilaterals[i]);  // TODO: This assumes the vanilla bomb layout. It will need to be updated for other layouts.
+			RegisterWidget(widget, screenshot, lightsState, quadrilaterals[i]);  // TODO: This assumes the vanilla bomb layout. It will need to be updated for other layouts.
 		}
 	}
 
@@ -87,7 +87,7 @@ internal static partial class Edgework {
 			if (GameState.Current.PortPlates.Count > 0) {
 				var emptyPlates = GameState.Current.PortPlates.Count(p => p == 0);
 				var emptyPlatesDesc = emptyPlates switch { 0 => "", 1 => "; an empty port plate", _ => $"{emptyPlates} empty port plates" };
-				var list = string.Join("; ", from p in GameState.Current.PortPlates where p != 0 select $"plate: {string.Join(' ', from t in GetPortTypes(p) select t switch { PortTypes.DviD => "DVI", PortTypes.PS2 => "PS2", PortTypes.RJ45 => "RJ45", PortTypes.StereoRCA => "RCA", _ => t.ToString() })}");
+				var list = string.Join("; ", from p in GameState.Current.PortPlates where p != 0 select $"plate: {string.Join(' ', from t in GetPortTypes(p) select t switch { PortTypes.DviD => "DVI", PortTypes.PS2 => "PS2", PortTypes.RJ45 => "RJ45", PortTypes.StereoRca => "RCA", _ => t.ToString() })}");
 				ports = $"Ports: {list}{emptyPlatesDesc}.";
 			} else
 				ports = "No ports.";
@@ -104,7 +104,7 @@ internal static partial class Edgework {
 		if (ports.HasFlag(PortTypes.PS2)) yield return PortTypes.PS2;
 		if (ports.HasFlag(PortTypes.RJ45)) yield return PortTypes.RJ45;
 		if (ports.HasFlag(PortTypes.Serial)) yield return PortTypes.Serial;
-		if (ports.HasFlag(PortTypes.StereoRCA)) yield return PortTypes.StereoRCA;
+		if (ports.HasFlag(PortTypes.StereoRca)) yield return PortTypes.StereoRca;
 	}
 
 	#region Log templates

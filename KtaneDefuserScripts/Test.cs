@@ -47,7 +47,7 @@ internal class Test {
 	public static void TestScreenshot(AimlAsyncContext context) {
 		var image = DefuserConnector.Instance.TakeScreenshot();
 		using var fileStream = File.OpenWrite(Path.Combine(Path.GetTempPath(), "test.bmp"));
-		image.Save(fileStream, new BmpEncoder() { BitsPerPixel = BmpBitsPerPixel.Pixel24 });
+		image.Save(fileStream, new BmpEncoder { BitsPerPixel = BmpBitsPerPixel.Pixel24 });
 		context.Reply("Done.");
 	}
 

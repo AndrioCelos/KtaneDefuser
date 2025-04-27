@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using JetBrains.Annotations;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -56,8 +57,10 @@ internal class TextRecogniser {
 	}
 
 	/// <summary>Identifies the text in the specified bounding box of the specified image.</summary>
+	[Pure]
 	public string Recognise(Image<Rgba32> image, Rectangle rectangle) => Recognise(image, rectangle, backgroundValue, foregroundValue);
 	/// <summary>Identifies the text in the specified bounding box of the specified image.</summary>
+	[Pure]
 	public string Recognise(Image<Rgba32> image, Rectangle rectangle, byte backgroundValue, byte foregroundValue) {
 		var denominator = foregroundValue - backgroundValue;
 		string? result = null;
@@ -77,8 +80,10 @@ internal class TextRecogniser {
 			}
 		});
 		*/
+
 		foreach (var (refImage, refRatio, s) in samples) {
-			if (Math.Abs(checkRatio - refRatio) > 1) continue;  // Skip strings that are way too narrow or too wide to match this rectangle.
+			if (checkRatio / refRatio is < 0.5f or > 2) continue;  // Skip strings that are way too narrow or too wide to match this rectangle.
+
 			refImage.ProcessPixelRows(image, (ar, ac) => {
 				var dist = 0;
 				for (var y = 0; y < ar.Height; y++) {

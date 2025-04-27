@@ -1,22 +1,17 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using KtaneDefuserConnector.DataTypes;
-using KtaneDefuserConnector.Properties;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace KtaneDefuserConnector.Components;
 public class Timer : ComponentReader<Timer.ReadData> {
-	private static readonly Image<Rgba32>[] Samples = [Image.Load<Rgba32>(Resources.Timer1), Image.Load<Rgba32>(Resources.Timer2)];
-
 	public override string Name => "Timer";
-	protected internal override ComponentFrameType FrameType => ComponentFrameType.Timer;
-
-	protected internal override float IsModulePresent(Image<Rgba32> image)
-		=> ImageUtils.TryFindCorners(image, new(16, 96, 224, 144), IsTimerBackground, 0, out _) ? ImageUtils.CheckSimilarity(image, Samples) * 1.5f : 0;
 
 	private static bool IsTimerBackground(Rgba32 c) => c is { G: < 12, B: < 12 };
 
+	[SuppressMessage("ReSharper", "AccessToDisposedClosure")]
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		var timerCorners = ImageUtils.FindCorners(image, new(16, 96, 224, 144), IsTimerBackground, 0);
 		using var timerBitmap = ImageUtils.PerspectiveUndistort(image, timerCorners, InterpolationMode.NearestNeighbour, new(256, 128));
@@ -27,7 +22,7 @@ public class Timer : ComponentReader<Timer.ReadData> {
 
 		if (debugImage is not null) {
 			debugImage.DebugDrawPoints(timerCorners);
-			debugImage.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Transparent }).DrawImage(timerBitmap, new Point(0, 256), 1));
+			debugImage.Mutate(c => c.Resize(new ResizeOptions { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Transparent }).DrawImage(timerBitmap, new Point(0, 256), 1));
 			if (strikesBitmap is not null) {
 				debugImage.DebugDrawPoints(strikesCorners);
 				debugImage.Mutate(c => c.Brightness(1.5f).DrawImage(strikesBitmap, new Point(0, 384), 1));

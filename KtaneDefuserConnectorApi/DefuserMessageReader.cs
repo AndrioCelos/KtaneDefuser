@@ -45,7 +45,7 @@ public class DefuserMessageReader : IDisposable {
 			}
 		} catch (IOException ex) {
 			Disconnected?.Invoke(this, new(ex));
-			stream.Dispose();
+			await stream.DisposeAsync();
 		} catch (ObjectDisposedException) { }
 	}
 #else
@@ -86,37 +86,35 @@ public class DefuserMessageReader : IDisposable {
 #endif
 
 #pragma warning disable CS0618 // TODO: Obsolete message types may be removed later.
-	public unsafe void ProcessMessage(MessageType messageType, int length) {
+	private void ProcessMessage(MessageType messageType, int length) {
 		lock (buffer) {
-			fixed (byte* ptr = buffer) {
-				IDefuserMessage message = messageType switch {
-					MessageType.LegacyCommand => new LegacyCommandMessage(Encoding.UTF8.GetString(buffer, 0, length)),
-					MessageType.LegacyEvent => new LegacyEventMessage(Encoding.UTF8.GetString(buffer, 0, length)),
-					MessageType.ScreenshotResponse => new ScreenshotResponseMessage(length, buffer),
-					MessageType.CheatReadResponse => new CheatReadResponseMessage(length > 0 ? Encoding.UTF8.GetString(buffer, 0, length) : null),
-					MessageType.CheatReadError => new CheatReadErrorMessage(Encoding.UTF8.GetString(buffer, 0, length)),
-					MessageType.LegacyInputCallback => new LegacyInputCallbackMessage(Encoding.UTF8.GetString(buffer, 0, length)),
-					MessageType.InputCommand => ReadInputCommand(buffer, length),
-					MessageType.InputCallback => ReadInputCallback(buffer, length),
-					MessageType.CancelCommand => new CancelCommandMessage(),
-					MessageType.ScreenshotCommand => new ScreenshotCommandMessage(),
-					MessageType.CheatGetModuleTypeCommand => new CheatGetModuleTypeCommandMessage(new(buffer[0], buffer[1], buffer[2], buffer[3])),
-					MessageType.CheatGetModuleTypeResponse => new CheatGetModuleTypeResponseMessage(length > 0 ? Encoding.UTF8.GetString(buffer, 0, length) : null),
-					MessageType.CheatGetModuleTypeError => new CheatGetModuleTypeErrorMessage(Encoding.UTF8.GetString(buffer, 0, length)),
-					MessageType.CheatReadCommand => ReadCheatReadCommand(buffer, length),
-					MessageType.GameStart => new GameStartMessage(),
-					MessageType.GameEnd => new GameEndMessage(),
-					MessageType.NewBomb => ReadNewBomb(buffer, length),
-					MessageType.Strike => new StrikeMessage(new(buffer[0], buffer[1], buffer[2], buffer[3])),
-					MessageType.AlarmClockChange => new AlarmClockChangeMessage(buffer[0] != 0),
-					MessageType.LightsStateChange => new LightsStateChangeMessage(buffer[0] != 0),
-					MessageType.NeedyStateChange => new NeedyStateChangeMessage(new(buffer[0], buffer[1], buffer[2], buffer[3]), (NeedyState) buffer[4]),
-					MessageType.BombExplode => new BombExplodeMessage(),
-					MessageType.BombDefuse => new BombDefuseMessage(buffer[0]),
-					_ => throw new InvalidOperationException("Unknown message type")
-				};
-				MessageReceived?.Invoke(this, new(message));
-			}
+			IDefuserMessage message = messageType switch {
+				MessageType.LegacyCommand => new LegacyCommandMessage(Encoding.UTF8.GetString(buffer, 0, length)),
+				MessageType.LegacyEvent => new LegacyEventMessage(Encoding.UTF8.GetString(buffer, 0, length)),
+				MessageType.ScreenshotResponse => new ScreenshotResponseMessage(length, buffer),
+				MessageType.CheatReadResponse => new CheatReadResponseMessage(length > 0 ? Encoding.UTF8.GetString(buffer, 0, length) : null),
+				MessageType.CheatReadError => new CheatReadErrorMessage(Encoding.UTF8.GetString(buffer, 0, length)),
+				MessageType.LegacyInputCallback => new LegacyInputCallbackMessage(Encoding.UTF8.GetString(buffer, 0, length)),
+				MessageType.InputCommand => ReadInputCommand(buffer, length),
+				MessageType.InputCallback => ReadInputCallback(buffer),
+				MessageType.CancelCommand => new CancelCommandMessage(),
+				MessageType.ScreenshotCommand => new ScreenshotCommandMessage(),
+				MessageType.CheatGetModuleTypeCommand => new CheatGetModuleTypeCommandMessage(new(buffer[0], buffer[1], buffer[2], buffer[3])),
+				MessageType.CheatGetModuleTypeResponse => new CheatGetModuleTypeResponseMessage(length > 0 ? Encoding.UTF8.GetString(buffer, 0, length) : null),
+				MessageType.CheatGetModuleTypeError => new CheatGetModuleTypeErrorMessage(Encoding.UTF8.GetString(buffer, 0, length)),
+				MessageType.CheatReadCommand => ReadCheatReadCommand(buffer, length),
+				MessageType.GameStart => new GameStartMessage(),
+				MessageType.GameEnd => new GameEndMessage(),
+				MessageType.NewBomb => ReadNewBomb(buffer),
+				MessageType.Strike => new StrikeMessage(new(buffer[0], buffer[1], buffer[2], buffer[3])),
+				MessageType.AlarmClockChange => new AlarmClockChangeMessage(buffer[0] != 0),
+				MessageType.LightsStateChange => new LightsStateChangeMessage(buffer[0] != 0),
+				MessageType.NeedyStateChange => new NeedyStateChangeMessage(new(buffer[0], buffer[1], buffer[2], buffer[3]), (NeedyState) buffer[4]),
+				MessageType.BombExplode => new BombExplodeMessage(),
+				MessageType.BombDefuse => new BombDefuseMessage(buffer[0]),
+				_ => throw new InvalidOperationException("Unknown message type")
+			};
+			MessageReceived?.Invoke(this, new(message));
 		}
 	}
 #pragma warning restore CS0618 // Type or member is obsolete
@@ -128,23 +126,23 @@ public class DefuserMessageReader : IDisposable {
 			while (n < length) {
 				var typeId = *(ptr + n);
 				switch (typeId) {
-					case 0:
+					case (int) InputActionType.None:
 						actions.Add(new NoOpAction());
 						n++;
 						break;
-					case 1:
+					case (int) InputActionType.Button:
 						actions.Add(new ButtonAction((Button) (*(ptr + n + 1)), (ButtonActionType) (*(ptr + n + 2))));
 						n += 3;
 						break;
-					case 2:
+					case (int) InputActionType.Axis:
 						actions.Add(new AxisAction((Axis) (*(ptr + n + 1)), *(float*) (ptr + n + 2)));
 						n += 6;
 						break;
-					case 3:
+					case (int) InputActionType.Zoom:
 						actions.Add(new ZoomAction(*(float*) (ptr + n + 1)));
 						n += 6;
 						break;
-					case 4:
+					case (int) InputActionType.Callback:
 						actions.Add(new CallbackAction(new(*(int*) (ptr + n + 1), *(short*) (ptr + n + 5), *(short*) (ptr + n + 7), *(ptr + n + 9), *(ptr + n + 10), *(ptr + n + 11), *(ptr + n + 12), *(ptr + n + 13), *(ptr + n + 14), *(ptr + n + 15), *(ptr + n + 16))));
 						n += 17;
 						break;
@@ -156,7 +154,7 @@ public class DefuserMessageReader : IDisposable {
 		return new(actions);
 	}
 
-	private static unsafe InputCallbackMessage ReadInputCallback(byte[] buffer, int length) {
+	private static unsafe InputCallbackMessage ReadInputCallback(byte[] buffer) {
 		fixed (byte* ptr = buffer)
 			return new(new(*(int*) ptr, *(short*) (ptr + 4), *(short*) (ptr + 6), buffer[8], buffer[9], buffer[10], buffer[11], buffer[12], buffer[13], buffer[14], buffer[15]));
 	}
@@ -173,7 +171,7 @@ public class DefuserMessageReader : IDisposable {
 		return new(slot, members);
 	}
 
-	private static unsafe NewBombMessage ReadNewBomb(byte[] buffer, int length) {
+	private static unsafe NewBombMessage ReadNewBomb(byte[] buffer) {
 		fixed (byte* ptr = buffer)
 			return new(buffer[0], *(short*) (ptr + 1), *(short*) (ptr + 3), TimeSpan.FromTicks(*(long*) (ptr + 5)));
 	}

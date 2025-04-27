@@ -6,23 +6,6 @@ using SixLabors.ImageSharp.PixelFormats;
 namespace KtaneDefuserConnector.Components;
 public class Maze : ComponentReader<Maze.ReadData> {
 	public override string Name => "Maze";
-	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
-
-	protected internal override float IsModulePresent(Image<Rgba32> image) {
-		// Maze: look for the display
-		var count = 0;
-		for (var y = 60; y < 208; y++) {
-			for (var x = 40; x < 180; x++) {
-				var color = image[x, y];
-				if (color.R >= 128)
-					count += ImageUtils.ColorProximity(color, 214, 0, refB: 0, 40);
-				else
-					count += ImageUtils.ColorProximity(color, 5, 12, 33, 24, 70, 90, 40);
-			}
-		}
-
-		return count / 828800f;
-	}
 
 	private static bool IsMarking(Rgba32 pixel, LightsState lightsState) => lightsState switch {
 		LightsState.Buzz => HsvColor.FromColor(pixel) is { H: <= 190, V: <= 0.25f },

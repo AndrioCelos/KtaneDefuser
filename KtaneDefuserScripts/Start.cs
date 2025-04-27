@@ -18,8 +18,8 @@ internal static partial class Start {
 		waitingForLights = true;
 		GameState.Current = new(process.Bot.LoggerFactory);
 		logger = GameState.Current.LoggerFactory.CreateLogger(nameof(Start));
-		Edgework.logger = GameState.Current.LoggerFactory.CreateLogger(nameof(Edgework));
-		ModuleSelection.logger = GameState.Current.LoggerFactory.CreateLogger(nameof(ModuleSelection));
+		Edgework.Logger = GameState.Current.LoggerFactory.CreateLogger(nameof(Edgework));
+		ModuleSelection.Logger = GameState.Current.LoggerFactory.CreateLogger(nameof(ModuleSelection));
 	}
 
 	[AimlCategory("OOB LightsChange *"), EditorBrowsable(EditorBrowsableState.Never)]
@@ -34,7 +34,7 @@ internal static partial class Start {
 	[AimlCategory("test start")]
 	public static async Task TestCategory(AimlAsyncContext context) => await GameStartAsync(context);
 
-	internal static async Task GameStartAsync(AimlAsyncContext context) {
+	private static async Task GameStartAsync(AimlAsyncContext context) {
 		GameState.Current = new(context.RequestProcess.Bot.LoggerFactory);
 		
 		// 1. Pick up the bomb
@@ -117,7 +117,7 @@ internal static partial class Start {
 			needTimerRead |= component is KtaneDefuserConnector.Components.Timer;
 		}
 		if (needTimerRead) {
-			await Timer.ReadTimerAsync(screenshot, startDelayStopwatch is not null && startDelayStopwatch.Elapsed < TimeSpan.FromSeconds(2));
+			await TimerUtil.ReadTimerAsync(screenshot, startDelayStopwatch is not null && startDelayStopwatch.Elapsed < TimeSpan.FromSeconds(2));
 			startDelayStopwatch = null;
 		}
 
@@ -148,10 +148,10 @@ internal static partial class Start {
 					GameState.Current.UnknownNeedyStates.TryGetValue(slot, out state);
 					GameState.Current.UnknownNeedyStates.Remove(slot);
 				}
-				if (state != 0) {
-					script.NeedyState = state;
-					script.NeedyStateChanged(context, state);
-				}
+
+				if (state == 0) return module;
+				script.NeedyState = state;
+				script.NeedyStateChanged(context, state);
 				return module;
 		}
 	}

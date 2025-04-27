@@ -47,7 +47,7 @@ public struct ScreenshotResponseMessage(int pixelDataLength, byte[] data) : IDef
 	}
 
 	readonly MessageType IDefuserMessage.MessageType => MessageType.ScreenshotResponse;
-	public readonly unsafe int ToBuffer(byte[] buffer) => PixelDataLength + 8;  // The caller should handle encoding the image data.
+	public readonly int ToBuffer(byte[] buffer) => PixelDataLength + 8;  // The caller should handle encoding the image data.
 }
 
 /// <summary>The response to a <see cref="CheatReadCommandMessage"/>.</summary>
@@ -87,28 +87,28 @@ public struct InputCommandMessage(IEnumerable<IInputAction> actions) : IDefuserM
 				var ptr2 = ptr + 5;
 				switch (action) {
 					case NoOpAction:
-						*(ptr2 + length) = 0;
+						*(ptr2 + length) = (int) InputActionType.None;
 						length++;
 						break;
 					case ButtonAction buttonAction:
-						*(ptr2 + length) = 1;
+						*(ptr2 + length) = (int) InputActionType.Button;
 						*(ptr2 + length + 1) = (byte) buttonAction.Button;
 						*(ptr2 + length + 2) = (byte) buttonAction.Action;
 						length += 3;
 						break;
 					case AxisAction axisAction:
-						*(ptr2 + length) = 2;
+						*(ptr2 + length) = (int) InputActionType.Axis;
 						*(ptr2 + length + 1) = (byte) axisAction.Axis;
 						*(float*) (ptr2 + length + 2) = axisAction.Value;
 						length += 6;
 						break;
 					case ZoomAction zoomAction:
-						*(ptr2 + length) = 3;
+						*(ptr2 + length) = (int) InputActionType.Zoom;
 						*(float*) (ptr2 + length + 1) = zoomAction.Value;
 						length += 5;
 						break;
 					case CallbackAction callbackAction:
-						*(ptr2 + length) = 4;
+						*(ptr2 + length) = (int) InputActionType.Callback;
 #if NET6_0_OR_GREATER
 						callbackAction.Token.TryWriteBytes(buffer.AsSpan(length + 6, 16));
 #else

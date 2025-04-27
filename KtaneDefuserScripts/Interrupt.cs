@@ -1,17 +1,20 @@
-﻿namespace KtaneDefuserScripts;
+﻿using JetBrains.Annotations;
+
+namespace KtaneDefuserScripts;
 /// <summary>Represents a context for performing a task that cannot be interrupted by other bot actions.</summary>
 /// <remarks>
 /// All inputs and all reading of a focused module require an interrupt. To perform one of these actions when another interrupt is in progress, it is necessary to wait for that interrupt to end first.
 /// This prevents issues such as desyncs and attempting to do things while holding a button.
 /// </remarks>
+[MustDisposeResource]
 public class Interrupt : IDisposable {
-	[AimlResponse("OOB DefuserCallback *"), Obsolete("String inputs are being replaced with IInputAction")]
+	[Obsolete("String inputs are being replaced with IInputAction")]
 	private static readonly AimlTaskFactory sendInputs = new("<oob><sendinputs>{0} callback:{ID}</sendinputs></oob>");
-	//[AimlResponse("OOB DefuserCallback *")]
+	[AimlResponse("OOB DefuserCallback *")]
 	private static readonly AimlTaskFactory inputCallback = new(null);
 
-	public static bool EnableInterrupts { get; set; } = true;
-	private static readonly Queue<TaskCompletionSource<Interrupt>> interruptQueue = new();
+	public static bool EnableInterrupts { get; private set; } = true;
+	private static readonly Queue<TaskCompletionSource<Interrupt>> InterruptQueue = new();
 
 	public bool IsDisposed { get; private set; }
 
@@ -28,22 +31,23 @@ public class Interrupt : IDisposable {
 
 	/// <summary>Attempts to enter a new interrupt on the interrupt queue and creates a <see cref="Task"/> that completes when the interrupt is entered.</summary>
 	/// <remarks>This will return an already-completed task if the interrupt queue was empty. <paramref name="context"/> is no longer valid after calling this method; the created <see cref="Interrupt"/> instance's <see cref="Context"/> must be used instead.</remarks>
+	[MustDisposeResource]
 	public static Task<Interrupt> EnterAsync(AimlAsyncContext context) {
-		lock (interruptQueue) {
+		lock (InterruptQueue) {
 			if (EnableInterrupts) {
 				EnableInterrupts = false;
 				return Task.FromResult(new Interrupt(context));
 			}
 			var taskSource = new TaskCompletionSource<Interrupt>();
-			interruptQueue.Enqueue(taskSource);
+			InterruptQueue.Enqueue(taskSource);
 			return taskSource.Task;
 		}
 	}
 
-	private static async void Exit(AimlAsyncContext context) {
+	private static async Task ExitAsync(AimlAsyncContext context) {
 		TaskCompletionSource<Interrupt>? queuedTaskSource;
-		lock (interruptQueue) {
-			interruptQueue.TryDequeue(out queuedTaskSource);
+		lock (InterruptQueue) {
+			InterruptQueue.TryDequeue(out queuedTaskSource);
 		}
 		if (queuedTaskSource is not null) {
 			queuedTaskSource.SetResult(new(context));
@@ -53,8 +57,8 @@ public class Interrupt : IDisposable {
 				var interrupt = new Interrupt(context);
 				await Utils.SelectModuleAsync(interrupt, GameState.Current.CurrentModuleNum!.Value, true);
 				// Perhaps another interrupt occurred during this.
-				lock (interruptQueue) {
-					interruptQueue.TryDequeue(out queuedTaskSource);
+				lock (InterruptQueue) {
+					InterruptQueue.TryDequeue(out queuedTaskSource);
 				}
 				if (queuedTaskSource is not null)
 					queuedTaskSource.SetResult(interrupt);
@@ -91,29 +95,25 @@ public class Interrupt : IDisposable {
 		DefuserConnector.Instance.SendInputs(actions);
 	}
 	/// <summary>Creates an <see cref="AimlTask"/> that presses the specified buttons in sequence and completes after this is complete.</summary>
-	public AimlTask SendInputsAsync(params Button[] buttons) => SendInputsAsync(from b in buttons select new ButtonAction(b));
+	public AimlTask SendInputsAsync(params IEnumerable<Button> buttons) => SendInputsAsync(from b in buttons select new ButtonAction(b), CancellationToken.None);
 	/// <summary>Creates an <see cref="AimlTask"/> that presses the specified buttons in sequence and completes after this is complete.</summary>
-	public AimlTask SendInputsAsync(IEnumerable<Button> buttons, CancellationToken cancellationToken = default) => SendInputsAsync(from b in buttons select new ButtonAction(b), cancellationToken);
+	public AimlTask SendInputsAsync(IEnumerable<Button> buttons, CancellationToken cancellationToken) => SendInputsAsync(from b in buttons select new ButtonAction(b), cancellationToken);
 	/// <summary>Creates an <see cref="AimlTask"/> that performs the specified input actions in sequence and completes after this is complete.</summary>
-	public AimlTask SendInputsAsync(params IInputAction[] actions) => SendInputsAsync((IEnumerable<IInputAction>) actions);
+	public AimlTask SendInputsAsync(params IEnumerable<IInputAction> actions) => SendInputsAsync(actions, CancellationToken.None);
 	/// <summary>Creates an <see cref="AimlTask"/> that performs the specified input actions in sequence and completes after this is complete.</summary>
-	public AimlTask SendInputsAsync(IEnumerable<IInputAction> actions, CancellationToken cancellationToken = default) {
+	public AimlTask SendInputsAsync(IEnumerable<IInputAction> actions, CancellationToken cancellationToken) {
 		ObjectDisposedException.ThrowIf(IsDisposed, this);
 		cancellationToken.Register(DefuserConnector.Instance.CancelInputs);
 		var guid = Guid.NewGuid();
 		var task = inputCallback.CallAsync(Context, guid, cancellationToken);
-		DefuserConnector.Instance.SendInputs(actions.Concat(new[] { new CallbackAction(guid) }));
+		DefuserConnector.Instance.SendInputs(actions.Concat([new CallbackAction(guid)]));
 		return task;
 	}
 
 	/// <summary>Performs the specified input actions, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
-	public Task<ModuleLightState> SubmitAsync(params Button[] buttons) => SubmitAsync(from b in buttons select new ButtonAction(b));
+	public Task<ModuleLightState> SubmitAsync(params IEnumerable<Button> buttons) => SubmitAsync(from b in buttons select new ButtonAction(b));
 	/// <summary>Performs the specified input actions, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
-	public Task<ModuleLightState> SubmitAsync(IEnumerable<Button> buttons) => SubmitAsync(from b in buttons select new ButtonAction(b));
-	/// <summary>Performs the specified input actions, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
-	public Task<ModuleLightState> SubmitAsync(params IInputAction[] actions) => SubmitAsync((IEnumerable<IInputAction>) actions);
-	/// <summary>Performs the specified input actions, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
-	public async Task<ModuleLightState> SubmitAsync(IEnumerable<IInputAction> actions) {
+	public async Task<ModuleLightState> SubmitAsync(params IEnumerable<IInputAction> actions) {
 		ObjectDisposedException.ThrowIf(IsDisposed, this);
 		if (submitCancellationTokenSource is not null) throw new InvalidOperationException("Already submitting.");
 		if (GameState.Current.CurrentModuleNum is null) throw new InvalidOperationException("No current module.");
@@ -135,7 +135,7 @@ public class Interrupt : IDisposable {
 				else {
 					context.Reply("<priority/>Module complete<reply>next module</reply>.");
 					if (!GameState.Current.NextModuleNums.TryDequeue(out var nextModule))
-						nextModule = GameState.Current.Modules.FindIndex(GameState.Current.SelectedModuleNum is int i ? i + 1 : 0, m => m.Script.PriorityCategory != PriorityCategory.Needy && !m.IsSolved);
+						nextModule = GameState.Current.Modules.FindIndex(GameState.Current.SelectedModuleNum is { } i ? i + 1 : 0, m => m.Script.PriorityCategory != PriorityCategory.Needy && !m.IsSolved);
 					if (nextModule >= 0) {
 						context.Reply($"Next is {GameState.Current.Modules[nextModule].Script.IndefiniteDescription}.");
 						await ModuleSelection.ChangeModuleAsync(context, nextModule, true);
@@ -159,14 +159,13 @@ public class Interrupt : IDisposable {
 	}
 
 	/// <summary>Exits this interrupt, allowing the bot to enter another interrupt. After calling this method, this instance is no longer usable.</summary>
-	public void Exit() => Dispose();
+	public void ExitAsync() => Dispose();
 
 	/// <summary>Exits this interrupt, allowing the bot to enter another interrupt. After calling this method, this instance is no longer usable.</summary>
 	public void Dispose() {
-		if (!IsDisposed) {
-			IsDisposed = true;
-			Exit(AimlAsyncContext.Current ?? throw new InvalidOperationException("No current request"));
-			GC.SuppressFinalize(this);
-		}
+		if (IsDisposed) return;
+		IsDisposed = true;
+		_ = ExitAsync(AimlAsyncContext.Current ?? throw new InvalidOperationException("No current request"));
+		GC.SuppressFinalize(this);
 	}
 }

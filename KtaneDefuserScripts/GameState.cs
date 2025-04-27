@@ -4,11 +4,10 @@ using KtaneDefuserConnector.DataTypes;
 
 namespace KtaneDefuserScripts;
 public class GameState(ILoggerFactory loggerFactory) {
-	private static GameState? current;
-
+	[field: MaybeNull]
 	public static GameState Current {
-		get => current ?? throw new InvalidOperationException("Game has not been initialised.");
-		set => current = value;
+		get => field ?? throw new InvalidOperationException("Game has not been initialised.");
+		set;
 	}
 
 	internal ILoggerFactory LoggerFactory = loggerFactory;
@@ -25,15 +24,15 @@ public class GameState(ILoggerFactory loggerFactory) {
 	public TimeSpan TimerBaseTime { get; set; } = TimeSpan.Zero;
 	/// <summary>A <see cref="Stopwatch"/> that keeps track of the bomb time.</summary>
 	public Stopwatch TimerStopwatch { get; set; } = Stopwatch.StartNew();
-	/// <summary>The index of the currently-selected bomb face.</summary>
+	/// <summary>The index of the currently selected bomb face.</summary>
 	public int SelectedFaceNum { get; set; }
-	/// <summary>Returns a <see cref="BombFace"/> instance representing the currently-selected bomb face.</summary>
+	/// <summary>Returns a <see cref="BombFace"/> instance representing the currently selected bomb face.</summary>
 	public BombFace SelectedFace => Faces[SelectedFaceNum];
 	/// <summary>Whether we are looking at a side of the bomb at the start of the game.</summary>
 	public bool LookingAtSide { get; set; }
-	/// <summary>The currently-selected module number, or <see langword="null"/> if no module is selected.</summary>
+	/// <summary>The currently selected module number, or <see langword="null"/> if no module is selected.</summary>
 	public int? SelectedModuleNum { get; set; }
-	/// <summary>Returns a <see cref="ModuleState"/> instance representing the currently-selected module, or <see langword="null"/> if no module is selected.</summary>
+	/// <summary>Returns a <see cref="ModuleState"/> instance representing the currently selected module, or <see langword="null"/> if no module is selected.</summary>
 	public ModuleState? SelectedModule => SelectedModuleNum is not null ? Modules[SelectedModuleNum.Value] : null;
 
 	/// <summary>The number of the module we're currently discussing with the expert, or <see langword="null"/> if no module is in progress.</summary>
@@ -66,7 +65,7 @@ public class GameState(ILoggerFactory loggerFactory) {
 
 	public List<PortTypes> PortPlates { get; } = [];
 	public bool PortEmptyPlate => PortPlates.Contains(0);
-	public int PortCount => PortPlates.Sum(p => (p.HasFlag(PortTypes.Parallel) ? 1 : 0) + (p.HasFlag(PortTypes.Serial) ? 1 : 0) + (p.HasFlag(PortTypes.StereoRCA) ? 1 : 0) + (p.HasFlag(PortTypes.DviD) ? 1 : 0) + (p.HasFlag(PortTypes.PS2) ? 1 : 0) + (p.HasFlag(PortTypes.RJ45) ? 1 : 0));
+	public int PortCount => PortPlates.Sum(p => (p.HasFlag(PortTypes.Parallel) ? 1 : 0) + (p.HasFlag(PortTypes.Serial) ? 1 : 0) + (p.HasFlag(PortTypes.StereoRca) ? 1 : 0) + (p.HasFlag(PortTypes.DviD) ? 1 : 0) + (p.HasFlag(PortTypes.PS2) ? 1 : 0) + (p.HasFlag(PortTypes.RJ45) ? 1 : 0));
 
 	public bool HasPort(PortTypes portType) => PortPlates.Any(p => p.HasFlag(portType));
 	public int PortCountOfType(PortTypes portType) => PortPlates.Count(p => p.HasFlag(portType));
@@ -111,16 +110,13 @@ public enum BombType {
 	Centurion
 }
 
-public struct IndicatorData(bool isLit, string label) {
-	public bool IsLit = isLit;
-	public string Label = label ?? throw new ArgumentNullException(nameof(label));
-}
+public record struct IndicatorData(bool IsLit, string Label);
 
 [Flags]
 public enum PortTypes {
 	Parallel = 1,
 	Serial = 2,
-	StereoRCA = 4,
+	StereoRca = 4,
 	DviD = 8,
 	PS2 = 16,
 	RJ45 = 32

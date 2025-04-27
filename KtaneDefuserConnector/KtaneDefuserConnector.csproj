@@ -18,6 +18,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
     <PackageReference Include="Microsoft.ML" Version="4.0.2" />
     <PackageReference Include="Microsoft.ML.TensorFlow" Version="4.0.2" />
     <PackageReference Include="SciSharp.TensorFlow.Redist" Version="2.16.0" />

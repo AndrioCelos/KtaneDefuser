@@ -9,9 +9,8 @@ using SixLabors.ImageSharp.Processing;
 namespace KtaneDefuserConnector.Components;
 public class PianoKeys : ComponentReader<PianoKeys.ReadData> {
 	public override string Name => "Piano Keys";
-	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
-	private static readonly Image<Rgba32>[] referenceImages = [
+	private static readonly Image<Rgba32>[] ReferenceImages = [
 		LoadSampleImage(Properties.Resources.PianoKeysNatural),
 		LoadSampleImage(Properties.Resources.PianoKeysFlat),
 		LoadSampleImage(Properties.Resources.PianoKeysSharp),
@@ -24,12 +23,6 @@ public class PianoKeys : ComponentReader<PianoKeys.ReadData> {
 	];
 
 	private static Image<Rgba32> LoadSampleImage(byte[] bytes) => Image.Load<Rgba32>(bytes);
-
-	protected internal override float IsModulePresent(Image<Rgba32> image) {
-		return ImageUtils.TryFindEdges(image, new(24, 24, 160, 64), p => HsvColor.FromColor(p) is { H: >= 40 and <= 60, S: >= 0.2f and <= 0.3f, V: >= 0.8f }, out var noteRect)
-			? Math.Min(1, Math.Max(0, 7500 - Math.Abs(noteRect.Width * noteRect.Height - 7500)) / 4500f)
-			: 0;
-	}
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		var labelPoints = ImageUtils.FindCorners(image, new(0, 0, 200, 100), lightsState switch {
@@ -47,23 +40,23 @@ public class PianoKeys : ComponentReader<PianoKeys.ReadData> {
 			LightsState.Emergency => c => HsvColor.FromColor(c) is { V: > 0.8f },
 			_ => c => HsvColor.FromColor(c) is { V: < 0.8f }
 		};
-		var textBB = ImageUtils.FindEdges(image, new(labelPoints.TopLeft, new(labelPoints.TopRight.X - labelPoints.TopLeft.X, labelPoints.BottomLeft.Y - labelPoints.TopLeft.Y)), textPredicate);
-		debugImage?.Mutate(c => c.Draw(Pens.Solid(Color.Cyan, 1), textBB));
+		var textBounds = ImageUtils.FindEdges(image, new(labelPoints.TopLeft, new(labelPoints.TopRight.X - labelPoints.TopLeft.X, labelPoints.BottomLeft.Y - labelPoints.TopLeft.Y)), textPredicate);
+		debugImage?.Mutate(c => c.Draw(Pens.Solid(Color.Cyan, 1), textBounds));
 
 		// Find each symbol.
 		var symbols = new List<Symbol>();
-		var x = textBB.Left;
-		while (x < textBB.Right) {
-			for (; x < textBB.Right; x++) {
-				var anyPixels = Enumerable.Range(textBB.Top, textBB.Height).Any(y => textPredicate(image[x, y]));
+		var x = textBounds.Left;
+		while (x < textBounds.Right) {
+			for (; x < textBounds.Right; x++) {
+				var anyPixels = Enumerable.Range(textBounds.Top, textBounds.Height).Any(y => textPredicate(image[x, y]));
 				if (anyPixels) break;
 			}
 			var startX = x;
 			var endX = x;
 			var emptyColumnsRemaining = 8;
 			// Look for 8 pixels of whitespace to avoid mistaking the space within the C clef for the gap.
-			for (x++; x < textBB.Right; x++) {
-				var anyPixels = Enumerable.Range(textBB.Top, textBB.Height).Any(y => textPredicate(image[x, y]));
+			for (x++; x < textBounds.Right; x++) {
+				var anyPixels = Enumerable.Range(textBounds.Top, textBounds.Height).Any(y => textPredicate(image[x, y]));
 				if (anyPixels) {
 					endX = x;
 					emptyColumnsRemaining = 8;
@@ -74,7 +67,7 @@ public class PianoKeys : ComponentReader<PianoKeys.ReadData> {
 			}
 			endX++;
 
-			int top = textBB.Top, bottom = textBB.Bottom;
+			int top = textBounds.Top, bottom = textBounds.Bottom;
 			image.ProcessPixelRows(p => {
 				for (var y = top; y < bottom; y++) {
 					var found = false;
@@ -102,8 +95,8 @@ public class PianoKeys : ComponentReader<PianoKeys.ReadData> {
 			debugImage?.Mutate(c => c.DrawImage(charImage, new Point(32 * symbols.Count, 0), 1));
 
 			Symbol bestSymbol = 0; float bestSimilarity = 0;
-			for (var i = 0; i < referenceImages.Length; i++) {
-				var similarity = ImageUtils.CheckSimilarity(charImage, referenceImages[i]);
+			for (var i = 0; i < ReferenceImages.Length; i++) {
+				var similarity = ImageUtils.CheckSimilarity(charImage, ReferenceImages[i]);
 				if (similarity <= bestSimilarity) continue;
 				bestSimilarity = similarity;
 				bestSymbol = (Symbol) i;

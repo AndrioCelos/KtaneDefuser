@@ -16,9 +16,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		readme.md = readme.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AngelAiml.DotNetInterface", "..\AngelAiml.DotNetInterface\AngelAiml.DotNetInterface\AngelAiml.DotNetInterface.csproj", "{0B8F033C-5E9D-CCB9-9B63-025654B172D0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AngelAiml.DotNetInterface", "AngelAiml.DotNetInterface\AngelAiml.DotNetInterface\AngelAiml.DotNetInterface.csproj", "{0B8F033C-5E9D-CCB9-9B63-025654B172D0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AngelAiml", "..\AngelAiml.DotNetInterface\AngelAiml\AngelAiml\AngelAiml.csproj", "{FB77EBC0-413E-F0F1-664A-B3C61DB29BA6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AngelAiml", "AngelAiml.DotNetInterface\AngelAiml\AngelAiml\AngelAiml.csproj", "{FB77EBC0-413E-F0F1-664A-B3C61DB29BA6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisionTester", "VisionTester\VisionTester.csproj", "{95858D1D-231A-4CDD-A80F-3A124251B477}"
 EndProject

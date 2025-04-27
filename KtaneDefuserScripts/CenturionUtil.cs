@@ -84,7 +84,7 @@ public static class CenturionUtil {
 
 	/// <summary>Returns the visual position on the face of the specified slot.</summary>
 	/// <returns><c>x</c> is the horizontal position in half-slots right of the centre; <c>y</c> is the vertical position in full slots below the centre.</returns>
-	public static (int x, int y) GetVisualXY(Slot slot) {
+	private static (int x, int y) GetVisualXY(Slot slot) {
 		var (x, y) = slot.Face == 0
 		? slot.Y switch {
 			0 => slot.X >= 4 ? (-12 + slot.X * 2, 3) : (-3 + slot.X * 2, 4),

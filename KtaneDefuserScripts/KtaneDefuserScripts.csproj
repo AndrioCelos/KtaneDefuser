@@ -18,12 +18,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.7" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\AngelAiml.DotNetInterface\AngelAiml\AngelAiml\AngelAiml.csproj" />
     <ProjectReference Include="..\AngelAiml.DotNetInterface\AngelAiml.DotNetInterface\AngelAiml.DotNetInterface.csproj" />
+    <ProjectReference Include="..\AngelAiml.DotNetInterface\AngelAiml\AngelAiml\AngelAiml.csproj" />
     <ProjectReference Include="..\KtaneDefuserConnector\KtaneDefuserConnector.csproj" />
   </ItemGroup>
 

@@ -10,21 +10,21 @@ public partial class MainWindow : Window {
 	}
 
 	private void Button_OnClick(object? sender, RoutedEventArgs e) {
-		var vm = new TransformationViewModel() { mainViewModel = (MainWindowViewModel) DataContext! };
-		var window = new TransformationWindow() { DataContext = vm };
+		var vm = new TransformationViewModel { mainViewModel = (MainWindowViewModel) DataContext! };
+		var window = new TransformationWindow { DataContext = vm };
 		window.Show(this);
 	}
 
 	private void AnalysisButton_OnClick(object? sender, RoutedEventArgs e) {
 		var vm = new AnalysisViewModel();
 		((MainWindowViewModel) DataContext!).AnalysisViewModel = vm;
-		var window = new AnalysisWindow() { DataContext = vm };
+		var window = new AnalysisWindow { DataContext = vm };
 		window.Show(this);
 	}
 	
 	private void ColourRangeButton_OnClick(object? sender, RoutedEventArgs e) {
 		var vm = new ColourRangeViewModel();
-		var window = new ColourRangeWindow() { DataContext = vm };
+		var window = new ColourRangeWindow { DataContext = vm };
 		window.Show(this);
 	}
 

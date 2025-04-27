@@ -5,7 +5,7 @@ using Button = KtaneDefuserConnectorApi.Button;
 namespace KtaneDefuserScripts;
 public static class Utils {
 	public static Quadrilateral CurrentModuleArea { get; } = new( 836,  390, 1120,  390,  832,  678, 1124,  678);
-	private static readonly Quadrilateral[] moduleAreas = [
+	private static readonly Quadrilateral[] ModuleAreas = [
 		new( 220,  100,  496,  100,  193,  359,  479,  359),
 		new( 535,  100,  806,  101,  522,  359,  801,  360),
 		new( 840,  101, 1113,  101,  836,  360, 1119,  360),
@@ -22,7 +22,7 @@ public static class Utils {
 		new(1164,  704, 1444,  704, 1173, 1016, 1465, 1015),
 		new(1499,  704, 1782,  703, 1521, 1015, 1816, 1014)
 	];
-	private static readonly Quadrilateral[] bombAreas = [
+	private static readonly Quadrilateral[] BombAreas = [
 		new( 572,  291,  821,  291,  559,  534,  816,  534),
 		new( 852,  291, 1096,  291,  848,  534, 1101,  534),
 		new(1127,  292, 1369,  292, 1134,  533, 1383,  533),
@@ -30,13 +30,13 @@ public static class Utils {
 		new( 848,  558, 1099,  558,  845,  821, 1106,  821),
 		new(1134,  558, 1385,  558, 1141,  821, 1400,  821)
 	];
-	internal static readonly Quadrilateral[] sideWidgetAreas = [
+	internal static readonly Quadrilateral[] SideWidgetAreas = [
 		new( 813,  465,  817,  228,  988,  465,  988,  228),
 		new( 988,  465,  988,  228, 1163,  465, 1158,  228),
 		new( 808,  772,  812,  515,  988,  772,  988,  515),
 		new( 988,  772,  988,  515, 1168,  772, 1164,  515)
 	];
-	internal static readonly Quadrilateral[] topBottomWidgetAreas = [
+	internal static readonly Quadrilateral[] TopBottomWidgetAreas = [
 		new( 588,  430,  784,  430,  587,  541,  784,  541),
 		new( 824,  430, 1140,  430,  824,  541, 1140,  541),
 		new(1181,  430, 1389,  430, 1182,  540, 1390,  541),
@@ -52,9 +52,9 @@ public static class Utils {
 			var selectedSlot = GameState.Current.SelectedFace.SelectedSlot;
 			var dx = slot.X - selectedSlot.X;
 			var dy = slot.Y - selectedSlot.Y;
-			return moduleAreas[(dy + 1) * 5 + dx + 2];
+			return ModuleAreas[(dy + 1) * 5 + dx + 2];
 		} else
-			return bombAreas[slot.Y * 3 + slot.X];
+			return BombAreas[slot.Y * 3 + slot.X];
 	}
 
 	public static void AddReply(this AimlAsyncContext context, Reply reply) => AddReply(context, reply.Text, reply.Postback);
@@ -109,7 +109,9 @@ public static class Utils {
 	}
 
 	/// <summary>Selects the specified module.</summary>
-	/// <param name="waitForFocus">If true, waits for the module focusing animation to finish before completing; otherwise completes as soon as controller input is able to be sent to the module.</param>
+	/// <param name="interrupt">The interrupt to use for sending inputs.</param>
+	/// <param name="moduleNum">The index of the module to select.</param>
+	/// <param name="waitForFocus">If true, waits for the module focusing animation to finish before completing; otherwise completes as soon as controller input can be sent to the module.</param>
 	internal static async Task SelectModuleAsync(Interrupt interrupt, int moduleNum, bool waitForFocus) {
 		if (GameState.Current.SelectedModuleNum == moduleNum) return;  // The requested module is already selected.
 		var slot = GameState.Current.Modules[moduleNum].Slot;
@@ -126,20 +128,16 @@ public static class Utils {
 		// Move to the correct row.
 		var currentSlot = GameState.Current.SelectedFace.SelectedSlot;
 		if (slot.Y != currentSlot.Y) {
-			if (slot.Y < currentSlot.Y)
-				buttons.Add(Button.Up);
-			else
-				buttons.Add(Button.Down);
+			buttons.Add(slot.Y < currentSlot.Y ? Button.Up : Button.Down);
 
 			// Find which slot this input will select.
 			currentSlot.Y = slot.Y;
 			if (GameState.Current.SelectedFace[currentSlot]?.Reader is null or KtaneDefuserConnector.Components.Timer) {
 				for (var d = 0; d < 2; d++) {
 					var x2 = currentSlot.X + (d == 0 ? -1 : 1);
-					if (x2 >= 0 && x2 < 3 && GameState.Current.SelectedFace[x2, currentSlot.Y]?.Reader is not (null or KtaneDefuserConnector.Components.Timer)) {
-						currentSlot.X = x2;
-						break;
-					}
+					if (x2 is < 0 or >= 3 || GameState.Current.SelectedFace[x2, currentSlot.Y]?.Reader is null or KtaneDefuserConnector.Components.Timer) continue;
+					currentSlot.X = x2;
+					break;
 				}
 			}
 		}

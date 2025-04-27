@@ -9,18 +9,9 @@ using SixLabors.ImageSharp.Processing;
 namespace KtaneDefuserConnector.Components;
 public class Semaphore : ComponentReader<Semaphore.ReadData> {
 	public override string Name => "Semaphore";
-	protected internal override ComponentFrameType FrameType => ComponentFrameType.Solvable;
 
-	protected internal override float IsModulePresent(Image<Rgba32> image) {
-		if (!TryGetDisplayPoints(image, LightsState.On, out var points)) return 0;
-		return Math.Abs(points.TopRight.Y - points.TopLeft.Y) <= 5 && Math.Abs(points.BottomRight.Y - points.BottomLeft.Y) <= 5
-			&& Math.Abs(points.BottomLeft.X - points.TopLeft.X) <= 5 && Math.Abs(points.BottomRight.X - points.TopRight.X) <= 5
-			? 0.75f : 0;
-	}
-
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0042:Deconstruct variable declaration")]
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		if (!TryGetDisplayPoints(image, LightsState.On, out var points)) throw new ArgumentException("Couldn't find the display", nameof(image));
+		if (!TryGetDisplayPoints(image, LightsState.On, out var points)) throw new ArgumentException("Couldn't find the display.", nameof(image));
 		debugImage?.DebugDrawPoints(points);
 
 		var displayBitmap = ImageUtils.PerspectiveUndistort(image, points, InterpolationMode.NearestNeighbour, new(180, 142));
@@ -75,47 +66,47 @@ public class Semaphore : ComponentReader<Semaphore.ReadData> {
 		// Note: Flags may be mirrored in the case of the left flag held at up-right (W, X) or down-right (Z), or the right flag being held at down-left (H, 8) or up-left (O).
 		Direction leftFlag = 0, rightFlag = 0;
 
-		foreach (var blueShape in blueShapes) {
-			var whiteShape = whiteShapes.MinBy(s => Math.Abs(s.centre.X - blueShape.centre.X) + Math.Abs(s.centre.Y - blueShape.centre.Y));
+		foreach (var (blueCentre, blueBounds) in blueShapes) {
+			var (whiteCentre, whiteBounds) = whiteShapes.MinBy(s => Math.Abs(s.centre.X - blueCentre.X) + Math.Abs(s.centre.Y - blueCentre.Y));
 
-			if (Math.Abs(whiteShape.boundingBox.X - blueShape.boundingBox.X) < blueShape.boundingBox.Width / 2 && Math.Abs(whiteShape.boundingBox.Y - blueShape.boundingBox.Y) < blueShape.boundingBox.Height / 2) {
+			if (Math.Abs(whiteBounds.X - blueBounds.X) < blueBounds.Width / 2 && Math.Abs(whiteBounds.Y - blueBounds.Y) < blueBounds.Height / 2) {
 				// Both triangles have similar bounding boxes, meaning the flag is being held in a cardinal direction.
 				// Determine which flag it is and the direction by the relative positions of the centre points and the absolute position of the white shape.
-				if (whiteShape.centre.X > blueShape.centre.X) {
-					if (whiteShape.centre.Y > blueShape.centre.Y)
+				if (whiteCentre.X > blueCentre.X) {
+					if (whiteCentre.Y > blueCentre.Y)
 						leftFlag = Direction.Up;
-					else if (whiteShape.centre.X >= 64)
+					else if (whiteCentre.X >= 64)
 						rightFlag = Direction.Down;
 					else
 						leftFlag = Direction.Left;
 				} else {
-					if (whiteShape.centre.Y > blueShape.centre.Y)
+					if (whiteCentre.Y > blueCentre.Y)
 						rightFlag = Direction.Up;
-					else if (whiteShape.centre.X >= 128)
+					else if (whiteCentre.X >= 128)
 						rightFlag = Direction.Right;
 					else
 						leftFlag = Direction.Down;
 				}
 			} else {
 				// The triangles have different bounding boxes, meaning the flag is being held diagonally.
-				int dx = whiteShape.centre.X - blueShape.centre.X, dy = whiteShape.centre.Y - blueShape.centre.Y;
+				int dx = whiteCentre.X - blueCentre.X, dy = whiteCentre.Y - blueCentre.Y;
 				if (Math.Abs(dx) > Math.Abs(dy)) {
 					if (dx > 0) {
-						if (blueShape.centre.X >= 56) rightFlag = Direction.UpLeft;
+						if (blueCentre.X >= 56) rightFlag = Direction.UpLeft;
 						else leftFlag = Direction.UpLeft;
 					} else {
-						if (blueShape.centre.X >= 140) rightFlag = Direction.UpRight;
+						if (blueCentre.X >= 140) rightFlag = Direction.UpRight;
 						else leftFlag = Direction.UpRight;
 
 					}
 				} else {
 					if (dy > 0) {
 						// Shouldn't happen.
-						if (blueShape.centre.X >= 90) leftFlag = Direction.UpRight;
+						if (blueCentre.X >= 90) leftFlag = Direction.UpRight;
 						else rightFlag = Direction.UpLeft;
 					} else {
-						if (blueShape.centre.X >= 110) rightFlag = Direction.DownRight;
-						else if (blueShape.centre.X >= 68) rightFlag = Direction.DownLeft;
+						if (blueCentre.X >= 110) rightFlag = Direction.DownRight;
+						else if (blueCentre.X >= 68) rightFlag = Direction.DownLeft;
 						else leftFlag = Direction.DownLeft;
 					}
 				}

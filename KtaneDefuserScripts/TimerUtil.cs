@@ -3,7 +3,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace KtaneDefuserScripts;
-internal static class Timer {
+internal static class TimerUtil {
 	internal static async Task ReadTimerAsync(Image<Rgba32> screenshot, bool timerHasNotStartedYet) {
 		if (GameState.Current.TimerSlot is null) throw new InvalidOperationException("Don't know where the timer is.");
 		var polygon = Utils.GetPoints(GameState.Current.TimerSlot.Value);

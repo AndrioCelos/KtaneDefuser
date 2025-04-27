@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Media.Imaging;
@@ -13,7 +14,9 @@ using CommunityToolkit.Mvvm.Messaging.Messages;
 using ImageProcessingTester;
 using KtaneDefuserConnector;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace VisionTester.ViewModels;
 
@@ -31,6 +34,8 @@ public partial class AnalysisViewModel : ViewModelBase {
 
 	private static readonly ComponentReader[] ComponentReaders;
 	private static readonly WidgetReader[] WidgetReaders;
+
+	private readonly DefuserConnector connector = new();
 
 	static AnalysisViewModel() {
 		var componentReaders = new List<ComponentReader>();
@@ -50,7 +55,10 @@ public partial class AnalysisViewModel : ViewModelBase {
 		Analysers = [
 			new(AnalysisType.IdentifyComponent, "Identify component"),
 			new(AnalysisType.IdentifyWidget, "Identify widget"),
-			new(AnalysisType.GetModuleLightState, "Light state"),
+			new(AnalysisType.GetModuleLightState, "Module light state"),
+			new(AnalysisType.GetRoomLightState, "Room light state"),
+			new(AnalysisType.GetCenturionTopWidgetBoxes, "Centurion top widgets"),
+			new(AnalysisType.GetCenturionSideWidgetBoxes, "Centurion side widgets"),
 			.. from r in ComponentReaders select new AnalyserOption(AnalysisType.ComponentReader, r.Name) { ComponentReader = r },
 			.. from r in WidgetReaders select new AnalyserOption(AnalysisType.WidgetReader, r.Name) { WidgetReader = r },
 		];
@@ -99,40 +107,16 @@ public partial class AnalysisViewModel : ViewModelBase {
 			}
 			OutputImage = InputImage;
 			OutputAvaloniaImage = InputImage.ToAvaloniaImage();
-			//ImageUtils.ColourCorrect(bitmap, lightsState);
 			switch (SelectedAnalyserOption.Type) {
 				case AnalysisType.IdentifyComponent: {
-					if (ImageUtils.CheckForBlankComponent(InputImage)) {
-						s = "Blank";
-					} else {
-						var probs = new Dictionary<string, float>();
-						var frameType = ImageUtils.GetComponentFrame(InputImage);
-
-						foreach (var reader in ComponentReaders) {
-							if (reader.FrameType == frameType) {
-								var result = reader.IsModulePresent(InputImage);
-								probs[reader.Name] = result;
-							}
-						}
-
-						var sorted = probs.OrderByDescending(e => e.Value).ToList();
-						var max = sorted[0];
-						s = $"Frame: {frameType}\nClassified as: {max.Key}\n({string.Join(", ", sorted.Take(3).Select(e => $"{e.Key} [{e.Value:0.000}]"))})";
-					}
+					var reader = connector.GetComponentReader(InputImage, InputImage.Bounds);
+					s = $"Classified as: {reader?.Name ?? "null"}";
 					break;
 				}
 				case AnalysisType.IdentifyWidget: {
 					var pixelCounts = WidgetReader.GetPixelCounts(InputImage, 0);
-					var probs = new Dictionary<string, float>();
-
-					foreach (var reader in WidgetReaders) {
-						var result = Math.Max(0, reader.IsWidgetPresent(InputImage, 0, pixelCounts));
-						probs[reader.Name] = result;
-					}
-
-					var sorted = probs.OrderByDescending(e => e.Value).ToList();
-					var max = sorted[0];
-					s = $"Classified as: {(max.Value < 0.25f ? "nothing" : max.Key)}\n(R: {pixelCounts.Red}, Y: {pixelCounts.Yellow}, E: {pixelCounts.Grey}, W: {pixelCounts.White})\r\n({string.Join(", ", sorted.Take(3).Select(e => $"{e.Key} [{e.Value:0.000}]"))})";
+					var reader = connector.GetWidgetReader(InputImage, InputImage.Bounds);
+					s = $"Classified as: {reader?.Name ?? "null"}\n(R: {pixelCounts.Red}, Y: {pixelCounts.Yellow}, E: {pixelCounts.Grey}, W: {pixelCounts.White})";
 					break;
 				}
 				case AnalysisType.GetModuleLightState: {
@@ -140,19 +124,61 @@ public partial class AnalysisViewModel : ViewModelBase {
 					s = result.ToString();
 					break;
 				}
+				case AnalysisType.GetRoomLightState: {
+					var result = ImageUtils.GetLightsState(InputImage);
+					s = result.ToString();
+					break;
+				}
+				case AnalysisType.GetCenturionTopWidgetBoxes: {
+					var rectangles = ImageUtils.GetCenturionTopWidgetBounds(InputImage, InputImage.Width >= 1000 ? new(550, 440, 890, 180) : new(0, 0, InputImage.Width, InputImage.Height));
+					var debugImage = InputImage.Clone();
+					debugImage.Mutate(p => {
+						foreach (var rect in rectangles) {
+							p.Draw(Color.Cyan, 1, rect);
+						}
+					});
+					OutputImage = debugImage;
+					OutputAvaloniaImage = debugImage.ToAvaloniaImage();
+
+					foreach (var rect in rectangles) {
+						var reader = connector.GetWidgetReader(InputImage, rect);
+						s += $"{reader?.Name ?? "null"}\n";
+					}
+					break;
+				}
+				case AnalysisType.GetCenturionSideWidgetBoxes: {
+					var rectangles = ImageUtils.GetCenturionSideWidgetBounds(InputImage, InputImage.Width >= 1000 ? new(904, 250, 144, 500) : new(0, 0, InputImage.Width, InputImage.Height));
+					var debugImage = InputImage.Clone();
+					debugImage.Mutate(p => {
+						foreach (var rect in rectangles) {
+							p.Draw(Color.Cyan, 1, rect);
+						}
+					});
+					OutputImage = debugImage;
+					OutputAvaloniaImage = debugImage.ToAvaloniaImage();
+
+					foreach (var rect in rectangles) {
+						var reader = connector.GetWidgetReader(InputImage, new(rect.Right, rect.Top, rect.Right, rect.Bottom, rect.Left, rect.Top, rect.Left, rect.Bottom));
+						s += $"{reader?.Name ?? "null"}\n";
+					}
+					break;
+				}
 				default: {
 					var image2 = InputImage.Clone();
 					var debugImage = image2;
-					if (SelectedAnalyserOption.ComponentReader is not null) {
-						var result = SelectedAnalyserOption.ComponentReader.ProcessNonGeneric(InputImage, LightsState, ref debugImage);
-						s = result.ToString();
-					} else if (SelectedAnalyserOption.WidgetReader is not null) {
-						var result = SelectedAnalyserOption.WidgetReader.ProcessNonGeneric(InputImage, LightsState, ref debugImage);
-						s = result.ToString();
-					}
-					if (debugImage is not null) {
-						OutputImage = debugImage;
-						OutputAvaloniaImage = debugImage.ToAvaloniaImage();
+					var args = new object[] { InputImage, LightsState, debugImage };
+					try {
+						var reader = (object?) SelectedAnalyserOption.ComponentReader ?? SelectedAnalyserOption.WidgetReader;
+						if (reader is not null) {
+							var result = reader.GetType().GetMethod(nameof(ComponentReader<>.Process), BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(reader, args);
+							s = result?.ToString();
+						}
+					} finally {
+						debugImage = (Image<Rgba32>?) args[2];
+						if (debugImage is not null) {
+							OutputImage = debugImage;
+							OutputAvaloniaImage = debugImage.ToAvaloniaImage();
+						}
 					}
 					break;
 				}
@@ -181,6 +207,9 @@ public partial class AnalysisViewModel : ViewModelBase {
 		IdentifyComponent,
 		IdentifyWidget,
 		GetModuleLightState,
+		GetRoomLightState,
+		GetCenturionTopWidgetBoxes,
+		GetCenturionSideWidgetBoxes,
 		ComponentReader,
 		WidgetReader
 	}

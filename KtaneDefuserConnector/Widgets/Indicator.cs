@@ -7,12 +7,8 @@ namespace KtaneDefuserConnector.Widgets;
 public class Indicator : WidgetReader<Indicator.ReadData> {
 	public override string Name => "Indicator";
 
-	private static readonly TextRecogniser textRecogniser = new(new(TextRecogniser.Fonts.OstrichSansHeavy, 48), 0, 255, new(128, 64),
+	private static readonly TextRecogniser TextRecogniser = new(new(TextRecogniser.Fonts.OstrichSansHeavy, 48), 0, 255, new(128, 64),
 		"SND", "CLR", "CAR", "IND", "FRQ", "SIG", "NSA", "MSA", "TRN", "BOB", "FRK", "NLL");
-
-	protected internal override float IsWidgetPresent(Image<Rgba32> image, LightsState lightsState, PixelCounts pixelCounts)
-		// This has many red pixels, few white pixels and no yellow pixels.
-		=> Math.Max(0, pixelCounts.Red - pixelCounts.Yellow * 2 - Math.Max(0, pixelCounts.White - 4096) * 2) / 8192f;
 
 	private static bool IsRed(HsvColor hsv) => hsv is { H: >= 345 or < 15, S: >= 0.25f };
 	private static bool IsLit(HsvColor hsv) => hsv.V >= 1;
@@ -22,7 +18,7 @@ public class Indicator : WidgetReader<Indicator.ReadData> {
 		var corners = ImageUtils.FindCorners(image, image.Bounds, c => IsRed(HsvColor.FromColor(c)), 12);
 		var indicatorImage = ImageUtils.PerspectiveUndistort(image, corners, InterpolationMode.NearestNeighbour, new(256, 112));
 		debugImage?.DebugDrawPoints(corners);
-		debugImage?.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }).DrawImage(indicatorImage, new Point(0, 256), 1));
+		debugImage?.Mutate(c => c.Resize(new ResizeOptions { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }).DrawImage(indicatorImage, new Point(0, 256), 1));
 
 		bool ledIsOnRight, isLit;
 		var hsv = HsvColor.FromColor(indicatorImage[56, 56]);
@@ -48,10 +44,7 @@ public class Indicator : WidgetReader<Indicator.ReadData> {
 			indicatorImage.Mutate(c => c.Rotate(RotateMode.Rotate180));
 
 		var textBoundingBox = ImageUtils.FindEdges(indicatorImage, new(116, 28, 96, 56), c => c.B >= 128);
-		//indicatorImage.Mutate(c => c.Crop(textBoundingBox).Resize(128, 64, KnownResamplers.NearestNeighbor));
-		//debugImage?.Mutate(c => c.DrawImage(indicatorImage, new Point(0, 384), 1));
-
-		var label = textRecogniser.Recognise(indicatorImage, textBoundingBox);
+		var label = TextRecogniser.Recognise(indicatorImage, textBoundingBox);
 
 		return new(isLit, label);
 	}

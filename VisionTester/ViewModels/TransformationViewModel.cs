@@ -40,8 +40,6 @@ public partial class TransformationViewModel : ViewModelBase {
 	[ObservableProperty] internal partial ICommand SaveImageCommand { get; set; }
 
 	public Preset[] Presets { get; } = [
-		new("Focus", [new(836, 390), new(1120, 390), new(832, 678), new(1124, 678)]),
-
 		new("Module 1", [new(572, 291), new(821, 291), new(560, 534), new(817, 534)]),
 		new("Module 2", [new(852, 291), new(1096, 291), new(849, 534), new(1102, 534)]),
 		new("Module 3", [new(1127, 292), new(1369, 292), new(1134, 533), new(1382, 533)]),
@@ -49,20 +47,21 @@ public partial class TransformationViewModel : ViewModelBase {
 		new("Module 5", [new(848, 558), new(1099, 558), new(845, 821), new(1106, 821)]),
 		new("Module 6", [new(1134, 558), new(1385, 558), new(1141, 821), new(1400, 821)]),
 
-		new("Module (–2, –1)", [new(220, 100), new(496, 100), new(193, 359), new(479, 359)]),
-		new("Module (–1, –1)", [new(535, 100), new(806, 101), new(522, 359), new(801, 360)]),
-		new("Module ( 0, –1)", [new(840, 101), new(1113, 101), new(836, 360), new(1119, 360)]),
-		new("Module (+1, –1)", [new(1147, 101), new(1407, 101), new(1154, 360), new(1421, 360)]),
-		new("Module (+2, –1)", [new(1456, 102), new(1718, 102), new(1474, 360), new(1745, 360)]),
-		new("Module (–2,  0)", [new(190, 392), new(477, 392), new(160, 678), new(459, 678)]),
-		new("Module (–1,  0)", [new(520, 392), new(800, 392), new(501, 677), new(794, 677)]),
-		new("Module (+1,  0)", [new(1155, 390), new(1425, 390), new(1163, 676), new(1442, 676)]),
-		new("Module (+2,  0)", [new(1476, 390), new(1748, 390), new(1497, 676), new(1779, 676)]),
-		new("Module (–2, +1)", [new(157, 706), new(457, 705), new(124, 1019), new(436, 1018)]),
-		new("Module (–1, +1)", [new(501, 705), new(794, 705), new(481, 1018), new(787, 1017)]),
-		new("Module ( 0, +1)", [new(829, 705), new(1125, 704), new(828, 1018), new(1134, 1016)]),
-		new("Module (+1, +1)", [new(1164, 704), new(1444, 704), new(1173, 1016), new(1465, 1015)]),
-		new("Module (+2, +1)", [new(1499, 704), new(1782, 703), new(1521, 1015), new(1816, 1014)]),
+		new("Module -2 -1", [new(220, 100), new(496, 100), new(193, 359), new(479, 359)]),
+		new("Module -1 -1", [new(535, 100), new(806, 101), new(522, 359), new(801, 360)]),
+		new("Module  0 -1", [new(840, 101), new(1113, 101), new(836, 360), new(1119, 360)]),
+		new("Module +1 -1", [new(1147, 101), new(1407, 101), new(1154, 360), new(1421, 360)]),
+		new("Module +2 -1", [new(1456, 102), new(1718, 102), new(1474, 360), new(1745, 360)]),
+		new("Module -2  0", [new(190, 392), new(477, 392), new(160, 678), new(459, 678)]),
+		new("Module -1  0", [new(520, 392), new(800, 392), new(501, 677), new(794, 677)]),
+		new("Module  0  0", [new(836, 390), new(1120, 390), new(832, 678), new(1124, 678)]),
+		new("Module +1  0", [new(1155, 390), new(1425, 390), new(1163, 676), new(1442, 676)]),
+		new("Module +2  0", [new(1476, 390), new(1748, 390), new(1497, 676), new(1779, 676)]),
+		new("Module -2 +1", [new(157, 706), new(457, 705), new(124, 1019), new(436, 1018)]),
+		new("Module -1 +1", [new(501, 705), new(794, 705), new(481, 1018), new(787, 1017)]),
+		new("Module  0 +1", [new(829, 705), new(1125, 704), new(828, 1018), new(1134, 1016)]),
+		new("Module +1 +1", [new(1164, 704), new(1444, 704), new(1173, 1016), new(1465, 1015)]),
+		new("Module +2 +1", [new(1499, 704), new(1782, 703), new(1521, 1015), new(1816, 1014)]),
 
 		.. from i in Enumerable.Range(1, 4) select new Preset($"Side widget {i}", new Point[4]),
 
@@ -73,33 +72,33 @@ public partial class TransformationViewModel : ViewModelBase {
 		new("Top widget 5", [new(821, 566), new(1140, 566), new(821, 678), new(1140, 678)]),
 		new("Top widget 6", [new(1181, 566), new(1390, 566), new(1182, 678), new(1392, 678)]),
 
-		new("Centurion (-2, -1)", [new( 180,   66), new( 479,   66), new( 168,  357), new( 469,  357)]),
-		new("Centurion (-1, -1)", [new( 513,   66), new( 810,   66), new( 506,  357), new( 810,  357)]),
-		new("Centurion (0, -1)", [new( 847,   66), new(1148,   66), new( 847,  357), new(1149,  357)]),
-		new("Centurion (+1, -1)", [new(1182,   66), new(1480,   66), new(1185,  357), new(1487,  357)]),
-		new("Centurion (+2, -1)", [new(1517,   66), new(1820,   66), new(1525,  357), new(1824,  357)]),
-		new("Centurion (-2, 0)", [new( 167,  370), new( 469,  370), new( 155,  676), new( 460,  676)]),
-		new("Centurion (-1, 0)", [new( 503,  370), new( 811,  370), new( 499,  675), new( 807,  675)]),
-		new("Centurion (0, 0)", [new( 845,  370), new(1147,  370), new( 845,  675), new(1151,  675)]),
-		new("Centurion (+1, 0)", [new(1189,  370), new(1492,  370), new(1190,  675), new(1498,  675)]),
-		new("Centurion (+2, 0)", [new(1532,  370), new(1827,  370), new(1536,  675), new(1831,  675)]),
-		new("Centurion (-2, +1)", [new( 153,  688), new( 462,  688), new( 138, 1003), new( 452, 1003)]),
-		new("Centurion (-1, +1)", [new( 501,  688), new( 806,  688), new( 495, 1002), new( 805, 1002)]),
-		new("Centurion (0, +1)", [new( 843,  688), new(1154,  688), new( 843, 1002), new(1155, 1002)]),
-		new("Centurion (+1, +1)", [new(1194,  687), new(1499,  687), new(1195, 1001), new(1505, 1001)]),
-		new("Centurion (+2, +1)", [new(1543,  687), new(1845,  687), new(1544, 1001), new(1855, 1001)]),
+		new("Centurion -2 -1", [new( 180,   66), new( 479,   66), new( 168,  357), new( 469,  357)]),
+		new("Centurion -1 -1", [new( 513,   66), new( 810,   66), new( 506,  357), new( 810,  357)]),
+		new("Centurion  0 -1", [new( 847,   66), new(1148,   66), new( 847,  357), new(1149,  357)]),
+		new("Centurion +1 -1", [new(1182,   66), new(1480,   66), new(1185,  357), new(1487,  357)]),
+		new("Centurion +2 -1", [new(1517,   66), new(1820,   66), new(1525,  357), new(1824,  357)]),
+		new("Centurion -2  0", [new( 167,  370), new( 469,  370), new( 155,  676), new( 460,  676)]),
+		new("Centurion -1  0", [new( 503,  370), new( 811,  370), new( 499,  675), new( 807,  675)]),
+		new("Centurion  0  0", [new( 845,  370), new(1147,  370), new( 845,  675), new(1151,  675)]),
+		new("Centurion +1  0", [new(1189,  370), new(1492,  370), new(1190,  675), new(1498,  675)]),
+		new("Centurion +2  0", [new(1532,  370), new(1827,  370), new(1536,  675), new(1831,  675)]),
+		new("Centurion -2 +1", [new( 153,  688), new( 462,  688), new( 138, 1003), new( 452, 1003)]),
+		new("Centurion -1 +1", [new( 501,  688), new( 806,  688), new( 495, 1002), new( 805, 1002)]),
+		new("Centurion  0 +1", [new( 843,  688), new(1154,  688), new( 843, 1002), new(1155, 1002)]),
+		new("Centurion +1 +1", [new(1194,  687), new(1499,  687), new(1195, 1001), new(1505, 1001)]),
+		new("Centurion +2 +1", [new(1543,  687), new(1845,  687), new(1544, 1001), new(1855, 1001)]),
 
-		new("Centurion (-2.5, -1)", [new(  17,   66), new( 317,   66), new(   0,  357), new( 299,  357)]),
-		new("Centurion (-1.5, -1)", [new( 344,   66), new( 646,   66), new( 338,  357), new( 641,  357)]),
-		new("Centurion (-0.5, -1)", [new( 681,   66), new( 980,   66), new( 681,  357), new( 980,  357)]),
-		new("Centurion (+0.5, -1)", [new(1014,   66), new(1311,   66), new(1015,  357), new(1312,  357)]),
-		new("Centurion (+1.5, -1)", [new(1353,   66), new(1642,   66), new(1351,  357), new(1654,  357)]),
-		new("Centurion (-1.5, +1)", [new( 323,  688), new( 634,  688), new( 314, 1003), new( 626, 1003)]),
-		new("Centurion (-0.5, +1)", [new( 670,  688), new( 982,  688), new( 670, 1002), new( 982, 1002)]),
-		new("Centurion (+0.5, +1)", [new(1017,  688), new(1326,  688), new(1018, 1001), new(1329, 1001)]),
-		new("Centurion (+1.5, +1)", [new(1368,  687), new(1671,  687), new(1369, 1001), new(1687, 1001)]),
+		new("Centurion -2.5 -1", [new(  17,   66), new( 317,   66), new(   0,  357), new( 299,  357)]),
+		new("Centurion -1.5 -1", [new( 344,   66), new( 646,   66), new( 338,  357), new( 641,  357)]),
+		new("Centurion -0.5 -1", [new( 681,   66), new( 980,   66), new( 681,  357), new( 980,  357)]),
+		new("Centurion +0.5 -1", [new(1014,   66), new(1311,   66), new(1015,  357), new(1312,  357)]),
+		new("Centurion +1.5 -1", [new(1353,   66), new(1642,   66), new(1351,  357), new(1654,  357)]),
+		new("Centurion -1.5 +1", [new( 323,  688), new( 634,  688), new( 314, 1003), new( 626, 1003)]),
+		new("Centurion -0.5 +1", [new( 670,  688), new( 982,  688), new( 670, 1002), new( 982, 1002)]),
+		new("Centurion +0.5 +1", [new(1017,  688), new(1326,  688), new(1018, 1001), new(1329, 1001)]),
+		new("Centurion +1.5 +1", [new(1368,  687), new(1671,  687), new(1369, 1001), new(1687, 1001)]),
 		
-		new("Centurion top/bottom widgets", [new( 352,  384), new(1664,  384), new( 352,  656), new(1664,  656)])
+		new("Centurion top/bottom widgets", [new( 550,  440), new(1440,  440), new( 550,  620), new(1440,  620)])
 	];
 	[ObservableProperty] public partial Preset? SelectedPreset { get; set; }
 
@@ -266,7 +265,13 @@ public partial class TransformationViewModel : ViewModelBase {
 			:  new(from p in points select new Point(p.X * ScreenImage.Width / REFERENCE_SCREEN_WIDTH, p.Y * ScreenImage.Height / REFERENCE_SCREEN_HEIGHT));
 	}
 
+	internal void SetPresetByName(string name) {
+		var preset = Presets.First(p => p.Name == name);
+		SetPreset(preset.Points);
+	}
+
 	internal void CopyPresetCode() {
+		if (ScreenImage is null) return;
 		var text = $"new(\"\", [{string.Join(", ", from i in Enumerable.Range(0, 4) select Quadrilateral[i] into p
 			select $"new({p.X * REFERENCE_SCREEN_WIDTH / ScreenImage.Width,4}, {p.Y * REFERENCE_SCREEN_HEIGHT / ScreenImage.Height,4})")}]);";
 		var message = new CopyTextMessage(text);

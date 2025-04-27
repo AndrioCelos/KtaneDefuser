@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace KtaneDefuserScripts.Modules;
+﻿namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Password")]
 internal partial class Password : ModuleScript<KtaneDefuserConnector.Components.Password> {
 	public override string IndefiniteDescription => "a Password";

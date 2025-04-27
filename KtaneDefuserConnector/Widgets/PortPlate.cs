@@ -9,10 +9,6 @@ namespace KtaneDefuserConnector.Widgets;
 public class PortPlate : WidgetReader<PortPlate.Ports> {
 	public override string Name => "Port Plate";
 
-	protected internal override float IsWidgetPresent(Image<Rgba32> image, LightsState lightsState, PixelCounts pixelCounts)
-		// This has many dark grey pixels.
-		=> Math.Max(0, pixelCounts.Grey - 4096) / 8192f;
-
 	private static bool IsGrey(HsvColor hsv) => hsv is { S: < 0.08f, V: < 0.5f } or { H: < 120, S: < 0.12f, V: >= 0.8f };  // Also include the pale cream bezel on RJ-45 ports.
 	private static bool IsPink(HsvColor hsv) => hsv is { H: >= 330, S: >= 0.4f and < 0.6f, V: >= 0.65f };
 	private static bool IsTeal(HsvColor hsv) => hsv is { H: >= 180 and < 210, S: >= 0.4f and < 0.7f, V: >= 0.4f };
@@ -24,7 +20,7 @@ public class PortPlate : WidgetReader<PortPlate.Ports> {
 		var corners = ImageUtils.FindCorners(image, new(8, 8, 240, 240), c => IsGrey(HsvColor.FromColor(c)), 12);
 		var plateImage = ImageUtils.PerspectiveUndistort(image, corners, InterpolationMode.NearestNeighbour, new(256, 128));
 		debugImage?.DebugDrawPoints(corners);
-		debugImage?.Mutate(c => c.Resize(new ResizeOptions() { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }).DrawImage(plateImage, new Point(0, 256), 1));
+		debugImage?.Mutate(c => c.Resize(new ResizeOptions { Size = new(512, 512), Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.TopLeft, PadColor = Color.Black }).DrawImage(plateImage, new Point(0, 256), 1));
 
 		int pinkCount = 0, tealCount = 0;
 		int redCountEdge = 0, redCountMiddle = 0, greenCount = 0, blackCount = 0;
@@ -51,7 +47,7 @@ public class PortPlate : WidgetReader<PortPlate.Ports> {
 		var ports = (PortType) 0;
 		if (pinkCount >= 1200) ports |= PortType.Parallel;
 		if (tealCount >= 300) ports |= PortType.Serial;
-		if (redCountEdge >= 200) ports |= PortType.StereoRCA;
+		if (redCountEdge >= 200) ports |= PortType.StereoRca;
 		if (pinkCount < 600 && redCountMiddle >= 1000) ports |= PortType.DviD;
 		if (greenCount >= 200) ports |= PortType.PS2;
 		if (blackCount >= 200) ports |= PortType.RJ45;
@@ -75,7 +71,7 @@ public class PortPlate : WidgetReader<PortPlate.Ports> {
 		public IEnumerator<PortType> GetEnumerator() {
 			if (Value.HasFlag(PortType.Parallel)) yield return PortType.Parallel;
 			if (Value.HasFlag(PortType.Serial)) yield return PortType.Serial;
-			if (Value.HasFlag(PortType.StereoRCA)) yield return PortType.StereoRCA;
+			if (Value.HasFlag(PortType.StereoRca)) yield return PortType.StereoRca;
 			if (Value.HasFlag(PortType.DviD)) yield return PortType.DviD;
 			if (Value.HasFlag(PortType.PS2)) yield return PortType.PS2;
 			if (Value.HasFlag(PortType.RJ45)) yield return PortType.RJ45;
@@ -90,7 +86,7 @@ public class PortPlate : WidgetReader<PortPlate.Ports> {
 	public enum PortType {
 		Parallel = 1,
 		Serial = 2,
-		StereoRCA = 4,
+		StereoRca = 4,
 		DviD = 8,
 		PS2 = 16,
 		RJ45 = 32

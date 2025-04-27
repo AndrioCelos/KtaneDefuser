@@ -284,75 +284,6 @@ public static class ImageUtils {
 		return (float) score / total;
 	}
 
-	/// <summary>Returns a value indicating how much the module in the specified image looks like a needy frame.</summary>
-	[Obsolete("Being replaced with GetComponentFrame.")]
-	public static float CheckForNeedyFrame(Image<Rgba32> image) {
-		var yellowPixels = 0;
-		for (var y = 0; y < image.Height * 5 / 16; y++) {
-			for (var x = 0; x < image.Width; x++) {
-				if (HsvColor.FromColor(image[x, y]) is { H: >= 30 and <= 60, S: >= 0.5f, V: >= 0.4f })  // Include the stripboard on Needy Capacitors.
-					yellowPixels++;
-			}
-		}
-		return yellowPixels / (float) (8 * StandardResolution);
-	}
-
-	public static ComponentFrameType GetComponentFrame(Image<Rgba32> image) {
-		var rectangles = new Rectangle[] {
-			new(0, 0, image.Width, image.Height / 4),
-			new(0, 0, image.Width / 4, image.Height),
-			new(0, image.Height * 3 / 4, image.Width, image.Height / 4),
-			new(image.Width * 3 / 4, 0, image.Width / 4, image.Height)
-		};
-		var total = 0;
-		var match = new int[3];
-		image.ProcessPixelRows(p => {
-			for (var i = 0; i < rectangles.Length; i++) {
-				var rect = rectangles[i];
-				for (var y = rect.Top; y < rect.Bottom; y++) {
-					var r = p.GetRowSpan(y);
-					for (var x = rect.Left; x < rect.Right; x++) {
-						total++;
-
-						switch (HsvColor.FromColor(r[x])) {
-							case { H: >= 180 and < 240, S: < 0.5f, V: >= 0.15f and < 0.5f }:  // Needy background
-							case { H: >= 30 and < 60, S: >= 0.5f, V: >= 0.3f and < 0.75f} when i == 0:  // Needy yellow stripes
-							case { H: >= 240, S: >= 0.25f and < 0.5f, V: >= 0.1f and < 0.2f } when i == 0:  // Needy black stripes
-								match[1]++; 
-								break;
-							case { H: >= 150 and < 240, S: < 0.5f, V: >= 0.5f }:
-								match[0]++; // Solvable background
-								break;
-							case { S: < 0.25f, V: < 0.2f }:
-								match[2]++; // Timer background
-								break;
-							case { H: < 60, S: >= 0.5f, V: < 0.2f }:
-								match[2] += 2; // Timer display background
-								break;
-						}
-					}
-				}
-			}
-		});
-		return match[2] >= total / 4 && match[2] >= match[1] && match[2] >= match[0] ? ComponentFrameType.Timer
-			: match[0] > match[1] && match[0] >= total / 4 ? ComponentFrameType.Solvable
-			: match[1] > match[0] && match[1] >= total / 5 ? ComponentFrameType.Needy
-			: ComponentFrameType.Unknown;
-	}
-
-	/// <summary>Returns a value indicating whether the module in the specified image looks like a blank component.</summary>
-	public static bool CheckForBlankComponent(Image<Rgba32> image) {
-		var orangePixels = 0;
-		for (var y = 0; y < image.Height; y++) {
-			for (var x = 0; x < image.Width; x++) {
-				var hsvColor = HsvColor.FromColor(image[x, y]);
-				if (hsvColor.H is >= 15 and <= 25 && hsvColor.S is >= 0.6f and <= 0.8f && hsvColor.V >= 0.35f)
-					orangePixels++;
-			}
-		}
-		return orangePixels >= 40000;
-	}
-
 	/// <summary>Reads the light state of the module in the specified quadrilateral area.</summary>
 	public static ModuleLightState GetLightState(Image<Rgba32> image, Quadrilateral points) {
 		var x = (int) Math.Round(points.TopRight.X + (points.BottomLeft.X - points.TopRight.X) * 0.1015625);
@@ -364,9 +295,9 @@ public static class ImageUtils {
 		};
 	}
 
-	private static readonly Rectangle[] lightsStateSearchRects = [new(96, 48, 16, 16), new(960, 48, 16, 16), new(1748, 236, 16, 16)];
-	private static readonly int[] lightsStateSearchTolerances = [0x20000, 0x20000, 0x8000, 0x30000];
-	private static readonly Rgb48[,] lightsStateSearchColours = new Rgb48[,] {
+	private static readonly Rectangle[] LightsStateSearchRects = [new(96, 48, 16, 16), new(960, 48, 16, 16), new(1748, 236, 16, 16)];
+	private static readonly int[] LightsStateSearchTolerances = [0x20000, 0x20000, 0x8000, 0x30000];
+	private static readonly Rgb48[,] LightsStateSearchColours = new Rgb48[,] {
 		{
 			new(0x1c08, 0x19e9, 0x17a3),
 			new(0x24eb, 0x2364, 0x206f),
@@ -390,9 +321,9 @@ public static class ImageUtils {
 		image.ProcessPixelRows(a => {
 			for (var i = 1; i < 4; i++) {
 				for (var rectIndex = 0; rectIndex < 3; rectIndex++) {
-					var rect = lightsStateSearchRects[rectIndex];
+					var rect = LightsStateSearchRects[rectIndex];
 					var dist = 0;
-					var refColour = lightsStateSearchColours[i, rectIndex];
+					var refColour = LightsStateSearchColours[i, rectIndex];
 					for (var y = rect.Top; y < rect.Bottom; y++) {
 						var r = a.GetRowSpan(y);
 						for (var x = rect.Left; x < rect.Right; x++) {
@@ -401,7 +332,7 @@ public static class ImageUtils {
 						}
 					}
 
-					if (dist >= lightsStateSearchTolerances[i]) continue;
+					if (dist >= LightsStateSearchTolerances[i]) continue;
 					result = (LightsState) i;
 					return;
 				}
