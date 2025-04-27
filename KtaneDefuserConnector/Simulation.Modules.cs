@@ -781,6 +781,110 @@ internal partial class Simulation {
 				}
 			}
 		}
-#endregion
+
+		public partial class NeedyMath(Simulation simulation) : NeedyModule<Components.NeedyMath.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.NeedyMath>(), 4, 3) {
+			internal override Components.NeedyMath.ReadData Details => new(IsActive ? (int) RemainingTime.TotalSeconds : null, display, new(X, Y));
+
+			private string display = "";
+			private int answer;
+			private int input;
+			private bool minus;
+
+			protected override void OnActivate() {
+				var random = new Random();
+				int a = random.Next(100), b = random.Next(100);
+				var subtract = random.Next(2) != 0;
+				answer = subtract ? a - b : a + b;
+				input = 0;
+				minus = false;
+				display = $"{a}{(subtract ? '-' : '+')}{b}";
+			}
+
+			public override void Interact() {
+				if (X == 3) {
+					switch (Y) {
+						case 0:
+							LogButton('0');
+							input *= 10;
+							return;
+						case 1:
+							LogButton('-');
+							minus = !minus;
+							return;
+						default:
+							if (!IsActive) return;
+							if (minus) input = -input;
+							LogSubmit(input);
+							if (input != answer) StrikeFlash();
+							Deactivate();
+							display = "";
+							return;
+					}
+				}
+
+				var n = X + 1 + Y * 3;
+				LogButton((char) ('0' + n));
+				input = input * 10 + n;
+			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "{Button} was pressed.")]
+			private partial void LogButton(char button);
+
+			#endregion
+		}
+
+		public partial class EmojiMath : Module<Components.EmojiMath.ReadData> {
+			internal override Components.EmojiMath.ReadData Details => new(display, new(X, Y));
+
+			private readonly string display;
+			private readonly int answer;
+			private int input;
+			private bool minus;
+
+			public EmojiMath(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.EmojiMath>(), 4, 3) {
+				var random = new Random();
+				int a = random.Next(100), b = random.Next(100);
+				var subtract = random.Next(2) != 0;
+				answer = subtract ? a - b : a + b;
+				input = 0;
+				minus = false;
+				display = string.Join(null, from c in $"{a}{(subtract ? '-' : '+')}{b}" select c switch { '0' => ":)", '1' => "=(", '2' => "(:", '3' => ")=", '4' => ":(", '5' => "):", '6' => "=)", '7' => "(=", '8' => ":|", '9' => "|:", _ => c.ToString() });
+			}
+
+			public override void Interact() {
+				if (X == 3) {
+					switch (Y) {
+						case 0:
+							LogButton('0');
+							input *= 10;
+							return;
+						case 1:
+							LogButton('-');
+							minus = !minus;
+							return;
+						default:
+							if (minus) input = -input;
+							LogSubmit(input);
+							if (input != answer) StrikeFlash();
+							Solve();
+							return;
+					}
+				}
+
+				var n = X + 1 + Y * 3;
+				LogButton((char) ('0' + n));
+				input = input * 10 + n;
+			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "{Button} was pressed.")]
+			private partial void LogButton(char button);
+
+			#endregion
+		}
+		#endregion
 	}
 }

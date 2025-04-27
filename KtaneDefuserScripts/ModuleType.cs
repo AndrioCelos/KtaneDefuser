@@ -30,6 +30,10 @@ public enum ModuleType {
 	[AimlSetItem("Piano Keys")]
 	PianoKeys,
 	Semaphore,
+	[AimlSetItem("Needy Math"), AimlSetItem("Math")]
+	NeedyMath,
+	[AimlSetItem("Emoji Math")]
+	EmojiMath,
 
 	Unknown = -1
 }
