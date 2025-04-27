@@ -18,7 +18,7 @@ public class MlComponentIdentifier : IDisposable {
 
 	public MlComponentIdentifier() {
 		var mlContext = new MLContext();
-		var path = File.Exists("model.zip") ? "model.zip" : Path.Combine(Path.GetDirectoryName(typeof(MlComponentIdentifier).Assembly.Location)!, "model.zip");
+		var path = File.Exists("MlComponentIdentifierModel.zip") ? "MlComponentIdentifierModel.zip" : Path.Combine(Path.GetDirectoryName(typeof(MlComponentIdentifier).Assembly.Location)!, "MlComponentIdentifierModel.zip");
 		var trainedModel = mlContext.Model.Load(path, out _);
 		predictor = mlContext.Model.CreatePredictionEngine<ImagePixelData, ImagePrediction>(trainedModel);
 	}
