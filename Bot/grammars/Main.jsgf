@@ -1,0 +1,23 @@
+#JSGF V1.0 UTF-8 en;
+grammar main;
+import <util.*>;
+
+public <command> =
+	<selectmodule>
+	| say again
+	| edge work
+	| ready
+
+	// Needy module shortcuts
+	| knob [<number2>] is (up | right | down | left)
+
+	// Fun
+	| veemo
+;
+
+<selectmodule> =
+	module <number2>
+	| first module
+	| next module
+	| vanilla modules
+	| select [a | an | the] <module>;

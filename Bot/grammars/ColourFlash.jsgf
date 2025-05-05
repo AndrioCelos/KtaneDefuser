@@ -1,0 +1,10 @@
+#JSGF V1.0 UTF-8 en;
+grammar colourflash;
+import <main.*>;
+import <util.*>;
+
+public <root> =	<command> | press (yes | no) <when>;
+
+<when> = any time
+	| on <digit>
+	| on the (first | second | third | fourth | fifth | sixth | seventh | eighth) (word | step | element | entry);
