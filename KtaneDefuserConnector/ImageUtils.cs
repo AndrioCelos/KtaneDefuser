@@ -8,12 +8,14 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace KtaneDefuserConnector;
+
 public static class ImageUtils {
 	public const int StandardResolution = 256;
 
 	/// <summary>Returns an image drawn by stretching the specified quadrilateral area from another image.</summary>
 	public static Image<Rgba32> PerspectiveUndistort(Image<Rgba32> originalImage, Quadrilateral quadrilateral, InterpolationMode interpolationMode)
 		=> PerspectiveUndistort(originalImage, quadrilateral, interpolationMode, new(StandardResolution, StandardResolution));
+
 	/// <summary>Returns an image drawn by stretching the specified quadrilateral area from another image.</summary>
 	public static Image<Rgba32> PerspectiveUndistort(Image<Rgba32> originalImage, Quadrilateral quadrilateral, InterpolationMode interpolationMode, Size resolution) {
 		var bitmap = new Image<Rgba32>(resolution.Width, resolution.Height);
@@ -52,6 +54,7 @@ public static class ImageUtils {
 
 	public static bool IsModuleBack(Rgba32 color, LightsState lightsState)
 		=> Math.Abs(color.R - 136) + Math.Abs(color.G - 138) + Math.Abs(color.B - 150) <= 90;
+
 	public static bool IsModuleBack(HsvColor hsv, LightsState lightsState)
 		=> hsv.H is >= 180 and < 255 && hsv.S is >= 0.025f and < 0.25f && hsv.V is >= 0.45f and < 0.75f;
 
@@ -95,15 +98,19 @@ public static class ImageUtils {
 								if (bounds.Contains(point3) && predicate(image[point3.X, point3.Y]))
 									pixelCount++;
 							}
+
 							if (pixelCount >= continuitySize)
 								found = true;
 						} else
 							found = true;
+
 						if (found)
 							break;
 					}
+
 					point += dir;
 				}
+
 				if (found) {
 					var point2 = diagonalPoint2;
 					for (var j = 0; j <= i; j++) {
@@ -115,21 +122,27 @@ public static class ImageUtils {
 									if (bounds.Contains(point3) && predicate(image[point3.X, point3.Y]))
 										pixelCount++;
 								}
+
 								if (pixelCount >= continuitySize)
 									break;
 							} else
 								break;
 						}
+
 						point2 -= dir;
 					}
+
 					quadrilateral[n] = new((point.X + point2.X) / 2, (point.Y + point2.Y) / 2);
 					break;
 				}
+
 				diagonalPoint1 += increment;
 				diagonalPoint2 += increment + dir;
 			}
+
 			if (!found) return false;
 		}
+
 		return true;
 	}
 
@@ -144,6 +157,7 @@ public static class ImageUtils {
 		result = result2;
 		return success;
 	}
+
 	/// <summary>Finds a rectangle within the specified rectangle bounding pixels matching the specified predicate.</summary>
 	public static bool TryFindEdges<TPixel>(PixelAccessor<TPixel> accessor, Rectangle rectangle, Predicate<TPixel> predicate, out Rectangle result) where TPixel : unmanaged, IPixel<TPixel> {
 		if (rectangle.Height <= 0 || rectangle.Width <= 0) {
@@ -161,6 +175,7 @@ public static class ImageUtils {
 						break;
 					}
 				}
+
 				if (found) break;
 				if (edge == 0) rectangle.Y++;
 				rectangle.Height--;
@@ -170,6 +185,7 @@ public static class ImageUtils {
 				}
 			}
 		}
+
 		for (var edge = 0; edge < 2; edge++) {
 			while (true) {
 				var x = edge == 0 ? rectangle.Left : rectangle.Right - 1;
@@ -180,17 +196,21 @@ public static class ImageUtils {
 						break;
 					}
 				}
+
 				if (found) break;
 				if (edge == 0) rectangle.X++;
 				rectangle.Width--;
 			}
 		}
+
 		result = rectangle;
 		return true;
 	}
+
 	/// <summary>Finds a rectangle within the specified rectangle bounding pixels matching the specified predicate.</summary>
 	public static Rectangle FindEdges<TPixel>(Image<TPixel> image, Rectangle rectangle, Predicate<TPixel> predicate) where TPixel : unmanaged, IPixel<TPixel>
 		=> TryFindEdges(image, rectangle, predicate, out var result) ? result : throw new ArgumentException("No area matching the specified condition was found.");
+
 	/// <summary>Finds a rectangle within the specified rectangle bounding pixels matching the specified predicate.</summary>
 	public static Rectangle FindEdges<TPixel>(PixelAccessor<TPixel> accessor, Rectangle rectangle, Predicate<TPixel> predicate) where TPixel : unmanaged, IPixel<TPixel>
 		=> TryFindEdges(accessor, rectangle, predicate, out var result) ? result : throw new ArgumentException("No area matching the specified condition was found.");
@@ -216,6 +236,7 @@ public static class ImageUtils {
 
 	/// <summary>Corrects the colours of an image with the specified lights state to approximate <see cref="LightsState.On"/> colours.</summary>
 	public static void ColourCorrect(this Image<Rgba32> image, LightsState lightsState) => ColourCorrect(image, lightsState, image.Bounds);
+
 	/// <summary>Corrects the colours of the specified area of an image with the specified lights state to approximate <see cref="LightsState.On"/> colours.</summary>
 	public static void ColourCorrect(this Image<Rgba32> image, LightsState lightsState, Rectangle rectangle) {
 		if (lightsState == LightsState.On) return;
@@ -248,15 +269,22 @@ public static class ImageUtils {
 	// The gradient (m) and intercept (c) are multiplied by 65536 because fixed-point math is faster than floating-point math.
 	// The intercept is also offset by +32768 for rounding.
 	public static Rgba32 ColourCorrect(Rgba32 pixel, LightsState lightsState) => lightsState switch {
-		LightsState.Buzz      => new((byte) Math.Clamp(( 319305 * pixel.R +  429087) >> 16, 0, 255), (byte) Math.Clamp(( 315405 * pixel.G +  664756) >> 16, 0, 255), (byte) Math.Clamp(( 316774 * pixel.B +  663781) >> 16, 0, 255), pixel.A),
-		LightsState.Off       => new((byte) Math.Clamp((2127280 * pixel.R +  497929) >> 16, 0, 255), (byte) Math.Clamp((1964778 * pixel.G +  715096) >> 16, 0, 255), (byte) Math.Clamp((1570129 * pixel.B +  740225) >> 16, 0, 255), pixel.A),
-		LightsState.Emergency => new((byte) Math.Clamp((  53982 * pixel.R -  299830) >> 16, 0, 255), (byte) Math.Clamp((  84761 * pixel.G +  256655) >> 16, 0, 255), (byte) Math.Clamp((  85066 * pixel.B +  250049) >> 16, 0, 255), pixel.A),
+		LightsState.Buzz => new((byte) Math.Clamp((319305 * pixel.R + 429087) >> 16, 0, 255), (byte) Math.Clamp((315405 * pixel.G + 664756) >> 16, 0, 255),
+			(byte) Math.Clamp((316774 * pixel.B + 663781) >> 16, 0, 255), pixel.A),
+		LightsState.Off => new((byte) Math.Clamp((2127280 * pixel.R + 497929) >> 16, 0, 255), (byte) Math.Clamp((1964778 * pixel.G + 715096) >> 16, 0, 255),
+			(byte) Math.Clamp((1570129 * pixel.B + 740225) >> 16, 0, 255), pixel.A),
+		LightsState.Emergency => new((byte) Math.Clamp((53982 * pixel.R - 299830) >> 16, 0, 255), (byte) Math.Clamp((84761 * pixel.G + 256655) >> 16, 0, 255),
+			(byte) Math.Clamp((85066 * pixel.B + 250049) >> 16, 0, 255), pixel.A),
 		_ => pixel
 	};
+
 	public static Rgba32 ColourUncorrect(Rgba32 pixel, LightsState lightsState) => lightsState switch {
-		LightsState.Buzz      => new((byte) Math.Clamp((  13118 * pixel.R -    2642) >> 16, 0, 255), (byte) Math.Clamp((  13099 * pixel.G -   26052) >> 16, 0, 255), (byte) Math.Clamp((  12964 * pixel.B -   15923) >> 16, 0, 255), pixel.A),
-		LightsState.Off       => new((byte) Math.Clamp((   1879 * pixel.R +   37662) >> 16, 0, 255), (byte) Math.Clamp((   1946 * pixel.G +   43646) >> 16, 0, 255), (byte) Math.Clamp((   2449 * pixel.B +   42723) >> 16, 0, 255), pixel.A),
-		LightsState.Emergency => new((byte) Math.Clamp((  78034 * pixel.R +  647314) >> 16, 0, 255), (byte) Math.Clamp((  50172 * pixel.G -   70498) >> 16, 0, 255), (byte) Math.Clamp((  49926 * pixel.B -   57006) >> 16, 0, 255), pixel.A),
+		LightsState.Buzz => new((byte) Math.Clamp((13118 * pixel.R - 2642) >> 16, 0, 255), (byte) Math.Clamp((13099 * pixel.G - 26052) >> 16, 0, 255),
+			(byte) Math.Clamp((12964 * pixel.B - 15923) >> 16, 0, 255), pixel.A),
+		LightsState.Off => new((byte) Math.Clamp((1879 * pixel.R + 37662) >> 16, 0, 255), (byte) Math.Clamp((1946 * pixel.G + 43646) >> 16, 0, 255),
+			(byte) Math.Clamp((2449 * pixel.B + 42723) >> 16, 0, 255), pixel.A),
+		LightsState.Emergency => new((byte) Math.Clamp((78034 * pixel.R + 647314) >> 16, 0, 255), (byte) Math.Clamp((50172 * pixel.G - 70498) >> 16, 0, 255),
+			(byte) Math.Clamp((49926 * pixel.B - 57006) >> 16, 0, 255), pixel.A),
 		_ => pixel
 	};
 
@@ -277,10 +305,12 @@ public static class ImageUtils {
 					if (increment > maxIncrement) maxIncrement = increment;
 					if (totalIncrement > maxTotalIncrement) maxTotalIncrement = totalIncrement;
 				}
+
 				score += maxIncrement;
 				total += maxTotalIncrement;
 			}
 		}
+
 		return (float) score / total;
 	}
 
@@ -297,6 +327,7 @@ public static class ImageUtils {
 
 	private static readonly Rectangle[] LightsStateSearchRects = [new(96, 48, 16, 16), new(960, 48, 16, 16), new(1748, 236, 16, 16)];
 	private static readonly int[] LightsStateSearchTolerances = [0x20000, 0x20000, 0x8000, 0x30000];
+
 	private static readonly Rgb48[,] LightsStateSearchColours = new Rgb48[,] {
 		{
 			new(0x1c08, 0x19e9, 0x17a3),
@@ -316,6 +347,7 @@ public static class ImageUtils {
 			new(0x6122, 0x20bf, 0x1df0),
 		}
 	};
+
 	public static LightsState GetLightsState(Image<Rgba32> image) {
 		var result = LightsState.On;
 		image.ProcessPixelRows(a => {
@@ -373,11 +405,12 @@ public static class ImageUtils {
 						}
 					}
 				}
+
 				x++;
 			}
 		}
 	}
-	
+
 	public static IEnumerable<Rectangle> GetCenturionSideWidgetBounds(Image<Rgba32> image, Rectangle baseRectangle) {
 		for (var line = 0; line < 2; line++) {
 			var lineX = baseRectangle.Left + baseRectangle.Width * (1 + line * 2) / 4;
@@ -408,6 +441,7 @@ public static class ImageUtils {
 						}
 					}
 				}
+
 				y++;
 			}
 		}
@@ -421,13 +455,28 @@ public static class ImageUtils {
 		image.ProcessPixelRows(p => {
 			var row = p.GetRowSpan(p.Height * 840 / 1080);
 			for (var x = p.Width / 2 - 200; x < p.Width / 2 + 200; x++) {
-				if (row[x] is { R: 7 or 8, G: 7 or 8, B: 7 or 8 }  // Lights off
-					|| HsvColor.FromColor(row[x]) is { H: >= 15 and <= 30, S: >= 0.25f and < 0.5f })  // Lights on
+				if (row[x] is { R: 7 or 8, G: 7 or 8, B: 7 or 8 } // Lights off
+					|| HsvColor.FromColor(row[x]) is { H: >= 15 and <= 30, S: >= 0.25f and < 0.5f }) // Lights on
 					continue;
 				result = true;
 				return;
 			}
 		});
 		return result;
+	}
+
+	public static Rectangle Map(this Image image, int x, int y, int width, int height, int originalSize = StandardResolution)
+		=> new(x * image.Width / originalSize, y * image.Height / originalSize, width * image.Width / originalSize, height * image.Height / originalSize);
+	public static Rectangle Map(this Image image, Rectangle rectangle, int originalSize = StandardResolution)
+		=> new(rectangle.X * image.Width / originalSize, rectangle.Y * image.Height / originalSize, rectangle.Width * image.Width / originalSize, rectangle.Height * image.Height / originalSize);
+	public static Rectangle Map(this PixelAccessor<Rgba32> pixelAccessor, int x, int y, int width, int height, int originalSize = StandardResolution)
+		=> new(x * pixelAccessor.Width / originalSize, y * pixelAccessor.Height / originalSize, width * pixelAccessor.Width / originalSize, height * pixelAccessor.Height / originalSize);
+	public static Rectangle Map(this PixelAccessor<Rgba32> pixelAccessor, Rectangle rectangle, int originalSize = StandardResolution)
+		=> new(rectangle.X * pixelAccessor.Width / originalSize, rectangle.Y * pixelAccessor.Height / originalSize, rectangle.Width * pixelAccessor.Width / originalSize, rectangle.Height * pixelAccessor.Height / originalSize);
+	public static IEnumerable<int> MapRange(this int newLength, int start, int end, int step = 1, int originalSize = StandardResolution) {
+		var start2 = start * newLength / originalSize;
+		var end2 = end * newLength / originalSize;
+		for (var v = start2; v < end2; v += step)
+			yield return v;
 	}
 }

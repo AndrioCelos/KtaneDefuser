@@ -61,7 +61,7 @@ public static class CenturionUtil {
 			0 => dx switch {
 				-4 => new(new(167, 370), new(469, 370), new(155, 676), new(460, 676)),
 				-2 => new(new(503, 370), new(811, 370), new(499, 675), new(807, 675)),
-				0 => new(new(845, 370), new(1147, 370), new(845, 675), new(1151, 675)),
+				0 => new(new(844, 370), new(1149, 370), new(844, 675), new(1149, 675)),
 				2 => new(new(1189, 370), new(1492, 370), new(1190, 675), new(1498, 675)),
 				4 => new(new(1532, 370), new(1827, 370), new(1536, 675), new(1831, 675)),
 				_ => throw new ArgumentOutOfRangeException(nameof(slot))

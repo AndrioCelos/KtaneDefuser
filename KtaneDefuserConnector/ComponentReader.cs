@@ -6,6 +6,7 @@ using SixLabors.ImageSharp.Processing;
 
 namespace KtaneDefuserConnector;
 /// <summary>Handles identification and reading of components from images.</summary>
+[UsedImplicitly(ImplicitUseKindFlags.InstantiatedWithFixedConstructorSignature, ImplicitUseTargetFlags.Itself | ImplicitUseTargetFlags.WithInheritors)]
 public abstract class ComponentReader {
 	/// <summary>When overridden, returns the name of the component handled by this class.</summary>
 	public abstract string Name { get; }
@@ -27,10 +28,9 @@ public abstract class ComponentReader {
 		return count;
 	}
 
-	/// <summary>Returns the number displayed on the module's needy timer, or null if it is blank.</summary>
-	[MustUseReturnValue]
-	protected static int? ReadNeedyTimer(Image<Rgba32> image, LightsState lightsState, Image<Rgba32>? debugImage) {
-		var bezelCorners = ImageUtils.FindCorners(image, new(80, 16, 96, 64), c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is var hsv && hsv.H >= (lightsState == LightsState.Emergency ? 15 : 45) && hsv is { H: <= 150, S: <= 0.25f, V: >= 0.3f and <= 0.9f }, 4);
+	[MustDisposeResource]
+	protected static Image<Rgba32> GetNeedyDisplayImage(Image<Rgba32> image, LightsState lightsState, Image<Rgba32>? debugImage) {
+		var bezelCorners = ImageUtils.FindCorners(image, image.Map(72, 16, 120, 64), c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is var hsv && hsv.H >= (lightsState == LightsState.Emergency ? 15 : 45) && hsv is { H: <= 150, S: <= 0.25f, V: >= 0.3f and <= 0.9f }, 4);
 		debugImage?.DebugDrawPoints(bezelCorners);
 		var left = Math.Min(bezelCorners.TopLeft.X, bezelCorners.BottomLeft.X);
 		var top = Math.Min(bezelCorners.TopLeft.Y, bezelCorners.TopRight.Y);
@@ -38,11 +38,18 @@ public abstract class ComponentReader {
 		var bottom = Math.Max(bezelCorners.BottomLeft.Y, bezelCorners.BottomRight.Y);
 		var bezelRectangle = new Rectangle(left, top, right - left, bottom - top);
 		bezelRectangle.Inflate(-4, -4);
-		var displayCorners = ImageUtils.FindCorners(image, bezelRectangle, c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is { H: >= 345 or <= 15, S: >= 0.75f } or { V: <= 0.10f}, 4);
+		var displayCorners = ImageUtils.FindCorners(image, bezelRectangle, c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is { H: >= 345 or <= 15, S: >= 0.75f } or { V: <= 0.10f }, 4);
 		debugImage?.DebugDrawPoints(displayCorners);
 
 		var displayImage = ImageUtils.PerspectiveUndistort(image, displayCorners, InterpolationMode.NearestNeighbour, new(128, 64));
-		debugImage?.Mutate(p => p.DrawImage(displayImage, 0));
+		debugImage?.Mutate(p => p.DrawImage(displayImage, 1));
+		return displayImage;
+	}
+
+	/// <summary>Returns the number displayed on the module's needy timer, or null if it is blank.</summary>
+	[MustUseReturnValue]
+	protected static int? ReadNeedyTimer(Image<Rgba32> image, LightsState lightsState, Image<Rgba32>? debugImage) {
+		using var displayImage = GetNeedyDisplayImage(image, lightsState, debugImage);
 
 		bool CheckRectangle(Image<Rgba32> image, Rectangle rectangle) {
 			for (var dy = 0; dy < rectangle.Height; dy++) {

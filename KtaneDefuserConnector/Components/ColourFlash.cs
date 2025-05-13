@@ -11,7 +11,7 @@ public class ColourFlash : ComponentReader<ColourFlash.ReadData> {
 		"RED", "YELLOW", "GREEN", "BLUE", "MAGENTA", "WHITE");
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		var displayRect = ImageUtils.FindEdges(image, new(32, 32, 144, 96), p => ImageUtils.ColourCorrect(p, lightsState) is { R: < 48, G: < 48, B: < 48 });
+		var displayRect = ImageUtils.FindEdges(image, image.Map(32, 32, 144, 96), p => ImageUtils.ColourCorrect(p, lightsState) is { R: < 48, G: < 48, B: < 48 });
 		debugImage?.Mutate(c => c.Draw(Color.Lime, 1, displayRect));
 		displayRect.Inflate(-6, -6);
 

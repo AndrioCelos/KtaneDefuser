@@ -20,6 +20,8 @@ using SixLabors.ImageSharp.Processing;
 namespace KtaneDefuserConnector;
 /// <summary>Integrates a bot with Keep Talking and Nobody Explodes.</summary>
 public class DefuserConnector : IDisposable {
+	private const int Resolution = 305;
+	
 	private static readonly Dictionary<Type, ComponentReader> ComponentReaders
 		= (from t in typeof(ComponentReader).Assembly.GetTypes() where !t.IsAbstract && typeof(ComponentReader).IsAssignableFrom(t) select t).ToDictionary(t => t, t => (ComponentReader) Activator.CreateInstance(t)!);
 	private static readonly Dictionary<string, ComponentReader> ComponentReadersByName;
@@ -303,7 +305,7 @@ public class DefuserConnector : IDisposable {
 			return simulation.GetComponentReader(quadrilateral);
 
 		// Extract an image of the component from the screenshot.
-		var bitmap = ImageUtils.PerspectiveUndistort(screenshotBitmap, quadrilateral, InterpolationMode.NearestNeighbour);
+		var bitmap = ImageUtils.PerspectiveUndistort(screenshotBitmap, quadrilateral, InterpolationMode.NearestNeighbour, new(224, 224));
 		
 		// Identify the component.
 		var name = ComponentIdentifier.Identify(bitmap);
@@ -340,7 +342,7 @@ public class DefuserConnector : IDisposable {
 		return pixelCounts switch {
 			{ Yellow: >= 1000 } => BatteryHolderReader,
 			{ Grey: >= 5000 } => PortPlateReader,
-			{ Red: >= 5000 } or { White: >= 5000 } => pixelCounts.Red >= pixelCounts.White * 2 ? IndicatorReader : SerialNumberReader,
+			{ Red: >= 10000 } or { Red: >= 5000, White: >= 5000 } => pixelCounts.Red >= pixelCounts.White * 2 ? IndicatorReader : SerialNumberReader,
 			_ => null
 		};
 	}
@@ -349,9 +351,9 @@ public class DefuserConnector : IDisposable {
 	public T ReadComponent<T>(Image<Rgba32> screenshot, LightsState lightsState, ComponentReader<T> reader, Quadrilateral quadrilateral) where T : notnull {
 		if (simulation is not null)
 			return simulation.ReadComponent<T>(quadrilateral);
-		var image = ImageUtils.PerspectiveUndistort(screenshot, quadrilateral, InterpolationMode.NearestNeighbour);
+		var image = ImageUtils.PerspectiveUndistort(screenshot, quadrilateral, InterpolationMode.NearestNeighbour, new(Resolution, Resolution));
 #if DEBUG
-		//Task.Run(() => SaveDebugImage(image, reader.Name));
+		Task.Run(() => SaveDebugImage(image, reader.Name));
 #endif
 		Image<Rgba32>? debugImage = null;
 		return reader.Process(image, lightsState, ref debugImage);
@@ -363,7 +365,7 @@ public class DefuserConnector : IDisposable {
 			return simulation.ReadWidget<T>(quadrilateral);
 		var image = ImageUtils.PerspectiveUndistort(screenshot, quadrilateral, InterpolationMode.NearestNeighbour);
 #if DEBUG
-		//Task.Run(() => SaveDebugImage(image, reader.Name));
+		Task.Run(() => SaveDebugImage(image, reader.Name));
 #endif
 		Image<Rgba32>? debugImage = null;
 		return reader.Process(image, lightsState, ref debugImage);
@@ -395,7 +397,7 @@ public class DefuserConnector : IDisposable {
 				: throw new ArgumentException($"No such command, module or widget is known: {readerName}");
 
 		var lightsState = ImageUtils.GetLightsState(screenshot);
-		var image = ImageUtils.PerspectiveUndistort(screenshot, quadrilateral, InterpolationMode.NearestNeighbour);
+		var image = ImageUtils.PerspectiveUndistort(screenshot, quadrilateral, InterpolationMode.NearestNeighbour, new(Resolution, Resolution));
 #if DEBUG
 		SaveDebugImage(image, readerName);
 #endif

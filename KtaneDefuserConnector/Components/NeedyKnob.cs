@@ -29,12 +29,11 @@ public class NeedyKnob : ComponentReader<NeedyKnob.ReadData> {
 
 		static bool IsRectangleLit(PixelAccessor<Rgba32> a, Rectangle rectangle) {
 			var count = 0;
+			rectangle = a.Map(rectangle);
 			for (var dy = 0; dy < rectangle.Height; dy++) {
 				var r = a.GetRowSpan(rectangle.Y + dy);
 				for (var dx = 0; dx < rectangle.Width; dx++) {
 					var p = r[rectangle.X + dx];
-					//var hsv = HsvColor.FromColor(p);
-					//if (hsv.H is >= 75 and <= 150 && hsv.S >= 0.5f && hsv.V >= 0.5f) {
 					if (p is not { R: >= 64, G: >= 176, B: >= 16 and < 96 }) continue;
 					count++;
 					if (count >= 16) return true;

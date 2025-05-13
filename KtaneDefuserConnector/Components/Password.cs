@@ -94,7 +94,7 @@ public class Password : ComponentReader<Password.ReadData> {
 			return new(left, top, right - left, bottom - top);
 		}
 
-		var displayCorners = ImageUtils.FindCorners(image, new(16, 64, 224, 128), c => HsvColor.FromColor(c) is { H: >= 75 and < 120, S: >= 0.8f, V: >= 0.5f }, 12);
+		var displayCorners = ImageUtils.FindCorners(image, image.Map(16, 64, 224, 128), c => HsvColor.FromColor(c) is { H: >= 75 and < 120, S: >= 0.8f, V: >= 0.5f }, 12);
 		using var displayImage = ImageUtils.PerspectiveUndistort(image, displayCorners, InterpolationMode.NearestNeighbour, new(256, 110));
 		if (debugImage is not null) {
 			debugImage.Mutate(c => c.DrawImage(displayImage, 1));

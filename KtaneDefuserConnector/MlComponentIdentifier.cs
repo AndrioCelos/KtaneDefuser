@@ -28,19 +28,34 @@ public class MlComponentIdentifier : IDisposable {
 	public string? Identify(Image<Rgba32> image) {
 		// Transform the image into the format expected by the model (224 × 224 × 3 floats).
 		var pixelData = new float[ImageHeight * ImageWidth * 3];
-		image.ProcessPixelRows(p => {
-			var i = 0;
-			for (var y = 0; y < ImageHeight; y++) {
-				var row = p.GetRowSpan(y + (y + 3) / 7);
-				for (var x = 0; x < ImageWidth; x++) {
-					var pixel = row[x + (x + 3) / 7];
-					pixelData[i++] = pixel.R - Mean;
-					pixelData[i++] = pixel.G - Mean;
-					pixelData[i++] = pixel.B - Mean;
+		if (image.Height != ImageHeight) {
+			image.ProcessPixelRows(p => {
+				var i = 0;
+				for (var y = 0; y < ImageHeight; y++) {
+					var row = p.GetRowSpan(y + (y + 3) / 7);
+					for (var x = 0; x < ImageWidth; x++) {
+						var pixel = row[x + (x + 3) / 7];
+						pixelData[i++] = pixel.R - Mean;
+						pixelData[i++] = pixel.G - Mean;
+						pixelData[i++] = pixel.B - Mean;
+					}
 				}
-			}
-		});
-		
+			});
+		} else {
+			image.ProcessPixelRows(p => {
+				var i = 0;
+				for (var y = 0; y < ImageHeight; y++) {
+					var row = p.GetRowSpan(y);
+					for (var x = 0; x < ImageWidth; x++) {
+						var pixel = row[x];
+						pixelData[i++] = pixel.R - Mean;
+						pixelData[i++] = pixel.G - Mean;
+						pixelData[i++] = pixel.B - Mean;
+					}
+				}
+			});
+		}
+
 		// Run the model.
 		var prediction = predictor.Predict(new(pixelData, null));
 		return prediction.PredictedLabelValue == NullLabel ? null : prediction.PredictedLabelValue;

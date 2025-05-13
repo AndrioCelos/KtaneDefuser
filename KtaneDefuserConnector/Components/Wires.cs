@@ -14,11 +14,11 @@ public class Wires : ComponentReader<Wires.ReadData> {
 		var seenFirstValidPixel = false;
 		var added = false;
 		var colours = new List<Colour>();
-		for (var y = 32; y < 232; y++) {
-			var pixel = image[128, y];
+		foreach (var y in image.Height.MapRange(24, 232)) {
+			var pixel = image[image.Width / 2, y];
 			if (lightsState == LightsState.Emergency || pixel.R < 160) pixel = ImageUtils.ColourCorrect(pixel, lightsState);
 			if (debugImage is not null)
-				debugImage[128, y] = pixel;
+				debugImage[image.Width / 2, y] = pixel;
 			var hsv = HsvColor.FromColor(pixel);
 			var colour = GetColour(hsv);
 			if (colour is null) {

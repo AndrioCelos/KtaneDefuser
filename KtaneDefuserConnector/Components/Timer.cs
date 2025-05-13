@@ -13,10 +13,10 @@ public class Timer : ComponentReader<Timer.ReadData> {
 
 	[SuppressMessage("ReSharper", "AccessToDisposedClosure")]
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		var timerCorners = ImageUtils.FindCorners(image, new(16, 96, 224, 144), IsTimerBackground, 0);
+		var timerCorners = ImageUtils.FindCorners(image, image.Map(16, 96, 224, 144), IsTimerBackground, 0);
 		using var timerBitmap = ImageUtils.PerspectiveUndistort(image, timerCorners, InterpolationMode.NearestNeighbour, new(256, 128));
 
-		using var strikesBitmap = ImageUtils.TryFindCorners(image, new(88, 16, 96, 64), IsTimerBackground, 0, out var strikesCorners)
+		using var strikesBitmap = ImageUtils.TryFindCorners(image, image.Map(88, 16, 96, 64), IsTimerBackground, 0, out var strikesCorners)
 			? ImageUtils.PerspectiveUndistort(image, strikesCorners, InterpolationMode.NearestNeighbour, new(128, 64))
 			: null;
 

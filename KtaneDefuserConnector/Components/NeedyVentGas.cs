@@ -16,9 +16,9 @@ public class NeedyVentGas : ComponentReader<NeedyVentGas.ReadData> {
 
 		int top = 0, bottom = 0;
 		image.ProcessPixelRows(a => {
-			for (top = 64; top < 128; top++) {
+			for (top = image.Height / 4; top < image.Height / 2; top++) {
 				var r = a.GetRowSpan(top);
-				for (var x = 112; x < 144; x++) {
+				foreach (var x in image.Width.MapRange(112, 144)) {
 					if (HsvColor.FromColor(r[x]) is { H: >= 90 and <= 135, S: >= 0.75f, V: >= 0.5f })
 						return;
 				}
@@ -26,13 +26,13 @@ public class NeedyVentGas : ComponentReader<NeedyVentGas.ReadData> {
 		});
 		top--;  // For the height of the '?'.
 
-		if (top >= 128) return new(null, null);
+		if (top >= image.Height / 2) return new(null, null);
 
 		image.ProcessPixelRows(a => {
-			for (bottom = top + 8; bottom < 144; bottom++) {
+			for (bottom = top + 8; bottom < 144 * image.Height / 256; bottom++) {
 				var r = a.GetRowSpan(bottom);
 				var found = false;
-				for (var x = 112; x < 144; x++) {
+				foreach (var x in image.Width.MapRange(112, 144)) {
 					if (HsvColor.FromColor(r[x]) is not { H: >= 90 and <= 135, S: >= 0.75f, V: >= 0.5f }) continue;
 					found = true;
 					break;
@@ -42,7 +42,7 @@ public class NeedyVentGas : ComponentReader<NeedyVentGas.ReadData> {
 		});
 		bottom--;
 
-		var textRect = ImageUtils.FindEdges(image, new(64, top, 128, bottom - top), c => HsvColor.FromColor(c) is { H: >= 90 and <= 135, V: >= 0.5f });
+		var textRect = ImageUtils.FindEdges(image, new(image.Height / 4, top, image.Height / 2, bottom - top), c => HsvColor.FromColor(c) is { H: >= 90 and <= 135, V: >= 0.5f });
 		debugImage?.Mutate(c => c.Draw(Color.Cyan, 1, textRect));
 		return new(time, DisplayRecogniser.Recognise(image, textRect));
 	}

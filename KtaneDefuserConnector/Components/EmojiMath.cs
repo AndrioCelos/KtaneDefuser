@@ -13,23 +13,23 @@ public class EmojiMath : ComponentReader<EmojiMath.ReadData> {
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		// Find the expression display bounding box.
-		var baseRect = new Rectangle(8, 8, 88, 64);
-		var rect = ImageUtils.FindEdges(image, baseRect, p => p is { R: >= 192, G: < 16, B: < 16 });
+		var baseRect = image.Map(20, 20, 160, 72);
+		var rect = ImageUtils.FindEdges(image, baseRect, p => p is { R: >= 160, G: < 16, B: < 16 });
 
 		// Find the character bounding boxes.
 		var builder = new StringBuilder();
 		for (var x = rect.Left; x < rect.Right; x++) {
-			if (!Enumerable.Range(rect.Top, rect.Height).Any(y => image[x, y] is { R: >= 192, G: < 16, B: < 16 })) continue;
+			if (!Enumerable.Range(rect.Top, rect.Height).Any(y => image[x, y] is { R: >= 160, G: < 16, B: < 16 })) continue;
 
 			var x1 = x;
 			for (x++; x < rect.Right; x++) {
-				if (!Enumerable.Range(rect.Top, rect.Height).Any(y => image[x, y] is { R: >= 192, G: < 16, B: < 16 })) break;
+				if (!Enumerable.Range(rect.Top, rect.Height).Any(y => image[x, y] is { R: >= 160, G: < 16, B: < 16 })) break;
 			}
 
 			int y1 = rect.Top, y2 = rect.Bottom;
-			while (y1 < y2 && !Enumerable.Range(x1, x - x1).Any(x => image[x, y1] is { R: >= 192, G: < 16, B: < 16 }))
+			while (y1 < y2 && !Enumerable.Range(x1, x - x1).Any(x => image[x, y1] is { R: >= 160, G: < 16, B: < 16 }))
 				y1++;
-			while (y1 < y2 && !Enumerable.Range(x1, x - x1).Any(x => image[x, y2 - 1] is { R: >= 192, G: < 16, B: < 16 }))
+			while (y1 < y2 && !Enumerable.Range(x1, x - x1).Any(x => image[x, y2 - 1] is { R: >= 160, G: < 16, B: < 16 }))
 				y2--;
 
 			var charRect = new Rectangle(x1, y1, x - x1, y2 - y1);
@@ -40,10 +40,10 @@ public class EmojiMath : ComponentReader<EmojiMath.ReadData> {
 		// Find the selection.
 		Point point = default;
 		image.ProcessPixelRows(p => {
-			for (var y = 80; y < 192; y += 8) {
+			foreach (var y in image.Height.MapRange(80, 192, 8)) {
 				var row = p.GetRowSpan(y);
-				for (var x = 32; x < 192; x += 2) {
-					if (HsvColor.FromColor(row[x]) is { H: < 30, S: >= 0.75f, V: >= 0.5f }) {
+				foreach (var x in image.Width.MapRange(32, 192, 2)) {
+					if (HsvColor.FromColor(row[x]) is { H: < 30, S: >= 0.65f, V: >= 0.5f }) {
 						point = new(x, y);
 						return;
 					}
@@ -51,7 +51,7 @@ public class EmojiMath : ComponentReader<EmojiMath.ReadData> {
 			}
 		});
 
-		return new(builder.ToString(), point.Y == 0 ? null : new(point.X switch { < 66 => 0, < 108 => 1, < 150 => 2, _ => 3 }, point.Y switch { < 128 => 0, < 168 => 1, _ => 2 }));
+		return new(builder.ToString(), point.Y == 0 ? null : new((point.X * 256 / image.Width) switch { < 66 => 0, < 108 => 1, < 150 => 2, _ => 3 }, (point.Y * 256 / image.Height) switch { < 128 => 0, < 168 => 1, _ => 2 }));
 	}
 
 	public record ReadData(string Display, Point? Selection);

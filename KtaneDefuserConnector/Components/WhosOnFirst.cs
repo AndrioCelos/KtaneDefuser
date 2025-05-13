@@ -17,7 +17,7 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 
 	[SuppressMessage("ReSharper", "AccessToModifiedClosure")]
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		var displayBorderRect = ImageUtils.FindEdges(image, new(28, 22, 140, 50), c => c is { R: < 44, G: < 44, B: < 44 });
+		var displayBorderRect = ImageUtils.FindEdges(image, image.Map(28, 22, 140, 50), c => c is { R: < 44, G: < 44, B: < 44 });
 		displayBorderRect.Inflate(-4, -4);
 
 		string displayText;
@@ -31,17 +31,17 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 
 		var keyLabels = new string[6];
 		for (var i = 0; i < 6; i++) {
-			var keyRect = i switch {
+			var keyRect = image.Map(i switch {
 				0 => new(24, 90, 74, 44),
 				1 => new(104, 90, 74, 44),
 				2 => new(24, 134, 74, 44),
 				3 => new(104, 134, 74, 44),
 				4 => new(24, 178, 74, 44),
 				_ => new Rectangle(104, 178, 74, 44)
-			};
+			});
 			debugImage?.ColourCorrect(lightsState, keyRect);
 			keyRect = ImageUtils.FindEdges(image, keyRect, IsKeyBackground);
-			textRect = Rectangle.Inflate(keyRect, -3, -5);
+			textRect = Rectangle.Inflate(keyRect, -4 * image.Width / 256, -6 * image.Height / 256);
 			textRect = ImageUtils.FindEdges(image, textRect, c => ImageUtils.ColourCorrect(c, lightsState).R < 128);
 			debugImage?.Mutate(c => c.Draw(Color.Yellow, 1, keyRect).Draw(Color.Green, 1, textRect));
 			image.ColourCorrect(lightsState, textRect);

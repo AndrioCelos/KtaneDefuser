@@ -16,10 +16,11 @@ public class ComplicatedWires : ComponentReader<ComplicatedWires.ReadData> {
 		WireFlags? currentFlags = null;
 		var inWire = 0;
 		var highlight = -1;
+		var highlightPixels = 0;
 		var wires = new List<WireFlags>();
-		for (var x = 20; x < 220; x++) {
+		foreach (var x in image.Width.MapRange(20, 220)) {
 			var anyColours = false;
-			for (var y = 160; y < 176; y++) {
+			foreach (var y in image.Height.MapRange(160, 176)) {
 				var pixel = image[x, y];
 				var hsv = HsvColor.FromColor(ImageUtils.ColourCorrect(pixel, lightsState));
 				var colour = GetColour(hsv);
@@ -28,21 +29,25 @@ public class ComplicatedWires : ComponentReader<ComplicatedWires.ReadData> {
 				anyColours = true;
 				if (debugImage is not null) debugImage[x, y] = colour switch { Colour.White => Color.White, Colour.Red => Color.Red, Colour.Blue => Color.Blue, Colour.Highlight => Color.Orange, _ => default };
 				if (colour == Colour.Highlight) {
-					if (highlight < 0 && !currentFlags.HasValue)
+					if (highlight >= 0 || currentFlags.HasValue) continue;
+					highlightPixels++;
+					if (highlightPixels >= 4)
 						highlight = wires.Count;
 				} else {
+					highlightPixels = 0;
 					if (!currentFlags.HasValue) {
 						currentFlags = 0;
 
-						var slotNumber = x switch { < 53 => 0, < 86 => 1, < 118 => 2, < 154 => 3, < 180 => 4, _ => 5 };
-						var x2 = slotNumber switch { 0 => 35, 1 => 61, 2 => 88, 3 => 118, 4 => 145, _ => 171 };
-						if (HsvColor.FromColor(image[x2, 34]).V >= 0.9f) {
+						var slotNumber = (x * 256 / image.Width) switch { < 53 => 0, < 86 => 1, < 118 => 2, < 154 => 3, < 180 => 4, _ => 5 };
+						var x2 = slotNumber switch { 0 => 35, 1 => 61, 2 => 88, 3 => 118, 4 => 145, _ => 171 } * image.Width / 256;
+						var y2 = 34 * image.Height / 256;
+						if (HsvColor.FromColor(image[x2, y2]).V >= 0.9f) {
 							currentFlags |= WireFlags.Light;
-							if (debugImage is not null) debugImage[x2, 34] = Color.Yellow;
+							if (debugImage is not null) debugImage[x2, y2] = Color.Yellow;
 						} else
-						if (debugImage is not null) debugImage[x2, 34] = Color.Blue;
+						if (debugImage is not null) debugImage[x2, y2] = Color.Blue;
 
-						var stickerRect = new Rectangle(slotNumber switch { 0 => 29, 1 => 63, 2 => 95, 3 => 131, 4 => 165, _ => 198 }, 208, 16, 10);
+						var stickerRect = image.Map(slotNumber switch { 0 => 29, 1 => 63, 2 => 95, 3 => 131, 4 => 165, _ => 198 }, 208, 16, 10);
 						debugImage?.Mutate(c => c.Draw(Color.Lime, 1, stickerRect));
 						image.ProcessPixelRows(a => {
 							for (var y = stickerRect.Top; y < stickerRect.Bottom; y++) {

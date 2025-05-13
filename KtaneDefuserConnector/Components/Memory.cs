@@ -15,14 +15,14 @@ public class Memory : ComponentReader<Memory.ReadData> {
 		"1", "2", "3", "4");
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		var displayBorderRect = ImageUtils.FindEdges(image, new(50, 40, 108, 80), c => c is { R: < 44, G: < 44, B: < 44 });
+		var displayBorderRect = ImageUtils.FindEdges(image, image.Map(50, 40, 108, 80), c => c is { R: < 44, G: < 44, B: < 44 });
 		displayBorderRect.Inflate(-4, -4);
 		var textRect = ImageUtils.FindEdges(image, displayBorderRect, c => c.G >= 192);
 
 		debugImage?.Mutate(c => c.Draw(Color.Red, 1, displayBorderRect).Draw(Color.Lime, 1, textRect));
 		var displayText = DisplayRecogniser.Recognise(image, textRect);
 
-		var keypadRect = ImageUtils.FindEdges(image, new(20, 148, 164, 72), c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is { H: >= 30 and <= 45, S: >= 0.2f and <= 0.4f });
+		var keypadRect = ImageUtils.FindEdges(image, image.Map(20, 148, 164, 72), c => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is { H: >= 30 and <= 45, S: >= 0.2f and <= 0.4f });
 		image.ColourCorrect(lightsState, keypadRect);
 		debugImage?.ColourCorrect(lightsState, keypadRect);
 		debugImage?.Mutate(c => c.Draw(Color.Yellow, 1, keypadRect));

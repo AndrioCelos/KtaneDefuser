@@ -15,7 +15,7 @@ public class NeedyMath : ComponentReader<NeedyMath.ReadData> {
 		var time = ReadNeedyTimer(image, lightsState, debugImage);
 
 		// Find the expression display bounding box.
-		var baseRect = new Rectangle(8, 8, 88, 64);
+		var baseRect = image.Map(8, 8, 88, 64);
 		var rect = ImageUtils.FindEdges(image, baseRect, p => p is { R: >= 192, G: < 16, B: < 16 });
 
 		// Find the character bounding boxes.
@@ -42,9 +42,9 @@ public class NeedyMath : ComponentReader<NeedyMath.ReadData> {
 		// Find the selection.
 		Point point = default;
 		image.ProcessPixelRows(p => {
-			for (var y = 80; y < 192; y += 8) {
+			foreach (var y in image.Height.MapRange(80, 192, 8)) {
 				var row = p.GetRowSpan(y);
-				for (var x = 32; x < 192; x += 2) {
+				foreach (var x in image.Width.MapRange(32, 192, 2)) {
 					if (HsvColor.FromColor(row[x]) is not { H: < 30, S: >= 0.75f, V: >= 0.5f }) continue;
 					point = new(x, y);
 					return;
@@ -52,7 +52,7 @@ public class NeedyMath : ComponentReader<NeedyMath.ReadData> {
 			}
 		});
 
-		return new(time, builder.ToString(), point.Y == 0 ? null : new(point.X switch { < 66 => 0, < 108 => 1, < 150 => 2, _ => 3 }, point.Y switch { < 128 => 0, < 168 => 1, _ => 2 }));
+		return new(time, builder.ToString(), point.Y == 0 ? null : new((point.X * 256 / image.Width) switch { < 66 => 0, < 108 => 1, < 150 => 2, _ => 3 }, (point.Y * 256 / image.Height) switch { < 128 => 0, < 168 => 1, _ => 2 }));
 	}
 
 	public record ReadData(int? Time, string Display, Point? Selection);

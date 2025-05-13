@@ -16,9 +16,9 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		debugImage?.ColourCorrect(lightsState);
 		var textRects = new[] {
-			new Rectangle(24, 60, 32, 48),
-			new Rectangle(24, 100, 32, 48),
-			new Rectangle(24, 140, 32, 48)
+			image.Map(24, 60, 32, 48),
+			image.Map(24, 100, 32, 48),
+			image.Map(24, 140, 32, 48)
 		};
 
 		for (var i = 0; i < 3; i++) {
@@ -58,7 +58,7 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 			}
 		}
 		static WireColour? GetWireColour(Image<Rgba32> image, Rectangle textRect, int x, bool isHighlighted, LightsState lightsState) {
-			for (; x < 76; x++) {
+			for (; x < 76 * image.Width / 256; x++) {
 				for (var y = textRect.Top; y < textRect.Bottom; y++) {
 					var hsv = HsvColor.FromColor(ImageUtils.ColourCorrect(image[x, y], lightsState));
 					if (hsv.V <= 0.05f)
@@ -68,13 +68,13 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 					// No explicit check for a red wire in the highlighted slot until we can find a way to not get a false positive from the selection highlight.
 					// We know there must be a wire in this slot to highlight, so assume the wire is red if we don't find a blue or black pixel.
 					if (isHighlighted || !IsSelectionHighlight(hsv)) continue;
-					if (y is >= 106 and < 144) {
+					if (y * 256 / image.Height is >= 106 and < 144) {
 						// An extra check to make sure this is a red wire and not a selection highlight crossing over the full search area from the top or bottom wire.
 						// Red pixels shouldn't extend upward or downward out of the search area.
 						// Also use a narrower search area for the middle slot.
-						if (x >= 72) continue;
+						if (x >= 72 * image.Width / 256) continue;
 						int y2;
-						if (y < 124) {
+						if (y < 124 * image.Height / 256) {
 							for (y2 = y; y2 >= textRect.Top; y2--) {
 								if (!IsSelectionHighlight(HsvColor.FromColor(image[x, y2]))) break;
 							}
@@ -94,16 +94,16 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 
 		// Find out whether either of the buttons is highlighted.
 		var highlightedButton = 0;
-		for (var y = 8; y < 32; y++) {
-			var pixel = image[106, y];
+		foreach (var y in image.Height.MapRange(8, 32)) {
+			var pixel = image[106 * image.Width / 256, y];
 			if (lightsState == LightsState.Emergency) pixel = ImageUtils.ColourCorrect(pixel, lightsState);
 			if (!IsSelectionHighlight(HsvColor.FromColor(pixel))) continue;
 			highlightedButton = -1;
 			break;
 		}
 		if (highlightedButton == 0) {
-			for (var y = 240; y >= 216; y--) {
-				var pixel = image[106, y];
+			foreach (var y in image.Height.MapRange(216, 240)) {
+				var pixel = image[106 * image.Width / 256, y];
 				if (lightsState == LightsState.Emergency) pixel = ImageUtils.ColourCorrect(pixel, lightsState);
 				if (!IsSelectionHighlight(HsvColor.FromColor(pixel))) continue;
 				highlightedButton = 1;
@@ -122,7 +122,7 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 				colours[i] = GetWireColour(image, textRects[i], x, true, lightsState) ?? WireColour.Red;
 
 				if (!isStrictMatch) continue;
-				for (x = 160; x >= 128; x--) {
+				for (x = 160 * image.Width / 256; x >= image.Width / 2; x--) {
 					for (var y = textRects[0].Top; y < textRects[2].Bottom; y++) {
 						var hsv = HsvColor.FromColor(image[x, y]);
 						if (!IsSelectionHighlightStrict(hsv, lightsState)) continue;

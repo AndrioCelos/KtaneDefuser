@@ -12,7 +12,7 @@ public class Button : ComponentReader<Button.ReadData> {
 	public override string Name => "The Button";
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		var hsv = HsvColor.FromColor(ImageUtils.ColourCorrect(image[103, 112], lightsState));
+		var hsv = HsvColor.FromColor(ImageUtils.ColourCorrect(image[103 * image.Width / 256, 112 * image.Height / 256], lightsState));
 		var colour = hsv switch {
 			{ H: >= 345 or <= 15, S: >= 0.5f } => Colour.Red,
 			{ H: >= 30 and <= 75, S: >= 0.7f } => Colour.Yellow,
@@ -22,7 +22,7 @@ public class Button : ComponentReader<Button.ReadData> {
 		};
 
 		// Check for the indicator.
-		hsv = HsvColor.FromColor(image[218, 164]);
+		hsv = HsvColor.FromColor(image[218 * image.Width / 256, 164 * image.Height / 256]);;
 		Colour? indicatorColour = hsv switch {
 			{ S: < 0.05f, V: >= 0.75f } => Colour.White,
 			{ S: >= 0.75f, V: >= 0.75f, H: >= 350 or <= 10 } => Colour.Red,
@@ -39,7 +39,7 @@ public class Button : ComponentReader<Button.ReadData> {
 			? p => HsvColor.FromColor(p) is { S: <= 0.25f, V: >= 0.75f }
 			: p => HsvColor.FromColor(ImageUtils.ColourCorrect(p, lightsState)).V <= 0.25f;
 
-		var textRect = ImageUtils.FindEdges(image, new(32, 128, 144, 48), labelPredicate);
+		var textRect = ImageUtils.FindEdges(image,  image.Map(32, 128, 144, 48), labelPredicate);
 		image.ColourCorrect(lightsState, textRect);
 		debugImage?.ColourCorrect(lightsState, textRect);
 		debugImage?.Mutate(c => c.Draw(Color.Lime, 1, textRect));

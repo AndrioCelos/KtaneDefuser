@@ -68,7 +68,7 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 			}
 		}
 
-		var keypadCorners = ImageUtils.FindCorners(image, new(0, 48, 208, 208), IsKeyBackground, 12);
+		var keypadCorners = ImageUtils.FindCorners(image, image.Map(0, 48, 208, 208), IsKeyBackground, 12);
 		debugImage?.DebugDrawPoints(keypadCorners);
 
 		var keysBitmap = ImageUtils.PerspectiveUndistort(image, keypadCorners, InterpolationMode.Bilinear, new(256, 256));

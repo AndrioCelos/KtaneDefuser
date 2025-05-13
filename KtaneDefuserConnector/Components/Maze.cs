@@ -18,41 +18,41 @@ public class Maze : ComponentReader<Maze.ReadData> {
 		var debugImage2 = debugImage;
 		image.ProcessPixelRows(a => {
 			for (var y = 0; y < 6; y++) {
-				var row = a.GetRowSpan(74 + 23 * y);
+				var row = a.GetRowSpan((74 + 23 * y) * a.Height / 256);
 				for (var x = 0; x < 6; x++) {
-					var p = row[58 + 23 * x];
-					if (debugImage2 is not null) debugImage2[x, y] = Color.Blue;
+					var p = row[(58 + 23 * x) * a.Width / 256];
+					if (debugImage2 is not null) debugImage2[(58 + 23 * x) * a.Width / 256, (74 + 23 * y) * a.Height / 256] = Color.Blue;
 					if (p.R >= 128) {
 						if (p.G >= 128) {
-							if (debugImage2 is not null) debugImage2[x, y] = Color.White;
+							if (debugImage2 is not null) debugImage2[(58 + 23 * x) * a.Width / 256, (74 + 23 * y) * a.Height / 256] = Color.White;
 							if (start is not null) throw new ArgumentException("Found more than one start location.");
 							start = new(x, y);
 						} else {
-							if (debugImage2 is not null) debugImage2[x, y] = Color.Red;
+							if (debugImage2 is not null) debugImage2[(58 + 23 * x) * a.Width / 256, (74 + 23 * y) * a.Height / 256] = Color.Red;
 							if (goal is not null) throw new ArgumentException("Found more than one goal location.");
 							goal = new(x, y);
 						}
 					}
 					// Look left for a marking.
 					var found = false;
-					for (var dx = 0; dx < 8; dx++) {
-						if (!IsMarking(row[58 - 16 + 23 * x + dx], lightsState)) continue;
+					for (var dx = 0; dx < a.Width / 32; dx++) {
+						if (!IsMarking(row[(58 - 16 + 23 * x) * a.Width / 256 + dx], lightsState)) continue;
 						found = true;
 						break;
 					}
 					if (!found) continue;
 					// Look right for a marking.
 					found = false;
-					for (var dx = 0; dx < 8; dx++) {
-						if (!IsMarking(row[58 + 8 + 23 * x + dx], lightsState)) continue;
+					for (var dx = 0; dx < a.Width / 32; dx++) {
+						if (!IsMarking(row[(58 + 8 + 23 * x) * a.Width / 256 + dx], lightsState)) continue;
 						found = true;
 						break;
 					}
 					if (!found) continue;
 					// Look up for a marking.
-					var row2 = a.GetRowSpan(65 + 23 * y);
-					for (var dx = 0; dx < 8; dx++) {
-						if (!IsMarking(row2[58 - 4 + 23 * x + dx], lightsState)) continue;
+					var row2 = a.GetRowSpan((65 + 23 * y) * a.Height / 256);
+					for (var dx = 0; dx < a.Width / 32; dx++) {
+						if (!IsMarking(row2[(58 - 4 + 23 * x) * a.Width / 256 + dx], lightsState)) continue;
 						if (debugImage2 is not null) debugImage2[x + 1, y] = Color.Green;
 						if (circle1 is null)
 							circle1 = new(x, y);

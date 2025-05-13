@@ -148,13 +148,15 @@
 						</MenuFlyout>
 					</SplitButton.Flyout>
 				</SplitButton>
-				 <Label>Simulate:</Label>
+				<Label>Simulate:</Label>
 				<ComboBox SelectedItem="{Binding LightsSimulation}">
 					<dc:LightsState>On</dc:LightsState>
 					<dc:LightsState>Buzz</dc:LightsState>
 					<dc:LightsState>Off</dc:LightsState>
 					<dc:LightsState>Emergency</dc:LightsState>
 				</ComboBox>
+				<Label>Resolution</Label>
+				<NumericUpDown Value="{Binding Resolution}" Minimum="224" Maximum="305" Width="120"></NumericUpDown>
 			</WrapPanel>
 			<Image Source="{Binding OutputAvaloniaImage}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 		</DockPanel>

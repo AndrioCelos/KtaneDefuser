@@ -33,7 +33,7 @@ public class Semaphore : ComponentReader<Semaphore.ReadData> {
 
 		// Find the white and blue triangles that are parts of a flag.
 		// NOTE: This assumes the flags will never overlap. They shouldn't, because the space signal isn't used.
-		// For each triangle, we find its centre of mass and its axis-aligned bounding box. The box is used to calculate the centre, and make sure it won't be counted again.
+		// For each triangle, we find its centre of mass and its axis-aligned bounding box. The box is used to calculate the centre and make sure it won't be counted again.
 		List<(Point centre, Rectangle boundingBox)> whiteShapes = [], blueShapes = [];
 
 		displayBitmap.ProcessPixelRows(p => {
@@ -172,7 +172,7 @@ public class Semaphore : ComponentReader<Semaphore.ReadData> {
 	}
 
 	private static bool TryGetDisplayPoints(Image<Rgba32> image, LightsState lightsState, out Quadrilateral points)
-		=> ImageUtils.TryFindCorners(image, new(12, 48, 200, 180), lightsState switch {
+		=> ImageUtils.TryFindCorners(image, image.Map(12, 48, 200, 180), lightsState switch {
 			LightsState.Buzz => c => HsvColor.FromColor(c) is { S: < 0.25f, V: < 0.05f },
 			LightsState.Off => c => c is { R: < 2, G: < 2, B: < 2 },
 			LightsState.Emergency => c => HsvColor.FromColor(c) is { H: < 15, S: < 0.6f, V: < 0.2f },

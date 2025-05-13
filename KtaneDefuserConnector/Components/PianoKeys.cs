@@ -25,7 +25,7 @@ public class PianoKeys : ComponentReader<PianoKeys.ReadData> {
 	private static Image<Rgba32> LoadSampleImage(byte[] bytes) => Image.Load<Rgba32>(bytes);
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		var labelPoints = ImageUtils.FindCorners(image, new(0, 0, 200, 100), lightsState switch {
+		var labelPoints = ImageUtils.FindCorners(image, image.Map(0, 0, 200, 100), lightsState switch {
 			LightsState.Buzz => c => HsvColor.FromColor(c) is { H: >= 45 and <= 60, S: >= 0.2f and <= 0.4f, V: >= 0.1f },
 			LightsState.Off => c => c is { R: 7, G: 7, B: 7 },
 			LightsState.Emergency => c => HsvColor.FromColor(c) is { H: >= 15 and <= 40, S: >= 0.2f and <= 0.4f, V: >= 0.75f },
