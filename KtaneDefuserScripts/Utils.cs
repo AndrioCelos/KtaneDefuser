@@ -13,7 +13,7 @@ public static class Utils {
 		new(1456,  102, 1718,  102, 1474,  360, 1745,  360),
 		new( 190,  392,  477,  392,  160,  678,  459,  678),
 		new( 520,  392,  800,  392,  501,  677,  794,  677),
-		new( 836,  390, 1120,  390,  832,  678, 1124,  678),
+		new( 836,  390, 1124,  390,  836,  678, 1124,  678),
 		new(1155,  390, 1425,  390, 1163,  676, 1442,  676),
 		new(1476,  390, 1748,  390, 1497,  676, 1779,  676),
 		new( 157,  706,  457,  705,  124, 1019,  436, 1018),
@@ -160,6 +160,28 @@ public static class Utils {
 
 	/// <summary>Returns a value indicating whether the specified module is currently visible to the bot.</summary>
 	internal static bool CanReadModuleImmediately(int moduleIndex) => !GameState.Current.LookingAtSide && GameState.Current.Modules[moduleIndex].Slot.Face == GameState.Current.SelectedFaceNum;
+
+	internal static IEnumerable<T[]> EnumeratePermutations<T>(IEnumerable<T> items) {
+		var array = items.ToArray();
+		return EnumeratePermutationsInternal(array, array.Length);
+		
+		static IEnumerable<T[]> EnumeratePermutationsInternal(T[] array, int length) {
+			// Use Heap's algorithm to generate permutations.
+			if (length == 1) {
+				yield return array;
+				yield break;
+			}
+
+			foreach (var a in EnumeratePermutationsInternal(array, length - 1)) yield return a;
+			for (var i = 0; i < length - 1; i++) {
+				if (length % 2 == 0)
+					(array[i], array[length - 1]) = (array[length - 1], array[i]);
+				else
+					(array[0], array[length - 1]) = (array[length - 1], array[0]);
+				foreach (var a in EnumeratePermutationsInternal(array, length - 1)) yield return a;
+			}
+		}
+	}
 }
 
 [AimlSet]

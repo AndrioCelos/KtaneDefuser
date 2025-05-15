@@ -12,17 +12,15 @@ internal partial class WireSequence : ModuleScript<KtaneDefuserConnector.Compone
 
 	protected internal override void Started(AimlAsyncContext context) => readyToRead = true;
 
-	protected internal override async void ModuleSelected(AimlAsyncContext context) {
-		if (readyToRead) {
-			readyToRead = false;
-			using var interrupt = await ModuleInterruptAsync(context);
-			// The highlight starts on the previous button, so move down first.
-			if (highlight == -1) {
-				await interrupt.SendInputsAsync(Button.Down);
-				highlight = -2;
-			}
-			await ContinuePageAsync(interrupt);
+	protected internal override async void ModuleSelected(Interrupt interrupt) {
+		if (!readyToRead) return;
+		readyToRead = false;
+		// The highlight starts on the previous button, so move down first.
+		if (highlight == -1) {
+			await interrupt.SendInputsAsync(Button.Down);
+			highlight = -2;
 		}
+		await ContinuePageAsync(interrupt);
 	}
 
 	private async Task ContinuePageAsync(Interrupt interrupt) {

@@ -13,14 +13,13 @@ internal partial class SimonSays : ModuleScript<KtaneDefuserConnector.Components
 	private readonly List<SimonColour> pattern = new(5);
 	private SimonColour? currentColour;
 
-	protected internal override void Initialise(AimlAsyncContext context) => GameState.Current.Strike += (_, _) => Array.Clear(buttonMap);  // A strike invalidates the whole mapping.
+	protected internal override void Initialise(Interrupt interrupt) => GameState.Current.Strike += (_, _) => Array.Clear(buttonMap);  // A strike invalidates the whole mapping.
 
 	protected internal override void Started(AimlAsyncContext context) => readyToRead = true;
 
-	protected internal override async void ModuleSelected(AimlAsyncContext context) {
+	protected internal override async void ModuleSelected(Interrupt interrupt) {
 		if (readyToRead) {
 			readyToRead = false;
-			using var interrupt = await ModuleInterruptAsync(context);
 			if (pattern.Count == 0) {
 				var colour = await ReadLastColourAsync(interrupt);
 				pattern.Add(colour);

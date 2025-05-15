@@ -64,7 +64,7 @@ public class Interrupt : IDisposable {
 					queuedTaskSource.SetResult(interrupt);
 				else {
 					EnableInterrupts = true;
-					GameState.Current.CurrentModule!.Script.ModuleSelected(context);
+					GameState.Current.CurrentModule!.Script.ModuleSelected(interrupt);
 				}
 			} else
 				EnableInterrupts = true;
@@ -73,6 +73,12 @@ public class Interrupt : IDisposable {
 
 	/// <summary>Reads data from the currently-focused module using the specified <see cref="ComponentReader"/.></summary>
 	public T Read<T>(ComponentReader<T> reader) where T : notnull {
+		ObjectDisposedException.ThrowIf(IsDisposed, this);
+		using var ss = DefuserConnector.Instance.TakeScreenshot();
+		return DefuserConnector.Instance.ReadComponent(ss, DefuserConnector.Instance.GetLightsState(ss), reader, Utils.CurrentModuleArea);
+	}
+	/// <summary>Reads data from the currently-focused module using the specified <see cref="ComponentReader"/.></summary>
+	public T Read<T>(ComponentReader<T> reader, Slot slot) where T : notnull {
 		ObjectDisposedException.ThrowIf(IsDisposed, this);
 		using var ss = DefuserConnector.Instance.TakeScreenshot();
 		return DefuserConnector.Instance.ReadComponent(ss, DefuserConnector.Instance.GetLightsState(ss), reader, Utils.CurrentModuleArea);
@@ -132,10 +138,10 @@ public class Interrupt : IDisposable {
 				var isDefused = GameState.Current.TryMarkModuleSolved(context, GameState.Current.CurrentModuleNum.Value);
 				if (isDefused)
 					context.Reply("The bomb is defused.");
-				else {
+				else if (GameState.Current.CurrentModuleNum == GameState.Current.SelectedModuleNum) {
 					context.Reply("<priority/>Module complete<reply>next module</reply>.");
 					if (!GameState.Current.NextModuleNums.TryDequeue(out var nextModule))
-						nextModule = GameState.Current.Modules.FindIndex(GameState.Current.SelectedModuleNum is { } i ? i + 1 : 0, m => m.Script.PriorityCategory != PriorityCategory.Needy && !m.IsSolved);
+						nextModule = GameState.Current.Modules.FindIndex(GameState.Current.SelectedModuleNum is { } i ? i + 1 : 0, m => !m.Script.PriorityCategory.HasFlag(PriorityCategory.Needy) && !m.IsSolved);
 					if (nextModule >= 0) {
 						context.Reply($"Next is {GameState.Current.Modules[nextModule].Script.IndefiniteDescription}.");
 						await ModuleSelection.ChangeModuleAsync(context, nextModule, true);

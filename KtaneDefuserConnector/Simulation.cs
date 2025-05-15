@@ -26,6 +26,7 @@ internal partial class Simulation {
 	private readonly WidgetFace[] widgetFaces = new WidgetFace[4];
 	private bool isAlarmClockOn;
 
+	public Random Random { get; } = new();
 	internal static Image<Rgba32> DummyScreenshot { get; } = new(1, 1);
 
 	private ComponentFace SelectedFace => moduleFaces[selectedFaceNum];
@@ -470,6 +471,7 @@ internal partial class Simulation {
 	}
 
 	private abstract partial class Module : BombComponent {
+		protected readonly Simulation Simulation;
 		protected readonly ILogger Logger;
 		private readonly Timer resetLightTimer = new(2000) { AutoReset = false };
 
@@ -485,6 +487,7 @@ internal partial class Simulation {
 		public event EventHandler? Strike;
 
 		protected Module(Simulation simulation, ComponentReader reader, int selectableWidth, int selectableHeight) : base(reader) {
+			Simulation = simulation;
 			Logger = simulation.loggerFactory.CreateLogger(GetType());
 			nextId++;
 			ID = nextId;
@@ -570,6 +573,9 @@ internal partial class Simulation {
 
 		[LoggerMessage(LogLevel.Information, "Selected ({X}, {Y}) in {ModuleName}")]
 		private partial void LogModuleInteraction(int x, int y, string moduleName);
+			
+		[LoggerMessage(LogLevel.Information, "{Button} was pressed.")]
+		protected partial void LogButton(object? button);
 
 		#endregion
 	}

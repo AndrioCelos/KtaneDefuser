@@ -47,12 +47,12 @@ internal static partial class Start {
 		await Delay(1);  // Wait for modules to initialise.
 		// 2. Identify components on the bomb.
 		using (var ss = DefuserConnector.Instance.TakeScreenshot())
-			await RegisterComponentsAsync(interrupt, context, ss);
+			await RegisterComponentsAsync(interrupt, ss);
 		// 3. Turn the bomb around and identify widgets on the side.
 		await Utils.SelectFaceAsync(interrupt, 1, SelectFaceAlignMode.CheckWidgets);
 		// 4. Repeat steps 2-3 for the other faces.
 		using (var ss = DefuserConnector.Instance.TakeScreenshot())
-			await RegisterComponentsAsync(interrupt, context, ss);
+			await RegisterComponentsAsync(interrupt, ss);
 		await Utils.SelectFaceAsync(interrupt, 0, SelectFaceAlignMode.CheckWidgets);
 		// 5. Turn the bomb to the bottom face.
 		GameState.Current.LookingAtSide = true;
@@ -73,22 +73,22 @@ internal static partial class Start {
 		context.Reply("Ready. <reply>edgework</reply><reply>first module</reply><reply>vanilla modules</reply><reply>specific module…</reply>");
 	}
 
-	private static async Task RegisterComponentsAsync(Interrupt interrupt, AimlAsyncContext context, Image<Rgba32> screenshot) {
+	private static async Task RegisterComponentsAsync(Interrupt interrupt, Image<Rgba32> screenshot) {
 		var lightsState = DefuserConnector.Instance.GetLightsState(screenshot);
 		if (lightsState != LightsState.On) throw new ArgumentException($"Can't identify components on lights state {lightsState}.");
 		if (GameState.Current.BombType == BombType.Centurion) {
 			var anyModules = false;
 			foreach (var (centre, group) in CenturionUtil.SlotGroups[GameState.Current.SelectedFaceNum]) {
 				await Utils.SelectSlotAsync(interrupt, centre, true);
-				anyModules = await ReadComponentSlotsAsync(context, screenshot, group, anyModules);
+				anyModules = await ReadComponentSlotsAsync(interrupt, screenshot, group, anyModules);
 			}
 		} else {
 			var slots = from y in Enumerable.Range(0, 2) from x in Enumerable.Range(0, 3) select new Slot(0, GameState.Current.SelectedFaceNum, x, y);
-			await ReadComponentSlotsAsync(context, screenshot, slots, false);
+			await ReadComponentSlotsAsync(interrupt, screenshot, slots, false);
 		}
 	}
 
-	private static async Task<bool> ReadComponentSlotsAsync(AimlAsyncContext context, Image<Rgba32> screenshot, IEnumerable<Slot> slots, bool anyModules) {
+	private static async Task<bool> ReadComponentSlotsAsync(Interrupt interrupt, Image<Rgba32> screenshot, IEnumerable<Slot> slots, bool anyModules) {
 		var needTimerRead = false;
 		foreach (var slot in slots) {
 			var points = Utils.GetPoints(slot);
@@ -104,7 +104,8 @@ internal static partial class Start {
 				anyModules = true;
 				GameState.Current.Faces[GameState.Current.SelectedFaceNum].SelectedSlot = slot;
 			}
-			var module = RegisterComponent(context, slot, component);  // TODO: This assumes the vanilla bomb layout. It will need to be updated for other layouts.
+
+			var module = RegisterComponent(interrupt, slot, component);  // TODO: This assumes the vanilla bomb layout. It will need to be updated for other layouts.
 			if (module is not null) {
 				var lightState = DefuserConnector.Instance.GetModuleLightState(screenshot, points);
 				if (lightState == ModuleLightState.Solved) {
@@ -124,7 +125,7 @@ internal static partial class Start {
 		return anyModules;
 	}
 
-	private static ModuleState? RegisterComponent(AimlAsyncContext context, Slot slot, ComponentReader? component) {
+	private static ModuleState? RegisterComponent(Interrupt interrupt, Slot slot, ComponentReader? component) {
 		switch (component) {
 			case null:
 				return null;
@@ -141,8 +142,8 @@ internal static partial class Start {
 				GameState.Current.Faces[slot.Face].HasModules = true;
 				LogRegisteringModule(logger, script.ModuleIndex + 1, component.Name, slot);
 				if (script.PriorityCategory != PriorityCategory.None)
-					context.Reply($"<priority/> Module {script.ModuleIndex + 1} is {script.IndefiniteDescription}.");
-				script.Initialise(context);
+					interrupt.Context.Reply($"<priority/> Module {script.ModuleIndex + 1} is {script.IndefiniteDescription}.");
+				script.Initialise(interrupt);
 				NeedyState state;
 				lock (GameState.Current.UnknownNeedyStates) {
 					GameState.Current.UnknownNeedyStates.TryGetValue(slot, out state);
@@ -151,7 +152,7 @@ internal static partial class Start {
 
 				if (state == 0) return module;
 				script.NeedyState = state;
-				script.NeedyStateChanged(context, state);
+				script.NeedyStateChanged(interrupt.Context, state);
 				return module;
 		}
 	}

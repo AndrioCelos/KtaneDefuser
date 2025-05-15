@@ -92,7 +92,7 @@ public class GameState(ILoggerFactory loggerFactory) {
 	internal bool TryMarkModuleSolved(AimlAsyncContext context, int index) {
 		var module = Modules[index];
 		if (module.IsSolved) return false;
-		if (module.Script.PriorityCategory == PriorityCategory.Needy) throw new ArgumentException("Cannot mark a needy module as solved.");
+		if (module.Script.PriorityCategory.HasFlag(PriorityCategory.Needy)) throw new ArgumentException("Cannot mark a needy module as solved.");
 
 		module.IsSolved = true;
 		ModuleSolved?.Invoke(this, new(context, module.Slot, module));

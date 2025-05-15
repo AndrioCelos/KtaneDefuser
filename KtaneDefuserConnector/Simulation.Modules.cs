@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text;
 using System.Timers;
 using KtaneDefuserConnector.DataTypes;
 using Microsoft.Extensions.Logging;
@@ -383,7 +385,7 @@ internal partial class Simulation {
 			}
 
 			public override void Interact() {
-				LogKeyPressed(X == 0 ? 'Y' : 'N');
+				LogButton(X == 0 ? 'Y' : 'N');
 				if (X == 0) {
 					if (messageIndex != 0) StrikeFlash();
 					Deactivate();
@@ -398,9 +400,6 @@ internal partial class Simulation {
 
 			[LoggerMessage(LogLevel.Information, "Display: {Display}")]
 			private partial void LogDisplay(string display);
-
-			[LoggerMessage(LogLevel.Information, "{Button} was pressed.")]
-			private partial void LogKeyPressed(char button);
 
 			#endregion
 		}
@@ -481,7 +480,7 @@ internal partial class Simulation {
 					_ => X == 0 ? SimonColour.Red : SimonColour.Yellow
 				};
 				litColour = pressedColour;
-				LogButtonPressed(pressedColour);
+				LogButton(pressedColour);
 				if (LightState == ModuleLightState.Solved) return;
 				if (pressedColour != (SimonColour) inputProgress) {
 					StrikeFlash();
@@ -499,13 +498,6 @@ internal partial class Simulation {
 					tick = -20;
 				}
 			}
-
-			#region Log templates
-
-			[LoggerMessage(LogLevel.Information, "{Colour} was pressed.")]
-			private partial void LogButtonPressed(SimonColour colour);
-
-			#endregion
 		}
 
 		public partial class WhosOnFirst : Module<Components.WhosOnFirst.ReadData> {
@@ -717,6 +709,203 @@ internal partial class Simulation {
 			#endregion
 		}
 
+		public partial class CrazyTalk(Simulation simulation, string display, int downTime, int upTime) : Module<Components.CrazyTalk.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.CrazyTalk>(), 1, 1) {
+			internal override Components.CrazyTalk.ReadData Details => new(display, _switchIsDown);
+			private bool _switchIsDown;
+			private int _correctMoves;
+
+			public override void Interact() {
+				var elapsed = TimerComponent.Instance.Elapsed;
+				_switchIsDown = !_switchIsDown;
+				LogSwitchMoved(_switchIsDown ? "down" : "up", elapsed);
+				if (elapsed.Ticks / TimeSpan.TicksPerSecond % 10 == (_switchIsDown ? downTime : upTime)) {
+					_correctMoves++;
+					if (_correctMoves >= 2)
+						Solve();
+				} else {
+					_correctMoves = 0;
+					StrikeFlash();
+				}
+			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "Switch moved {NewState} at {Time}.")]
+			private partial void LogSwitchMoved(string newState, TimeSpan time);
+
+			#endregion
+		}
+
+		public class EmojiMath : Module<Components.EmojiMath.ReadData> {
+			internal override Components.EmojiMath.ReadData Details => new(display, new(X, Y));
+
+			private readonly string display;
+			private readonly int answer;
+			private int input;
+			private bool minus;
+
+			public EmojiMath(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.EmojiMath>(), 4, 3) {
+				var random = new Random();
+				int a = random.Next(100), b = random.Next(100);
+				var subtract = random.Next(2) != 0;
+				answer = subtract ? a - b : a + b;
+				input = 0;
+				minus = false;
+				display = string.Join(null, from c in $"{a}{(subtract ? '-' : '+')}{b}" select c switch { '0' => ":)", '1' => "=(", '2' => "(:", '3' => ")=", '4' => ":(", '5' => "):", '6' => "=)", '7' => "(=", '8' => ":|", '9' => "|:", _ => c.ToString() });
+			}
+
+			public override void Interact() {
+				if (X == 3) {
+					switch (Y) {
+						case 0:
+							LogButton('0');
+							input *= 10;
+							return;
+						case 1:
+							LogButton('-');
+							minus = !minus;
+							return;
+						default:
+							if (minus) input = -input;
+							LogSubmit(input);
+							if (input != answer) StrikeFlash();
+							Solve();
+							return;
+					}
+				}
+
+				var n = X + 1 + Y * 3;
+				LogButton((char) ('0' + n));
+				input = input * 10 + n;
+			}
+		}
+
+		public class LetterKeys : Module<Components.LetterKeys.ReadData> {
+			internal override Components.LetterKeys.ReadData Details => new(_display, _labels, new(X, Y));
+
+			private readonly char[] _labels;
+			private readonly int _display;
+			private readonly int _correctButton;
+
+			public LetterKeys(Simulation simulation, int display, char correctLetter) : base(simulation, DefuserConnector.GetComponentReader<Components.LetterKeys>(), 2, 2) {
+				_display = display;
+				_labels = [.. from i in Enumerable.Range('A', 4) select (char) i];
+				for (var i = 3; i > 0; i--) {
+					var j = simulation.Random.Next(i + 1);
+					(_labels[i], _labels[j]) = (_labels[j], _labels[i]);
+				}
+				_correctButton = Array.IndexOf(_labels, correctLetter);
+			}
+
+			public override void Interact() {
+				var index = X + Y * 2;
+				LogButton(_labels[index]);
+				if (index == _correctButton)
+					Solve();
+				else
+					StrikeFlash();
+			}
+		}
+
+		public partial class LightsOut(Simulation simulation) : NeedyModule<Components.LightsOut.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.LightsOut>(), 3, 3) {
+			private readonly bool[] lights = new bool[9];
+			
+			internal override Components.LightsOut.ReadData Details => new(IsActive ? (int) RemainingTime.TotalSeconds : null, lights, new(X, Y));
+
+			protected override void OnActivate() {
+				var random = new Random();
+				var numMoves = random.Next(10) + 1;
+				Array.Clear(lights);
+				for (; numMoves > 0; numMoves--) {
+					var button = random.Next(9);
+					Toggle(button);
+				}
+				LogLights(lights);
+			}
+
+			private void Toggle(int button) {
+				lights[0] ^= button is 0 or 1 or 3;
+				lights[1] ^= button is 0 or 1 or 2 or 4;
+				lights[2] ^= button is 1 or 2 or 5;
+				lights[3] ^= button is 0 or 3 or 4 or 6;
+				lights[4] ^= button is 1 or 3 or 4 or 5 or 7;
+				lights[5] ^= button is 2 or 4 or 5 or 8;
+				lights[6] ^= button is 3 or 6 or 7;
+				lights[7] ^= button is 4 or 6 or 7 or 8;
+				lights[8] ^= button is 5 or 7 or 8;
+			}
+
+			public override void Interact() {
+				Toggle(X + Y * 3);
+				LogLights(lights);
+				if (!lights.Any(b => b)) Deactivate();
+			}
+
+			protected override void OnTimerExpired() {
+				base.OnTimerExpired();
+				Array.Clear(lights);
+			}
+
+			private void LogLights(bool[] state) {
+				if (!Logger.IsEnabled(LogLevel.Information)) return;
+				var str = string.Join(' ', from y in Enumerable.Range(0, 3) select string.Join(null, from x in Enumerable.Range(0, 3) select state[x + y * 3] ? '*' : '·'));
+				LogLights(str);
+			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "Lights state: {State}.")]
+			private partial void LogLights(string state);
+
+			#endregion
+		}
+
+		public partial class NeedyMath(Simulation simulation) : NeedyModule<Components.NeedyMath.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.NeedyMath>(), 4, 3) {
+			internal override Components.NeedyMath.ReadData Details => new(IsActive ? (int) RemainingTime.TotalSeconds : null, display, new(X, Y));
+
+			private string display = "";
+			private int answer;
+			private int input;
+			private bool minus;
+
+			protected override void OnActivate() {
+				var random = new Random();
+				int a = random.Next(100), b = random.Next(100);
+				var subtract = random.Next(2) != 0;
+				answer = subtract ? a - b : a + b;
+				input = 0;
+				minus = false;
+				display = $"{a}{(subtract ? '-' : '+')}{b}";
+			}
+
+			public override void Interact() {
+				if (X == 3) {
+					switch (Y) {
+						case 0:
+							LogButton('0');
+							input *= 10;
+							return;
+						case 1:
+							LogButton('-');
+							minus = !minus;
+							return;
+						default:
+							if (!IsActive) return;
+							if (minus) input = -input;
+							LogSubmit(input);
+							if (input != answer) StrikeFlash();
+							Deactivate();
+							display = "";
+							return;
+					}
+				}
+
+				var n = X + 1 + Y * 3;
+				LogButton((char) ('0' + n));
+				input = input * 10 + n;
+			}
+		}
+
 		public partial class PianoKeys(Simulation simulation) : Module<Components.PianoKeys.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.PianoKeys>(), 12, 1) {
 			internal override Components.PianoKeys.ReadData Details => new([Components.PianoKeys.Symbol.CutCommonTime, Components.PianoKeys.Symbol.Natural, Components.PianoKeys.Symbol.Fermata]);
 
@@ -781,110 +970,140 @@ internal partial class Simulation {
 				}
 			}
 		}
+	
+		public partial class Switches : Module<Components.Switches.ReadData> {
+			internal override Components.Switches.ReadData Details => new(currentState, targetState, X);
 
-		public partial class NeedyMath(Simulation simulation) : NeedyModule<Components.NeedyMath.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.NeedyMath>(), 4, 3) {
-			internal override Components.NeedyMath.ReadData Details => new(IsActive ? (int) RemainingTime.TotalSeconds : null, display, new(X, Y));
+			private readonly bool[] currentState;
+			private readonly bool[] targetState;
 
-			private string display = "";
-			private int answer;
-			private int input;
-			private bool minus;
+			private static readonly HashSet<int> InvalidStates = [0x04, 0x0B, 0x0F, 0x12, 0x13, 0x17, 0x18, 0x1A, 0x1C, 0x1E];
 
-			protected override void OnActivate() {
+			public Switches(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.Switches>(), 5, 1) {
 				var random = new Random();
-				int a = random.Next(100), b = random.Next(100);
-				var subtract = random.Next(2) != 0;
-				answer = subtract ? a - b : a + b;
-				input = 0;
-				minus = false;
-				display = $"{a}{(subtract ? '-' : '+')}{b}";
+				int currentStateInt, targetStateInt;
+				do {
+					currentStateInt = random.Next(0, 0x20);
+				} while (InvalidStates.Contains(currentStateInt));
+				currentState = [(currentStateInt & 0x10) != 0, (currentStateInt & 0x08) != 0, (currentStateInt & 0x04) != 0, (currentStateInt & 0x02) != 0, (currentStateInt & 0x01) != 0];
+				do {
+					targetStateInt = random.Next(0, 0x20);
+				} while (targetStateInt == currentStateInt || InvalidStates.Contains(targetStateInt));
+				targetState = [(targetStateInt & 0x10) != 0, (targetStateInt & 0x08) != 0, (targetStateInt & 0x04) != 0, (targetStateInt & 0x02) != 0, (targetStateInt & 0x01) != 0];
+				LogTargetState(string.Join(null, from state in targetState select state ? '^' : 'v'));
+				LogState(string.Join(null, from state in currentState select state ? '^' : 'v'));
 			}
 
 			public override void Interact() {
-				if (X == 3) {
-					switch (Y) {
-						case 0:
-							LogButton('0');
-							input *= 10;
-							return;
-						case 1:
-							LogButton('-');
-							minus = !minus;
-							return;
-						default:
-							if (!IsActive) return;
-							if (minus) input = -input;
-							LogSubmit(input);
-							if (input != answer) StrikeFlash();
-							Deactivate();
-							display = "";
-							return;
-					}
+				currentState[X] ^= true;
+				if (InvalidStates.Contains(ConvertToInt(currentState))) {
+					currentState[X] ^= true;
+					StrikeFlash();
+				} else {
+					LogState(string.Join(null, from state in currentState select state ? '^' : 'v'));
+					if (currentState.SequenceEqual(targetState))
+						Solve();
 				}
-
-				var n = X + 1 + Y * 3;
-				LogButton((char) ('0' + n));
-				input = input * 10 + n;
 			}
+
+			private static int ConvertToInt(bool[] state) => (state[0] ? 0x10 : 0) | (state[1] ? 0x08 : 0) | (state[2] ? 0x04 : 0) | (state[3] ? 0x02 : 0) | (state[4] ? 0x01 : 0);  
 
 			#region Log templates
 
-			[LoggerMessage(LogLevel.Information, "{Button} was pressed.")]
-			private partial void LogButton(char button);
+			[LoggerMessage(LogLevel.Information, "Target state: {state}")]
+			private partial void LogTargetState(string state);
+
+			[LoggerMessage(LogLevel.Information, "Switch state: {state}")]
+			private partial void LogState(string state);
 
 			#endregion
 		}
 
-		public partial class EmojiMath : Module<Components.EmojiMath.ReadData> {
-			internal override Components.EmojiMath.ReadData Details => new(display, new(X, Y));
+		public class TurnTheKeys(Simulation simulation) : Module<Components.TurnTheKeys.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.TurnTheKeys>(), 2, 1) {
+			internal override Components.TurnTheKeys.ReadData Details => new(_priority, _isKey1Turned, _isKey2Turned, X);
 
-			private readonly string display;
-			private readonly int answer;
-			private int input;
-			private bool minus;
+			private readonly int _priority = simulation.Random.Next(10000);
+			private bool _isKey1Turned;
+			private bool _isKey2Turned;
 
-			public EmojiMath(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.EmojiMath>(), 4, 3) {
-				var random = new Random();
-				int a = random.Next(100), b = random.Next(100);
-				var subtract = random.Next(2) != 0;
-				answer = subtract ? a - b : a + b;
-				input = 0;
-				minus = false;
-				display = string.Join(null, from c in $"{a}{(subtract ? '-' : '+')}{b}" select c switch { '0' => ":)", '1' => "=(", '2' => "(:", '3' => ")=", '4' => ":(", '5' => "):", '6' => "=)", '7' => "(=", '8' => ":|", '9' => "|:", _ => c.ToString() });
+			public override void Interact() {
+				if (CheckStrike()) {
+					StrikeFlash();
+				} else {
+					if (X == 0) _isKey1Turned = true; else _isKey2Turned = true;
+					if (_isKey1Turned && _isKey2Turned) Solve();
+				}
 			}
+
+			private bool CheckStrike() {
+				foreach (var f in Simulation.moduleFaces) {
+					foreach (var m in f.Slots.OfType<Module>()) {
+						if (X == 0) {
+							if (m == this) {
+								if (!_isKey2Turned) return true;
+							} else {
+								switch (m) {
+									case TurnTheKeys turnTheKeys:
+										if (!turnTheKeys._isKey2Turned || (turnTheKeys._priority < _priority ? !turnTheKeys._isKey1Turned : turnTheKeys._isKey1Turned))
+											return true;
+										break;
+									case Password or WhosOnFirst or CrazyTalk or Keypad:
+										if (m.LightState != ModuleLightState.Solved) return true;
+										break;
+									case Maze or Memory or ComplicatedWires or WireSequence:
+										if (m.LightState == ModuleLightState.Solved) return true;
+										break;
+								}
+							}
+						} else {
+							if (m == this) {
+								if (_isKey1Turned) return true;
+							} else {
+								switch (m) {
+									case TurnTheKeys turnTheKeys:
+										if (turnTheKeys._isKey1Turned || (turnTheKeys._priority < _priority ? turnTheKeys._isKey2Turned : !turnTheKeys._isKey2Turned))
+											return true;
+										break;
+									case MorseCode or Wires or Button or ColourFlash:
+										if (m.LightState != ModuleLightState.Solved) return true;
+										break;
+									case Semaphore or SimonSays or Switches:
+										if (m.LightState == ModuleLightState.Solved) return true;
+										break;
+								}
+							}
+						}
+					}
+				}
+				return false;
+			}
+		}
+
+		public class WordScramble(Simulation simulation, string display) : Module<Components.WordScramble.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.WordScramble>(), 4, 2) {
+			internal override Components.WordScramble.ReadData Details => new(display.ToCharArray(), new(X, Y));
+
+			private readonly StringBuilder _answer = new();
 
 			public override void Interact() {
 				if (X == 3) {
 					switch (Y) {
 						case 0:
-							LogButton('0');
-							input *= 10;
-							return;
-						case 1:
-							LogButton('-');
-							minus = !minus;
+							LogButton("Delete");
+							if (_answer.Length != 0) _answer.Remove(_answer.Length - 1, 1);
 							return;
 						default:
-							if (minus) input = -input;
-							LogSubmit(input);
-							if (input != answer) StrikeFlash();
+							LogSubmit(_answer.ToString());
 							Solve();
 							return;
 					}
+				} else {
+					var c = display[X + Y * 3];
+					LogButton(c);
+					_answer.Append(c);
 				}
-
-				var n = X + 1 + Y * 3;
-				LogButton((char) ('0' + n));
-				input = input * 10 + n;
 			}
-
-			#region Log templates
-
-			[LoggerMessage(LogLevel.Information, "{Button} was pressed.")]
-			private partial void LogButton(char button);
-
-			#endregion
 		}
+
 		#endregion
 	}
 }

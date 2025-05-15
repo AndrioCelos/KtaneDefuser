@@ -45,4 +45,17 @@ internal static class TimerUtil {
 		if (timeSpan < TimeSpan.Zero) timeSpan += TimeSpan.FromSeconds(10);
 		await Delay(timeSpan);
 	}
+	/// <summary>Returns a <see cref="Task"/> that completes when the specified digit is the seconds digit on the bomb timer.</summary>
+	public static async Task WaitForSecondsDigitAsync(int digit) {
+		var time = GameState.Current.Time;
+		if (time.Seconds % 10 == digit) return;
+
+		// Find out how long to wait for.
+		var timeSpan = GameState.Current.GameMode is GameMode.Zen or GameMode.Training
+			? TimeSpan.FromTicks(digit * TimeSpan.TicksPerSecond + TimeSpan.TicksPerSecond / 2 - time.Ticks % (TimeSpan.TicksPerSecond * 10))
+			: TimeSpan.FromTicks(time.Ticks % (TimeSpan.TicksPerSecond * 10) - digit * TimeSpan.TicksPerSecond - TimeSpan.TicksPerSecond / 2);
+		if (timeSpan < TimeSpan.Zero) timeSpan += TimeSpan.FromSeconds(10);
+		await Delay(timeSpan);
+	}
+
 }

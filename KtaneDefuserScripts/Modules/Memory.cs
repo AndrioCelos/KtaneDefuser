@@ -9,12 +9,10 @@ internal class Memory : ModuleScript<KtaneDefuserConnector.Components.Memory> {
 
 	protected internal override void Started(AimlAsyncContext context) => readyToRead = true;
 
-	protected internal override async void ModuleSelected(AimlAsyncContext context) {
-		if (readyToRead) {
-			readyToRead = false;
-			using var interrupt = await ModuleInterruptAsync(context);
-			Read(interrupt);
-		}
+	protected internal override void ModuleSelected(Interrupt interrupt) {
+		if (!readyToRead) return;
+		readyToRead = false;
+		Read(interrupt);
 	}
 
 	private async Task WaitRead(Interrupt interrupt) {

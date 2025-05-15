@@ -14,42 +14,46 @@ internal partial class Password : ModuleScript<KtaneDefuserConnector.Components.
 		context.Reply("<reply>column 1</reply><reply><text>2</text><postback>column 2</postback></reply><reply><text>3</text><postback>column 3</postback></reply><reply><text>4</text><postback>column 4</postback></reply><reply><text>5</text><postback>column 5</postback></reply>");
 	}
 	
-	protected internal override async void ModuleSelected(AimlAsyncContext context) {
-		if (!readyToRead) return;
-		readyToRead = false;
-		using var interrupt = await ModuleInterruptAsync(context);
-		await MoveToDownButtonRowAsync(interrupt);
-		for (var i = 0; i < 5; i++)
-			columns[i] = new char[6];
-		for (var i = 0; i < 6; i++) {
-			if (i > 0) {
-				var rightToLeft = highlightX == 4;
-				for (var j = 0; j < 5; j++) {
-					var x = rightToLeft ? 4 - j : j;
-					await CycleColumnAsync(interrupt, x);
-					columnPositions[x]++;
-					if (columnPositions[x] >= 6) columnPositions[x] = 0;
+	protected internal override async void ModuleSelected(Interrupt interrupt) {
+		try {
+			if (!readyToRead) return;
+			readyToRead = false;
+			await MoveToDownButtonRowAsync(interrupt);
+			for (var i = 0; i < 5; i++)
+				columns[i] = new char[6];
+			for (var i = 0; i < 6; i++) {
+				if (i > 0) {
+					var rightToLeft = highlightX == 4;
+					for (var j = 0; j < 5; j++) {
+						var x = rightToLeft ? 4 - j : j;
+						await CycleColumnAsync(interrupt, x);
+						columnPositions[x]++;
+						if (columnPositions[x] >= 6) columnPositions[x] = 0;
+					}
 				}
+
+				var data = interrupt.Read(Reader);
+				LogDisplay(new(data.Display));
+				for (var x = 0; x < 5; x++)
+					columns[x]![i] = data.Display[x];
 			}
-			var data = interrupt.Read(Reader);
-			LogDisplay(new(data.Display));
-			for (var x = 0; x < 5; x++)
-				columns[x]![i] = data.Display[x];
-		}
-		
-		// How many words from the Wordle set can be made with these letters?
-		var words = WordleSet.Where(word => Enumerable.Range(0, 5).All(x => columns[x]!.Any(c => char.ToLowerInvariant(c) == char.ToLowerInvariant(word[x])))).ToList();
-		switch (words.Count) {
-			case 0:
-				interrupt.Context.Reply("Couldn't find any words.");
-				break;
-			case 1:
-				interrupt.Context.Reply($"The password seems to be '{words[0]}'.");
-				await SubmitAsync(interrupt, words[0]);
-				break;
-			default:
-				interrupt.Context.Reply($"The following words are possible: '{string.Join("', '", words)}'.");
-				break;
+
+			// How many words from the Wordle set can be made with these letters?
+			var words = WordleSet.Where(word => Enumerable.Range(0, 5).All(x => columns[x]!.Any(c => char.ToLowerInvariant(c) == char.ToLowerInvariant(word[x])))).ToList();
+			switch (words.Count) {
+				case 0:
+					interrupt.Context.Reply("Couldn't find any words.");
+					break;
+				case 1:
+					interrupt.Context.Reply($"The password seems to be '{words[0]}'.");
+					await SubmitAsync(interrupt, words[0]);
+					break;
+				default:
+					interrupt.Context.Reply($"The following words are possible: '{string.Join("', '", words)}'.");
+					break;
+			}
+		} catch (Exception ex) {
+			LogException(ex);
 		}
 	}
 

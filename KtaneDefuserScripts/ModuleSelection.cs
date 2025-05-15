@@ -23,7 +23,7 @@ internal static partial class ModuleSelection {
 		if (Interrupt.EnableInterrupts) {
 			using var interrupt = await Interrupt.EnterAsync(context);
 			await Utils.SelectModuleAsync(interrupt, GameState.Current.CurrentModuleNum.Value, true);
-			script.ModuleSelected(context);
+			script.ModuleSelected(interrupt);
 		}
 	}
 
@@ -64,7 +64,7 @@ internal static partial class ModuleSelection {
 	[AimlCategory("first module"), EditorBrowsable(EditorBrowsableState.Never)]
 	public static async Task SelectModuleFirst(AimlAsyncContext context) {
 		GameState.Current.NextModuleNums.Clear();
-		var index = GameState.Current.Modules.FindIndex(m => m.Script.PriorityCategory != PriorityCategory.Needy && !m.IsSolved);
+		var index = GameState.Current.Modules.FindIndex(m => !m.Script.PriorityCategory.HasFlag(PriorityCategory.Needy) && !m.IsSolved);
 		if (index < 0) {
 			context.Reply("Could not find any modules.");
 			return;
@@ -75,7 +75,7 @@ internal static partial class ModuleSelection {
 	[AimlCategory("next module"), AimlCategory("next", That = "MODULE COMPLETE ^"), EditorBrowsable(EditorBrowsableState.Never)]
 	public static async Task SelectModuleNext(AimlAsyncContext context) {
 		if (!GameState.Current.NextModuleNums.TryDequeue(out var index))
-			index =  GameState.Current.Modules.FindIndex(GameState.Current.SelectedModuleNum is { } i ? i + 1 : 0, m => m.Script.PriorityCategory != PriorityCategory.Needy && !m.IsSolved);
+			index =  GameState.Current.Modules.FindIndex(GameState.Current.SelectedModuleNum is { } i ? i + 1 : 0, m => !m.Script.PriorityCategory.HasFlag(PriorityCategory.Needy) && !m.IsSolved);
 		if (index < 0) {
 			context.Reply("Could not find any more modules.");
 			return;

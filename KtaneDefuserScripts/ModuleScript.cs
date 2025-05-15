@@ -2,7 +2,7 @@
 
 namespace KtaneDefuserScripts;
 /// <summary>Provides the script and variables associated with a specific module.</summary>
-public abstract class ModuleScript {
+public abstract partial class ModuleScript {
 	protected readonly ILogger Logger;
 
 	private static readonly Dictionary<Type, (Type scriptType, string topic)> Scripts = new(from t in typeof(ModuleScript).Assembly.GetTypes() where t.BaseType is { IsGenericType: true } t2 && t2.GetGenericTypeDefinition() == typeof(ModuleScript<>)
@@ -45,13 +45,13 @@ public abstract class ModuleScript {
 		=> new() { topic = topic };
 
 	/// <summary>Called when the script is initialised at the start of the game.</summary>
-	protected internal virtual void Initialise(AimlAsyncContext context) { }
+	protected internal virtual void Initialise(Interrupt interrupt) { }
 	/// <summary>Called when the expert has chosen to work on this module.</summary>
 	protected internal virtual void Started(AimlAsyncContext context) { }
 	/// <summary>Called when the expert has ceased to work on this module.</summary>
 	protected internal virtual void Stopped(AimlAsyncContext context) { }
 	/// <summary>Called when the module has been fully selected and focused in-game.</summary>
-	protected internal virtual void ModuleSelected(AimlAsyncContext context) { }
+	protected internal virtual void ModuleSelected(Interrupt interrupt) { }
 	/// <summary>Called when the module has been deselected in-game.</summary>
 	protected internal virtual void ModuleDeselected(AimlAsyncContext context) { }
 	/// <summary>Called when a strike occurs on this module.</summary>
@@ -76,6 +76,13 @@ public abstract class ModuleScript {
 		await Utils.SelectModuleAsync(interrupt, ModuleIndex, waitForFocus);
 		return interrupt;
 	}
+	
+	#region Log templates
+		
+	[LoggerMessage(LogLevel.Error, "Exception handling module selection")]
+	protected partial void LogException(Exception ex);
+
+	#endregion
 }
 
 /// <summary>Represents a <see cref="ModuleScript"/> that uses a specified <see cref="ComponentReader"/> type to read its module.</summary>
@@ -89,9 +96,20 @@ internal class UnknownModuleScript : ModuleScript {
 }
 
 /// <summary>Indicates categories of modules that require special notice.</summary>
+[Flags]
 public enum PriorityCategory {
 	/// <summary>Not a priority module.</summary>
 	None,
 	/// <summary>A needy module. These cannot be disarmed, but activate periodically or stay active until the bomb is defused.</summary>
-	Needy
+	/// <remarks>e.g. Needy Capacitor</remarks>
+	Needy = 1,
+	/// <summary>A boss module. These require an action immediately after most other modules are disarmed.</summary>
+	/// <remarks>e.g. Forget Me Not</remarks>
+	Boss = 2,
+	/// <summary>Certain modules must not be disarmed before this one.</summary>
+	/// <remarks>e.g. Turn the Keys</remarks>
+	MustSolveBeforeSome = 4,
+	/// <summary>Has timing requirements that must be considered in advance.</summary>
+	/// <remarks>e.g. Turn the Key</remarks>
+	TimeDependent = 8
 }

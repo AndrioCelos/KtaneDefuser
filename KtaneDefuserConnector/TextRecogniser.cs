@@ -11,14 +11,15 @@ namespace KtaneDefuserConnector;
 /// <summary>Identifies images of text.</summary>
 internal class TextRecogniser {
 	internal static class Fonts {
-		private static readonly FontCollection fontCollection = new();
+		private static readonly FontCollection FontCollection = new();
 
+		internal static readonly FontFamily Arial = SystemFonts.Get("Arial");
 		internal static readonly FontFamily CabinMedium = LoadFontFamily(Properties.Resources.CabinMedium);
 		internal static readonly FontFamily OstrichSansHeavy = LoadFontFamily(Properties.Resources.OstrichSansHeavy);
 
 		private static FontFamily LoadFontFamily(byte[] fontFile) {
 			using var ms = new MemoryStream(fontFile);
-			return fontCollection.Add(ms);
+			return FontCollection.Add(ms);
 		}
 	}
 
@@ -48,9 +49,9 @@ internal class TextRecogniser {
 			image.Mutate(c => c.DrawText(textOptions, strings[i], Color.White));
 			var textBoundingBox = ImageUtils.FindEdges(image, image.Bounds, c => c.PackedValue >= 128);
 			if (textBoundingBox.Top <= 0 || textBoundingBox.Bottom >= image.Height)
-				throw new ArgumentException("Sample text height went out of the specified bounds.");
+				throw new ArgumentException($"Sample text height went out of the specified bounds. {TextMeasurer.MeasureSize(strings[i], textOptions)}");
 			if (textBoundingBox.Left <= 0 || textBoundingBox.Right >= image.Width)
-				throw new ArgumentException("Sample text width went out of the specified bounds.");
+				throw new ArgumentException($"Sample text width went out of the specified bounds. {TextMeasurer.MeasureSize(strings[i], textOptions)}");
 			image.Mutate(c => c.Crop(textBoundingBox).Resize(resolution, KnownResamplers.NearestNeighbor, false));
 			samples[i] = (image, (float) textBoundingBox.Width / textBoundingBox.Height, strings[i]);
 		}
@@ -66,44 +67,68 @@ internal class TextRecogniser {
 		string? result = null;
 		var bestDist = int.MaxValue;
 		var checkRatio = (float) rectangle.Width / rectangle.Height;
-		/*
-		var debugImage = new Image<L8>(this.samples[2].image.Width, this.samples[2].image.Height);
-		debugImage.ProcessPixelRows(image, (ar, ac) => {
-			for (var y = 0; y < ar.Height; y++) {
-				var rr = ar.GetRowSpan(y);
-				var rc = ac.GetRowSpan(rectangle.Y + y * rectangle.Height / ar.Height);
-				for (var x = 0; x < ar.Width; x++) {
-					var pc = rc[rectangle.X + x * rectangle.Width / ar.Width];
-					var lc = Math.Min(Math.Min(pc.R, pc.G), pc.B) + Math.Max(Math.Max(pc.R, pc.G), pc.B);
-					rr[x] = new((byte) lc);
-				}
-			}
-		});
-		*/
+
+#if TEXT_RECOGNISER_DEBUG
+		System.Diagnostics.Debug.WriteLine($"## {nameof(TextRecogniser)} starting recognition...");
+		Directory.CreateDirectory("TextRecogniserDebug");
+		var filenameBase = DateTime.Now.ToString("O").Replace(':', '-');
+#endif
 
 		foreach (var (refImage, refRatio, s) in samples) {
 			if (checkRatio / refRatio is < 0.5f or > 2) continue;  // Skip strings that are way too narrow or too wide to match this rectangle.
 
 			refImage.ProcessPixelRows(image, (ar, ac) => {
+				var gridTotals = new int[(ar.Width + 7) / 8];
+#if TEXT_RECOGNISER_DEBUG
+				using var debugImage = new Image<L8>(ar.Width * 3, ar.Height);
+				debugImage.Mutate(p => p.DrawImage(refImage, new Point(refImage.Width * 2, 0), 1));
+#endif
 				var dist = 0;
 				for (var y = 0; y < ar.Height; y++) {
-					var rr = ar.GetRowSpan(y);
-					var rc = ac.GetRowSpan(rectangle.Y + y * rectangle.Height / ar.Height);
+					var refRow = ar.GetRowSpan(y);
+					var checkRow = ac.GetRowSpan(rectangle.Y + y * rectangle.Height / ar.Height);
 					for (var x = 0; x < ar.Width; x++) {
-						var pc = rc[rectangle.X + x * rectangle.Width / ar.Width];
-						var lc = (Math.Min(Math.Min(pc.R, pc.G), pc.B) + Math.Max(Math.Max(pc.R, pc.G), pc.B)) / 2;
-						var lcScaled = Math.Max(0, Math.Min(255, (lc - backgroundValue) * 255 / denominator));
-						var lr = rr[x].PackedValue;
-						dist += Math.Abs(lcScaled - lr);
-						if (dist >= bestDist) return;
+						var checkPixel = checkRow[rectangle.X + x * rectangle.Width / ar.Width];
+						var checkL = (Math.Min(Math.Min(checkPixel.R, checkPixel.G), checkPixel.B) + Math.Max(Math.Max(checkPixel.R, checkPixel.G), checkPixel.B)) / 2;
+						var checkLScaled1 = Math.Clamp((checkL - backgroundValue) * 255 / denominator, 0, 255);
+						var checkLScaled = (checkLScaled1 * checkLScaled1) >> 8;
+						var refL = refRow[x].PackedValue;
+
+						gridTotals[x / 8] += Math.Abs(checkLScaled - refL);
+#if TEXT_RECOGNISER_DEBUG
+						debugImage[x + ar.Width, y] = new((byte) checkLScaled);
+						debugImage[x, y] = new((byte) Math.Abs(checkLScaled - refL));
+#else
+						//if (dist >= bestDist) return;
+#endif
+					}
+
+					if (y % 8 == 7) {
+						for (var gx = 0; gx < gridTotals.Length; gx++) {
+							dist += (gridTotals[gx] * gridTotals[gx]) >> 14;
+#if TEXT_RECOGNISER_DEBUG
+							System.Diagnostics.Debug.Write($"{gridTotals[gx]} ");
+#else
+							if (dist >= bestDist) return;
+#endif
+						}
+						Array.Clear(gridTotals);
 					}
 				}
+#if TEXT_RECOGNISER_DEBUG
+				System.Diagnostics.Debug.WriteLine($"'{s}': {dist}");
+				debugImage.SaveAsPng(Path.Combine("TextRecogniserDebug", $"{filenameBase}.{s}.dist.png"));
+				if (dist >= bestDist) return;
+#endif
 				// If we got here, this is the best match so far.
 				bestDist = dist;
 				result = s;
 			});
 		}
 
+#if TEXT_RECOGNISER_DEBUG
+		System.Diagnostics.Debug.WriteLine($"Recognition result: '{result}'");
+#endif
 		return result ?? throw new ArgumentException("Couldn't recognise the text.");
 	}
 }

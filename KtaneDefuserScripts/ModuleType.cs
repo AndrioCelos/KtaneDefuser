@@ -25,15 +25,27 @@ public enum ModuleType {
 	[AimlSetItem("Wire Sequence")]
 	WireSequence,
 
+	Anagrams,
 	[AimlSetItem("Colour Flash")]
 	ColourFlash,
+	[AimlSetItem("Crazy Talk")]
+	CrazyTalk,
+	[AimlSetItem("Emoji Math")]
+	EmojiMath,
+	[AimlSetItem("Letter Keys")]
+	LetterKeys,
+	[AimlSetItem("Lights Out")]
+	LightsOut,
+	[AimlSetItem("Needy Math"), AimlSetItem("Math")]
+	NeedyMath,
 	[AimlSetItem("Piano Keys")]
 	PianoKeys,
 	Semaphore,
-	[AimlSetItem("Needy Math"), AimlSetItem("Math")]
-	NeedyMath,
-	[AimlSetItem("Emoji Math")]
-	EmojiMath,
+	Switches,
+	[AimlSetItem("Turn the Keys")]
+	TurnTheKeys,
+	[AimlSetItem("Word Scramble")]
+	WordScramble,
 
 	Unknown = -1
 }

@@ -1,4 +1,5 @@
-﻿using static KtaneDefuserConnector.Components.ComplicatedWires;
+﻿using Tensorflow.Contexts;
+using static KtaneDefuserConnector.Components.ComplicatedWires;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("ComplicatedWires")]
@@ -13,25 +14,29 @@ internal partial class ComplicatedWires : ModuleScript<KtaneDefuserConnector.Com
 
 	protected internal override void Started(AimlAsyncContext context) => readyToRead = true;
 
-	protected internal override async void ModuleSelected(AimlAsyncContext context) {
+	protected internal override async void ModuleSelected(Interrupt interrupt) {
 		if (readyToRead) {
 			readyToRead = false;
-			await Read(context);
+			await Read(interrupt);
 		}
 	}
 
 	[AimlCategory("read")]
-	internal async Task Read(AimlAsyncContext context) {
+	internal static async Task Read(AimlAsyncContext context) {
 		using var interrupt = await CurrentModuleInterruptAsync(context);
+		var script = GameState.Current.CurrentScript<ComplicatedWires>();
+		await script.Read(interrupt);
+	}
+	private async Task Read(Interrupt interrupt) {
 		var data = interrupt.Read(Reader);
 		LogWires($"[{string.Join("] [", data.Wires)}]");
 		var module = GameState.Current.SelectedModule!;
 		var script = GameState.Current.CurrentScript<ComplicatedWires>();
 		script.wires ??= (from w in data.Wires select (w, false)).ToArray();
-		await script.FindWiresToCut(context, false);
+		await script.FindWiresToCut(interrupt, false);
 	}
 
-	private async Task FindWiresToCut(AimlAsyncContext context, bool fromUserInput) {
+	private async Task FindWiresToCut(Interrupt interrupt, bool fromUserInput) {
 		while (true) {
 			// Find any wires we already know should be cut.
 			// TODO: Clear this data when starting a new bomb.
@@ -57,8 +62,6 @@ internal partial class ComplicatedWires : ModuleScript<KtaneDefuserConnector.Com
 				toCut.AddRange(Enumerable.Range(0, wires.Length).Where(i => wires[i].flags == firstUnknown.Value));
 			}
 			if (toCut.Count > 0) {
-				using var interrupt = await Interrupt.EnterAsync(context);
-				context = interrupt.Context;
 				var buttons = new List<Button>();
 				for (var i = 0; i < toCut.Count; i++) {
 					var wireIndex = toCut[i];
@@ -86,8 +89,8 @@ internal partial class ComplicatedWires : ModuleScript<KtaneDefuserConnector.Com
 				}
 			} else if (firstUnknown != null) {
 				currentFlags = firstUnknown.Value;
-				context.Reply(firstUnknown == 0 ? "plain white" : $"{(firstUnknown.Value.HasFlag(WireFlags.Red) ? "red " : "")}{(firstUnknown.Value.HasFlag(WireFlags.Blue) ? "blue " : "")}{(firstUnknown.Value.HasFlag(WireFlags.Star) ? "star " : "")}{(firstUnknown.Value.HasFlag(WireFlags.Light) ? "light " : "")}.");
-				context.Reply("<reply>cut</reply><reply>don't cut</reply>");
+				interrupt.Context.Reply(firstUnknown == 0 ? "plain white" : $"{(firstUnknown.Value.HasFlag(WireFlags.Red) ? "red " : "")}{(firstUnknown.Value.HasFlag(WireFlags.Blue) ? "blue " : "")}{(firstUnknown.Value.HasFlag(WireFlags.Star) ? "star " : "")}{(firstUnknown.Value.HasFlag(WireFlags.Light) ? "light " : "")}.");
+				interrupt.Context.Reply("<reply>cut</reply><reply>don't cut</reply>");
 				return;
 			} else {
 				// Uh oh, we thought we knew all remaining wires shouldn't be cut, but the module isn't solved.
@@ -104,7 +107,8 @@ internal partial class ComplicatedWires : ModuleScript<KtaneDefuserConnector.Com
 		var script = GameState.Current.CurrentScript<ComplicatedWires>();
 		if (script.currentFlags == null) return;
 		shouldCut[(int) script.currentFlags] = true;
-		await script.FindWiresToCut(context, true);
+		using var interrupt = await CurrentModuleInterruptAsync(context);
+		await script.FindWiresToCut(interrupt, true);
 	}
 
 	[AimlCategory("don't cut ^")]
@@ -115,7 +119,8 @@ internal partial class ComplicatedWires : ModuleScript<KtaneDefuserConnector.Com
 		var script = GameState.Current.CurrentScript<ComplicatedWires>();
 		if (script.currentFlags == null) return;
 		shouldCut[(int) script.currentFlags] = false;
-		await script.FindWiresToCut(context, false);
+		using var interrupt = await CurrentModuleInterruptAsync(context);
+		await script.FindWiresToCut(interrupt, false);
 	}
 	
 	#region Log templates
