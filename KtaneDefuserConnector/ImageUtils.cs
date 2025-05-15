@@ -11,6 +11,8 @@ namespace KtaneDefuserConnector;
 
 public static class ImageUtils {
 	public const int StandardResolution = 256;
+	public const int ReferenceScreenWidth = 1920;
+	public const int ReferenceScreenHeight = 1080;
 
 	/// <summary>Returns an image drawn by stretching the specified quadrilateral area from another image.</summary>
 	public static Image<Rgba32> PerspectiveUndistort(Image<Rgba32> originalImage, Quadrilateral quadrilateral, InterpolationMode interpolationMode)
@@ -354,6 +356,9 @@ public static class ImageUtils {
 			for (var i = 1; i < 4; i++) {
 				for (var rectIndex = 0; rectIndex < 3; rectIndex++) {
 					var rect = LightsStateSearchRects[rectIndex];
+					if (image.Width != ReferenceScreenWidth || image.Height != ReferenceScreenHeight)
+						rect = new(rect.X * image.Width / ReferenceScreenWidth, rect.Y * image.Height / ReferenceScreenHeight, rect.Width * image.Width / ReferenceScreenWidth, rect.Height * image.Height / ReferenceScreenHeight);
+
 					var dist = 0;
 					var refColour = LightsStateSearchColours[i, rectIndex];
 					for (var y = rect.Top; y < rect.Bottom; y++) {
