@@ -12,27 +12,40 @@ internal partial class NeedyKnob : ModuleScript<KtaneDefuserConnector.Components
 	private static readonly Dictionary<Counts, Direction> correctDirections = [];
 
 	protected internal override async void NeedyStateChanged(AimlAsyncContext context, NeedyState newState) {
-		if (newState == NeedyState.Running) { 
-			using var interrupt = await PrepareToReadAsync(context);
-			if (interrupt is not null) context = interrupt.Context;
-			using var ss = DefuserConnector.Instance.TakeScreenshot();
-			var data = DefuserConnector.Instance.ReadComponent(ss, DefuserConnector.Instance.GetLightsState(ss), Reader, Utils.GetPoints(GameState.Current.Modules[ModuleIndex].Slot));
+		if (newState != NeedyState.Running) {
+			counts = null;
+			return;
+		}
+
+		KtaneDefuserConnector.Components.NeedyKnob.ReadData data;
+		Interrupt? interrupt = null;
+		try {
+			if (Utils.TryGetPoints(GameState.Current.Modules[ModuleIndex].Slot, out var quadrilateral)) {
+				// Can read the module without looking away from the current one.
+				using var ss = DefuserConnector.Instance.TakeScreenshot();
+				data = DefuserConnector.Instance.ReadComponent(ss, DefuserConnector.Instance.GetLightsState(ss), Reader, quadrilateral);
+			} else {
+				interrupt = await ModuleInterruptAsync(context);
+				using var ss = DefuserConnector.Instance.TakeScreenshot();
+				data = interrupt.Read(Reader);
+			}
+
 			var counts = new Counts();
 			for (var i = 0; i < 12; i++) {
-				if (data.Lights[i]) {
-					if (i % 6 < 3) counts.Left++;
-					else counts.Right++;
-				}
+				if (!data.Lights[i]) continue;
+				if (i % 6 < 3) counts.Left++;
+				else counts.Right++;
 			}
+
+			this.counts = counts;
 			LogActivated(ModuleIndex + 1, counts,
 				string.Join(' ', from i in Enumerable.Range(0, 6) select data.Lights[i] ? '*' : '.'),
 				string.Join(' ', from i in Enumerable.Range(0, 6) select data.Lights[i + 6] ? '*' : '.'));
-			this.counts = counts;
+
 			if (correctDirections.TryGetValue(counts, out var correctPosition)) {
-				if (direction != correctPosition) {
-					using var interrupt2 = interrupt ?? await ModuleInterruptAsync(context);
-					await TurnAsync(interrupt2, correctPosition);
-				}
+				if (direction == correctPosition) return;
+				interrupt ??= await ModuleInterruptAsync(context);
+				await TurnAsync(interrupt, correctPosition);
 			} else {
 				isHandled = false;
 				context.Reply($"<priority/> Knob {ModuleIndex + 1} is active. Counts: {counts.Left}, {counts.Right}");
@@ -42,14 +55,9 @@ internal partial class NeedyKnob : ModuleScript<KtaneDefuserConnector.Components
 				context.AddReply("right", $"knob {ModuleIndex + 1} is right");
 				context.Reply(".");
 			}
-		} else
-			this.counts = null;
-	}
-
-	private async Task<Interrupt?> PrepareToReadAsync(AimlAsyncContext context) {
-		if (Utils.CanReadModuleImmediately(ModuleIndex)) return null;
-		var interrupt = await ModuleInterruptAsync(context);
-		return interrupt;
+		} finally {
+			interrupt?.Dispose();
+		}
 	}
 
 	private async Task HandleInputAsync(AimlAsyncContext context, Direction direction) {

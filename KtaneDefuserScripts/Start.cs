@@ -4,6 +4,7 @@ using AngelAiml;
 using Microsoft.Extensions.Logging.Abstractions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+// ReSharper disable MethodHasAsyncOverload
 
 namespace KtaneDefuserScripts;
 [AimlInterface]
@@ -46,13 +47,11 @@ internal static partial class Start {
 		interrupt.SendInputs(Button.A);
 		await Delay(1);  // Wait for modules to initialise.
 		// 2. Identify components on the bomb.
-		using (var ss = DefuserConnector.Instance.TakeScreenshot())
-			await RegisterComponentsAsync(interrupt, ss);
+		await RegisterComponentsAsync(interrupt);
 		// 3. Turn the bomb around and identify widgets on the side.
 		await Utils.SelectFaceAsync(interrupt, 1, SelectFaceAlignMode.CheckWidgets);
 		// 4. Repeat steps 2-3 for the other faces.
-		using (var ss = DefuserConnector.Instance.TakeScreenshot())
-			await RegisterComponentsAsync(interrupt, ss);
+		await RegisterComponentsAsync(interrupt);
 		await Utils.SelectFaceAsync(interrupt, 0, SelectFaceAlignMode.CheckWidgets);
 		// 5. Turn the bomb to the bottom face.
 		GameState.Current.LookingAtSide = true;
@@ -73,25 +72,43 @@ internal static partial class Start {
 		context.Reply("Ready. <reply>edgework</reply><reply>first module</reply><reply>vanilla modules</reply><reply>specific module…</reply>");
 	}
 
-	private static async Task RegisterComponentsAsync(Interrupt interrupt, Image<Rgba32> screenshot) {
-		var lightsState = DefuserConnector.Instance.GetLightsState(screenshot);
-		if (lightsState != LightsState.On) throw new ArgumentException($"Can't identify components on lights state {lightsState}.");
+	private static async Task RegisterComponentsAsync(Interrupt interrupt) {
 		if (GameState.Current.BombType == BombType.Centurion) {
-			var anyModules = false;
-			foreach (var (centre, group) in CenturionUtil.SlotGroups[GameState.Current.SelectedFaceNum]) {
-				await Utils.SelectSlotAsync(interrupt, centre, true);
-				anyModules = await ReadComponentSlotsAsync(interrupt, screenshot, group, anyModules);
-			}
+			// The bottom row of components is mostly offscreen at the default zoom level, so we will take two screenshots.
+			bool anyModules;
+			await interrupt.SendInputsAsync(new ZoomAction(-2));
+			using (var ss = DefuserConnector.Instance.TakeScreenshot())
+				anyModules = await RegisterComponentsAsync(interrupt, ss, true, false);
+			await interrupt.SendInputsAsync(new ZoomAction(0));
+			using (var ss = DefuserConnector.Instance.TakeScreenshot())
+				await RegisterComponentsAsync(interrupt, ss, false, anyModules);
 		} else {
-			var slots = from y in Enumerable.Range(0, 2) from x in Enumerable.Range(0, 3) select new Slot(0, GameState.Current.SelectedFaceNum, x, y);
-			await ReadComponentSlotsAsync(interrupt, screenshot, slots, false);
+			using var ss = DefuserConnector.Instance.TakeScreenshot();
+			await RegisterComponentsAsync(interrupt, ss, false, false);
 		}
 	}
 
-	private static async Task<bool> ReadComponentSlotsAsync(Interrupt interrupt, Image<Rgba32> screenshot, IEnumerable<Slot> slots, bool anyModules) {
+	private static Task<bool> RegisterComponentsAsync(Interrupt interrupt, Image<Rgba32> screenshot, bool isZoomedOut, bool anyModules) {
+		if (!isZoomedOut) {
+			var lightsState = DefuserConnector.Instance.GetLightsState(screenshot);
+			if (lightsState != LightsState.On) throw new ArgumentException($"Can't identify components on lights state {lightsState}.");
+		}
+		var slots = GameState.Current.BombType == BombType.Centurion
+			? isZoomedOut
+				? from x in Enumerable.Range(0, 4) select new Slot(0, GameState.Current.SelectedFaceNum, x, 0)
+				: [
+					.. from x in Enumerable.Range(4, 3) select new Slot(0, GameState.Current.SelectedFaceNum, x, 0),
+					.. from y in Enumerable.Range(1, 6) from x in Enumerable.Range(0, 7) select new Slot(0, GameState.Current.SelectedFaceNum, x, y),
+					.. from x in Enumerable.Range(0, 2) select new Slot(0, GameState.Current.SelectedFaceNum, x, 7)
+				]
+			: from y in Enumerable.Range(0, 2) from x in Enumerable.Range(0, 3) select new Slot(0, GameState.Current.SelectedFaceNum, x, y);
+		return ReadComponentSlotsAsync(interrupt, screenshot, slots, isZoomedOut, anyModules);
+	}
+
+	private static async Task<bool> ReadComponentSlotsAsync(Interrupt interrupt, Image<Rgba32> screenshot, IEnumerable<Slot> slots, bool isZoomedOut, bool anyModules) {
 		var needTimerRead = false;
 		foreach (var slot in slots) {
-			var points = Utils.GetPoints(slot);
+			var points = Utils.GetPoints(slot, isZoomedOut);
 			var component = DefuserConnector.Instance.GetComponentReader(screenshot, points);
 			var actualComponent = DefuserConnector.Instance.CheatGetComponentReader(slot);
 			if (actualComponent != component && !(actualComponent is null && component is KtaneDefuserConnector.Components.Timer)) {
@@ -105,7 +122,7 @@ internal static partial class Start {
 				GameState.Current.Faces[GameState.Current.SelectedFaceNum].SelectedSlot = slot;
 			}
 
-			var module = RegisterComponent(interrupt, slot, component);  // TODO: This assumes the vanilla bomb layout. It will need to be updated for other layouts.
+			var module = RegisterComponent(interrupt, slot, component);
 			if (module is not null) {
 				var lightState = DefuserConnector.Instance.GetModuleLightState(screenshot, points);
 				if (lightState == ModuleLightState.Solved) {

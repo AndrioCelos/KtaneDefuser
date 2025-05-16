@@ -23,6 +23,7 @@ public class QuadrilateralSelector : Control {
 	public static readonly StyledProperty<Quadrilateral> QuadrilateralProperty = AvaloniaProperty.Register<QuadrilateralSelector, Quadrilateral>(nameof(Quadrilateral));
 	private static readonly IPen SelectionLinePen = new ImmutablePen(Brushes.LightGray);
 	private int? draggingPoint;
+	private bool enableMouseDrag;
 	private Point[] points { get; } = new Point[4];
 
 	[Content]
@@ -136,17 +137,17 @@ public class QuadrilateralSelector : Control {
 		}
 		if (ds[index] > 100) return;
 		draggingPoint = index;
+		enableMouseDrag = true;
 		InvalidateVisual();
 	}
 
 	protected override void OnPointerMoved(PointerEventArgs e) {
-		if (draggingPoint != null && Source is not null) {
-			var displayPoint = e.GetCurrentPoint(this).Position;
-			var point = FromDisplayPoint(displayPoint);
-			point = new(Math.Min(Math.Max(point.X, 0), Source.Width), Math.Min(Math.Max(point.Y, 0), Source.Height));
-			points[draggingPoint.Value] = point;
-			UpdateQuadrilateral();
-		}
+		if (!enableMouseDrag || draggingPoint is null || Source is null) return;
+		var displayPoint = e.GetCurrentPoint(this).Position;
+		var point = FromDisplayPoint(displayPoint);
+		point = new(Math.Min(Math.Max(point.X, 0), Source.Width), Math.Min(Math.Max(point.Y, 0), Source.Height));
+		points[draggingPoint.Value] = point;
+		UpdateQuadrilateral();
 	}
 
 	private void UpdateQuadrilateral() {
@@ -170,21 +171,25 @@ public class QuadrilateralSelector : Control {
 		switch (e.Key) {
 			case Key.W:
 				points[i] += new Point(0, -1);
+				enableMouseDrag = false;
 				UpdateQuadrilateral();
 				e.Handled = true;
 				break;
 			case Key.S:
 				points[i] += new Point(0, 1);
+				enableMouseDrag = false;
 				UpdateQuadrilateral();
 				e.Handled = true;
 				break;
 			case Key.A:
 				points[i] += new Point(-1, 0);
+				enableMouseDrag = false;
 				UpdateQuadrilateral();
 				e.Handled = true;
 				break;
 			case Key.D:
 				points[i] += new Point(1, 0);
+				enableMouseDrag = false;
 				UpdateQuadrilateral();
 				e.Handled = true;
 				break;

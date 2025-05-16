@@ -46,15 +46,28 @@ public static class Utils {
 	];
 
 	/// <summary>Returns the quadrilateral representing the location of the specified slot on the screen. The slot should be on the side of the bomb we're already looking at.</summary>
-	public static Quadrilateral GetPoints(Slot slot) {
-		if (GameState.Current.BombType == BombType.Centurion) return CenturionUtil.GetPoints(slot);
-		if (GameState.Current.FocusState == FocusState.Module) {
-			var selectedSlot = GameState.Current.SelectedFace.SelectedSlot;
-			var dx = slot.X - selectedSlot.X;
-			var dy = slot.Y - selectedSlot.Y;
-			return ModuleAreas[(dy + 1) * 5 + dx + 2];
-		} else
-			return BombAreas[slot.Y * 3 + slot.X];
+	public static Quadrilateral GetPoints(Slot slot, bool isZoomedOut = false) {
+		if (!TryGetPoints(slot, isZoomedOut, out var quadrilateral)) throw new ArgumentException("Tried to look at a module slot that is not visible.");
+		return quadrilateral;
+	}
+
+	public static bool TryGetPoints(Slot slot, out Quadrilateral quadrilateral) => TryGetPoints(slot, false, out quadrilateral);
+	public static bool TryGetPoints(Slot slot, bool isZoomedOut, out Quadrilateral quadrilateral) {
+		if (GameState.Current.LookingAtSide || slot.Face != GameState.Current.SelectedFaceNum) {
+			quadrilateral = new();
+			return false;
+		}
+		if (GameState.Current.BombType == BombType.Centurion) return CenturionUtil.TryGetPoints(slot, isZoomedOut, out quadrilateral);
+		if (GameState.Current.FocusState != FocusState.Module) {
+			quadrilateral = BombAreas[slot.Y * 3 + slot.X];
+			return true;
+		}
+
+		var selectedSlot = GameState.Current.SelectedFace.SelectedSlot;
+		var dx = slot.X - selectedSlot.X;
+		var dy = slot.Y - selectedSlot.Y;
+		quadrilateral = ModuleAreas[(dy + 1) * 5 + dx + 2];
+		return true;
 	}
 
 	public static void AddReply(this AimlAsyncContext context, Reply reply) => AddReply(context, reply.Text, reply.Postback);
@@ -157,9 +170,6 @@ public static class Utils {
 		GameState.Current.SelectedFace.SelectedSlot = slot;
 		GameState.Current.FocusState = FocusState.Module;
 	}
-
-	/// <summary>Returns a value indicating whether the specified module is currently visible to the bot.</summary>
-	internal static bool CanReadModuleImmediately(int moduleIndex) => !GameState.Current.LookingAtSide && GameState.Current.Modules[moduleIndex].Slot.Face == GameState.Current.SelectedFaceNum;
 
 	internal static IEnumerable<T[]> EnumeratePermutations<T>(IEnumerable<T> items) {
 		var array = items.ToArray();

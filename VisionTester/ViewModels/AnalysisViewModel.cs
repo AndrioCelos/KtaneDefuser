@@ -142,13 +142,33 @@ public partial class AnalysisViewModel : ViewModelBase {
 
 					foreach (var rect in rectangles) {
 						var reader = connector.GetWidgetReader(InputImage, rect);
-						s += $"{reader?.Name ?? "null"}\n";
+						s += $"{reader?.Name ?? "null"}; ";
 					}
 					break;
 				}
 				case AnalysisType.GetCenturionSideWidgetBoxes: {
-					var rectangles = ImageUtils.GetCenturionSideWidgetBounds(InputImage, InputImage.Width >= 1000 ? new(904, 250, 144, 500) : new(0, 0, InputImage.Width, InputImage.Height));
+					var bombTopY = 0;
+					InputImage.ProcessPixelRows(a => {
+						for (var y = 0; y < a.Height; y++) {
+							var row = a.GetRowSpan(y);
+							for (var x = 640 * a.Width / ImageUtils.ReferenceScreenWidth; x < 1280 * a.Width / ImageUtils.ReferenceScreenWidth; x++) {
+								if (HsvColor.FromColor(row[x]) is not { S: < 0.11f, V: >= 0.35f and < 0.98f }) continue;
+								bombTopY = y;
+								return;
+							}
+						}
+					});
+					
+					var (top, height) = bombTopY switch {
+						< 25 => (20, 580),  // Looking at the top section.
+						< 90 => (250, 500),  // Looking at the middle section.
+						_ => (420, 650)  // Looking at the bottom section.
+					};
+					
 					var debugImage = InputImage.Clone();
+					var baseRectangle = ImageUtils.GetCenturionSideWidgetBaseRectangle(InputImage, top * InputImage.Height / ImageUtils.ReferenceScreenHeight, height * InputImage.Height / ImageUtils.ReferenceScreenHeight);
+					debugImage.Mutate(p => p.Draw(Color.Lime, 1, baseRectangle));
+					var rectangles = ImageUtils.GetCenturionSideWidgetBounds(InputImage, baseRectangle);
 					debugImage.Mutate(p => {
 						foreach (var rect in rectangles) {
 							p.Draw(Color.Cyan, 1, rect);
@@ -159,7 +179,7 @@ public partial class AnalysisViewModel : ViewModelBase {
 
 					foreach (var rect in rectangles) {
 						var reader = connector.GetWidgetReader(InputImage, new(rect.Right, rect.Top, rect.Right, rect.Bottom, rect.Left, rect.Top, rect.Left, rect.Bottom));
-						s += $"{reader?.Name ?? "null"}\n";
+						s += $"{reader?.Name ?? "null"}; ";
 					}
 					break;
 				}
