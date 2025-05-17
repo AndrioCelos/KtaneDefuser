@@ -1,6 +1,4 @@
 ﻿using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
@@ -10,7 +8,7 @@ namespace KtaneDefuserConnector.Components;
 public class LetterKeys : ComponentReader<LetterKeys.ReadData> {
 	public override string Name => "Letter Keys";
 
-	private static readonly TextRecogniser LetterRecogniser = new(new(TextRecogniser.Fonts.OstrichSansHeavy, 48), 210, 0, new(64, 64), ["A", "B", "C", "D"]);
+	private static readonly TextRecogniser LetterRecogniser = new(new(TextRecogniser.Fonts.OstrichSansHeavy, 48), 210, 0, new(64, 64), "A", "B", "C", "D");
 	private static readonly TextRecogniser NumberRecogniser = new(new(TextRecogniser.Fonts.OstrichSansHeavy, 48), 10, 128, new(64, 64), [.. from i in Enumerable.Range('0', 10) select ((char) i).ToString()]);
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {

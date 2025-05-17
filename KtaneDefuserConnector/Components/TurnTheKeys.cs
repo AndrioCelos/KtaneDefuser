@@ -1,16 +1,10 @@
 ﻿using System;
-using System.Linq;
-using System.Text;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 
 namespace KtaneDefuserConnector.Components;
 public class TurnTheKeys : ComponentReader<TurnTheKeys.ReadData> {
 	public override string Name => "Turn the Keys";
-
-	private static readonly TextRecogniser TextRecogniser = new(new(TextRecogniser.Fonts.OstrichSansHeavy, 48), 10, 128, new(64, 64), [":", "=", "(", "|", ")", "+", "-"]);
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		using var displayImage = GetNeedyDisplayImage(image, lightsState, debugImage);
@@ -27,10 +21,9 @@ public class TurnTheKeys : ComponentReader<TurnTheKeys.ReadData> {
 			foreach (var y in image.Height.MapRange(104, 148, 8)) {
 				var row = p.GetRowSpan(y);
 				foreach (var x in image.Width.MapRange(24, 232, 2)) {
-					if (HsvColor.FromColor(row[x]) is { H: < 30, S: >= 0.65f, V: >= 0.5f }) {
-						point = new(x, y);
-						return;
-					}
+					if (HsvColor.FromColor(row[x]) is not { H: < 30, S: >= 0.65f, V: >= 0.5f }) continue;
+					point = new(x, y);
+					return;
 				}
 			}
 		});

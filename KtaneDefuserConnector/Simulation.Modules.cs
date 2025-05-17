@@ -16,13 +16,13 @@ internal partial class Simulation {
 		public class Wires(Simulation simulation, int shouldCut, params Components.Wires.Colour[] wires) : Module<Components.Wires.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.Wires>(), 1, wires.Length) {
 			internal override Components.Wires.ReadData Details => new(wires);
 
-			private readonly bool[] isCut = new bool[wires.Length];
+			private readonly bool[] _isCut = new bool[wires.Length];
 
 			public override void Interact() {
 				LogCutWire(Y + 1);
-				if (isCut[Y])
+				if (_isCut[Y])
 					return;
-				isCut[Y] = true;
+				_isCut[Y] = true;
 				if (Y == shouldCut)
 					Solve();
 				else
@@ -33,62 +33,62 @@ internal partial class Simulation {
 		public class ComplicatedWires(Simulation simulation, WireFlags[] wires) : Module<Components.ComplicatedWires.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.ComplicatedWires>(), wires.Length, 1) {
 			internal override Components.ComplicatedWires.ReadData Details => new(X, wires);
 
-			private static readonly bool[] shouldCut = new bool[16];
-			private readonly bool[] isCut = new bool[wires.Length];
+			private static readonly bool[] ShouldCut = new bool[16];
+			private readonly bool[] _isCut = new bool[wires.Length];
 
 			static ComplicatedWires() {
-				shouldCut[(int) WireFlags.None] = true;
-				shouldCut[(int) WireFlags.Blue] = true;
-				shouldCut[(int) (WireFlags.Blue | WireFlags.Star)] = true;
-				shouldCut[(int) (WireFlags.Blue | WireFlags.Light)] = true;
-				shouldCut[(int) (WireFlags.Blue | WireFlags.Star | WireFlags.Light)] = true;
+				ShouldCut[(int) WireFlags.None] = true;
+				ShouldCut[(int) WireFlags.Blue] = true;
+				ShouldCut[(int) (WireFlags.Blue | WireFlags.Star)] = true;
+				ShouldCut[(int) (WireFlags.Blue | WireFlags.Light)] = true;
+				ShouldCut[(int) (WireFlags.Blue | WireFlags.Star | WireFlags.Light)] = true;
 			}
 
 			public override void Interact() {
 				LogCutWire(X + 1);
-				if (isCut[X])
+				if (_isCut[X])
 					return;
-				isCut[X] = true;
-				if (!shouldCut[(int) wires[X]])
+				_isCut[X] = true;
+				if (!ShouldCut[(int) wires[X]])
 					StrikeFlash();
-				else if (!wires.Where((t, i) => shouldCut[(int) t] && !isCut[i]).Any())
+				else if (!wires.Where((t, i) => ShouldCut[(int) t] && !_isCut[i]).Any())
 					Solve();
 			}
 		}
 
 		public partial class Button : Module<Components.Button.ReadData> {
-			private readonly Components.Button.Colour colour;
-			private readonly string label;
-			private Components.Button.Colour? indicatorColour;
-			private int correctDigit;
-			private readonly Timer pressTimer = new(500) { AutoReset = false };
+			private readonly Components.Button.Colour _colour;
+			private readonly string _label;
+			private Components.Button.Colour? _indicatorColour;
+			private int _correctDigit;
+			private readonly Timer _pressTimer = new(500) { AutoReset = false };
 
-			internal override Components.Button.ReadData Details => new(colour, label, indicatorColour);
+			internal override Components.Button.ReadData Details => new(_colour, _label, _indicatorColour);
 
 			public Button(Simulation simulation, Components.Button.Colour colour, string label) : base(simulation, DefuserConnector.GetComponentReader<Components.Button>(), 1, 1) {
-				this.colour = colour;
-				this.label = label;
-				pressTimer.Elapsed += PressTimer_Elapsed;
+				_colour = colour;
+				_label = label;
+				_pressTimer.Elapsed += PressTimer_Elapsed;
 			}
 
-			public override void Interact() => pressTimer.Start();
+			public override void Interact() => _pressTimer.Start();
 			public override void StopInteract() {
 				bool correct;
-				pressTimer.Stop();
-				if (indicatorColour is not null) {
+				_pressTimer.Stop();
+				if (_indicatorColour is not null) {
 					var elapsed = TimerComponent.Instance.Elapsed;
 					var time = elapsed.Ticks;
 					LogButtonReleased(elapsed.TotalSeconds);
 					correct = time >= Stopwatch.Frequency * 60
-						? time / (Stopwatch.Frequency * 600) % 10 == correctDigit
-							|| time / (Stopwatch.Frequency * 60) % 10 == correctDigit
-							|| time / (Stopwatch.Frequency * 10) % 10 == correctDigit
-							|| time / Stopwatch.Frequency % 10 == correctDigit
-						: time / (Stopwatch.Frequency * 10) % 10 == correctDigit
-							|| time / Stopwatch.Frequency % 10 == correctDigit
-							|| time / (Stopwatch.Frequency / 10) % 10 == correctDigit
-							|| time / (Stopwatch.Frequency / 100) % 10 == correctDigit;
-					indicatorColour = null;
+						? time / (Stopwatch.Frequency * 600) % 10 == _correctDigit
+							|| time / (Stopwatch.Frequency * 60) % 10 == _correctDigit
+							|| time / (Stopwatch.Frequency * 10) % 10 == _correctDigit
+							|| time / Stopwatch.Frequency % 10 == _correctDigit
+						: time / (Stopwatch.Frequency * 10) % 10 == _correctDigit
+							|| time / Stopwatch.Frequency % 10 == _correctDigit
+							|| time / (Stopwatch.Frequency / 10) % 10 == _correctDigit
+							|| time / (Stopwatch.Frequency / 100) % 10 == _correctDigit;
+					_indicatorColour = null;
 				} else {
 					LogButtonTapped();
 					correct = false;
@@ -98,9 +98,9 @@ internal partial class Simulation {
 			}
 
 			private void PressTimer_Elapsed(object? sender, ElapsedEventArgs e) {
-				indicatorColour = Components.Button.Colour.Blue;
-				correctDigit = 4;
-				LogButtonHeld(indicatorColour);
+				_indicatorColour = Components.Button.Colour.Blue;
+				_correctDigit = 4;
+				LogButtonHeld(_indicatorColour);
 			}
 
 			#region Log templates
@@ -120,25 +120,20 @@ internal partial class Simulation {
 		public partial class Keypad(Simulation simulation, Components.Keypad.Symbol[] symbols, int[] correctOrder) : Module<Components.Keypad.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.Keypad>(), 2, 2) {
 			internal override Components.Keypad.ReadData Details => new(symbols);
 
-			private readonly Components.Keypad.Symbol[] symbols = symbols;
-			private readonly int[] correctOrder = correctOrder;
-			private readonly bool[] isPressed = new bool[symbols.Length];
+			private readonly bool[] _isPressed = new bool[symbols.Length];
 
 			public override void Interact() {
 				if (X is < 0 or >= 2 || Y is < 0 or >= 2) throw new InvalidOperationException("Invalid highlight position");
 				var index = Y * 2 + X;
 				LogKeyPressed(index);
-				if (isPressed[index])
+				if (_isPressed[index])
 					return;
-				foreach (var i in correctOrder) {
-					if (i == index) break;
-					if (!isPressed[i]) {
-						StrikeFlash();
-						return;
-					}
+				if (correctOrder.TakeWhile(i => i != index).Any(i => !_isPressed[i])) {
+					StrikeFlash();
+					return;
 				}
-				isPressed[index] = true;
-				if (!isPressed.Contains(false))
+				_isPressed[index] = true;
+				if (!_isPressed.Contains(false))
 					Solve();
 			}
 
@@ -151,18 +146,18 @@ internal partial class Simulation {
 		}
 
 		public partial class Maze : Module<Components.Maze.ReadData> {
-			internal override Components.Maze.ReadData Details => new(position, goal, circle1, circle2);
+			internal override Components.Maze.ReadData Details => new(_position, _goal, _circle1, _circle2);
 
-			private GridCell position;
-			private readonly GridCell goal;
-			private readonly GridCell circle1;
-			private readonly GridCell circle2;
+			private GridCell _position;
+			private readonly GridCell _goal;
+			private readonly GridCell _circle1;
+			private readonly GridCell _circle2;
 
 			public Maze(Simulation simulation, GridCell start, GridCell goal, GridCell circle1, GridCell circle2) : base(simulation, DefuserConnector.GetComponentReader<Components.Maze>(), 3, 3) {
-				position = start;
-				this.goal = goal;
-				this.circle1 = circle1;
-				this.circle2 = circle2;
+				_position = start;
+				_goal = goal;
+				_circle1 = circle1;
+				_circle2 = circle2;
 				SelectableGrid[0, 0] = false;
 				SelectableGrid[0, 2] = false;
 				SelectableGrid[1, 1] = false;
@@ -176,7 +171,7 @@ internal partial class Simulation {
 					2 => Direction.Down,
 					_ => X == 0 ? Direction.Left : Direction.Right
 				};
-				var newPosition = position;
+				var newPosition = _position;
 				switch (direction) {
 					case Direction.Up: newPosition.Y--; break;
 					case Direction.Right: newPosition.X++; break;
@@ -187,9 +182,9 @@ internal partial class Simulation {
 					LogMovedIntoBoundary(direction);
 					StrikeFlash();
 				} else {
-					position = newPosition;
+					_position = newPosition;
 					LogMoved(direction, newPosition);
-					if (position == goal)
+					if (_position == _goal)
 						Solve();
 				}
 			}
@@ -206,46 +201,46 @@ internal partial class Simulation {
 		}
 
 		public partial class Memory : Module<Components.Memory.ReadData> {
-			internal override Components.Memory.ReadData Details => !isAnimating ? new(stagesCleared, display, keyDigits) : throw new InvalidOperationException("Tried to read module while animating");
+			internal override Components.Memory.ReadData Details => !_isAnimating ? new(_stagesCleared, _display, _keyDigits) : throw new InvalidOperationException("Tried to read module while animating");
 
-			private int display;
-			private readonly int[] keyDigits = new int[4];
-			private int stagesCleared;
-			private bool isAnimating;
-			private readonly Timer animationTimer = new(2900) { AutoReset = false };
+			private int _display;
+			private readonly int[] _keyDigits = new int[4];
+			private int _stagesCleared;
+			private bool _isAnimating;
+			private readonly Timer _animationTimer = new(2900) { AutoReset = false };
 
 			public Memory(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.Memory>(), 4, 1) {
-				animationTimer.Elapsed += AnimationTimer_Elapsed;
+				_animationTimer.Elapsed += AnimationTimer_Elapsed;
 				SetKeysAndDisplay();
 			}
 
 			private void AnimationTimer_Elapsed(object? sender, ElapsedEventArgs e) {
 				SetKeysAndDisplay();
-				isAnimating = false;
+				_isAnimating = false;
 			}
 
 			private void SetKeysAndDisplay() {
 				for (var i = 0; i < 4; i++)
-					keyDigits[i] = (i + stagesCleared) % 4 + 1;
-				display = keyDigits[0];
+					_keyDigits[i] = (i + _stagesCleared) % 4 + 1;
+				_display = _keyDigits[0];
 			}
 
 			private void StartAnimation() {
-				isAnimating = true;
-				animationTimer.Start();
+				_isAnimating = true;
+				_animationTimer.Start();
 			}
 
 			public override void Interact() {
-				if (isAnimating) throw new InvalidOperationException("Memory button pressed during animation");
+				if (_isAnimating) throw new InvalidOperationException("Memory button pressed during animation");
 				LogKeyPressed(X + 1);
 				if (LightState == ModuleLightState.Solved) return;
-				if (X != stagesCleared % 4) {
+				if (X != _stagesCleared % 4) {
 					StrikeFlash();
-					stagesCleared = 0;
+					_stagesCleared = 0;
 					StartAnimation();
 				} else {
-					stagesCleared++;
-					if (stagesCleared >= 5)
+					_stagesCleared++;
+					if (_stagesCleared >= 5)
 						Solve();
 					else
 						StartAnimation();
@@ -261,43 +256,44 @@ internal partial class Simulation {
 		}
 
 		public class MorseCode : Module<Components.MorseCode.ReadData> {
-			internal override Components.MorseCode.ReadData Details => new(lightOn);
-
-			private bool lightOn;
 			private const long Pattern = 0b10101000101010111000111011100011101110111000101010111; // bombs
 			private const int PatternLength = 53;
-			private int index;
-			private readonly Timer animationTimer = new(250);
-			private int selectedFrequency;
-			private static readonly string[] allFrequencies = ["505", "515", "522", "532", "535", "542", "545", "552", "555", "565", "572", "575", "582", "592", "595", "600"];
+			private static readonly string[] AllFrequencies = ["505", "515", "522", "532", "535", "542", "545", "552", "555", "565", "572", "575", "582", "592", "595", "600"];
+
+			internal override Components.MorseCode.ReadData Details => new(_isLightOn);
+
+			private bool _isLightOn;
+			private int _index;
+			private readonly Timer _animationTimer = new(250);
+			private int _selectedFrequency;
 
 			public MorseCode(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.MorseCode>(), 2, 2) {
 				SelectableGrid[1, 1] = false;
-				animationTimer.Elapsed += AnimationTimer_Elapsed;
-				animationTimer.Start();
+				_animationTimer.Elapsed += AnimationTimer_Elapsed;
+				_animationTimer.Start();
 			}
 
 			private void AnimationTimer_Elapsed(object? sender, ElapsedEventArgs e) {
-				index++;
-				if (index >= PatternLength) index = -10;
-				lightOn = index >= 0 && (Pattern & 1L << index) != 0;
+				_index++;
+				if (_index >= PatternLength) _index = -10;
+				_isLightOn = _index >= 0 && (Pattern & 1L << _index) != 0;
 			}
 
 			public override void Interact() {
 				if (Y == 1) {
-					LogSubmit($"3.{allFrequencies[selectedFrequency]}");
-					if (selectedFrequency == 9) {
+					LogSubmit($"3.{AllFrequencies[_selectedFrequency]}");
+					if (_selectedFrequency == 9) {
 						Solve();
-						animationTimer.Stop();
-						lightOn = false;
+						_animationTimer.Stop();
+						_isLightOn = false;
 					} else
 						StrikeFlash();
 				} else if (X == 0) {
-					if (selectedFrequency == 0) throw new InvalidOperationException("Pointer went out of bounds.");
-					selectedFrequency--;
+					if (_selectedFrequency == 0) throw new InvalidOperationException("Pointer went out of bounds.");
+					_selectedFrequency--;
 				} else {
-					if (selectedFrequency == 15) throw new InvalidOperationException("Pointer went out of bounds.");
-					selectedFrequency++;
+					if (_selectedFrequency == 15) throw new InvalidOperationException("Pointer went out of bounds.");
+					_selectedFrequency++;
 				}
 			}
 		}
@@ -334,35 +330,35 @@ internal partial class Simulation {
 		}
 
 		public partial class NeedyKnob(Simulation simulation) : NeedyModule<Components.NeedyKnob.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.NeedyKnob>(), 1, 1) {
-			private static readonly bool[] inactiveLights = new bool[12];
-			private bool[] lights = inactiveLights;
-			private int position;
-			private int correctPosition;
-			private int nextStateIndex;
-
-			private static readonly (bool[] lights, int correctPosition)[] states = [
+			private static readonly bool[] InactiveLights = new bool[12];
+			private static readonly (bool[] lights, int correctPosition)[] States = [
 				([false, false, true, false, true, true, true, true, true, true, false, true], 0),
 				([false, true, true, false, false, true, true, true, true, true, false, true], 2)
 			];
 
-			internal override Components.NeedyKnob.ReadData Details => new(DisplayedTime, lights);
+			private bool[] _lights = InactiveLights;
+			private int _position;
+			private int _correctPosition;
+			private int _nextStateIndex;
+
+			internal override Components.NeedyKnob.ReadData Details => new(DisplayedTime, _lights);
 
 			protected override void OnActivate() {
-				var state = states[nextStateIndex];
-				nextStateIndex = (nextStateIndex + 1) % states.Length;
-				lights = state.lights;
-				correctPosition = state.correctPosition;
+				var state = States[_nextStateIndex];
+				_nextStateIndex = (_nextStateIndex + 1) % States.Length;
+				_lights = state.lights;
+				_correctPosition = state.correctPosition;
 			}
 
 			public override void Interact() {
-				position = (position + 1) % 4;
-				LogMoved(position);
+				_position = (_position + 1) % 4;
+				LogMoved(_position);
 			}
 
 			protected override void OnTimerExpired() {
-				if (position != correctPosition)
+				if (_position != _correctPosition)
 					StrikeFlash();
-				lights = inactiveLights;
+				_lights = InactiveLights;
 			}
 
 			#region Log templates
@@ -374,23 +370,24 @@ internal partial class Simulation {
 		}
 
 		public partial class NeedyVentGas(Simulation simulation) : NeedyModule<Components.NeedyVentGas.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.NeedyVentGas>(), 2, 1) {
-			private static readonly string[] messages = ["VENT GAS?", "DETONATE?"];
-			private int messageIndex = 1;
+			private static readonly string[] Messages = ["VENT GAS?", "DETONATE?"];
+			
+			private int _messageIndex = 1;
 
-			internal override Components.NeedyVentGas.ReadData Details => new(DisplayedTime, DisplayedTime is not null ? messages[messageIndex] : null);
+			internal override Components.NeedyVentGas.ReadData Details => new(DisplayedTime, DisplayedTime is not null ? Messages[_messageIndex] : null);
 
 			protected override void OnActivate() {
-				messageIndex ^= 1;
-				LogDisplay(messages[messageIndex]);
+				_messageIndex ^= 1;
+				LogDisplay(Messages[_messageIndex]);
 			}
 
 			public override void Interact() {
 				LogButton(X == 0 ? 'Y' : 'N');
 				if (X == 0) {
-					if (messageIndex != 0) StrikeFlash();
+					if (_messageIndex != 0) StrikeFlash();
 					Deactivate();
 				} else {
-					if (messageIndex != 0) Deactivate();
+					if (_messageIndex != 0) Deactivate();
 				}
 			}
 
@@ -405,16 +402,16 @@ internal partial class Simulation {
 		}
 
 		public class Password : Module<Components.Password.ReadData> {
-			private readonly char[,] columns = new[,] {
+			private readonly char[,] _columns = new[,] {
 				{ 'A', 'B', 'C', 'D', 'E', 'F' },
 				{ 'G', 'B', 'H', 'I', 'J', 'K' },
 				{ 'L', 'M', 'N', 'O', 'P', 'Q' },
 				{ 'R', 'S', 'T', 'U', 'V', 'W' },
 				{ 'W', 'X', 'Y', 'Z', 'A', 'T' }
 			};
-			private readonly int[] columnPositions = new int[5];
+			private readonly int[] _columnPositions = new int[5];
 
-			internal override Components.Password.ReadData Details => new([.. columnPositions.Select((y, x) => columns[x, y])]);
+			internal override Components.Password.ReadData Details => new([.. _columnPositions.Select((y, x) => _columns[x, y])]);
 
 			public Password(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.Password>(), 5, 3) {
 				SelectableGrid[2, 0] = false;
@@ -426,12 +423,12 @@ internal partial class Simulation {
 			public override void Interact() {
 				if (Y == 2) {
 					LogSubmit(new string(Details.Display));
-					if (columnPositions[0] == 0 && columnPositions[1] == 1 && columnPositions[2] == 3 && columnPositions[3] == 3 && columnPositions[4] == 5)
+					if (_columnPositions[0] == 0 && _columnPositions[1] == 1 && _columnPositions[2] == 3 && _columnPositions[3] == 3 && _columnPositions[4] == 5)
 						Solve();
 					else
 						StrikeFlash();
 				} else {
-					ref var columnPosition = ref columnPositions[X];
+					ref var columnPosition = ref _columnPositions[X];
 					if (Y == 0) {
 						columnPosition--;
 						if (columnPosition < 0) columnPosition = 5;
@@ -443,14 +440,14 @@ internal partial class Simulation {
 			}
 		}
 
-		public partial class SimonSays : Module<Components.SimonSays.ReadData> {
-			internal override Components.SimonSays.ReadData Details => new(litColour);
+		public class SimonSays : Module<Components.SimonSays.ReadData> {
+			internal override Components.SimonSays.ReadData Details => new(_litColour);
 
-			private readonly Timer timer = new(500);
-			private SimonColour? litColour;
-			private int stagesCleared;
-			private int inputProgress;
-			private int tick;
+			private readonly Timer _timer = new(500);
+			private SimonColour? _litColour;
+			private int _stagesCleared;
+			private int _inputProgress;
+			private int _tick;
 
 			public SimonSays(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.SimonSays>(), 3, 3) {
 				SelectableGrid[0, 0] = false;
@@ -458,19 +455,23 @@ internal partial class Simulation {
 				SelectableGrid[1, 1] = false;
 				SelectableGrid[2, 0] = false;
 				SelectableGrid[2, 2] = false;
-				timer.Elapsed += Timer_Elapsed;
-				timer.Start();
+				_timer.Elapsed += Timer_Elapsed;
+				_timer.Start();
 			}
 
 			private void Timer_Elapsed(object? sender, ElapsedEventArgs e) {
-				if (tick >= 0) {
-					inputProgress = 0;
-					litColour = tick % 3 == 2 ? null : (SimonColour) (tick / 3);
-				} else if (tick is -18 or -4)
-					litColour = null;
-				tick++;
-				if (tick >= (stagesCleared + 1) * 3)
-					tick = -20;
+				switch (_tick) {
+					case >= 0:
+						_inputProgress = 0;
+						_litColour = _tick % 3 == 2 ? null : (SimonColour) (_tick / 3);
+						break;
+					case -18 or -4:
+						_litColour = null;
+						break;
+				}
+				_tick++;
+				if (_tick >= (_stagesCleared + 1) * 3)
+					_tick = -20;
 			}
 
 			public override void Interact() {
@@ -479,73 +480,72 @@ internal partial class Simulation {
 					2 => SimonColour.Green,
 					_ => X == 0 ? SimonColour.Red : SimonColour.Yellow
 				};
-				litColour = pressedColour;
+				_litColour = pressedColour;
 				LogButton(pressedColour);
 				if (LightState == ModuleLightState.Solved) return;
-				if (pressedColour != (SimonColour) inputProgress) {
+				if (pressedColour != (SimonColour) _inputProgress) {
 					StrikeFlash();
-					inputProgress = 0;
-				} else if (inputProgress >= stagesCleared) {
-					stagesCleared++;
-					inputProgress = 0;
-					tick = -6;
-					if (stagesCleared >= 4) {
-						Solve();
-						timer.Stop();
-					}
+					_inputProgress = 0;
+				} else if (_inputProgress >= _stagesCleared) {
+					_stagesCleared++;
+					_inputProgress = 0;
+					_tick = -6;
+					if (_stagesCleared < 4) return;
+					Solve();
+					_timer.Stop();
 				} else {
-					inputProgress++;
-					tick = -20;
+					_inputProgress++;
+					_tick = -20;
 				}
 			}
 		}
 
-		public partial class WhosOnFirst : Module<Components.WhosOnFirst.ReadData> {
-			internal override Components.WhosOnFirst.ReadData Details => !isAnimating ? new(stagesCleared, display, keys) : throw new InvalidOperationException("Tried to read module while animating");
-
-			private string display;
-			private readonly string[] keys = new string[6];
-			private int stagesCleared;
-			private bool isAnimating;
-			private readonly Timer animationTimer = new(2900) { AutoReset = false };
-
-			private static readonly string[] displayStrings = [ "", "YES", "FIRST", "DISPLAY", "OKAY", "SAYS", "NOTHING", "BLANK", "NO", "LED", "LEAD", "READ", "RED", "REED", "LEED",
+			private static readonly string[] DisplayStrings = [ "", "YES", "FIRST", "DISPLAY", "OKAY", "SAYS", "NOTHING", "BLANK", "NO", "LED", "LEAD", "READ", "RED", "REED", "LEED",
 				"HOLD ON", "YOU", "YOU ARE", "YOUR", "YOU'RE", "UR", "THERE", "THEY'RE", "THEIR", "THEY ARE", "SEE", "C", "CEE" ];
-			private static readonly string[] keyStrings = [ "READY", "FIRST", "NO", "BLANK", "NOTHING", "YES", "WHAT", "UHHH", "LEFT", "RIGHT", "MIDDLE", "OKAY", "WAIT", "PRESS",
+			private static readonly string[] KeyStrings = [ "READY", "FIRST", "NO", "BLANK", "NOTHING", "YES", "WHAT", "UHHH", "LEFT", "RIGHT", "MIDDLE", "OKAY", "WAIT", "PRESS",
 				"YOU", "YOU ARE", "YOUR", "YOU’RE", "UR", "U", "UH HUH", "UH UH", "WHAT?", "DONE", "NEXT", "HOLD", "SURE", "LIKE" ];
 
+		public partial class WhosOnFirst : Module<Components.WhosOnFirst.ReadData> {
+			internal override Components.WhosOnFirst.ReadData Details => !_isAnimating ? new(_stagesCleared, _display, _keys) : throw new InvalidOperationException("Tried to read module while animating");
+
+			private string _display;
+			private readonly string[] _keys = new string[6];
+			private int _stagesCleared;
+			private bool _isAnimating;
+			private readonly Timer _animationTimer = new(2900) { AutoReset = false };
+
 			public WhosOnFirst(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.WhosOnFirst>(), 2, 3) {
-				animationTimer.Elapsed += AnimationTimer_Elapsed;
+				_animationTimer.Elapsed += AnimationTimer_Elapsed;
 				SetKeysAndDisplay();
 			}
 
 			private void AnimationTimer_Elapsed(object? sender, ElapsedEventArgs e) {
 				SetKeysAndDisplay();
-				isAnimating = false;
+				_isAnimating = false;
 			}
 
-			[MemberNotNull(nameof(display))]
+			[MemberNotNull(nameof(_display))]
 			private void SetKeysAndDisplay() {
 				for (var i = 0; i < 6; i++)
-					keys[i] = keyStrings[i + stagesCleared * 8];
-				display = displayStrings[stagesCleared];
+					_keys[i] = KeyStrings[i + _stagesCleared * 8];
+				_display = DisplayStrings[_stagesCleared];
 			}
 
 			private void StartAnimation() {
-				isAnimating = true;
-				animationTimer.Start();
+				_isAnimating = true;
+				_animationTimer.Start();
 			}
 
 			public override void Interact() {
-				if (isAnimating) throw new InvalidOperationException("Memory button pressed during animation");
+				if (_isAnimating) throw new InvalidOperationException("Memory button pressed during animation");
 				LogButtonPressed(X + Y * 2 + 1);
 				if (LightState == ModuleLightState.Solved) return;
-				if (X + Y * 2 != stagesCleared) {
+				if (X + Y * 2 != _stagesCleared) {
 					StrikeFlash();
 					StartAnimation();
 				} else {
-					stagesCleared++;
-					if (stagesCleared >= 3)
+					_stagesCleared++;
+					if (_stagesCleared >= 3)
 						Solve();
 					else
 						StartAnimation();
@@ -565,84 +565,83 @@ internal partial class Simulation {
 
 			internal override Components.WireSequence.ReadData Details {
 				get {
-					readFailSimulation--;
-					if (readFailSimulation < 0) readFailSimulation = 3;
-					return !isAnimating
-						? new(stagesCleared, 1 + currentPage * 3, wires.Skip(stagesCleared * 3).Take(3).Select(w => w?.Colour).ToArray(), Y switch { 0 => -1, 4 => 1, _ => 0 },
-							readFailSimulation == 0 && Y is >= 1 and <= 3 && wires[Y - 1 + currentPage * 3] is { } wire ? new(Y - 1, wire.To) : null)
+					_readFailSimulation--;
+					if (_readFailSimulation < 0) _readFailSimulation = 3;
+					return !_isAnimating
+						? new(_stagesCleared, 1 + _currentPage * 3, _wires.Skip(_stagesCleared * 3).Take(3).Select(w => w?.Colour).ToArray(), Y switch { 0 => -1, 4 => 1, _ => 0 },
+							_readFailSimulation == 0 && Y is >= 1 and <= 3 && _wires[Y - 1 + _currentPage * 3] is { } wire ? new(Y - 1, wire.To) : null)
 						: throw new InvalidOperationException("Tried to read module while animating");
 				}
 			}
 
-			private readonly WireData?[] wires = new WireData?[12];
-			private readonly bool[] shouldCut = new bool[12];
-			private readonly bool[] isCut = new bool[12];
-			private int currentPage;
-			private int stagesCleared;
-			private bool isAnimating;
-			private int readFailSimulation;
-			private readonly Timer animationTimer = new(1200) { AutoReset = false };
+			private readonly WireData?[] _wires = new WireData?[12];
+			private readonly bool[] _shouldCut = new bool[12];
+			private readonly bool[] _isCut = new bool[12];
+			private int _currentPage;
+			private int _stagesCleared;
+			private bool _isAnimating;
+			private int _readFailSimulation;
+			private readonly Timer _animationTimer = new(1200) { AutoReset = false };
 
 			public WireSequence(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.WireSequence>(), 1, 5) {
-				animationTimer.Elapsed += AnimationTimer_Elapsed;
+				_animationTimer.Elapsed += AnimationTimer_Elapsed;
 				for (var i = 0; i < 12; i++) {
-					if (i % 4 != 0) {
-						var colour = (Components.WireSequence.WireColour) (i / 2 % 3);
-						wires[i] = new(colour, (char) ('A' + i % 3));
-						shouldCut[i] = colour == Components.WireSequence.WireColour.Blue;
-					}
+					if (i % 4 == 0) continue;
+					var colour = (Components.WireSequence.WireColour) (i / 2 % 3);
+					_wires[i] = new(colour, (char) ('A' + i % 3));
+					_shouldCut[i] = colour == Components.WireSequence.WireColour.Blue;
 				}
 				UpdateSelectable();
 			}
 
 			private void UpdateSelectable() {
 				for (var y = 0; y < 3; y++)
-					SelectableGrid[y + 1, 0] = currentPage < 4 && wires[y + currentPage * 3] is not null;
+					SelectableGrid[y + 1, 0] = _currentPage < 4 && _wires[y + _currentPage * 3] is not null;
 			}
 
 			private void AnimationTimer_Elapsed(object? sender, ElapsedEventArgs e) {
 				UpdateSelectable();
-				isAnimating = false;
+				_isAnimating = false;
 			}
 
 			private void StartAnimation() {
-				isAnimating = true;
-				animationTimer.Start();
+				_isAnimating = true;
+				_animationTimer.Start();
 			}
 
 			public override void Interact() {
 				if (LightState == ModuleLightState.Solved) return;
-				if (isAnimating) throw new InvalidOperationException("Wire Sequence interacted during animation");
+				if (_isAnimating) throw new InvalidOperationException("Wire Sequence interacted during animation");
 				switch (Y) {
 					case 0:
-						if (currentPage == 0) throw new InvalidOperationException("Tried to move up from the first page");
-						currentPage--;
-						LogPageChanged(currentPage + 1);
+						if (_currentPage == 0) throw new InvalidOperationException("Tried to move up from the first page");
+						_currentPage--;
+						LogPageChanged(_currentPage + 1);
 						StartAnimation();
 						break;
 					case 4:
-						if (currentPage == stagesCleared) {
-							if (Enumerable.Range(currentPage * 3, 3).Any(i => shouldCut[i] && !isCut[i]))
+						if (_currentPage == _stagesCleared) {
+							if (Enumerable.Range(_currentPage * 3, 3).Any(i => _shouldCut[i] && !_isCut[i]))
 								StrikeFlash();
 							else {
-								currentPage++;
-								stagesCleared++;
-								if (currentPage == 4)
+								_currentPage++;
+								_stagesCleared++;
+								if (_currentPage == 4)
 									Solve();
-								LogPageChanged(currentPage + 1);
+								LogPageChanged(_currentPage + 1);
 								StartAnimation();
 							}
 						} else {
-							currentPage++;
-							LogPageChanged(currentPage + 1);
+							_currentPage++;
+							LogPageChanged(_currentPage + 1);
 							StartAnimation();
 						}
 						break;
 					default:
-						if (isCut[currentPage * 3 + Y - 1]) return;
-						LogCutWire(currentPage * 3 + Y);
-						isCut[currentPage * 3 + Y - 1] = true;
-						if (!shouldCut[currentPage * 3 + Y - 1])
+						if (_isCut[_currentPage * 3 + Y - 1]) return;
+						LogCutWire(_currentPage * 3 + Y);
+						_isCut[_currentPage * 3 + Y - 1] = true;
+						if (!_shouldCut[_currentPage * 3 + Y - 1])
 							StrikeFlash();
 						break;
 
@@ -661,38 +660,38 @@ internal partial class Simulation {
 
 		#region Mod modules
 		public partial class ColourFlash : Module<Components.ColourFlash.ReadData> {
-			internal override Components.ColourFlash.ReadData Details => index < 0 ? new(null, Components.ColourFlash.Colour.None) : sequence[index];
+			internal override Components.ColourFlash.ReadData Details => _index < 0 ? new(null, Components.ColourFlash.Colour.None) : _sequence[_index];
 
-			private int index;
-			private readonly Components.ColourFlash.ReadData[] sequence;
-			private readonly Timer animationTimer = new(750);
+			private int _index;
+			private readonly Components.ColourFlash.ReadData[] _sequence;
+			private readonly Timer _animationTimer = new(750);
 
 			public ColourFlash(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.ColourFlash>(), 2, 1) {
-				sequence = [ new("RED", Components.ColourFlash.Colour.Yellow), new("YELLOW", Components.ColourFlash.Colour.Green), new("GREEN", Components.ColourFlash.Colour.Blue),
+				_sequence = [ new("RED", Components.ColourFlash.Colour.Yellow), new("YELLOW", Components.ColourFlash.Colour.Green), new("GREEN", Components.ColourFlash.Colour.Blue),
 					new("BLUE", Components.ColourFlash.Colour.Magenta), new("MAGENTA", Components.ColourFlash.Colour.White), new("WHITE", Components.ColourFlash.Colour.Blue),
 					new("RED", Components.ColourFlash.Colour.Red), new("BLUE", Components.ColourFlash.Colour.Blue) ];
-				animationTimer.Elapsed += AnimationTimer_Elapsed;
-				animationTimer.Start();
+				_animationTimer.Elapsed += AnimationTimer_Elapsed;
+				_animationTimer.Start();
 			}
 
 			private void AnimationTimer_Elapsed(object? sender, ElapsedEventArgs e) {
-				index++;
-				if (index >= sequence.Length) index = -4;
+				_index++;
+				if (_index >= _sequence.Length) _index = -4;
 			}
 
 			public override void Interact() {
 				switch (X) {
 					case 0:
-						LogYes(index);
-						if (index == 0) {
+						LogYes(_index);
+						if (_index == 0) {
 							Solve();
-							animationTimer.Stop();
-							index = -1;
+							_animationTimer.Stop();
+							_index = -1;
 						} else
 							StrikeFlash();
 						break;
 					case 1:
-						LogNo(index);
+						LogNo(_index);
 						StrikeFlash();
 						break;
 				}
@@ -711,6 +710,7 @@ internal partial class Simulation {
 
 		public partial class CrazyTalk(Simulation simulation, string display, int downTime, int upTime) : Module<Components.CrazyTalk.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.CrazyTalk>(), 1, 1) {
 			internal override Components.CrazyTalk.ReadData Details => new(display, _switchIsDown);
+			
 			private bool _switchIsDown;
 			private int _correctMoves;
 
@@ -737,21 +737,21 @@ internal partial class Simulation {
 		}
 
 		public class EmojiMath : Module<Components.EmojiMath.ReadData> {
-			internal override Components.EmojiMath.ReadData Details => new(display, new(X, Y));
+			internal override Components.EmojiMath.ReadData Details => new(_display, new(X, Y));
 
-			private readonly string display;
-			private readonly int answer;
-			private int input;
-			private bool minus;
+			private readonly string _display;
+			private readonly int _answer;
+			private int _input;
+			private bool _minus;
 
 			public EmojiMath(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.EmojiMath>(), 4, 3) {
 				var random = new Random();
 				int a = random.Next(100), b = random.Next(100);
 				var subtract = random.Next(2) != 0;
-				answer = subtract ? a - b : a + b;
-				input = 0;
-				minus = false;
-				display = string.Join(null, from c in $"{a}{(subtract ? '-' : '+')}{b}" select c switch { '0' => ":)", '1' => "=(", '2' => "(:", '3' => ")=", '4' => ":(", '5' => "):", '6' => "=)", '7' => "(=", '8' => ":|", '9' => "|:", _ => c.ToString() });
+				_answer = subtract ? a - b : a + b;
+				_input = 0;
+				_minus = false;
+				_display = string.Join(null, from c in $"{a}{(subtract ? '-' : '+')}{b}" select c switch { '0' => ":)", '1' => "=(", '2' => "(:", '3' => ")=", '4' => ":(", '5' => "):", '6' => "=)", '7' => "(=", '8' => ":|", '9' => "|:", _ => c.ToString() });
 			}
 
 			public override void Interact() {
@@ -759,16 +759,16 @@ internal partial class Simulation {
 					switch (Y) {
 						case 0:
 							LogButton('0');
-							input *= 10;
+							_input *= 10;
 							return;
 						case 1:
 							LogButton('-');
-							minus = !minus;
+							_minus = !_minus;
 							return;
 						default:
-							if (minus) input = -input;
-							LogSubmit(input);
-							if (input != answer) StrikeFlash();
+							if (_minus) _input = -_input;
+							LogSubmit(_input);
+							if (_input != _answer) StrikeFlash();
 							Solve();
 							return;
 					}
@@ -776,7 +776,7 @@ internal partial class Simulation {
 
 				var n = X + 1 + Y * 3;
 				LogButton((char) ('0' + n));
-				input = input * 10 + n;
+				_input = _input * 10 + n;
 			}
 		}
 
@@ -808,42 +808,42 @@ internal partial class Simulation {
 		}
 
 		public partial class LightsOut(Simulation simulation) : NeedyModule<Components.LightsOut.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.LightsOut>(), 3, 3) {
-			private readonly bool[] lights = new bool[9];
-			
-			internal override Components.LightsOut.ReadData Details => new(IsActive ? (int) RemainingTime.TotalSeconds : null, lights, new(X, Y));
+			internal override Components.LightsOut.ReadData Details => new(IsActive ? (int) RemainingTime.TotalSeconds : null, _lights, new(X, Y));
+
+			private readonly bool[] _lights = new bool[9];
 
 			protected override void OnActivate() {
 				var random = new Random();
 				var numMoves = random.Next(10) + 1;
-				Array.Clear(lights);
+				Array.Clear(_lights);
 				for (; numMoves > 0; numMoves--) {
 					var button = random.Next(9);
 					Toggle(button);
 				}
-				LogLights(lights);
+				LogLights(_lights);
 			}
 
 			private void Toggle(int button) {
-				lights[0] ^= button is 0 or 1 or 3;
-				lights[1] ^= button is 0 or 1 or 2 or 4;
-				lights[2] ^= button is 1 or 2 or 5;
-				lights[3] ^= button is 0 or 3 or 4 or 6;
-				lights[4] ^= button is 1 or 3 or 4 or 5 or 7;
-				lights[5] ^= button is 2 or 4 or 5 or 8;
-				lights[6] ^= button is 3 or 6 or 7;
-				lights[7] ^= button is 4 or 6 or 7 or 8;
-				lights[8] ^= button is 5 or 7 or 8;
+				_lights[0] ^= button is 0 or 1 or 3;
+				_lights[1] ^= button is 0 or 1 or 2 or 4;
+				_lights[2] ^= button is 1 or 2 or 5;
+				_lights[3] ^= button is 0 or 3 or 4 or 6;
+				_lights[4] ^= button is 1 or 3 or 4 or 5 or 7;
+				_lights[5] ^= button is 2 or 4 or 5 or 8;
+				_lights[6] ^= button is 3 or 6 or 7;
+				_lights[7] ^= button is 4 or 6 or 7 or 8;
+				_lights[8] ^= button is 5 or 7 or 8;
 			}
 
 			public override void Interact() {
 				Toggle(X + Y * 3);
-				LogLights(lights);
-				if (!lights.Any(b => b)) Deactivate();
+				LogLights(_lights);
+				if (!_lights.Any(b => b)) Deactivate();
 			}
 
 			protected override void OnTimerExpired() {
 				base.OnTimerExpired();
-				Array.Clear(lights);
+				Array.Clear(_lights);
 			}
 
 			private void LogLights(bool[] state) {
@@ -860,22 +860,22 @@ internal partial class Simulation {
 			#endregion
 		}
 
-		public partial class NeedyMath(Simulation simulation) : NeedyModule<Components.NeedyMath.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.NeedyMath>(), 4, 3) {
-			internal override Components.NeedyMath.ReadData Details => new(IsActive ? (int) RemainingTime.TotalSeconds : null, display, new(X, Y));
+		public class NeedyMath(Simulation simulation) : NeedyModule<Components.NeedyMath.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.NeedyMath>(), 4, 3) {
+			internal override Components.NeedyMath.ReadData Details => new(IsActive ? (int) RemainingTime.TotalSeconds : null, _display, new(X, Y));
 
-			private string display = "";
-			private int answer;
-			private int input;
-			private bool minus;
+			private string _display = "";
+			private int _answer;
+			private int _input;
+			private bool _minus;
 
 			protected override void OnActivate() {
 				var random = new Random();
 				int a = random.Next(100), b = random.Next(100);
 				var subtract = random.Next(2) != 0;
-				answer = subtract ? a - b : a + b;
-				input = 0;
-				minus = false;
-				display = $"{a}{(subtract ? '-' : '+')}{b}";
+				_answer = subtract ? a - b : a + b;
+				_input = 0;
+				_minus = false;
+				_display = $"{a}{(subtract ? '-' : '+')}{b}";
 			}
 
 			public override void Interact() {
@@ -883,46 +883,47 @@ internal partial class Simulation {
 					switch (Y) {
 						case 0:
 							LogButton('0');
-							input *= 10;
+							_input *= 10;
 							return;
 						case 1:
 							LogButton('-');
-							minus = !minus;
+							_minus = !_minus;
 							return;
 						default:
 							if (!IsActive) return;
-							if (minus) input = -input;
-							LogSubmit(input);
-							if (input != answer) StrikeFlash();
+							if (_minus) _input = -_input;
+							LogSubmit(_input);
+							if (_input != _answer) StrikeFlash();
 							Deactivate();
-							display = "";
+							_display = "";
 							return;
 					}
 				}
 
 				var n = X + 1 + Y * 3;
 				LogButton((char) ('0' + n));
-				input = input * 10 + n;
+				_input = _input * 10 + n;
 			}
 		}
 
 		public partial class PianoKeys(Simulation simulation) : Module<Components.PianoKeys.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.PianoKeys>(), 12, 1) {
+			private static readonly string[] Labels = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
 			internal override Components.PianoKeys.ReadData Details => new([Components.PianoKeys.Symbol.CutCommonTime, Components.PianoKeys.Symbol.Natural, Components.PianoKeys.Symbol.Fermata]);
 
-			private static readonly string[] labels = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-			private readonly int[] correctSequence = [4, 6, 6, 6, 6, 4, 4, 4];
-			private int index;
+			private readonly int[] _correctSequence = [4, 6, 6, 6, 6, 4, 4, 4];
+			private int _index;
 
 			public override void Interact() {
-				LogKeyPressed(labels[X]);
-				if (index >= correctSequence.Length) return;
-				if (X == correctSequence[index]) {
-					index++;
-					if (index >= correctSequence.Length)
+				LogKeyPressed(Labels[X]);
+				if (_index >= _correctSequence.Length) return;
+				if (X == _correctSequence[_index]) {
+					_index++;
+					if (_index >= _correctSequence.Length)
 						Solve();
 				} else {
 					StrikeFlash();
-					index = 0;
+					_index = 0;
 				}
 			}
 
@@ -934,11 +935,12 @@ internal partial class Simulation {
 			#endregion
 		}
 
-		public class Semaphore(Simulation simulation) : Module<Components.Semaphore.ReadData>(simulation,
-			DefuserConnector.GetComponentReader<Components.Semaphore>(), 3, 1) {
-			internal override Components.Semaphore.ReadData Details => signals[index];
+		public class Semaphore(Simulation simulation) : Module<Components.Semaphore.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.Semaphore>(), 3, 1) {
+			private const int CorrectIndex = 5;
 
-			private readonly Components.Semaphore.ReadData[] signals = [
+			internal override Components.Semaphore.ReadData Details => _signals[_index];
+
+			private readonly Components.Semaphore.ReadData[] _signals = [
 				new(Components.Semaphore.Direction.Up, Components.Semaphore.Direction.Right),
 				new(Components.Semaphore.Direction.DownLeft, Components.Semaphore.Direction.Down),
 				new(Components.Semaphore.Direction.Left, Components.Semaphore.Direction.Down),
@@ -949,20 +951,19 @@ internal partial class Simulation {
 				new(Components.Semaphore.Direction.Up, Components.Semaphore.Direction.Down),
 				new(Components.Semaphore.Direction.Down, Components.Semaphore.Direction.UpRight)
 			];
-			private int index;
-			private const int CorrectIndex = 5;
+			private int _index;
 
 			public override void Interact() {
 				switch (X) {
 					case 0:
-						if (index > 0) index--;
+						if (_index > 0) _index--;
 						break;
 					case 2:
-						if (index < signals.Length - 1) index++;
+						if (_index < _signals.Length - 1) _index++;
 						break;
 					case 1:
 						LogSubmit(Details);
-						if (index == CorrectIndex)
+						if (_index == CorrectIndex)
 							Solve();
 						else
 							StrikeFlash();
@@ -972,12 +973,12 @@ internal partial class Simulation {
 		}
 	
 		public partial class Switches : Module<Components.Switches.ReadData> {
-			internal override Components.Switches.ReadData Details => new(currentState, targetState, X);
-
-			private readonly bool[] currentState;
-			private readonly bool[] targetState;
-
 			private static readonly HashSet<int> InvalidStates = [0x04, 0x0B, 0x0F, 0x12, 0x13, 0x17, 0x18, 0x1A, 0x1C, 0x1E];
+
+			internal override Components.Switches.ReadData Details => new(_currentState, _targetState, X);
+
+			private readonly bool[] _currentState;
+			private readonly bool[] _targetState;
 
 			public Switches(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.Switches>(), 5, 1) {
 				var random = new Random();
@@ -985,23 +986,23 @@ internal partial class Simulation {
 				do {
 					currentStateInt = random.Next(0, 0x20);
 				} while (InvalidStates.Contains(currentStateInt));
-				currentState = [(currentStateInt & 0x10) != 0, (currentStateInt & 0x08) != 0, (currentStateInt & 0x04) != 0, (currentStateInt & 0x02) != 0, (currentStateInt & 0x01) != 0];
+				_currentState = [(currentStateInt & 0x10) != 0, (currentStateInt & 0x08) != 0, (currentStateInt & 0x04) != 0, (currentStateInt & 0x02) != 0, (currentStateInt & 0x01) != 0];
 				do {
 					targetStateInt = random.Next(0, 0x20);
 				} while (targetStateInt == currentStateInt || InvalidStates.Contains(targetStateInt));
-				targetState = [(targetStateInt & 0x10) != 0, (targetStateInt & 0x08) != 0, (targetStateInt & 0x04) != 0, (targetStateInt & 0x02) != 0, (targetStateInt & 0x01) != 0];
-				LogTargetState(string.Join(null, from state in targetState select state ? '^' : 'v'));
-				LogState(string.Join(null, from state in currentState select state ? '^' : 'v'));
+				_targetState = [(targetStateInt & 0x10) != 0, (targetStateInt & 0x08) != 0, (targetStateInt & 0x04) != 0, (targetStateInt & 0x02) != 0, (targetStateInt & 0x01) != 0];
+				LogTargetState(string.Join(null, from state in _targetState select state ? '^' : 'v'));
+				LogState(string.Join(null, from state in _currentState select state ? '^' : 'v'));
 			}
 
 			public override void Interact() {
-				currentState[X] ^= true;
-				if (InvalidStates.Contains(ConvertToInt(currentState))) {
-					currentState[X] ^= true;
+				_currentState[X] ^= true;
+				if (InvalidStates.Contains(ConvertToInt(_currentState))) {
+					_currentState[X] ^= true;
 					StrikeFlash();
 				} else {
-					LogState(string.Join(null, from state in currentState select state ? '^' : 'v'));
-					if (currentState.SequenceEqual(targetState))
+					LogState(string.Join(null, from state in _currentState select state ? '^' : 'v'));
+					if (_currentState.SequenceEqual(_targetState))
 						Solve();
 				}
 			}
@@ -1036,7 +1037,7 @@ internal partial class Simulation {
 			}
 
 			private bool CheckStrike() {
-				foreach (var f in Simulation.moduleFaces) {
+				foreach (var f in Simulation._moduleFaces) {
 					foreach (var m in f.Slots.OfType<Module>()) {
 						if (X == 0) {
 							if (m == this) {
@@ -1096,11 +1097,11 @@ internal partial class Simulation {
 							Solve();
 							return;
 					}
-				} else {
-					var c = display[X + Y * 3];
-					LogButton(c);
-					_answer.Append(c);
 				}
+
+				var c = display[X + Y * 3];
+				LogButton(c);
+				_answer.Append(c);
 			}
 		}
 

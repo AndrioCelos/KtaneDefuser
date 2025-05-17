@@ -17,6 +17,6 @@ internal class Anagrams : ModuleScript<KtaneDefuserConnector.Components.Anagrams
 	[AimlCategory("<set>NATO</set> <set>NATO</set> <set>NATO</set> <set>NATO</set> <set>NATO</set> <set>NATO</set>")]
 	internal static async Task SubmitLetters(AimlAsyncContext context, string nato1, string nato2, string nato3, string nato4, string nato5, string nato6) {
 		using var interrupt = await CurrentModuleInterruptAsync(context);
-		await GameState.Current.CurrentScript<Anagrams>()._processor.SubmitLetters(interrupt, NATO.DecodeChar(nato1), NATO.DecodeChar(nato2), NATO.DecodeChar(nato3), NATO.DecodeChar(nato4), NATO.DecodeChar(nato5), NATO.DecodeChar(nato6));
+		await GameState.Current.CurrentScript<Anagrams>()._processor.SubmitLetters(interrupt, Nato.DecodeChar(nato1), Nato.DecodeChar(nato2), Nato.DecodeChar(nato3), Nato.DecodeChar(nato4), Nato.DecodeChar(nato5), Nato.DecodeChar(nato6));
 	}
 }

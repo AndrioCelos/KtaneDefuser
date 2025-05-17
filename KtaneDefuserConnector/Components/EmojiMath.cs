@@ -9,14 +9,14 @@ namespace KtaneDefuserConnector.Components;
 public class EmojiMath : ComponentReader<EmojiMath.ReadData> {
 	public override string Name => "Emoji Math";
 
-	private static readonly TextRecogniser TextRecogniser = new(new(TextRecogniser.Fonts.OstrichSansHeavy, 48), 10, 128, new(64, 64), [":", "=", "(", "|", ")", "+", "-"]);
+	private static readonly TextRecogniser TextRecogniser = new(new(TextRecogniser.Fonts.OstrichSansHeavy, 48), 10, 128, new(64, 64), ":", "=", "(", "|", ")", "+", "-");
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		// Find the expression display bounding box.
+		// Find the expression display bounds.
 		var baseRect = image.Map(20, 20, 160, 72);
 		var rect = ImageUtils.FindEdges(image, baseRect, p => p is { R: >= 160, G: < 16, B: < 16 });
 
-		// Find the character bounding boxes.
+		// Find the character bounds.
 		var builder = new StringBuilder();
 		for (var x = rect.Left; x < rect.Right; x++) {
 			if (!Enumerable.Range(rect.Top, rect.Height).Any(y => image[x, y] is { R: >= 160, G: < 16, B: < 16 })) continue;

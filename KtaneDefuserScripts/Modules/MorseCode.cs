@@ -4,13 +4,11 @@ namespace KtaneDefuserScripts.Modules;
 
 [AimlInterface("MorseCode")]
 internal partial class MorseCode : ModuleScript<KtaneDefuserConnector.Components.MorseCode> {
-	public override string IndefiniteDescription => "Morse Code";
-	private static Interrupt? interrupt;
-	private static CancellationTokenSource? cancellationTokenSource;
-	private static readonly int DASH_THRESHOLD = 4;
-	private static readonly int WORD_SPACE_THRESHOLD = 10;
-
-	private static readonly Dictionary<MorseLetter, char> decodeMorse = new() {
+	private const int DashThreshold = 4;
+	private const int WordSpaceThreshold = 10;
+	private static Interrupt? _interrupt;
+	private static CancellationTokenSource? _cancellationTokenSource;
+	private static readonly Dictionary<MorseLetter, char> DecodeMorse = new() {
 		{ new(MorseElement.Dot, MorseElement.Dash), 'A' },
 		{ new(MorseElement.Dash, MorseElement.Dot, MorseElement.Dot, MorseElement.Dot), 'B' },
 		{ new(MorseElement.Dash, MorseElement.Dot, MorseElement.Dash, MorseElement.Dot), 'C' },
@@ -49,7 +47,7 @@ internal partial class MorseCode : ModuleScript<KtaneDefuserConnector.Components
 		{ new(MorseElement.Dash, MorseElement.Dash, MorseElement.Dash, MorseElement.Dash, MorseElement.Dot), '9' }
 	};
 
-	private static readonly Dictionary<string, int> frequencies = new() {
+	private static readonly Dictionary<string, int> Frequencies = new() {
 		{ "505",  0 },
 		{ "515",  1 },
 		{ "522",  2 },
@@ -68,28 +66,31 @@ internal partial class MorseCode : ModuleScript<KtaneDefuserConnector.Components
 		{ "600", 15 }
 	};
 
-	private int highlight;  // For this script, 0 => down button, 1 => right button, 2 => submit button
-	private int selectedFrequency;
+
+	public override string IndefiniteDescription => "Morse Code";
+	
+	private int _highlight;  // For this script, 0 => down button, 1 => right button, 2 => submit button
+	private int _selectedFrequency;
 
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
 	[AimlCategory("read")]
 	internal static Task Read(AimlAsyncContext context) {
-		context.Reply($"Stand by.");
-		cancellationTokenSource = new();
-		return GameState.Current.CurrentScript<MorseCode>().ReadAsync(context, cancellationTokenSource.Token);
+		context.Reply("Stand by.");
+		_cancellationTokenSource = new();
+		return GameState.Current.CurrentScript<MorseCode>().ReadAsync(context, _cancellationTokenSource.Token);
 	}
 
 	private async Task ReadAsync(AimlAsyncContext context, CancellationToken cancellationToken) {
 		var interrupt = await ModuleInterruptAsync(context);
 		try {
-			MorseCode.interrupt = interrupt;
+			_interrupt = interrupt;
 
 			// Wait for a space between letters.
 			LogWaitingForLetterSpace();
 			while (true) {
 				await WaitForStateAsync(interrupt, false, cancellationToken);
-				var continuedLetter = await WaitForStateAsync(interrupt, true, DASH_THRESHOLD, cancellationToken);
+				var continuedLetter = await WaitForStateAsync(interrupt, true, DashThreshold, cancellationToken);
 				if (!continuedLetter) break;
 			}
 			LogLetterSpaceFound();
@@ -97,7 +98,7 @@ internal partial class MorseCode : ModuleScript<KtaneDefuserConnector.Components
 			for (var lettersRead = 0; lettersRead < 5; lettersRead++) {
 				// We've just seen a space between letters. Find out whether it is a space between words.
 				LogWaitingForNextLetter();
-				var continuedWord = await WaitForStateAsync(interrupt, true, WORD_SPACE_THRESHOLD - DASH_THRESHOLD, cancellationToken);
+				var continuedWord = await WaitForStateAsync(interrupt, true, WordSpaceThreshold - DashThreshold, cancellationToken);
 				if (cancellationToken.IsCancellationRequested) return;
 				if (!continuedWord && !interrupt.IsDisposed) {
 					LogWordStart();
@@ -109,19 +110,19 @@ internal partial class MorseCode : ModuleScript<KtaneDefuserConnector.Components
 
 				var currentLetter = new MorseLetter();
 				while (true) {
-					var isDot = await WaitForStateAsync(interrupt, false, DASH_THRESHOLD, cancellationToken);
+					var isDot = await WaitForStateAsync(interrupt, false, DashThreshold, cancellationToken);
 					LogSymbol(isDot ? "Dot" : "Dash");
 					currentLetter.Add(isDot ? MorseElement.Dot : MorseElement.Dash);
 					if (!isDot) await WaitForStateAsync(interrupt, false, cancellationToken);
-					var continuedLetter = await WaitForStateAsync(interrupt, true, DASH_THRESHOLD, cancellationToken);
+					var continuedLetter = await WaitForStateAsync(interrupt, true, DashThreshold, cancellationToken);
 					if (!continuedLetter) break;
 				}
 				if (cancellationToken.IsCancellationRequested || interrupt.IsDisposed) return;
 				LogLetterSpaceFound();
 
-				if (decodeMorse.TryGetValue(currentLetter, out var c)) {
+				if (DecodeMorse.TryGetValue(currentLetter, out var c)) {
 					LogLetter(c);
-					interrupt.Context.Reply(NATO.Speak(c.ToString()));
+					interrupt.Context.Reply(Nato.Speak(c.ToString()));
 				} else
 					interrupt.Context.Reply(string.Join(' ', currentLetter));
 				interrupt.Context.Reply("<reply>505</reply><reply>515</reply><reply>522</reply><reply>532</reply><reply>535</reply><reply>542</reply><reply>545</reply><reply>552</reply><reply>555</reply><reply>565</reply><reply>572</reply><reply>575</reply><reply>582</reply><reply>592</reply><reply>595</reply><reply>600</reply>");
@@ -130,7 +131,7 @@ internal partial class MorseCode : ModuleScript<KtaneDefuserConnector.Components
 			// Only dispose the interrupt if we're not ending due to a cancellation signal, as that indicates we're keeping the interrupt to submit an answer.
 			if (!cancellationToken.IsCancellationRequested) {
 				interrupt.Dispose();
-				MorseCode.interrupt = null;
+				_interrupt = null;
 			}
 		}
 	}
@@ -157,7 +158,7 @@ internal partial class MorseCode : ModuleScript<KtaneDefuserConnector.Components
 	[AimlCategory("transmit at <set>number</set>")]
 	[AimlCategory("respond at <set>number</set>")]
 	internal static async Task Submit1(AimlAsyncContext context, string s) {
-		if (!frequencies.TryGetValue(s, out var frequency)) {
+		if (!Frequencies.TryGetValue(s, out var frequency)) {
 			context.Reply("That is not a valid frequency.");
 			return;
 		}
@@ -170,7 +171,7 @@ internal partial class MorseCode : ModuleScript<KtaneDefuserConnector.Components
 	[AimlCategory("transmit at <set>number</set> <set>number</set> <set>number</set>")]
 	[AimlCategory("respond at <set>number</set> <set>number</set> <set>number</set>")]
 	internal static async Task Submit2(AimlAsyncContext context, string d1, string d2, string d3) {
-		if (!frequencies.TryGetValue($"{d1}{d2}{d3}", out var frequency)) {
+		if (!Frequencies.TryGetValue($"{d1}{d2}{d3}", out var frequency)) {
 			context.Reply("That is not a valid frequency.");
 			return;
 		}
@@ -178,37 +179,37 @@ internal partial class MorseCode : ModuleScript<KtaneDefuserConnector.Components
 		await script.Submit(context, frequency);
 	}
 
-	internal async Task Submit(AimlAsyncContext context, int frequency) {
-		cancellationTokenSource?.Cancel();
-		cancellationTokenSource?.Dispose();
-		cancellationTokenSource = null;
-		using var interrupt = MorseCode.interrupt ?? await ModuleInterruptAsync(context);
+	private async Task Submit(AimlAsyncContext context, int frequency) {
+		_cancellationTokenSource?.Cancel();
+		_cancellationTokenSource?.Dispose();
+		_cancellationTokenSource = null;
+		using var interrupt = _interrupt ?? await ModuleInterruptAsync(context);
 		interrupt.Context = context;
 		var buttons = new List<Button>();
-		if (frequency < selectedFrequency) {
-			switch (highlight) {
+		if (frequency < _selectedFrequency) {
+			switch (_highlight) {
 				case 1: buttons.Add(Button.Left); break;
 				case 2: buttons.Add(Button.Up); break;
 			}
-			highlight = 0;
+			_highlight = 0;
 			do {
 				buttons.Add(Button.A);
-				selectedFrequency--;
-			} while (frequency < selectedFrequency);
+				_selectedFrequency--;
+			} while (frequency < _selectedFrequency);
 		}
-		if (frequency > selectedFrequency) {
-			if (highlight != 1) {
+		if (frequency > _selectedFrequency) {
+			if (_highlight != 1) {
 				buttons.Add(Button.Right);
-				highlight = 1;
+				_highlight = 1;
 			}
 			do {
 				buttons.Add(Button.A);
-				selectedFrequency++;
-			} while (frequency > selectedFrequency);
+				_selectedFrequency++;
+			} while (frequency > _selectedFrequency);
 		}
-		if (highlight != 2) {
+		if (_highlight != 2) {
 			buttons.Add(Button.Down);
-			highlight = 2;
+			_highlight = 2;
 		}
 		buttons.Add(Button.A);
 		await interrupt.SubmitAsync(buttons);

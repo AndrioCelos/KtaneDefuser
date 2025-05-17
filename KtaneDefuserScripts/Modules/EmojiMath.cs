@@ -5,8 +5,8 @@ namespace KtaneDefuserScripts.Modules;
 internal class EmojiMath : ModuleScript<KtaneDefuserConnector.Components.EmojiMath> {
 	public override string IndefiniteDescription => "Emoji Math";
 
-	private int highlightX;
-	private int highlightY;
+	private int _highlightX;
+	private int _highlightY;
 
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
@@ -16,7 +16,7 @@ internal class EmojiMath : ModuleScript<KtaneDefuserConnector.Components.EmojiMa
 	private async Task ReadAsync(AimlAsyncContext context) {
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		var data = interrupt.Read(Reader);
-		if (data.Selection is { } selection) (highlightX, highlightY) = selection;
+		if (data.Selection is { } selection) (_highlightX, _highlightY) = selection;
 		var builder = new StringBuilder();
 		builder.Append("<speak>");
 		var n = 0;
@@ -34,12 +34,11 @@ internal class EmojiMath : ModuleScript<KtaneDefuserConnector.Components.EmojiMa
 
 			builder.Append($"<sub alias='{alias}'>{c}</sub>");
 			n++;
-			if (n >= 2 || c is '+' or '-') {
-				builder.Append("<break strength='weak'/><![CDATA[ ]]>");
-				n = 0;
-			}
+			if (n < 2 && c is not ('+' or '-')) continue;
+			builder.Append("<break strength='weak'/><![CDATA[ ]]>");
+			n = 0;
 		}
-		builder.Append($"</speak>");
+		builder.Append("</speak>");
 		context.Reply(builder.ToString());
 	}
 
@@ -68,10 +67,10 @@ internal class EmojiMath : ModuleScript<KtaneDefuserConnector.Components.EmojiMa
 
 	private async Task PressButtonAsync(Interrupt interrupt, int x, int y, bool submit) {
 		var buttons = new List<Button>();
-		for (; highlightX < x; highlightX++) buttons.Add(Button.Right);
-		for (; highlightX > x; highlightX--) buttons.Add(Button.Left);
-		for (; highlightY < y; highlightY++) buttons.Add(Button.Down);
-		for (; highlightY > y; highlightY--) buttons.Add(Button.Up);
+		for (; _highlightX < x; _highlightX++) buttons.Add(Button.Right);
+		for (; _highlightX > x; _highlightX--) buttons.Add(Button.Left);
+		for (; _highlightY < y; _highlightY++) buttons.Add(Button.Down);
+		for (; _highlightY > y; _highlightY--) buttons.Add(Button.Up);
 		buttons.Add(Button.A);
 		if (submit)
 			await interrupt.SubmitAsync(buttons);

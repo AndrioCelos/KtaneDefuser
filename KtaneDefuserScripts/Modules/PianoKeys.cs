@@ -19,14 +19,7 @@ internal partial class PianoKeys : ModuleScript<KtaneDefuserConnector.Components
 		B
 	}
 
-	public override string IndefiniteDescription => "Piano Keys";
-
-	[GeneratedRegex(@"\G\s*(?:($)|([A-G])\w*(?:\s+(?:(s\w*|#)|(flat)))?(?:\s+(\d+)\s*times)?)", RegexOptions.IgnoreCase)]
-	private static partial Regex PlayParseRegex();
-
-	private Note highlight;
-
-	public static Dictionary<Symbol, string> SymbolDescriptions { get; } = new() {
+	private static Dictionary<Symbol, string> SymbolDescriptions { get; } = new() {
 		{ Symbol.Natural      , "natural" },
 		{ Symbol.Flat         , "flat" },
 		{ Symbol.Sharp        , "sharp" },
@@ -37,6 +30,13 @@ internal partial class PianoKeys : ModuleScript<KtaneDefuserConnector.Components
 		{ Symbol.Fermata      , "fermata" },
 		{ Symbol.CClef        , "alto clef" },
 	};
+
+	[GeneratedRegex(@"\G\s*(?:($)|([A-G])\w*(?:\s+(?:(s\w*|#)|(flat)))?(?:\s+(\d+)\s*times)?)", RegexOptions.IgnoreCase)]
+	private static partial Regex PlayParseRegex();
+
+	public override string IndefiniteDescription => "Piano Keys";
+
+	private Note _highlight;
 
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
@@ -57,7 +57,7 @@ internal partial class PianoKeys : ModuleScript<KtaneDefuserConnector.Components
 
 		var script = GameState.Current.CurrentScript<PianoKeys>();
 		var buttons = new List<Button>();
-		var newHighlight = script.highlight;
+		var newHighlight = script._highlight;
 		foreach (var m in matches.Cast<Match>()) {
 			if (m.Groups[1].Success) break;
 			var note = m.Groups[2].Value[0] switch {
@@ -101,7 +101,7 @@ internal partial class PianoKeys : ModuleScript<KtaneDefuserConnector.Components
 		}
 
 		using var interrupt = await CurrentModuleInterruptAsync(context);
-		script.highlight = newHighlight;
+		script._highlight = newHighlight;
 		await interrupt.SubmitAsync(buttons);
 	}
 }

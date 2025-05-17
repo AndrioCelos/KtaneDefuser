@@ -15,16 +15,24 @@ using Microsoft.Extensions.Logging.Abstractions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Bmp;
+using SixLabors.ImageSharp.Formats.Gif;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Pbm;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Qoi;
+using SixLabors.ImageSharp.Formats.Tga;
+using SixLabors.ImageSharp.Formats.Tiff;
+using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.PixelFormats;
 using HsvColor = KtaneDefuserConnector.HsvColor;
 
 namespace VisionTester.ViewModels;
 
 public partial class TransformationViewModel : ViewModelBase {
-	private const int REFERENCE_SCREEN_WIDTH = 1920;
-	private const int REFERENCE_SCREEN_HEIGHT = 1080;
+	private const int ReferenceScreenWidth = 1920;
+	private const int ReferenceScreenHeight = 1080;
 	
-	public MainWindowViewModel? mainViewModel;
+	public MainWindowViewModel? MainViewModel;
 	[ObservableProperty] public partial Image<Rgba32>? ScreenImage { get; set; }
 	[ObservableProperty] public partial Image<Rgba32>? OutputImage { get; set; }
 	[ObservableProperty] public partial Bitmap? OutputAvaloniaImage { get; set; }
@@ -39,7 +47,7 @@ public partial class TransformationViewModel : ViewModelBase {
 	[ObservableProperty] internal partial string SaveImageLabel { get; set; } = "Save file...";
 	[ObservableProperty] internal partial ICommand SaveImageCommand { get; set; }
 
-	public Preset[] Presets { get; } = [
+	private Preset[] Presets { get; } = [
 		new("Module 1", [new(572, 291), new(821, 291), new(560, 534), new(817, 534)], 224),
 		new("Module 2", [new(852, 291), new(1096, 291), new(849, 534), new(1102, 534)], 224),
 		new("Module 3", [new(1127, 292), new(1369, 292), new(1134, 533), new(1382, 533)], 224),
@@ -113,7 +121,7 @@ public partial class TransformationViewModel : ViewModelBase {
 					RedrawTransformedImage();
 					break;
 				case nameof(SelectedPreset):
-					if (SelectedPreset is not Preset preset) break;
+					if (SelectedPreset is not { } preset) break;
 					SetPreset(preset);
 					RedrawTransformedImage();
 					break;
@@ -132,18 +140,18 @@ public partial class TransformationViewModel : ViewModelBase {
 	}
 
 	[RelayCommand]
-	public async Task LoadImageFile() {
+	private async Task LoadImageFile() {
 		(LoadImageCommand, LoadImageLabel) = (LoadImageFileCommand, "Load file...");
 		var message = new LoadImageFileMessage();
 		var file = await WeakReferenceMessenger.Default.Send(message);
 		if (file is null) return;
 
-		using var stream = await file.OpenReadAsync();
+		await using var stream = await file.OpenReadAsync();
 		ScreenImage = await Image.LoadAsync<Rgba32>(stream);
 	}
 
 	[RelayCommand]
-	public async Task PasteImage() {
+	private async Task PasteImage() {
 		(LoadImageCommand, LoadImageLabel) = (PasteImageCommand, "Paste");
 		var message = new PasteImageMessage();
 		var image = await WeakReferenceMessenger.Default.Send(message);
@@ -152,12 +160,12 @@ public partial class TransformationViewModel : ViewModelBase {
 	}
 
 	[RelayCommand]
-	public async Task LoadImageFromGame() {
+	private async Task LoadImageFromGame() {
 		var stopwatch = Stopwatch.StartNew();
 		(LoadImageCommand, LoadImageLabel) = (LoadImageFromGameCommand, "From game");
 		Debug.WriteLine($"Set command: {stopwatch.Elapsed}");
 		using var connector = new DefuserConnector();
-		await connector.ConnectAsync(NullLoggerFactory.Instance, false);
+		await connector.ConnectAsync(NullLoggerFactory.Instance);
 		Debug.WriteLine($"Connected: {stopwatch.Elapsed}");
 		var image = await connector.TakeScreenshotAsync();
 		Debug.WriteLine($"Downloaded image: {stopwatch.Elapsed}");
@@ -172,21 +180,21 @@ public partial class TransformationViewModel : ViewModelBase {
 
 		var encoder = (ImageEncoder) (Path.GetExtension(file.Name).ToLowerInvariant() switch {
 			".bmp" => new BmpEncoder(),
-			".gif" => new SixLabors.ImageSharp.Formats.Gif.GifEncoder(),
-			".jpeg" or ".jpg" => new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder(),
-			".pbm" => new SixLabors.ImageSharp.Formats.Pbm.PbmEncoder(),
-			".qoi" => new SixLabors.ImageSharp.Formats.Qoi.QoiEncoder(),
-			".tga" => new SixLabors.ImageSharp.Formats.Tga.TgaEncoder(),
-			".tiff" => new SixLabors.ImageSharp.Formats.Tiff.TiffEncoder(),
-			".webp" => new SixLabors.ImageSharp.Formats.Webp.WebpEncoder(),
-			_ => new SixLabors.ImageSharp.Formats.Png.PngEncoder()
+			".gif" => new GifEncoder(),
+			".jpeg" or ".jpg" => new JpegEncoder(),
+			".pbm" => new PbmEncoder(),
+			".qoi" => new QoiEncoder(),
+			".tga" => new TgaEncoder(),
+			".tiff" => new TiffEncoder(),
+			".webp" => new WebpEncoder(),
+			_ => new PngEncoder()
 		});
-		using var stream = await file.OpenWriteAsync();
+		await using var stream = await file.OpenWriteAsync();
 		await ScreenImage.SaveAsync(stream, encoder);
 	}
 
 	[RelayCommand]
-	public async Task SaveImageFile() {
+	private async Task SaveImageFile() {
 		(SaveImageCommand, SaveImageLabel) = (SaveImageFileCommand, "Save file...");
 		if (OutputImage is null) return;
 		var message = new SaveImageFileMessage();
@@ -195,21 +203,21 @@ public partial class TransformationViewModel : ViewModelBase {
 
 		var encoder = (ImageEncoder) (Path.GetExtension(file.Name).ToLowerInvariant() switch {
 			".bmp" => new BmpEncoder(),
-			".gif" => new SixLabors.ImageSharp.Formats.Gif.GifEncoder(),
-			".jpeg" or ".jpg" => new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder(),
-			".pbm" => new SixLabors.ImageSharp.Formats.Pbm.PbmEncoder(),
-			".qoi" => new SixLabors.ImageSharp.Formats.Qoi.QoiEncoder(),
-			".tga" => new SixLabors.ImageSharp.Formats.Tga.TgaEncoder(),
-			".tiff" => new SixLabors.ImageSharp.Formats.Tiff.TiffEncoder(),
-			".webp" => new SixLabors.ImageSharp.Formats.Webp.WebpEncoder(),
-			_ => new SixLabors.ImageSharp.Formats.Png.PngEncoder()
+			".gif" => new GifEncoder(),
+			".jpeg" or ".jpg" => new JpegEncoder(),
+			".pbm" => new PbmEncoder(),
+			".qoi" => new QoiEncoder(),
+			".tga" => new TgaEncoder(),
+			".tiff" => new TiffEncoder(),
+			".webp" => new WebpEncoder(),
+			_ => new PngEncoder()
 		});
-		using var stream = await file.OpenWriteAsync();
+		await using var stream = await file.OpenWriteAsync();
 		await OutputImage.SaveAsync(stream, encoder);
 	}
 
 	[RelayCommand]
-	public void CopyImage() {
+	private void CopyImage() {
 		(SaveImageCommand, SaveImageLabel) = (CopyImageCommand, "Copy");
 		if (OutputImage is null) return;
 		var message = new CopyImageMessage(OutputImage);
@@ -223,7 +231,7 @@ public partial class TransformationViewModel : ViewModelBase {
 		}
 
 		OutputImage = ImageUtils.PerspectiveUndistort(ScreenImage, Quadrilateral, InterpolationMode, new(Resolution, Resolution));
-		ImageUtils.ColourUncorrect(OutputImage, LightsSimulation);
+		OutputImage.ColourUncorrect(LightsSimulation);
 
 		using (var ms = new MemoryStream()) {
 			OutputImage.Save(ms, new BmpEncoder());
@@ -239,32 +247,35 @@ public partial class TransformationViewModel : ViewModelBase {
 		Array.Copy(new Point[] { new(988, 465), new(988, 228), new(1163, 465), new(1158, 228) }, Presets[22].Points, 4);
 		Array.Copy(new Point[] { new(808, 772), new(812, 515), new(988, 772), new(988, 515) }, Presets[23].Points, 4);
 		Array.Copy(new Point[] { new(988, 772), new(988, 515), new(1168, 772), new(1164, 515) }, Presets[24].Points, 4);
-		if (ScreenImage is not null) {
-			// When turning the bomb to the side, it isn't possible to position it precisely, so find the bomb position and adjust the polygons.
-			static bool isBombBacking(HsvColor hsv) => hsv.H is >= 180 and < 225 && hsv.S < 0.35f && hsv.V >= 0.35f;
-			int left;
-			for (left = 60; left < ScreenImage.Width - 60; left++) {
-				if (isBombBacking(HsvColor.FromColor(ScreenImage[left, ScreenImage.Height / 2])))
-					break;
-			}
-			int right;
-			for (right = ScreenImage.Width - 60; right >= 0; right--) {
-				if (isBombBacking(HsvColor.FromColor(ScreenImage[right, ScreenImage.Height / 2])))
-					break;
-			}
-			var d = (left + right) / 2 - 988;
-			for (var i = 0; i < 4; i++) {
-				for (var j = 0; j < 4; j++) {
-					Presets[21 + i].Points[j].X += d;
-				}
+		if (ScreenImage is null) return;
+
+		// When turning the bomb to the side, it isn't possible to position it precisely, so find the bomb position and adjust the polygons.
+		int left;
+		for (left = 60; left < ScreenImage.Width - 60; left++) {
+			if (IsBombBacking(HsvColor.FromColor(ScreenImage[left, ScreenImage.Height / 2])))
+				break;
+		}
+		int right;
+		for (right = ScreenImage.Width - 60; right >= 0; right--) {
+			if (IsBombBacking(HsvColor.FromColor(ScreenImage[right, ScreenImage.Height / 2])))
+				break;
+		}
+		var d = (left + right) / 2 - 988;
+		for (var i = 0; i < 4; i++) {
+			for (var j = 0; j < 4; j++) {
+				Presets[21 + i].Points[j].X += d;
 			}
 		}
+
+		return;
+
+		static bool IsBombBacking(HsvColor hsv) => hsv is { H: >= 180 and < 225, S: < 0.35f, V: >= 0.35f };
 	}
 
 	private void SetPreset(Preset preset) {
-		Quadrilateral = ScreenImage is null or { Width: REFERENCE_SCREEN_WIDTH, Height: REFERENCE_SCREEN_HEIGHT }
+		Quadrilateral = ScreenImage is null or { Width: ReferenceScreenWidth, Height: ReferenceScreenHeight }
 			?  new(preset.Points)
-			:  new(from p in preset.Points select new Point(p.X * ScreenImage.Width / REFERENCE_SCREEN_WIDTH, p.Y * ScreenImage.Height / REFERENCE_SCREEN_HEIGHT));
+			:  new(from p in preset.Points select new Point(p.X * ScreenImage.Width / ReferenceScreenWidth, p.Y * ScreenImage.Height / ReferenceScreenHeight));
 		Resolution = preset.Resolution;
 	}
 
@@ -276,13 +287,13 @@ public partial class TransformationViewModel : ViewModelBase {
 	internal void CopyPresetCode() {
 		if (ScreenImage is null) return;
 		var text = $"new(\"\", [{string.Join(", ", from i in Enumerable.Range(0, 4) select Quadrilateral[i] into p
-			select $"new({p.X * REFERENCE_SCREEN_WIDTH / ScreenImage.Width,4}, {p.Y * REFERENCE_SCREEN_HEIGHT / ScreenImage.Height,4})")}]);";
+			select $"new({p.X * ReferenceScreenWidth / ScreenImage.Width,4}, {p.Y * ReferenceScreenHeight / ScreenImage.Height,4})")}]);";
 		var message = new CopyTextMessage(text);
 		WeakReferenceMessenger.Default.Send(message);
 	}
 
 	internal void Analyse() {
-		if (ScreenImage is null || OutputImage is null || mainViewModel?.AnalysisViewModel is not { } vm) return;
+		if (ScreenImage is null || OutputImage is null || MainViewModel?.AnalysisViewModel is not { } vm) return;
 		vm.InputImage = null;
 		vm.LightsState = LightsSimulation != LightsState.On ? LightsSimulation : ImageUtils.GetLightsState(ScreenImage);
 		vm.InputImage = OutputImage;

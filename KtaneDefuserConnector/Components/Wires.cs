@@ -23,14 +23,12 @@ public class Wires : ComponentReader<Wires.ReadData> {
 			var colour = GetColour(hsv);
 			if (colour is null) {
 				seenFirstValidPixel = false;
-				if (inWire > 0) {
-					inWire--;
-					if (inWire == 0) {
-						if (!added)
-							colours.Add(Colour.Red);
-						added = false;
-					}
-				}
+				if (inWire <= 0) continue;
+				inWire--;
+				if (inWire != 0) continue;
+				if (!added)
+					colours.Add(Colour.Red);
+				added = false;
 			} else {
 				if (!seenFirstValidPixel) {
 					// Filter out single pixels.

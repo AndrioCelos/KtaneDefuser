@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.LogicalTree;
 using KtaneDefuserConnector;
 using KtaneDefuserConnectorApi;
@@ -12,7 +13,7 @@ using Button = Avalonia.Controls.Button;
 namespace VisionTester.Views;
 
 public partial class InputTestWindow : Window {
-	private readonly DefuserConnector connector = new();
+	private readonly DefuserConnector _connector = new();
 	
 	public InputTestWindow() {
 		InitializeComponent();
@@ -41,18 +42,18 @@ public partial class InputTestWindow : Window {
 		RYBox.ValueChanged += (_, _) => SendAxisAction(Axis.RightStickY, (float) RYBox.Value!);
 		
 		foreach (var button in ButtonsGrid.GetLogicalDescendants().OfType<Button>()) {
-			button.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
-			button.HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center;
+			button.HorizontalAlignment = HorizontalAlignment.Stretch;
+			button.HorizontalContentAlignment = HorizontalAlignment.Center;
 			button.Click += Button_Click;
 		}
 
 		ZoomSlider.ValueChanged += (_, _) => ZoomBox.Value = (decimal) ZoomSlider.Value;
-		ZoomButton.Click += (_, _) => connector.SendInputs(new ZoomAction((float) ZoomBox.Value!));
+		ZoomButton.Click += (_, _) => _connector.SendInputs(new ZoomAction((float) ZoomBox.Value!));
 	}
 
 	private async void OnLoaded(object? sender, RoutedEventArgs e) {
 		try {
-			await connector.ConnectAsync(NullLoggerFactory.Instance, false);
+			await _connector.ConnectAsync(NullLoggerFactory.Instance);
 			StatusLabel.Content = "Connected";
 		} catch (Exception ex) {
 			StatusLabel.Content = ex.Message;
@@ -72,11 +73,11 @@ public partial class InputTestWindow : Window {
 
 	private void Button_Click(object? sender, RoutedEventArgs e) {
 		var button = GetButton(sender);
-		connector.SendInputs(new ButtonAction(button));
+		_connector.SendInputs(new ButtonAction(button));
 	}
 
 	private void SendAxisAction(Axis axis, float value) {
-		connector.SendInputs(new AxisAction(axis, value));
+		_connector.SendInputs(new AxisAction(axis, value));
 	}
 }
 

@@ -3,15 +3,15 @@
 internal class WhosOnFirst : ModuleScript<KtaneDefuserConnector.Components.WhosOnFirst> {
 	public override string IndefiniteDescription => "Who's on First";
 
-	private bool readyToRead;
-	private Phrase[] keyLabels = new Phrase[6];
-	private int highlight;
+	private bool _readyToRead;
+	private Phrase[] _keyLabels = new Phrase[6];
+	private int _highlight;
 
-	protected internal override void Started(AimlAsyncContext context) => readyToRead = true;
+	protected internal override void Started(AimlAsyncContext context) => _readyToRead = true;
 
 	protected internal override void ModuleSelected(Interrupt interrupt) {
-		if (!readyToRead) return;
-		readyToRead = false;
+		if (!_readyToRead) return;
+		_readyToRead = false;
 		Read(interrupt);
 	}
 
@@ -22,16 +22,15 @@ internal class WhosOnFirst : ModuleScript<KtaneDefuserConnector.Components.WhosO
 
 	private void Read(Interrupt interrupt) {
 		var data = interrupt.Read(Reader);
-		keyLabels = data.Keys.Select(s => AimlInterface.TryParseSetEnum<Phrase>(s.Replace('’', '\''), out var p) ? p : throw new ArgumentException("Unknown button label")).ToArray();
-		if (data.Display == "")
-			interrupt.Context.Reply("The display is literally empty.");
-		else
-			interrupt.Context.Reply($"The display reads {PronouncePhrase(AimlInterface.TryParseSetEnum<Phrase>(data.Display.Replace('’', '\''), out var p) ? p : throw new ArgumentException("Unknown display"))}.");
+		_keyLabels = data.Keys.Select(s => AimlInterface.TryParseSetEnum<Phrase>(s.Replace('’', '\''), out var p) ? p : throw new ArgumentException("Unknown button label")).ToArray();
+		interrupt.Context.Reply(data.Display == ""
+			? "The display is literally empty."
+			: $"The display reads {PronouncePhrase(AimlInterface.TryParseSetEnum<Phrase>(data.Display.Replace('’', '\''), out var p) ? p : throw new ArgumentException("Unknown display"))}.");
 		interrupt.Context.Reply("<reply>top left</reply><reply>top right</reply><reply>middle left</reply><reply>middle right</reply><reply>bottom left</reply><reply>bottom right</reply>");
 	}
 
-	public void ReadButton(AimlAsyncContext context, int keyIndex) {
-		context.Reply(PronouncePhrase(keyLabels[keyIndex]));
+	private void ReadButton(AimlAsyncContext context, int keyIndex) {
+		context.Reply(PronouncePhrase(_keyLabels[keyIndex]));
 		context.Reply("<reply>press …</reply>");
 	}
 
@@ -55,7 +54,7 @@ internal class WhosOnFirst : ModuleScript<KtaneDefuserConnector.Components.WhosO
 	[AimlCategory("HandleButton <set>WhosOnFirstPhrase</set>")]
 	public static async Task Press(AimlAsyncContext context, Phrase phrase) {
 		var script = GameState.Current.CurrentScript<WhosOnFirst>();
-		var index = Array.IndexOf(script.keyLabels, phrase);
+		var index = Array.IndexOf(script._keyLabels, phrase);
 		if (index < 0)
 			context.Reply("No.");
 		else {
@@ -66,7 +65,7 @@ internal class WhosOnFirst : ModuleScript<KtaneDefuserConnector.Components.WhosO
 
 	private async Task PressButtonAsync(AimlAsyncContext context, int index) {
 		var buttons = new List<Button>();
-		var highlight = this.highlight;
+		var highlight = _highlight;
 		if (highlight % 2 == 0 && index % 2 == 1) {
 			highlight++;
 			buttons.Add(Button.Right);
@@ -83,7 +82,7 @@ internal class WhosOnFirst : ModuleScript<KtaneDefuserConnector.Components.WhosO
 			buttons.Add(Button.Up);
 		}
 		buttons.Add(Button.A);
-		this.highlight = highlight;
+		_highlight = highlight;
 		using var interrupt = await ModuleInterruptAsync(context);
 		var result = await interrupt.SubmitAsync(buttons);
 		if (result != ModuleLightState.Solved) await WaitRead(interrupt);

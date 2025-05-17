@@ -2,7 +2,7 @@
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Semaphore")]
-internal partial class Semaphore : ModuleScript<KtaneDefuserConnector.Components.Semaphore> {
+internal class Semaphore : ModuleScript<KtaneDefuserConnector.Components.Semaphore> {
 
 	public override string IndefiniteDescription => "Semaphore";
 
@@ -17,9 +17,9 @@ internal partial class Semaphore : ModuleScript<KtaneDefuserConnector.Components
 		{ KtaneDefuserConnector.Components.Semaphore.Direction.DownRight, "down right" },
 	};
 
-	private int highlight;
-	private List<ReadData>? displays;
-	private int display;
+	private int _highlight;
+	private List<ReadData>? _displays;
+	private int _display;
 
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
@@ -28,35 +28,35 @@ internal partial class Semaphore : ModuleScript<KtaneDefuserConnector.Components
 		var script = GameState.Current.CurrentScript<Semaphore>();
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		
-		if (script.display > 0) {
+		if (script._display > 0) {
 			var list = new List<Button>();
-			while (script.highlight > 0) {
+			while (script._highlight > 0) {
 				list.Add(Button.Left);
-				script.highlight--;
+				script._highlight--;
 			}
-			while (script.display > 0) {
+			while (script._display > 0) {
 				list.Add(Button.A);
-				script.display--;
+				script._display--;
 			}
 			await interrupt.SendInputsAsync(list);
 			await Delay(0.5);
 		}
 
-		script.displays = [];
+		script._displays = [];
 		while (true) {
 			var read = interrupt.Read(Reader);
-			if (script.displays.Count > 0) {
-				if (read == script.displays.Last()) break;
-				script.display++;
+			if (script._displays.Count > 0) {
+				if (read == script._displays.Last()) break;
+				script._display++;
 			}
-			script.displays.Add(read);
+			script._displays.Add(read);
 			context.Reply($"<priority/> {DirectionDescriptions[read.LeftFlag]} and {DirectionDescriptions[read.RightFlag]}");
 
-			if (script.highlight < 2) {
+			if (script._highlight < 2) {
 				var list = new List<Button>();
-				while (script.highlight < 2) {
+				while (script._highlight < 2) {
 					list.Add(Button.Right);
-					script.highlight++;
+					script._highlight++;
 				}
 				list.Add(Button.A);
 				await interrupt.SendInputsAsync(list);
@@ -68,7 +68,7 @@ internal partial class Semaphore : ModuleScript<KtaneDefuserConnector.Components
 
 	private static async Task Submit(AimlAsyncContext context, int index) {
 		var script = GameState.Current.CurrentScript<Semaphore>();
-		if (index <= 0 || index > script.displays?.Count) {
+		if (index <= 0 || index > script._displays?.Count) {
 			context.Reply("Not a valid position.");
 			return;
 		}
@@ -76,27 +76,33 @@ internal partial class Semaphore : ModuleScript<KtaneDefuserConnector.Components
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 
 		var list = new List<Button>();
-		while (script.display < index) {
-			while (script.highlight < 2) {
+		while (script._display < index) {
+			while (script._highlight < 2) {
 				list.Add(Button.Right);
-				script.highlight++;
+				script._highlight++;
 			}
 			list.Add(Button.A);
-			script.display++;
+			script._display++;
 		}
 
-		while (script.display > index) {
-			while (script.highlight > 0) {
+		while (script._display > index) {
+			while (script._highlight > 0) {
 				list.Add(Button.Left);
-				script.highlight--;
+				script._highlight--;
 			}
 			list.Add(Button.A);
-			script.display--;
+			script._display--;
 		}
 
-		if (script.highlight == 0) list.Add(Button.Right);
-		else if (script.highlight == 2) list.Add(Button.Left);
-		script.highlight = 1;
+		switch (script._highlight) {
+			case 0:
+				list.Add(Button.Right);
+				break;
+			case 2:
+				list.Add(Button.Left);
+				break;
+		}
+		script._highlight = 1;
 
 		list.Add(Button.A);
 		await interrupt.SubmitAsync(list);
@@ -116,12 +122,12 @@ internal partial class Semaphore : ModuleScript<KtaneDefuserConnector.Components
 		}
 
 		var script = GameState.Current.CurrentScript<Semaphore>();
-		if (script.displays == null) {
+		if (script._displays == null) {
 			context.Reply("Need to read the module first.");
 			return Task.CompletedTask;
 		}
 
-		var i = script.displays.IndexOf(new(leftFlag, rightFlag));
+		var i = script._displays.IndexOf(new(leftFlag, rightFlag));
 		if (i < 0) {
 			context.Reply("That signal was not present.");
 			return Task.CompletedTask;

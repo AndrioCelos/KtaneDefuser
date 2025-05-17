@@ -10,11 +10,12 @@ using CommunityToolkit.Mvvm.Messaging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using VisionTester.ViewModels;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace VisionTester.Views;
 
 public partial class ColourRangeWindow : Window {
-	private Rect imageRectangle;
+	private Rect _imageRectangle;
 
 	public ColourRangeWindow() {
 		InitializeComponent();
@@ -44,14 +45,14 @@ public partial class ColourRangeWindow : Window {
 			return null;
 		}
 		using var ms = new MemoryStream((byte[]) data);
-		return SixLabors.ImageSharp.Image.Load<Rgba32>(ms);
+		return Image.Load<Rgba32>(ms);
 	}
 
 	private void ImageControl_PointerMoved(object? sender, PointerEventArgs e) {
-		if (imageRectangle.Width == 0 || imageRectangle.Height == 0 || DataContext is not ColourRangeViewModel { InputImage: { } image } vm) return;
+		if (_imageRectangle.Width == 0 || _imageRectangle.Height == 0 || DataContext is not ColourRangeViewModel { InputImage: { } image } vm) return;
 		var point = e.GetCurrentPoint(ImageControl);
-		var x = (int) Math.Round((point.Position.X - imageRectangle.X) * image.Width / imageRectangle.Width);
-		var y = (int) Math.Round((point.Position.Y - imageRectangle.Y) * image.Height / imageRectangle.Height);
+		var x = (int) Math.Round((point.Position.X - _imageRectangle.X) * image.Width / _imageRectangle.Width);
+		var y = (int) Math.Round((point.Position.Y - _imageRectangle.Y) * image.Height / _imageRectangle.Height);
 		if (point.Properties is { IsLeftButtonPressed: false, IsRightButtonPressed: false }) return;
 		vm.MouseClick(new(x, y), point.Properties.IsRightButtonPressed, e.KeyModifiers);
 	}
@@ -67,10 +68,10 @@ public partial class ColourRangeWindow : Window {
 		var scaleY = ImageControl.Bounds.Height / image.Height;
 		if (scaleX < scaleY) {
 			var height = (int) Math.Round(image.Height * scaleX);
-			imageRectangle = new(0, (ImageControl.Bounds.Height - height) / 2, ImageControl.Bounds.Width, height);
+			_imageRectangle = new(0, (ImageControl.Bounds.Height - height) / 2, ImageControl.Bounds.Width, height);
 		} else {
 			var width = (int) Math.Round(image.Width * scaleY);
-			imageRectangle = new((ImageControl.Bounds.Width - width) / 2, 0, width, ImageControl.Bounds.Height);
+			_imageRectangle = new((ImageControl.Bounds.Width - width) / 2, 0, width, ImageControl.Bounds.Height);
 		}
 	}
 }

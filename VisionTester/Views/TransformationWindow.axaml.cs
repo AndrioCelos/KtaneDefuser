@@ -4,12 +4,12 @@ using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.Messaging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using VisionTester.ViewModels;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace VisionTester.Views;
 
@@ -41,7 +41,7 @@ public partial class TransformationWindow : Window {
 			return null;
 		}
 		using var ms = new MemoryStream((byte[]) data); 
-		return SixLabors.ImageSharp.Image.Load<Rgba32>(ms);
+		return Image.Load<Rgba32>(ms);
 	}
 
 	private async Task<IStorageFile?> SaveImageFileAsync() {
@@ -54,16 +54,12 @@ public partial class TransformationWindow : Window {
 		clipboard.SetTextAsync(text);
 	}
 
-	private void CopyImage(SixLabors.ImageSharp.Image image) {
+	private void CopyImage(Image image) {
 		var clipboard = GetTopLevel(this)!.Clipboard!;
 		var dataObject = new DataObject();
 		using var ms = new MemoryStream();
 		image.SaveAsPng(ms);
 		dataObject.Set("PNG", ms.ToArray());
 		clipboard.SetDataObjectAsync(dataObject);
-	}
-
-	private void PresetButton_Click(object? sender, RoutedEventArgs e) {
-		PresetButton.Flyout!.Hide();
 	}
 }

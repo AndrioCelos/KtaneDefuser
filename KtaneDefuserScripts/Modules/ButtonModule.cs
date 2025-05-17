@@ -6,7 +6,7 @@ namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Button")]
 internal class ButtonModule : ModuleScript<Button> {
 	public override string IndefiniteDescription => "a Button";
-	private static Interrupt? holdInterrupt;
+	private static Interrupt? _holdInterrupt;
 
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
@@ -27,24 +27,24 @@ internal class ButtonModule : ModuleScript<Button> {
 
 	[AimlCategory("hold")]
 	internal static async Task Hold(AimlAsyncContext context) {
-		holdInterrupt = await CurrentModuleInterruptAsync(context);
-		holdInterrupt.SendInputs(new ButtonAction(KtaneDefuserConnectorApi.Button.A, ButtonActionType.Hold));
+		_holdInterrupt = await CurrentModuleInterruptAsync(context);
+		_holdInterrupt.SendInputs(new ButtonAction(KtaneDefuserConnectorApi.Button.A, ButtonActionType.Hold));
 		await Delay(1);
-		var data = holdInterrupt.Read(Reader);
-		holdInterrupt.Context.Reply($"The light is {data.IndicatorColour}.<reply>release on …</reply>");
+		var data = _holdInterrupt.Read(Reader);
+		_holdInterrupt.Context.Reply($"The light is {data.IndicatorColour}.<reply>release on …</reply>");
 	}
 
 	[AimlCategory("release on <set>number</set>")]
 	internal static async Task Release(AimlAsyncContext context, int digit) {
-		if (holdInterrupt == null) {
+		if (_holdInterrupt == null) {
 			context.Reply("I cannot do that now.");
 			return;
 		}
-		holdInterrupt.Context = context;
+		_holdInterrupt.Context = context;
 		await TimerUtil.WaitForDigitInTimerAsync(digit);
-		await holdInterrupt.SubmitAsync(new ButtonAction(KtaneDefuserConnectorApi.Button.A, ButtonActionType.Release));
-		holdInterrupt.ExitAsync();
-		holdInterrupt = null;
+		await _holdInterrupt.SubmitAsync(new ButtonAction(KtaneDefuserConnectorApi.Button.A, ButtonActionType.Release));
+		_holdInterrupt.ExitAsync();
+		_holdInterrupt = null;
 	}
 
 	[AimlCategory("release on …")]

@@ -1,14 +1,14 @@
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
-using System.Linq;
 using Avalonia.Markup.Xaml;
 using VisionTester.ViewModels;
 using VisionTester.Views;
 
 namespace VisionTester;
 
-public partial class App : Application {
+public class App : Application {
 	public override void Initialize() {
 		AvaloniaXamlLoader.Load(this);
 	}
@@ -24,7 +24,7 @@ public partial class App : Application {
 		base.OnFrameworkInitializationCompleted();
 	}
 
-	private void DisableAvaloniaDataAnnotationValidation() {
+	private static void DisableAvaloniaDataAnnotationValidation() {
 		// Get an array of plugins to remove
 		var dataValidationPluginsToRemove =
 			BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray();

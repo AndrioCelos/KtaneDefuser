@@ -1,5 +1,4 @@
-﻿using System.Collections.Specialized;
-using System.Linq;
+﻿using System.Linq;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 

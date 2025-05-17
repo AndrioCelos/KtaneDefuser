@@ -4,30 +4,32 @@ using AngelAiml;
 using Microsoft.Extensions.Logging.Abstractions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using Timer = KtaneDefuserConnector.Components.Timer;
+
 // ReSharper disable MethodHasAsyncOverload
 
 namespace KtaneDefuserScripts;
 [AimlInterface]
 internal static partial class Start {
-	private static ILogger logger = NullLogger.Instance;
-	private static bool waitingForLights;
-	private static Stopwatch? startDelayStopwatch;
+	private static ILogger _logger = NullLogger.Instance;
+	private static bool _waitingForLights;
+	private static Stopwatch? _startDelayStopwatch;
 
 	[AimlCategory("OOB NewBomb *"), EditorBrowsable(EditorBrowsableState.Never)]
 	public static void NewBomb(RequestProcess process) {
 		// 0. Clear previous game variables.
-		waitingForLights = true;
+		_waitingForLights = true;
 		GameState.Current = new(process.Bot.LoggerFactory);
-		logger = GameState.Current.LoggerFactory.CreateLogger(nameof(Start));
+		_logger = GameState.Current.LoggerFactory.CreateLogger(nameof(Start));
 		Edgework.Logger = GameState.Current.LoggerFactory.CreateLogger(nameof(Edgework));
 		ModuleSelection.Logger = GameState.Current.LoggerFactory.CreateLogger(nameof(ModuleSelection));
 	}
 
 	[AimlCategory("OOB LightsChange *"), EditorBrowsable(EditorBrowsableState.Never)]
 	public static async Task Lights(AimlAsyncContext context, bool on) {
-		if (on && waitingForLights) {
-			waitingForLights = false;
-			startDelayStopwatch = Stopwatch.StartNew();
+		if (on && _waitingForLights) {
+			_waitingForLights = false;
+			_startDelayStopwatch = Stopwatch.StartNew();
 			await GameStartAsync(context);
 		}
 	}
@@ -59,13 +61,13 @@ internal static partial class Start {
 		await Delay(0.5);
 		// 6. Identify widgets on the bottom face.
 		using (var ss = DefuserConnector.Instance.TakeScreenshot())
-			Edgework.RegisterWidgets(context, false, ss);
+			Edgework.RegisterWidgets(false, ss);
 		// 7. Turn the bomb to the top face.
 		interrupt.SendInputs(new AxisAction(Axis.RightStickY, 1));
 		await Delay(0.5);
 		// 8. Identify widgets on the top face.
 		using (var ss = DefuserConnector.Instance.TakeScreenshot())
-			Edgework.RegisterWidgets(context, false, ss);
+			Edgework.RegisterWidgets(false, ss);
 		// 9. Reset the bomb tilt.
 		interrupt.SendInputs(new AxisAction(Axis.RightStickY, 0));
 		GameState.Current.LookingAtSide = false;
@@ -111,12 +113,12 @@ internal static partial class Start {
 			var points = Utils.GetPoints(slot, isZoomedOut);
 			var component = DefuserConnector.Instance.GetComponentReader(screenshot, points);
 			var actualComponent = DefuserConnector.Instance.CheatGetComponentReader(slot);
-			if (actualComponent != component && !(actualComponent is null && component is KtaneDefuserConnector.Components.Timer)) {
-				LogWrongComponent(logger, slot, component?.Name, actualComponent?.Name);
+			if (actualComponent != component && !(actualComponent is null && component is Timer)) {
+				LogWrongComponent(_logger, slot, component?.Name, actualComponent?.Name);
 				component = actualComponent;
 			}
 
-			if (!anyModules && component is not (null or KtaneDefuserConnector.Components.Timer)) {
+			if (!anyModules && component is not (null or Timer)) {
 				// Set the initially selected slot on each side to be the first one with a module in it.
 				anyModules = true;
 				GameState.Current.Faces[GameState.Current.SelectedFaceNum].SelectedSlot = slot;
@@ -126,17 +128,17 @@ internal static partial class Start {
 			if (module is not null) {
 				var lightState = DefuserConnector.Instance.GetModuleLightState(screenshot, points);
 				if (lightState == ModuleLightState.Solved) {
-					LogSolvedModule(logger, module.Script.ModuleIndex + 1);
+					LogSolvedModule(_logger, module.Script.ModuleIndex + 1);
 					module.IsSolved = true;
 				}
 			}
 
 			// If we saw the timer but don't already know the bomb time, read it now.
-			needTimerRead |= component is KtaneDefuserConnector.Components.Timer;
+			needTimerRead |= component is Timer;
 		}
 		if (needTimerRead) {
-			await TimerUtil.ReadTimerAsync(screenshot, startDelayStopwatch is not null && startDelayStopwatch.Elapsed < TimeSpan.FromSeconds(2));
-			startDelayStopwatch = null;
+			await TimerUtil.ReadTimerAsync(screenshot, _startDelayStopwatch is not null && _startDelayStopwatch.Elapsed < TimeSpan.FromSeconds(2));
+			_startDelayStopwatch = null;
 		}
 
 		return anyModules;
@@ -146,9 +148,9 @@ internal static partial class Start {
 		switch (component) {
 			case null:
 				return null;
-			case KtaneDefuserConnector.Components.Timer:
+			case Timer:
 				GameState.Current.TimerSlot = slot;
-				LogRegisteringTimer(logger, slot);
+				LogRegisteringTimer(_logger, slot);
 				return null;
 			default:
 				var script = ModuleScript.Create(component);
@@ -157,7 +159,7 @@ internal static partial class Start {
 				GameState.Current.Faces[slot.Face][slot] = module;
 				GameState.Current.Modules.Add(module);
 				GameState.Current.Faces[slot.Face].HasModules = true;
-				LogRegisteringModule(logger, script.ModuleIndex + 1, component.Name, slot);
+				LogRegisteringModule(_logger, script.ModuleIndex + 1, component.Name, slot);
 				if (script.PriorityCategory != PriorityCategory.None)
 					interrupt.Context.Reply($"<priority/> Module {script.ModuleIndex + 1} is {script.IndefiniteDescription}.");
 				script.Initialise(interrupt);

@@ -9,9 +9,9 @@ namespace KtaneDefuserScripts;
 [MustDisposeResource]
 public class Interrupt : IDisposable {
 	[Obsolete("String inputs are being replaced with IInputAction")]
-	private static readonly AimlTaskFactory sendInputs = new("<oob><sendinputs>{0} callback:{ID}</sendinputs></oob>");
+	private static readonly AimlTaskFactory SendInputsFactory = new("<oob><sendinputs>{0} callback:{ID}</sendinputs></oob>");
 	[AimlResponse("OOB DefuserCallback *")]
-	private static readonly AimlTaskFactory inputCallback = new(null);
+	private static readonly AimlTaskFactory InputCallbackFactory = new(null);
 
 	public static bool EnableInterrupts { get; private set; } = true;
 	private static readonly Queue<TaskCompletionSource<Interrupt>> InterruptQueue = new();
@@ -24,8 +24,8 @@ public class Interrupt : IDisposable {
 	/// </summary>
 	public AimlAsyncContext Context { get; set; }
 
-	private CancellationTokenSource? submitCancellationTokenSource;
-	private Slot submitCurrentSlot;
+	private CancellationTokenSource? _submitCancellationTokenSource;
+	private Slot _submitCurrentSlot;
 
 	private Interrupt(AimlAsyncContext context) => Context = context ?? throw new ArgumentNullException(nameof(context));
 
@@ -50,6 +50,7 @@ public class Interrupt : IDisposable {
 			InterruptQueue.TryDequeue(out queuedTaskSource);
 		}
 		if (queuedTaskSource is not null) {
+			// ReSharper disable once NotDisposedResource
 			queuedTaskSource.SetResult(new(context));
 		} else {
 			if (GameState.Current.CurrentModuleNum != GameState.Current.SelectedModuleNum && GameState.Current.CurrentModuleNum is not null) {
@@ -71,28 +72,15 @@ public class Interrupt : IDisposable {
 		}
 	}
 
-	/// <summary>Reads data from the currently-focused module using the specified <see cref="ComponentReader"/.></summary>
+	/// <summary>Reads data from the currently focused module using the specified <see cref="ComponentReader"/>.</summary>
 	public T Read<T>(ComponentReader<T> reader) where T : notnull {
 		ObjectDisposedException.ThrowIf(IsDisposed, this);
 		using var ss = DefuserConnector.Instance.TakeScreenshot();
 		return DefuserConnector.Instance.ReadComponent(ss, DefuserConnector.Instance.GetLightsState(ss), reader, Utils.CurrentModuleArea);
 	}
-	/// <summary>Reads data from the currently-focused module using the specified <see cref="ComponentReader"/.></summary>
-	public T Read<T>(ComponentReader<T> reader, Slot slot) where T : notnull {
-		ObjectDisposedException.ThrowIf(IsDisposed, this);
-		using var ss = DefuserConnector.Instance.TakeScreenshot();
-		return DefuserConnector.Instance.ReadComponent(ss, DefuserConnector.Instance.GetLightsState(ss), reader, Utils.CurrentModuleArea);
-	}
-
-	[Obsolete("String inputs are being replaced with IInputAction")]
-	public AimlTask SendInputsAsync(string inputs) => sendInputs.CallAsync(inputs);
-	[Obsolete("String inputs are being replaced with IInputAction")]
-	public void SendInputs(string inputs) => Context.Reply($"<oob><sendinputs>{inputs}</sendinputs></oob>");
 
 	/// <summary>Presses the specified buttons in sequence.</summary>
-	public void SendInputs(params Button[] buttons) => SendInputs(from b in buttons select new ButtonAction(b));
-	/// <summary>Presses the specified buttons in sequence.</summary>
-	public void SendInputs(IEnumerable<Button> buttons) => SendInputs(from b in buttons select new ButtonAction(b));
+	public void SendInputs(params IEnumerable<Button> buttons) => SendInputs(from b in buttons select new ButtonAction(b));
 	/// <summary>Performs the specified input actions in sequence.</summary>
 	public void SendInputs(params IInputAction[] actions) => SendInputs((IEnumerable<IInputAction>) actions);
 	/// <summary>Performs the specified input actions in sequence.</summary>
@@ -111,7 +99,7 @@ public class Interrupt : IDisposable {
 		ObjectDisposedException.ThrowIf(IsDisposed, this);
 		cancellationToken.Register(DefuserConnector.Instance.CancelInputs);
 		var guid = Guid.NewGuid();
-		var task = inputCallback.CallAsync(Context, guid, cancellationToken);
+		var task = InputCallbackFactory.CallAsync(Context, guid, cancellationToken);
 		DefuserConnector.Instance.SendInputs(actions.Concat([new CallbackAction(guid)]));
 		return task;
 	}
@@ -121,47 +109,44 @@ public class Interrupt : IDisposable {
 	/// <summary>Performs the specified input actions, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
 	public async Task<ModuleLightState> SubmitAsync(params IEnumerable<IInputAction> actions) {
 		ObjectDisposedException.ThrowIf(IsDisposed, this);
-		if (submitCancellationTokenSource is not null) throw new InvalidOperationException("Already submitting.");
+		if (_submitCancellationTokenSource is not null) throw new InvalidOperationException("Already submitting.");
 		if (GameState.Current.CurrentModuleNum is null) throw new InvalidOperationException("No current module.");
 		var module = GameState.Current.Modules[GameState.Current.CurrentModuleNum.Value];
 		var context = AimlAsyncContext.Current ?? throw new InvalidOperationException("No current request");
 
-		submitCancellationTokenSource = new();
-		submitCurrentSlot = module.Slot;
+		_submitCancellationTokenSource = new();
+		_submitCurrentSlot = module.Slot;
 		GameState.Current.Strike += GameState_Strike;
 		try {
-			await SendInputsAsync(actions, submitCancellationTokenSource.Token);
+			await SendInputsAsync(actions, _submitCancellationTokenSource.Token);
 			await Delay(0.5);  // Wait for the interaction punch to end.
 			using var ss = DefuserConnector.Instance.TakeScreenshot();
 			var result = DefuserConnector.Instance.GetModuleLightState(ss, Utils.CurrentModuleArea);
-			if (result == ModuleLightState.Solved) {
-				var isDefused = GameState.Current.TryMarkModuleSolved(context, GameState.Current.CurrentModuleNum.Value);
-				if (isDefused)
-					context.Reply("The bomb is defused.");
-				else if (GameState.Current.CurrentModuleNum == GameState.Current.SelectedModuleNum) {
-					context.Reply("<priority/>Module complete<reply>next module</reply>.");
-					if (!GameState.Current.NextModuleNums.TryDequeue(out var nextModule))
-						nextModule = GameState.Current.Modules.FindIndex(GameState.Current.SelectedModuleNum is { } i ? i + 1 : 0, m => !m.Script.PriorityCategory.HasFlag(PriorityCategory.Needy) && !m.IsSolved);
-					if (nextModule >= 0) {
-						context.Reply($"Next is {GameState.Current.Modules[nextModule].Script.IndefiniteDescription}.");
-						await ModuleSelection.ChangeModuleAsync(context, nextModule, true);
-					}
-				}
+			if (result != ModuleLightState.Solved) return result;
+			var isDefused = GameState.Current.TryMarkModuleSolved(context, GameState.Current.CurrentModuleNum.Value);
+			if (isDefused)
+				context.Reply("The bomb is defused.");
+			else if (GameState.Current.CurrentModuleNum == GameState.Current.SelectedModuleNum) {
+				context.Reply("<priority/>Module complete<reply>next module</reply>.");
+				if (!GameState.Current.NextModuleNums.TryDequeue(out var nextModule))
+					nextModule = GameState.Current.Modules.FindIndex(GameState.Current.SelectedModuleNum is { } i ? i + 1 : 0, m => !m.Script.PriorityCategory.HasFlag(PriorityCategory.Needy) && !m.IsSolved);
+				if (nextModule < 0) return result;
+				context.Reply($"Next is {GameState.Current.Modules[nextModule].Script.IndefiniteDescription}.");
+				await ModuleSelection.ChangeModuleAsync(context, nextModule, true);
 			}
 			return result;
 		} catch (TaskCanceledException) {
 			return ModuleLightState.Strike;
 		} finally {
-			submitCancellationTokenSource?.Dispose();
-			submitCancellationTokenSource = null;
+			_submitCancellationTokenSource?.Dispose();
+			_submitCancellationTokenSource = null;
 		}
 	}
 
 	private void GameState_Strike(object? sender, StrikeEventArgs e) {
-		if (e.Slot == submitCurrentSlot) {
-			Context = e.Context;
-			submitCancellationTokenSource?.Cancel();
-		}
+		if (e.Slot != _submitCurrentSlot) return;
+		Context = e.Context;
+		_submitCancellationTokenSource?.Cancel();
 	}
 
 	/// <summary>Exits this interrupt, allowing the bot to enter another interrupt. After calling this method, this instance is no longer usable.</summary>

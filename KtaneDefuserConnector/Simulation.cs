@@ -2,56 +2,59 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Timers;
+using KtaneDefuserConnector.Components;
 using KtaneDefuserConnector.DataTypes;
+using KtaneDefuserConnector.Widgets;
 using KtaneDefuserConnectorApi;
 using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using Timer = System.Timers.Timer;
 
 namespace KtaneDefuserConnector;
 /// <summary>Provides a simulation of a Keep Talking and Nobody Explodes game, for testing without the real game.</summary>
 internal partial class Simulation {
-	private readonly ILoggerFactory loggerFactory;
-	private readonly ILogger logger;
-	private int roomX;
-	private readonly Timer rxTimer = new(187.5);
-	private bool rxBetweenFaces;
-	private float ry;
-	private FocusStates focusState;
-	private int selectedFaceNum;
-	private BombFaces currentFace;
-	private readonly Queue<IInputAction> actionQueue = new();
-	private readonly Timer queueTimer = new(167);
-	private readonly ComponentFace[] moduleFaces = new ComponentFace[2];
-	private readonly WidgetFace[] widgetFaces = new WidgetFace[4];
-	private bool isAlarmClockOn;
+	private readonly ILoggerFactory _loggerFactory;
+	private readonly ILogger _logger;
+	private int _roomX;
+	private readonly Timer _rxTimer = new(187.5);
+	private bool _rxBetweenFaces;
+	private float _ry;
+	private FocusStates _focusState;
+	private int _selectedFaceNum;
+	private BombFaces _currentFace;
+	private readonly Queue<IInputAction> _actionQueue = new();
+	private readonly Timer _queueTimer = new(167);
+	private readonly ComponentFace[] _moduleFaces = new ComponentFace[2];
+	private readonly WidgetFace[] _widgetFaces = new WidgetFace[4];
+	private bool _isAlarmClockOn;
 
-	public Random Random { get; } = new();
+	private Random Random { get; } = new();
 	internal static Image<Rgba32> DummyScreenshot { get; } = new(1, 1);
 
-	private ComponentFace SelectedFace => moduleFaces[selectedFaceNum];
+	private ComponentFace SelectedFace => _moduleFaces[_selectedFaceNum];
 
 	internal event EventHandler<string>? Postback;
 
 	public Simulation(ILoggerFactory loggerFactory) {
-		this.loggerFactory = loggerFactory;
-		logger = loggerFactory.CreateLogger<Simulation>();
-		queueTimer.Elapsed += QueueTimer_Elapsed;
-		rxTimer.Elapsed += RXTimer_Elapsed;
+		_loggerFactory = loggerFactory;
+		_logger = loggerFactory.CreateLogger<Simulation>();
+		_queueTimer.Elapsed += QueueTimer_Elapsed;
+		_rxTimer.Elapsed += RXTimer_Elapsed;
 
-		moduleFaces[0] = new(new BombComponent?[,] {
+		_moduleFaces[0] = new(new BombComponent?[,] {
 			{
 				TimerComponent.Instance,
-				new Modules.Wires(this, 0, [Components.Wires.Colour.Black, Components.Wires.Colour.White, Components.Wires.Colour.Blue]),
-				new Modules.Keypad(this, [Components.Keypad.Symbol.QuestionMark, Components.Keypad.Symbol.HollowStar, Components.Keypad.Symbol.LeftC, Components.Keypad.Symbol.Balloon], [3, 2, 1, 0])
+				new Modules.Wires(this, 0, Wires.Colour.Black, Wires.Colour.White, Wires.Colour.Blue),
+				new Modules.Keypad(this, [Keypad.Symbol.QuestionMark, Keypad.Symbol.HollowStar, Keypad.Symbol.LeftC, Keypad.Symbol.Balloon], [3, 2, 1, 0])
 			},
 			{
 				new Modules.Password(this),
 				new Modules.Button(this, Components.Button.Colour.Red, "ABORT"),
-				new Modules.ComplicatedWires(this, [Components.ComplicatedWires.WireFlags.None, Components.ComplicatedWires.WireFlags.Red, Components.ComplicatedWires.WireFlags.Blue, Components.ComplicatedWires.WireFlags.Light, Components.ComplicatedWires.WireFlags.Star])
+				new Modules.ComplicatedWires(this, [ComplicatedWires.WireFlags.None, ComplicatedWires.WireFlags.Red, ComplicatedWires.WireFlags.Blue, ComplicatedWires.WireFlags.Light, ComplicatedWires.WireFlags.Star])
 			}
 		});
-		moduleFaces[1] = new(new BombComponent?[,] {
+		_moduleFaces[1] = new(new BombComponent?[,] {
 			{
 				new Modules.Maze(this, new(0, 0), new(6, 6), new(0, 1), new(5, 2)),
 				new Modules.Memory(this),
@@ -63,17 +66,17 @@ internal partial class Simulation {
 				new Modules.WireSequence(this)
 			}
 		});
-		widgetFaces[0] = new([Widget.Create(new Widgets.SerialNumber(), "AB3DE6"), null, null, null]);
-		widgetFaces[1] = new([Widget.Create(new Widgets.Indicator(), new(false, "BOB")), Widget.Create(new Widgets.Indicator(), new(true, "FRQ")), null, null
+		_widgetFaces[0] = new([Widget.Create(new SerialNumber(), "AB3DE6"), null, null, null]);
+		_widgetFaces[1] = new([Widget.Create(new Indicator(), new(false, "BOB")), Widget.Create(new Indicator(), new(true, "FRQ")), null, null
 		]);
-		widgetFaces[2] = new([Widget.Create(new Widgets.BatteryHolder(), 2), null, null, null, null, null]);
-		widgetFaces[3] = new([Widget.Create(new Widgets.PortPlate(), new(Widgets.PortPlate.PortType.Parallel | Widgets.PortPlate.PortType.Serial)), Widget.Create(new Widgets.PortPlate(), new(0)), null, null, null, null]);
+		_widgetFaces[2] = new([Widget.Create(new BatteryHolder(), 2), null, null, null, null, null]);
+		_widgetFaces[3] = new([Widget.Create(new PortPlate(), new(PortPlate.PortType.Parallel | PortPlate.PortType.Serial)), Widget.Create(new PortPlate(), new(0)), null, null, null, null]);
 		LogInitialised();
 
-		for (var i = 0; i < moduleFaces.Length; i++) {
-			for (var y = 0; y < moduleFaces[i].Slots.GetLength(0); y++) {
-				for (var x = 0; x < moduleFaces[i].Slots.GetLength(1); x++) {
-					if (moduleFaces[i].Slots[y, x] is not { } component) continue;
+		for (var i = 0; i < _moduleFaces.Length; i++) {
+			for (var y = 0; y < _moduleFaces[i].Slots.GetLength(0); y++) {
+				for (var x = 0; x < _moduleFaces[i].Slots.GetLength(1); x++) {
+					if (_moduleFaces[i].Slots[y, x] is not { } component) continue;
 					component.PostbackSent += (_, m) => Postback?.Invoke(this, m);
 					if (component is not Module module) continue;
 					var slot = new Slot(0, i, x, y);
@@ -88,28 +91,28 @@ internal partial class Simulation {
 	}
 
 	private void RXTimer_Elapsed(object? sender, ElapsedEventArgs e) {
-		if (rxBetweenFaces)
-			rxBetweenFaces = false;
+		if (_rxBetweenFaces)
+			_rxBetweenFaces = false;
 		else {
-			rxBetweenFaces = true;
-			currentFace = (BombFaces) (((int) currentFace + 1) % 4);
-			var faceNum = ((int) currentFace + 1) / 2 % 2;
-			if (faceNum != selectedFaceNum) {
-				selectedFaceNum = faceNum;
-				if (focusState == FocusStates.Module) {
-					focusState = FocusStates.Bomb;
+			_rxBetweenFaces = true;
+			_currentFace = (BombFaces) (((int) _currentFace + 1) % 4);
+			var faceNum = ((int) _currentFace + 1) / 2 % 2;
+			if (faceNum != _selectedFaceNum) {
+				_selectedFaceNum = faceNum;
+				if (_focusState == FocusStates.Module) {
+					_focusState = FocusStates.Bomb;
 					LogModuleDeselected();
 				}
 			}
-			LogBombTurned(currentFace);
+			LogBombTurned(_currentFace);
 		}
 	}
 
 	private void QueueTimer_Elapsed(object? sender, ElapsedEventArgs e) => PopInputQueue();
 
 	private void PopInputQueue() {
-		if (!actionQueue.TryDequeue(out var action)) {
-			queueTimer.Stop();
+		if (!_actionQueue.TryDequeue(out var action)) {
+			_queueTimer.Stop();
 			return;
 		}
 		switch (action) {
@@ -120,43 +123,48 @@ internal partial class Simulation {
 				switch (axisAction.Axis) {
 					case Axis.RightStickX:
 						if (axisAction.Value > 0)
-							rxTimer.Start();
+							_rxTimer.Start();
 						else
-							rxTimer.Stop();
+							_rxTimer.Stop();
 						break;
 					case Axis.RightStickY:
-						ry = axisAction.Value;
+						_ry = axisAction.Value;
 						break;
 				}
 				break;
 			case ButtonAction buttonAction:
 				switch (buttonAction.Button) {
-					case Button.A:
-						switch (focusState) {
+					case KtaneDefuserConnectorApi.Button.A:
+						switch (_focusState) {
 							case FocusStates.Room:
 								if (buttonAction.Action != ButtonActionType.Press) break;
-								focusState = roomX == -1 ? FocusStates.AlarmClock : FocusStates.Bomb;
-								LogFocusStateChanged(focusState);
+								_focusState = _roomX == -1 ? FocusStates.AlarmClock : FocusStates.Bomb;
+								LogFocusStateChanged(_focusState);
 								break;
 							case FocusStates.AlarmClock:
 								if (buttonAction.Action != ButtonActionType.Press) break;
-								SetAlarmClock(!isAlarmClockOn);
+								SetAlarmClock(!_isAlarmClockOn);
 								break;
 							case FocusStates.Bomb:
 								if (buttonAction.Action != ButtonActionType.Press) break;
-								if ((int) currentFace % 2 != 0) {
-									currentFace = (BombFaces) (((int) currentFace + 1) % 4);
-									rxBetweenFaces = false;
-									LogBombAligned(currentFace);
+								if ((int) _currentFace % 2 != 0) {
+									_currentFace = (BombFaces) (((int) _currentFace + 1) % 4);
+									_rxBetweenFaces = false;
+									LogBombAligned(_currentFace);
 								}
 								var component = SelectedFace.SelectedComponent;
-								if (component == null)
-									LogNoModuleHighlighted();
-								else if (component is Module module1) {
-									focusState = FocusStates.Module;
-									LogModuleSelected(component.Reader.Name, module1.ID, SelectedFace.X + 1, SelectedFace.Y + 1);
-								} else
-									LogUnselectableComponent(component.Reader.Name);
+								switch (component) {
+									case null:
+										LogNoModuleHighlighted();
+										break;
+									case Module module1:
+										_focusState = FocusStates.Module;
+										LogModuleSelected(component.Reader.Name, module1.ID, SelectedFace.X + 1, SelectedFace.Y + 1);
+										break;
+									default:
+										LogUnselectableComponent(component.Reader.Name);
+										break;
+								}
 								break;
 							case FocusStates.Module:
 								if (SelectedFace.SelectedComponent is Module module2) {
@@ -176,33 +184,33 @@ internal partial class Simulation {
 								break;
 						}
 						break;
-					case Button.B:
-						switch (focusState) {
+					case KtaneDefuserConnectorApi.Button.B:
+						switch (_focusState) {
 							case FocusStates.AlarmClock:
 							case FocusStates.Bomb:
-								if ((int) currentFace % 2 != 0) {
-									currentFace = (BombFaces) (((int) currentFace + 1) % 4);
-									rxBetweenFaces = false;
-									LogBombAligned(currentFace);
+								if ((int) _currentFace % 2 != 0) {
+									_currentFace = (BombFaces) (((int) _currentFace + 1) % 4);
+									_rxBetweenFaces = false;
+									LogBombAligned(_currentFace);
 								}
-								focusState = FocusStates.Room;
-								if ((int) currentFace % 2 != 0) {
-									currentFace = (BombFaces) (((int) currentFace + 1) % 4);
-									rxBetweenFaces = false;
-									LogBombAligned(currentFace);
+								_focusState = FocusStates.Room;
+								if ((int) _currentFace % 2 != 0) {
+									_currentFace = (BombFaces) (((int) _currentFace + 1) % 4);
+									_rxBetweenFaces = false;
+									LogBombAligned(_currentFace);
 								}
-								LogFocusStateChanged(focusState);
+								LogFocusStateChanged(_focusState);
 								break;
 							case FocusStates.Module:
-								focusState = FocusStates.Bomb;
-								LogFocusStateChanged(focusState);
+								_focusState = FocusStates.Bomb;
+								LogFocusStateChanged(_focusState);
 								break;
 						}
 						break;
-					case Button.Left:
-						switch (focusState) {
+					case KtaneDefuserConnectorApi.Button.Left:
+						switch (_focusState) {
 							case FocusStates.Room:
-								if (roomX == 0) roomX = -1;
+								if (_roomX == 0) _roomX = -1;
 								break;
 							case FocusStates.Bomb:
 								do {
@@ -215,10 +223,10 @@ internal partial class Simulation {
 								break;
 						}
 						break;
-					case Button.Right:
-						switch (focusState) {
+					case KtaneDefuserConnectorApi.Button.Right:
+						switch (_focusState) {
 							case FocusStates.Room:
-								if (roomX == -1) roomX = 0;
+								if (_roomX == -1) _roomX = 0;
 								break;
 							case FocusStates.Bomb:
 								do {
@@ -231,8 +239,8 @@ internal partial class Simulation {
 								break;
 						}
 						break;
-					case Button.Up:
-						switch (focusState) {
+					case KtaneDefuserConnectorApi.Button.Up:
+						switch (_focusState) {
 							case FocusStates.Bomb:
 								SelectedFace.Y--;
 								FindNearestModule();
@@ -243,8 +251,8 @@ internal partial class Simulation {
 								break;
 						}
 						break;
-					case Button.Down:
-						switch (focusState) {
+					case KtaneDefuserConnectorApi.Button.Down:
+						switch (_focusState) {
 							case FocusStates.Bomb:
 								SelectedFace.Y++;
 								FindNearestModule();
@@ -266,10 +274,9 @@ internal partial class Simulation {
 		for (var d = 1; d <= 2; d++) {
 			for (var dir = 0; dir < 2; dir++) {
 				var x = dir == 0 ? SelectedFace.X - d : SelectedFace.X + d;
-				if (x >= 0 && x < SelectedFace.Slots.GetLength(1) && SelectedFace.Slots[SelectedFace.Y, x] is Module) {
-					SelectedFace.X = x;
-					return;
-				}
+				if (x < 0 || x >= SelectedFace.Slots.GetLength(1) || SelectedFace.Slots[SelectedFace.Y, x] is not Module) continue;
+				SelectedFace.X = x;
+				return;
 			}
 		}
 	}
@@ -277,23 +284,22 @@ internal partial class Simulation {
 	/// <summary>Simulates the specified controller input actions.</summary>
 	public void SendInputs(IEnumerable<IInputAction> actions) {
 		foreach (var action in actions)
-			actionQueue.Enqueue(action);
-		if (!queueTimer.Enabled) {
-			queueTimer.Start();
-			PopInputQueue();
-		}
+			_actionQueue.Enqueue(action);
+		if (_queueTimer.Enabled) return;
+		_queueTimer.Start();
+		PopInputQueue();
 	}
 
 	/// <summary>Cancels any queued input actions.</summary>
 	public void CancelInputs() {
-		actionQueue.Clear();
-		queueTimer.Stop();
+		_actionQueue.Clear();
+		_queueTimer.Stop();
 	}
 
 	/// <summary>Returns the <see cref="ComponentReader"/> instance that handles the component at the specified point.</summary>
 	public ComponentReader? GetComponentReader(Quadrilateral quadrilateral) => GetComponent(quadrilateral)?.Reader;
 	/// <summary>Returns the <see cref="ComponentReader"/> instance that handles the component in the specified slot.</summary>
-	public ComponentReader? GetComponentReader(Slot slot) => moduleFaces[slot.Face].Slots[slot.Y, slot.X]?.Reader;
+	public ComponentReader? GetComponentReader(Slot slot) => _moduleFaces[slot.Face].Slots[slot.Y, slot.X]?.Reader;
 
 	/// <summary>Reads component data of the specified type from the component at the specified point.</summary>
 	public T ReadComponent<T>(Quadrilateral quadrilateral) where T : notnull {
@@ -318,9 +324,9 @@ internal partial class Simulation {
 	public ModuleLightState GetLightState(Quadrilateral quadrilateral) => GetComponent(quadrilateral) is Module module and not NeedyModule ? module.LightState : ModuleLightState.Off;
 
 	private BombComponent? GetComponent(Quadrilateral quadrilateral) {
-		switch (focusState) {
+		switch (_focusState) {
 			case FocusStates.Bomb: {
-				var face = currentFace switch { BombFaces.Face1 => moduleFaces[0], BombFaces.Face2 => moduleFaces[1], _ => throw new InvalidOperationException($"Can't identify modules from face {currentFace}.") };
+				var face = _currentFace switch { BombFaces.Face1 => _moduleFaces[0], BombFaces.Face2 => _moduleFaces[1], _ => throw new InvalidOperationException($"Can't identify modules from face {_currentFace}.") };
 				var slotX = quadrilateral.TopLeft.X switch { 558 or 572 => 0, 848 or 852 => 1, 1127 or 1134 => 2, _ => throw new ArgumentException($"Unknown x coordinate: {quadrilateral.TopLeft.X}") };
 				var slotY = quadrilateral.TopLeft.Y switch { 291 or 292 => 0, 558 => 1, _ => throw new ArgumentException($"Unknown y coordinate: {quadrilateral.TopLeft.Y}") };
 				return face.Slots[slotY, slotX];
@@ -332,7 +338,7 @@ internal partial class Simulation {
 				return face.Slots[face.Y + slotDY, face.X + slotDX];
 			}
 			default:
-				throw new InvalidOperationException($"Can't identify modules from state {focusState}.");
+				throw new InvalidOperationException($"Can't identify modules from state {_focusState}.");
 		}
 	}
 
@@ -353,9 +359,9 @@ internal partial class Simulation {
 	}
 
 	private Widget? GetWidget(Quadrilateral quadrilateral) {
-		switch (focusState) {
+		switch (_focusState) {
 			case FocusStates.Bomb: {
-				var face = currentFace switch { BombFaces.Side1 => widgetFaces[0], BombFaces.Side2 => widgetFaces[1], _ => ry switch { < -0.5f => widgetFaces[2], >= 0.5f => widgetFaces[3], _ => throw new InvalidOperationException($"Can't identify widgets from face {currentFace}.") } };
+				var face = _currentFace switch { BombFaces.Side1 => _widgetFaces[0], BombFaces.Side2 => _widgetFaces[1], _ => _ry switch { < -0.5f => _widgetFaces[2], >= 0.5f => _widgetFaces[3], _ => throw new InvalidOperationException($"Can't identify widgets from face {_currentFace}.") } };
 				int slot;
 				if (face.Slots.Length == 4) {
 					var slotX = quadrilateral.TopLeft.X switch { < 900 => 0, _ => 1 };
@@ -369,7 +375,7 @@ internal partial class Simulation {
 				return face.Slots[slot];
 			}
 			default:
-				throw new InvalidOperationException($"Can't identify widgets from state {focusState}.");
+				throw new InvalidOperationException($"Can't identify widgets from state {_focusState}.");
 		}
 	}
 
@@ -388,7 +394,7 @@ internal partial class Simulation {
 	/// <summary>Triggers the alarm clock.</summary>
 	internal void SetAlarmClock(bool value) {
 		LogAlarmClockStateChanged(value ? "on" : "off");
-		isAlarmClockOn = value;
+		_isAlarmClockOn = value;
 		Postback?.Invoke(this, $"OOB AlarmClock {value}");
 	}
 
@@ -448,11 +454,10 @@ internal partial class Simulation {
 			Slots = slots ?? throw new ArgumentNullException(nameof(slots));
 			for (var y = 0; y < slots.GetLength(0); y++) {
 				for (var x = 0; x < slots.GetLength(1); x++) {
-					if (slots[y, x] is Module) {
-						X = x;
-						Y = y;
-						return;
-					}
+					if (slots[y, x] is not Module) continue;
+					X = x;
+					Y = y;
+					return;
 				}
 			}
 		}
@@ -475,7 +480,7 @@ internal partial class Simulation {
 		protected readonly ILogger Logger;
 		private readonly Timer resetLightTimer = new(2000) { AutoReset = false };
 
-		private static int nextId;
+		private static int _nextId;
 
 		internal int ID { get; }
 		public ModuleLightState LightState { get; private set; }
@@ -488,9 +493,9 @@ internal partial class Simulation {
 
 		protected Module(Simulation simulation, ComponentReader reader, int selectableWidth, int selectableHeight) : base(reader) {
 			Simulation = simulation;
-			Logger = simulation.loggerFactory.CreateLogger(GetType());
-			nextId++;
-			ID = nextId;
+			Logger = simulation._loggerFactory.CreateLogger(GetType());
+			_nextId++;
+			ID = _nextId;
 			resetLightTimer.Elapsed += ResetLightTimer_Elapsed;
 			SelectableGrid = new bool[selectableHeight, selectableWidth];
 			for (var y = 0; y < selectableHeight; y++)
@@ -503,11 +508,10 @@ internal partial class Simulation {
 		public void InitialiseHighlight() {
 			for (var y = 0; y < SelectableGrid.GetLength(0); y++) {
 				for (var x = 0; x < SelectableGrid.GetLength(1); x++) {
-					if (SelectableGrid[y, x]) {
-						X = x;
-						Y = y;
-						return;
-					}
+					if (!SelectableGrid[y, x]) continue;
+					X = x;
+					Y = y;
+					return;
 				}
 			}
 		}
@@ -588,17 +592,17 @@ internal partial class Simulation {
 	}
 
 	private abstract partial class NeedyModule : Module {
-		private int faceNum;
-		private int x;
-		private int y;
-		private TimeSpan baseTime;
-		private readonly Stopwatch stopwatch = new();
+		private int _faceNum;
+		private int _x;
+		private int _y;
+		private TimeSpan _baseTime;
+		private readonly Stopwatch _stopwatch = new();
 
 		protected virtual TimeSpan StartingTime => TimeSpan.FromSeconds(45);
 		protected virtual bool AutoReset => true;
 
 		protected bool IsActive { get; private set; }
-		protected TimeSpan RemainingTime => baseTime - stopwatch.Elapsed;
+		protected TimeSpan RemainingTime => _baseTime - _stopwatch.Elapsed;
 		protected int? DisplayedTime => IsActive ? (int?) RemainingTime.TotalSeconds : null;
 		protected Timer Timer { get; } = new() { AutoReset = false };
 
@@ -606,22 +610,22 @@ internal partial class Simulation {
 			=> Timer.Elapsed += ReactivateTimer_Elapsed;
 
 		public void Initialise(int faceNum, int x, int y) {
-			this.faceNum = faceNum;
-			this.x = x;
-			this.y = y;
-			Postback($"OOB NeedyStateChange 0 {this.faceNum} {this.x} {this.y} {nameof(NeedyState.AwaitingActivation)}");
+			_faceNum = faceNum;
+			_x = x;
+			_y = y;
+			Postback($"OOB NeedyStateChange 0 {_faceNum} {_x} {_y} {nameof(NeedyState.AwaitingActivation)}");
 			Timer.Interval = 10000;
 			Timer.Start();
 		}
 
 		private void Activate() {
-			baseTime = StartingTime;
-			Timer.Interval = baseTime.TotalMilliseconds;
-			stopwatch.Restart();
+			_baseTime = StartingTime;
+			Timer.Interval = _baseTime.TotalMilliseconds;
+			_stopwatch.Restart();
 			IsActive = true;
-			LogNeedyModuleActivated(Reader.Name, baseTime);
+			LogNeedyModuleActivated(Reader.Name, _baseTime);
 			OnActivate();
-			Postback($"OOB NeedyStateChange 0 {faceNum} {x} {y} {nameof(NeedyState.Running)}");
+			Postback($"OOB NeedyStateChange 0 {_faceNum} {_x} {_y} {nameof(NeedyState.Running)}");
 		}
 
 		protected abstract void OnActivate();
@@ -629,14 +633,14 @@ internal partial class Simulation {
 		protected void Deactivate() {
 			if (!IsActive) return;
 			IsActive = false;
-			stopwatch.Stop();
+			_stopwatch.Stop();
 			LogNeedyModuleDeactivated(Reader.Name, RemainingTime);
 			if (AutoReset) {
-				Timer.Interval = 30000;
-				Postback($"OOB NeedyStateChange 0 {faceNum} {x} {y} {nameof(NeedyState.Cooldown)}");
+				Timer.Interval = 30_000;
+				Postback($"OOB NeedyStateChange 0 {_faceNum} {_x} {_y} {nameof(NeedyState.Cooldown)}");
 			} else {
 				Timer.Stop();
-				Postback($"OOB NeedyStateChange 0 {faceNum} {x} {y} {nameof(NeedyState.Terminated)}");
+				Postback($"OOB NeedyStateChange 0 {_faceNum} {_x} {_y} {nameof(NeedyState.Terminated)}");
 			}
 		}
 
@@ -651,10 +655,10 @@ internal partial class Simulation {
 		}
 
 		protected void AddTime(TimeSpan time, TimeSpan max) {
-			baseTime += time;
+			_baseTime += time;
 			if (RemainingTime <= max) return;
-			baseTime = max;
-			stopwatch.Restart();
+			_baseTime = max;
+			_stopwatch.Restart();
 		}
 
 		#region Log templates
@@ -676,15 +680,15 @@ internal partial class Simulation {
 	}
 
 	private class TimerComponent : BombComponent {
-		public TimeSpan Elapsed => stopwatch.Elapsed;
+		public TimeSpan Elapsed => _stopwatch.Elapsed;
 
 		internal static TimerComponent Instance { get; } = new();
 
-		private readonly Stopwatch stopwatch = Stopwatch.StartNew();
+		private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
 
 		internal Components.Timer.ReadData Details {
 			get {
-				var elapsed = stopwatch.ElapsedTicks;
+				var elapsed = _stopwatch.ElapsedTicks;
 				var seconds = elapsed / Stopwatch.Frequency;
 				return new(GameMode.Zen, (int) seconds, seconds < 60 ? (int) (elapsed / (Stopwatch.Frequency / 100) % 100) : 0, 0);
 			}

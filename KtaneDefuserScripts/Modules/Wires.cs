@@ -3,8 +3,8 @@
 internal class Wires : ModuleScript<KtaneDefuserConnector.Components.Wires> {
 	public override string IndefiniteDescription => "Wires";
 	
-	private int wireCount;
-	private int highlight;
+	private int _wireCount;
+	private int _highlight;
 
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
@@ -12,7 +12,7 @@ internal class Wires : ModuleScript<KtaneDefuserConnector.Components.Wires> {
 	internal static async Task Read(AimlAsyncContext context) {
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		var data = interrupt.Read(Reader);
-		GameState.Current.CurrentScript<Wires>().wireCount = data.Colours.Length;
+		GameState.Current.CurrentScript<Wires>()._wireCount = data.Colours.Length;
 		interrupt.Context.Reply($"{data.Colours.Length} wires: {string.Join(", ", data.Colours)}.");
 
 		interrupt.Context.AddReply("cut the first wire");
@@ -25,13 +25,13 @@ internal class Wires : ModuleScript<KtaneDefuserConnector.Components.Wires> {
 		wireNum--;
 		var buttons = new List<Button>();
 		var script = GameState.Current.CurrentScript<Wires>();
-		while (script.highlight < wireNum) {
+		while (script._highlight < wireNum) {
 			buttons.Add(Button.Down);
-			script.highlight++;
+			script._highlight++;
 		}
-		while (script.highlight > wireNum) {
+		while (script._highlight > wireNum) {
 			buttons.Add(Button.Up);
-			script.highlight--;
+			script._highlight--;
 		}
 		buttons.Add(Button.A);
 		using var interrupt = await CurrentModuleInterruptAsync(context);
@@ -42,5 +42,5 @@ internal class Wires : ModuleScript<KtaneDefuserConnector.Components.Wires> {
 	internal static Task CutWireOrdinal(AimlAsyncContext context, string ordinal) => CutWire(context, Utils.ParseOrdinal(ordinal));
 
 	[AimlCategory("cut the last wire")]
-	internal static Task CutWireLast(AimlAsyncContext context) => CutWire(context, GameState.Current.CurrentScript<Wires>().wireCount);
+	internal static Task CutWireLast(AimlAsyncContext context) => CutWire(context, GameState.Current.CurrentScript<Wires>()._wireCount);
 }

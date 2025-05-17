@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
@@ -19,6 +20,7 @@ public static class ImageUtils {
 		=> PerspectiveUndistort(originalImage, quadrilateral, interpolationMode, new(StandardResolution, StandardResolution));
 
 	/// <summary>Returns an image drawn by stretching the specified quadrilateral area from another image.</summary>
+	[SuppressMessage("ReSharper", "PossibleLossOfFraction")]
 	public static Image<Rgba32> PerspectiveUndistort(Image<Rgba32> originalImage, Quadrilateral quadrilateral, InterpolationMode interpolationMode, Size resolution) {
 		var bitmap = new Image<Rgba32>(resolution.Width, resolution.Height);
 		bitmap.ProcessPixelRows(p => {
@@ -172,10 +174,9 @@ public static class ImageUtils {
 				var r = accessor.GetRowSpan(edge == 0 ? rectangle.Top : rectangle.Bottom - 1);
 				var found = false;
 				for (var x = rectangle.Left; x < rectangle.Right; x++) {
-					if (predicate(r[x])) {
-						found = true;
-						break;
-					}
+					if (!predicate(r[x])) continue;
+					found = true;
+					break;
 				}
 
 				if (found) break;
@@ -193,10 +194,9 @@ public static class ImageUtils {
 				var x = edge == 0 ? rectangle.Left : rectangle.Right - 1;
 				var found = false;
 				for (var y = rectangle.Top; y < rectangle.Bottom; y++) {
-					if (predicate(accessor.GetRowSpan(y)[x])) {
-						found = true;
-						break;
-					}
+					if (!predicate(accessor.GetRowSpan(y)[x])) continue;
+					found = true;
+					break;
 				}
 
 				if (found) break;
@@ -414,6 +414,49 @@ public static class ImageUtils {
 				x++;
 			}
 		}
+	}
+
+	public static Rectangle GetCenturionSideWidgetBaseRectangle(Image<Rgba32> image, int top, int height) {
+		var result = new Rectangle();
+		image.ProcessPixelRows(a => {
+			var left = 640 * a.Width / ReferenceScreenWidth;
+			var right = 1280 * a.Width / ReferenceScreenWidth;
+
+			int leftSum = 0, rightSum = 0;
+			for (var dy = 0; dy < height; dy++) {
+				var row = a.GetRowSpan(top + dy);
+				int outLeft2 = left, outRight2 = right;
+				var matches = 0;
+				for (var x = left; x < right; x++) {
+					if (IsBombBacking(row[x])) {
+						matches++;
+						if (matches >= 8) break;
+					} else {
+						matches = 0;
+						outLeft2 = x;
+					}
+				}
+				matches = 0;
+				for (var x = right; x > left; x--) {
+					if (IsBombBacking(row[x])) {
+						matches++;
+						if (matches >= 8) break;
+					} else {
+						matches = 0;
+						outRight2 = x;
+					}
+				}
+
+				leftSum += outLeft2;
+				rightSum += outRight2;
+			}
+			
+			result = new(leftSum / height + 1, top, (rightSum - leftSum) / height, height);
+			return;
+
+			static bool IsBombBacking(Rgba32 p) => HsvColor.FromColor(p) is { S: < 0.11f, V: >= 0.35f and < 0.98f };
+		});
+		return result;
 	}
 
 	public static IEnumerable<Rectangle> GetCenturionSideWidgetBounds(Image<Rgba32> image, Rectangle baseRectangle) {

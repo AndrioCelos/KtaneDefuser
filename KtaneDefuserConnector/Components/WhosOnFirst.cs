@@ -27,8 +27,6 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 		} else
 			displayText = "";
 
-		bool IsKeyBackground(Rgba32 c) => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is { H: >= 30 and <= 45, S: >= 0.2f and <= 0.4f };
-
 		var keyLabels = new string[6];
 		for (var i = 0; i < 6; i++) {
 			var keyRect = image.Map(i switch {
@@ -37,7 +35,7 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 				2 => new(24, 134, 74, 44),
 				3 => new(104, 134, 74, 44),
 				4 => new(24, 178, 74, 44),
-				_ => new Rectangle(104, 178, 74, 44)
+				_ => new(104, 178, 74, 44)
 			});
 			debugImage?.ColourCorrect(lightsState, keyRect);
 			keyRect = ImageUtils.FindEdges(image, keyRect, IsKeyBackground);
@@ -49,6 +47,8 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 		}
 
 		return new(ReadStageIndicator(image), displayText, keyLabels);
+
+		bool IsKeyBackground(Rgba32 c) => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is { H: >= 30 and <= 45, S: >= 0.2f and <= 0.4f };
 	}
 
 	public record ReadData(int StagesCleared, string Display, string[] Keys) {

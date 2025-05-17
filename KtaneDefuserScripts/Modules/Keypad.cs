@@ -1,9 +1,11 @@
-﻿using static KtaneDefuserConnector.Components.Keypad;
+﻿using AngelAiml.Media;
+using static KtaneDefuserConnector.Components.Keypad;
+using Button = KtaneDefuserConnectorApi.Button;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Keypad")]
 internal class Keypad : ModuleScript<KtaneDefuserConnector.Components.Keypad> {
-	public static Dictionary<Symbol, string> SymbolDescriptions { get; } = new() {
+	private static Dictionary<Symbol, string> SymbolDescriptions { get; } = new() {
 		{ Symbol.Copyright   , "copyright symbol" },
 		{ Symbol.FilledStar  , "filled star" },
 		{ Symbol.HollowStar  , "hollow star" },
@@ -38,30 +40,30 @@ internal class Keypad : ModuleScript<KtaneDefuserConnector.Components.Keypad> {
 
 	public override string IndefiniteDescription => "a Keypad";
 
-	private readonly bool[] pressed = new bool[4];
-	private Symbol[]? symbols;
-	private int highlight;
+	private readonly bool[] _pressed = new bool[4];
+	private Symbol[]? _symbols;
+	private int _highlight;
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
 	[AimlCategory("read")]
 	internal static async Task Read(AimlAsyncContext context) {
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		var data = interrupt.Read(Reader);
-		GameState.Current.CurrentScript<Keypad>().symbols = data.Symbols;
+		GameState.Current.CurrentScript<Keypad>()._symbols = data.Symbols;
 		interrupt.Context.Reply(string.Join(", ", from s in data.Symbols select SymbolDescriptions[s]));
-		interrupt.Context.AddReplies(from s in data.Symbols select new AngelAiml.Media.Reply(SymbolDescriptions[s], $"press {SymbolDescriptions[s]}"));
+		interrupt.Context.AddReplies(from s in data.Symbols select new Reply(SymbolDescriptions[s], $"press {SymbolDescriptions[s]}"));
 	}
 
 	[AimlCategory("press *")]
 	internal static async Task Press(AimlAsyncContext context, string keys) {
 		var script = GameState.Current.CurrentScript<Keypad>();
-		var symbols = GameState.Current.CurrentScript<Keypad>().symbols;
+		var symbols = GameState.Current.CurrentScript<Keypad>()._symbols;
 		if (symbols == null) {
 			context.Reply("We need to read the module first.");
 			return;
 		}
 		var presses = new List<(IEnumerable<Button> inputs, int index)>();
-		var cursorIndex = script.highlight;
+		var cursorIndex = script._highlight;
 		var descriptions = keys.Split(" then ", StringSplitOptions.TrimEntries);
 		foreach (var desc in descriptions) {
 			var symbol = Enum.Parse<Symbol>(context.RequestProcess.Srai($"GetKeypadGlyphName {desc}"), true);
@@ -85,14 +87,14 @@ internal class Keypad : ModuleScript<KtaneDefuserConnector.Components.Keypad> {
 		}
 		using var interrupt = await Interrupt.EnterAsync(context);
 		foreach (var (inputs, index) in presses) {
-			script.highlight = index;
+			script._highlight = index;
 			var result = await interrupt.SubmitAsync(inputs);
-			if (result != ModuleLightState.Strike) script.pressed[index] = true;
+			if (result != ModuleLightState.Strike) script._pressed[index] = true;
 			if (result != ModuleLightState.Off) return;
 		}
-		if (script.symbols is null) return;
+		if (script._symbols is null) return;
 		for (var i = 0; i < 4; i++) {
-			if (!script.pressed[i]) interrupt.Context.AddReply(SymbolDescriptions[script.symbols[i]], $"press {SymbolDescriptions[script.symbols[i]]}");
+			if (!script._pressed[i]) interrupt.Context.AddReply(SymbolDescriptions[script._symbols[i]], $"press {SymbolDescriptions[script._symbols[i]]}");
 		}
 	}
 }

@@ -5,7 +5,7 @@
 		xmlns:dc="using:KtaneDefuserConnector"
 		xmlns:vm="using:VisionTester.ViewModels"
 		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-		x:Class="VisionTester.AnalysisWindow"
+		x:Class="VisionTester.Views.AnalysisWindow"
 		x:DataType="vm:AnalysisViewModel"
 		Title="AnalysisWindow">
 	<Design.DataContext>

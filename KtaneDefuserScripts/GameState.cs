@@ -12,7 +12,7 @@ public class GameState(ILoggerFactory loggerFactory) {
 
 	internal ILoggerFactory LoggerFactory = loggerFactory;
 
-	/// <summary>Indicates the tyoe of the bomb casing.</summary>
+	/// <summary>Indicates the type of the bomb casing.</summary>
 	public BombType BombType { get; set; }
 	/// <summary>Indicates whether we are waiting for the lights to turn on at the start of the game.</summary>
 	public bool WaitingForLights { get; set; }

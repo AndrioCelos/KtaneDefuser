@@ -22,7 +22,7 @@ public class Button : ComponentReader<Button.ReadData> {
 		};
 
 		// Check for the indicator.
-		hsv = HsvColor.FromColor(image[218 * image.Width / 256, 164 * image.Height / 256]);;
+		hsv = HsvColor.FromColor(image[218 * image.Width / 256, 164 * image.Height / 256]);
 		Colour? indicatorColour = hsv switch {
 			{ S: < 0.05f, V: >= 0.75f } => Colour.White,
 			{ S: >= 0.75f, V: >= 0.75f, H: >= 350 or <= 10 } => Colour.Red,

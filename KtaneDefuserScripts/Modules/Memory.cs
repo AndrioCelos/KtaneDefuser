@@ -3,15 +3,15 @@
 internal class Memory : ModuleScript<KtaneDefuserConnector.Components.Memory> {
 	public override string IndefiniteDescription => "Memory";
 
-	private bool readyToRead;
-	private int[] keyLabels = new int[4];
-	private int highlight;
+	private bool _readyToRead;
+	private int[] _keyLabels = new int[4];
+	private int _highlight;
 
-	protected internal override void Started(AimlAsyncContext context) => readyToRead = true;
+	protected internal override void Started(AimlAsyncContext context) => _readyToRead = true;
 
 	protected internal override void ModuleSelected(Interrupt interrupt) {
-		if (!readyToRead) return;
-		readyToRead = false;
+		if (!_readyToRead) return;
+		_readyToRead = false;
 		Read(interrupt);
 	}
 
@@ -22,7 +22,7 @@ internal class Memory : ModuleScript<KtaneDefuserConnector.Components.Memory> {
 
 	private void Read(Interrupt interrupt) {
 		var data = interrupt.Read(Reader);
-		keyLabels = data.Keys;
+		_keyLabels = data.Keys;
 		interrupt.Context.Reply(data.Display.ToString());
 		interrupt.Context.Reply("<reply>position 1</reply><reply><text>2</text><postback>position 2</postback></reply><reply><text>3</text><postback>position 3</postback></reply><reply><text>4</text><postback>position 4</postback></reply>");
 		interrupt.Context.Reply("<reply>label 1</reply><reply><text>2</text><postback>label 2</postback></reply><reply><text>3</text><postback>label 3</postback></reply><reply><text>4</text><postback>label 4</postback></reply>");
@@ -49,14 +49,14 @@ internal class Memory : ModuleScript<KtaneDefuserConnector.Components.Memory> {
 	public static Task LabelAsync(AimlAsyncContext context, int label) {
 		var script = GameState.Current.CurrentScript<Memory>();
 		if (label is > 0 and <= 4)
-			return script.PressButtonAsync(context, Array.IndexOf(script.keyLabels, label), true);
+			return script.PressButtonAsync(context, Array.IndexOf(script._keyLabels, label), true);
 		context.Reply("Not a valid label.");
 		return Task.CompletedTask;
 	}
 
 	private async Task PressButtonAsync(AimlAsyncContext context, int index, bool fromLabel) {
 		var buttons = new List<Button>();
-		var highlight = this.highlight;
+		var highlight = _highlight;
 		while (highlight > index) {
 			highlight--;
 			buttons.Add(Button.Left);
@@ -67,11 +67,11 @@ internal class Memory : ModuleScript<KtaneDefuserConnector.Components.Memory> {
 		}
 		buttons.Add(Button.A);
 		using var interrupt = await ModuleInterruptAsync(context);
-		this.highlight = highlight;
+		_highlight = highlight;
 		var result = await interrupt.SubmitAsync(buttons);
 		if (result != ModuleLightState.Solved) {
 			if (result == ModuleLightState.Off)
-				interrupt.Context.Reply(fromLabel ? $"The position was {index + 1}." : $"The label was {keyLabels[index]}.");
+				interrupt.Context.Reply(fromLabel ? $"The position was {index + 1}." : $"The label was {_keyLabels[index]}.");
 			await WaitRead(interrupt);
 		}
 	}

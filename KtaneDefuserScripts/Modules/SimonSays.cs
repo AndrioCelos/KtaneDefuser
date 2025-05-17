@@ -5,37 +5,41 @@ namespace KtaneDefuserScripts.Modules;
 internal partial class SimonSays : ModuleScript<KtaneDefuserConnector.Components.SimonSays> {
 	public override string IndefiniteDescription => "a Simon";
 
-	private static readonly SimonColour?[] buttonMap = new SimonColour?[4];
+	private static readonly SimonColour?[] ButtonMap = new SimonColour?[4];
 
-	private bool readyToRead;
-	private SimonColour highlight = SimonColour.Blue;
-	private int stagesCleared;
-	private readonly List<SimonColour> pattern = new(5);
-	private SimonColour? currentColour;
+	private bool _readyToRead;
+	private SimonColour _highlight = SimonColour.Blue;
+	private int _stagesCleared;
+	private readonly List<SimonColour> _pattern = new(5);
+	private SimonColour? _currentColour;
 
-	protected internal override void Initialise(Interrupt interrupt) => GameState.Current.Strike += (_, _) => Array.Clear(buttonMap);  // A strike invalidates the whole mapping.
+	protected internal override void Initialise(Interrupt interrupt) => GameState.Current.Strike += (_, _) => Array.Clear(ButtonMap);  // A strike invalidates the whole mapping.
 
-	protected internal override void Started(AimlAsyncContext context) => readyToRead = true;
+	protected internal override void Started(AimlAsyncContext context) => _readyToRead = true;
 
 	protected internal override async void ModuleSelected(Interrupt interrupt) {
-		if (readyToRead) {
-			readyToRead = false;
-			if (pattern.Count == 0) {
+		try {
+			if (!_readyToRead) return;
+			_readyToRead = false;
+			if (_pattern.Count == 0) {
 				var colour = await ReadLastColourAsync(interrupt);
-				pattern.Add(colour);
+				_pattern.Add(colour);
 			}
+
 			await LoopAsync(interrupt);
+		} catch (Exception ex) {
+			LogException(ex);
 		}
 	}
 
 	private async Task LoopAsync(Interrupt interrupt) {
 		var buttons = new List<Button>();
 		while (true) {
-			var highlight = this.highlight;
-			foreach (var patternColour in pattern) {
-				var correctColour = buttonMap[(int) patternColour];
+			var highlight = _highlight;
+			foreach (var patternColour in _pattern) {
+				var correctColour = ButtonMap[(int) patternColour];
 				if (correctColour is null) {
-					currentColour = patternColour;
+					_currentColour = patternColour;
 					interrupt.Context.Reply(patternColour.ToString());
 					interrupt.Context.AddReplies("red", "yellow", "green", "blue");
 					return;
@@ -51,15 +55,15 @@ internal partial class SimonSays : ModuleScript<KtaneDefuserConnector.Components
 				}
 				buttons.Add(Button.A);
 			}
-			this.highlight = highlight;
+			_highlight = highlight;
 			var result = await interrupt.SubmitAsync(buttons);
 			if (result != ModuleLightState.Strike) {
-				stagesCleared++;
+				_stagesCleared++;
 				if (result == ModuleLightState.Solved) return;
 
 				await Delay(1);
 				var colour = await ReadLastColourAsync(interrupt);
-				pattern.Add(colour);
+				_pattern.Add(colour);
 			}
 			buttons.Clear();
 		}
@@ -73,7 +77,7 @@ internal partial class SimonSays : ModuleScript<KtaneDefuserConnector.Components
 				await Delay(0.125);
 				continue;
 			}
-			if (coloursSeen >= stagesCleared) {
+			if (coloursSeen >= _stagesCleared) {
 				LogLight(data.Colour.Value);
 				return data.Colour.Value;
 			}
@@ -90,9 +94,9 @@ internal partial class SimonSays : ModuleScript<KtaneDefuserConnector.Components
 	[AimlCategory("<set>SimonColour</set>"), AimlCategory("press <set>SimonColour</set>")]
 	public static async Task Colour(AimlAsyncContext context, string colour) {
 		var script = GameState.Current.CurrentScript<SimonSays>();
-		if (script.currentColour is not SimonColour currentColour) return;
-		buttonMap[(int) currentColour] = Enum.Parse<SimonColour>(colour, true);
-		script.currentColour = null;
+		if (script._currentColour is not { } currentColour) return;
+		ButtonMap[(int) currentColour] = Enum.Parse<SimonColour>(colour, true);
+		script._currentColour = null;
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		await script.LoopAsync(interrupt);
 	}

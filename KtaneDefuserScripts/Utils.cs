@@ -1,6 +1,7 @@
 ﻿using System.Web;
 using AngelAiml.Media;
 using Button = KtaneDefuserConnectorApi.Button;
+using Timer = KtaneDefuserConnector.Components.Timer;
 
 namespace KtaneDefuserScripts;
 public static class Utils {
@@ -95,7 +96,7 @@ public static class Utils {
 			await Delay(0.375);
 			interrupt.SendInputs(new AxisAction(Axis.RightStickX, 0));
 			using var ss = DefuserConnector.Instance.TakeScreenshot();
-			Edgework.RegisterWidgets(interrupt.Context, true, ss);
+			Edgework.RegisterWidgets(true, ss);
 			interrupt.SendInputs(new AxisAction(Axis.RightStickX, 1));
 			await Delay(0.125);
 		} else
@@ -145,10 +146,10 @@ public static class Utils {
 
 			// Find which slot this input will select.
 			currentSlot.Y = slot.Y;
-			if (GameState.Current.SelectedFace[currentSlot]?.Reader is null or KtaneDefuserConnector.Components.Timer) {
+			if (GameState.Current.SelectedFace[currentSlot]?.Reader is null or Timer) {
 				for (var d = 0; d < 2; d++) {
 					var x2 = currentSlot.X + (d == 0 ? -1 : 1);
-					if (x2 is < 0 or >= 3 || GameState.Current.SelectedFace[x2, currentSlot.Y]?.Reader is null or KtaneDefuserConnector.Components.Timer) continue;
+					if (x2 is < 0 or >= 3 || GameState.Current.SelectedFace[x2, currentSlot.Y]?.Reader is null or Timer) continue;
 					currentSlot.X = x2;
 					break;
 				}
@@ -157,11 +158,11 @@ public static class Utils {
 		// Move to the correct module within that row.
 		while (slot.X < currentSlot.X) {
 			buttons.Add(Button.Left);
-			do { currentSlot.X--; } while (GameState.Current.SelectedFace[currentSlot]?.Reader is null or KtaneDefuserConnector.Components.Timer);
+			do { currentSlot.X--; } while (GameState.Current.SelectedFace[currentSlot]?.Reader is null or Timer);
 		}
 		while (slot.X > currentSlot.X) {
 			buttons.Add(Button.Right);
-			do { currentSlot.X++; } while (GameState.Current.SelectedFace[currentSlot]?.Reader is null or KtaneDefuserConnector.Components.Timer);
+			do { currentSlot.X++; } while (GameState.Current.SelectedFace[currentSlot]?.Reader is null or Timer);
 		}
 		buttons.Add(Button.A);
 		await interrupt.SendInputsAsync(buttons);

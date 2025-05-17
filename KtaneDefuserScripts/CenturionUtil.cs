@@ -138,10 +138,9 @@ public static class CenturionUtil {
 				};
 			}
 		} else {
-			var selectedSlot = referenceSlot;
-			if (slot.Bomb != selectedSlot.Bomb || slot.Face != selectedSlot.Face)
+			if (slot.Bomb != referenceSlot.Bomb || slot.Face != referenceSlot.Face)
 				throw new ArgumentException("Specified slot must be on the currently-selected bomb face.", nameof(slot));
-			var (vx1, vy1) = GetVisualXY(selectedSlot);
+			var (vx1, vy1) = GetVisualXY(referenceSlot);
 			var (vx2, vy2) = GetVisualXY(slot);
 			var dx = vx2 - vx1;
 			var dy = vy2 - vy1;

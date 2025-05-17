@@ -2,6 +2,8 @@
 using JetBrains.Annotations;
 using SixLabors.ImageSharp.PixelFormats;
 
+// ReSharper disable CompareOfFloatsByEqualityOperator
+
 namespace KtaneDefuserConnector;
 /// <summary>Represents a colour in HSVA coordinates.</summary>
 public struct HsvColor(float h, float s, float v, byte a) {
@@ -24,8 +26,8 @@ public struct HsvColor(float h, float s, float v, byte a) {
 		var gf = g / 255f;
 		var bf = b / 255f;
 
-		var min = Math.Min(Math.Min(r, g), b) / 255f;
-		var max = Math.Max(Math.Max(r, g), b) / 255f;
+		var min = Math.Min(Math.Min(rf, gf), bf);
+		var max = Math.Max(Math.Max(rf, gf), bf);
 		var delta = max - min;
 
 		var h = delta == 0 ? 0
@@ -33,10 +35,8 @@ public struct HsvColor(float h, float s, float v, byte a) {
 			: gf == max ? 60 * ((bf - rf) / delta + 2)
 			: 60 * ((rf - gf) / delta + 4);
 		if (h < 0) h += 360;
-		var s = max == 0 ? 0 : delta / max;
-		var v = max;
 
-		return new(h, s, v, a);
+		return new(h, max == 0 ? 0 : delta / max, max, a);
 	}
 
 	public override readonly string ToString() => $"{nameof(HsvColor)} [ H={H:N1}, S={S:N2}, V={V:N2} ]";

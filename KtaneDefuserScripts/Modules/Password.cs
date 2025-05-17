@@ -3,43 +3,43 @@
 internal partial class Password : ModuleScript<KtaneDefuserConnector.Components.Password> {
 	public override string IndefiniteDescription => "a Password";
 
-	private bool readyToRead;
-	private int highlightX;
-	private int highlightY;
-	private readonly char[]?[] columns = new char[]?[5];
-	private readonly int[] columnPositions = new int[5];
+	private bool _readyToRead;
+	private int _highlightX;
+	private int _highlightY;
+	private readonly char[]?[] _columns = new char[]?[5];
+	private readonly int[] _columnPositions = new int[5];
 
 	protected internal override void Started(AimlAsyncContext context) {
-		readyToRead = true;
+		_readyToRead = true;
 		context.Reply("<reply>column 1</reply><reply><text>2</text><postback>column 2</postback></reply><reply><text>3</text><postback>column 3</postback></reply><reply><text>4</text><postback>column 4</postback></reply><reply><text>5</text><postback>column 5</postback></reply>");
 	}
 	
 	protected internal override async void ModuleSelected(Interrupt interrupt) {
 		try {
-			if (!readyToRead) return;
-			readyToRead = false;
+			if (!_readyToRead) return;
+			_readyToRead = false;
 			await MoveToDownButtonRowAsync(interrupt);
 			for (var i = 0; i < 5; i++)
-				columns[i] = new char[6];
+				_columns[i] = new char[6];
 			for (var i = 0; i < 6; i++) {
 				if (i > 0) {
-					var rightToLeft = highlightX == 4;
+					var rightToLeft = _highlightX == 4;
 					for (var j = 0; j < 5; j++) {
 						var x = rightToLeft ? 4 - j : j;
 						await CycleColumnAsync(interrupt, x);
-						columnPositions[x]++;
-						if (columnPositions[x] >= 6) columnPositions[x] = 0;
+						_columnPositions[x]++;
+						if (_columnPositions[x] >= 6) _columnPositions[x] = 0;
 					}
 				}
 
 				var data = interrupt.Read(Reader);
 				LogDisplay(new(data.Display));
 				for (var x = 0; x < 5; x++)
-					columns[x]![i] = data.Display[x];
+					_columns[x]![i] = data.Display[x];
 			}
 
 			// How many words from the Wordle set can be made with these letters?
-			var words = WordleSet.Where(word => Enumerable.Range(0, 5).All(x => columns[x]!.Any(c => char.ToLowerInvariant(c) == char.ToLowerInvariant(word[x])))).ToList();
+			var words = WordleSet.Where(word => Enumerable.Range(0, 5).All(x => _columns[x]!.Any(c => char.ToLowerInvariant(c) == char.ToLowerInvariant(word[x])))).ToList();
 			switch (words.Count) {
 				case 0:
 					interrupt.Context.Reply("Couldn't find any words.");
@@ -67,14 +67,14 @@ internal partial class Password : ModuleScript<KtaneDefuserConnector.Components.
 			letters[i] = data.Display[column];
 		}
 		Array.Sort(letters);
-		columns[column] = letters;
-		columnPositions[column] = 5;
-		interrupt.Context.Reply(NATO.Speak(letters));
+		_columns[column] = letters;
+		_columnPositions[column] = 5;
+		interrupt.Context.Reply(Nato.Speak(letters));
 		interrupt.Context.Reply("<reply>submit …</reply><reply>column 1</reply><reply><text>2</text><postback>column 2</postback></reply><reply><text>3</text><postback>column 3</postback></reply><reply><text>4</text><postback>column 4</postback></reply><reply><text>5</text><postback>column 5</postback></reply>");
 	}
 
 	private async Task MoveToDownButtonRowAsync(Interrupt interrupt) {
-		switch (highlightY) {
+		switch (_highlightY) {
 			case 0:
 				await interrupt.SendInputsAsync(Button.Down);
 				break;
@@ -82,18 +82,18 @@ internal partial class Password : ModuleScript<KtaneDefuserConnector.Components.
 				await interrupt.SendInputsAsync(Button.Up);
 				break;
 		}
-		highlightY = 1;
+		_highlightY = 1;
 	}
 
 	private async Task CycleColumnAsync(Interrupt interrupt, int column) {
 		var buttons = new List<Button>();
-		while (column < highlightX) {
+		while (column < _highlightX) {
 			buttons.Add(Button.Left);
-			highlightX--;
+			_highlightX--;
 		}
-		while (column > highlightX) {
+		while (column > _highlightX) {
 			buttons.Add(Button.Right);
-			highlightX++;
+			_highlightX++;
 		}
 		buttons.Add(Button.A);
 		await interrupt.SendInputsAsync(buttons);
@@ -106,19 +106,18 @@ internal partial class Password : ModuleScript<KtaneDefuserConnector.Components.
 			LogDisplay(new(data.Display));
 			var anyMismatch = false;
 			for (var x = 0; x < 5; x++) {
-				if (data.Display[x] != char.ToUpper(word[x])) {
-					anyMismatch = true;
-					await CycleColumnAsync(interrupt, x);
-					columnPositions[x]++;
-					if (columnPositions[x] >= 6) columnPositions[x] = 0;
-				}
+				if (data.Display[x] == char.ToUpper(word[x])) continue;
+				anyMismatch = true;
+				await CycleColumnAsync(interrupt, x);
+				_columnPositions[x]++;
+				if (_columnPositions[x] >= 6) _columnPositions[x] = 0;
 			}
-			if (!anyMismatch) {
-				highlightX = 2;
-				highlightY = 2;
-				await interrupt.SubmitAsync(Button.Down, Button.A);
-				return;
-			}
+
+			if (anyMismatch) continue;
+			_highlightX = 2;
+			_highlightY = 2;
+			await interrupt.SubmitAsync(Button.Down, Button.A);
+			return;
 		}
 		interrupt.Context.Reply("Could not submit that word.");
 	}
@@ -161,7 +160,7 @@ internal partial class Password : ModuleScript<KtaneDefuserConnector.Components.
 	public static async Task SubmitNato(AimlAsyncContext context, string nato1, string nato2, string nato3, string nato4, string nato5) {
 		var script = GameState.Current.CurrentScript<Password>();
 		using var interrupt = await CurrentModuleInterruptAsync(context);
-		await script.SubmitAsync(interrupt, $"{NATO.DecodeChar(nato1)}{NATO.DecodeChar(nato2)}{NATO.DecodeChar(nato3)}{NATO.DecodeChar(nato4)}{NATO.DecodeChar(nato5)}");
+		await script.SubmitAsync(interrupt, $"{Nato.DecodeChar(nato1)}{Nato.DecodeChar(nato2)}{Nato.DecodeChar(nato3)}{Nato.DecodeChar(nato4)}{Nato.DecodeChar(nato5)}");
 	}
 
 	private static readonly string[] WordleSet = [

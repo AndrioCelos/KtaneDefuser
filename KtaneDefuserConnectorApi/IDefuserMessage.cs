@@ -9,7 +9,7 @@ public interface IDefuserMessage {
 	int ToBuffer(byte[] buffer);
 }
 
-[Obsolete($"This message type is being replaced by specific Command messages.")]
+[Obsolete("This message type is being replaced by specific Command messages.")]
 public struct LegacyCommandMessage(string command) : IDefuserMessage {
 	public string Command = command ?? throw new ArgumentNullException(nameof(command));
 
@@ -17,7 +17,7 @@ public struct LegacyCommandMessage(string command) : IDefuserMessage {
 	readonly int IDefuserMessage.ToBuffer(byte[] buffer) => Encoding.UTF8.GetBytes(Command, 0, Command.Length, buffer, 5);
 }
 
-[Obsolete($"This message type is being replaced by specific event messages.")]
+[Obsolete("This message type is being replaced by specific event messages.")]
 public struct LegacyEventMessage(string eventMessage) : IDefuserMessage {
 	public string Event = eventMessage ?? throw new ArgumentNullException(nameof(eventMessage));
 

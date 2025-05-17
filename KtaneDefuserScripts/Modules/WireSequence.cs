@@ -5,22 +5,27 @@ namespace KtaneDefuserScripts.Modules;
 internal partial class WireSequence : ModuleScript<KtaneDefuserConnector.Components.WireSequence> {
 	public override string IndefiniteDescription => "a Wire Sequence";
 
-	private bool readyToRead;
-	private readonly int[] wireCounts = new int[3];
-	private WireColour?[] currentPageColours = new WireColour?[3];
-	private int highlight = -1;  // For this script, -1 => previous button, 0~2 => wire slots, 3 => next button, < -1 => unknown
+	private bool _readyToRead;
+	private readonly int[] _wireCounts = new int[3];
+	private WireColour?[] _currentPageColours = new WireColour?[3];
+	private int _highlight = -1;  // For this script, -1 => previous button, 0~2 => wire slots, 3 => next button, < -1 => unknown
 
-	protected internal override void Started(AimlAsyncContext context) => readyToRead = true;
+	protected internal override void Started(AimlAsyncContext context) => _readyToRead = true;
 
 	protected internal override async void ModuleSelected(Interrupt interrupt) {
-		if (!readyToRead) return;
-		readyToRead = false;
-		// The highlight starts on the previous button, so move down first.
-		if (highlight == -1) {
-			await interrupt.SendInputsAsync(Button.Down);
-			highlight = -2;
+		try {
+			if (!_readyToRead) return;
+			_readyToRead = false;
+			// The highlight starts on the previous button, so move down first.
+			if (_highlight == -1) {
+				await interrupt.SendInputsAsync(Button.Down);
+				_highlight = -2;
+			}
+
+			await ContinuePageAsync(interrupt);
+		} catch (Exception ex) {
+			LogException(ex);
 		}
-		await ContinuePageAsync(interrupt);
 	}
 
 	private async Task ContinuePageAsync(Interrupt interrupt) {
@@ -33,55 +38,58 @@ internal partial class WireSequence : ModuleScript<KtaneDefuserConnector.Compone
 	}
 
 	private void ReadCurrentWire(Interrupt interrupt, ReadData data) {
-		if (data.HighlightedWire is not null) {
-			var colour = data.WireColours[data.HighlightedWire.From]!;
-			ref var count = ref wireCounts[(int) colour];
-			count++;
-			interrupt.Context.Reply($"{Utils.ToOrdinal(count)} {colour} to {NATO.Speak([data.HighlightedWire.To])}");
-			interrupt.Context.AddReplies("cut", "don't cut");
-		}
+		if (data.HighlightedWire is null) return;
+		var colour = data.WireColours[data.HighlightedWire.From]!;
+		ref var count = ref _wireCounts[(int) colour];
+		count++;
+		interrupt.Context.Reply($"{Utils.ToOrdinal(count)} {colour} to {Nato.Speak([data.HighlightedWire.To])}");
+		interrupt.Context.AddReplies("cut", "don't cut");
 	}
 
 	private async Task MoveToNextPageAsync(Interrupt interrupt) {
-		var result = await interrupt.SubmitAsync(Button.A);
-		switch (result) {
-			case ModuleLightState.Solved:
-			case ModuleLightState.Strike:
-				return;
-			default:
-				await Delay(2);
-				await ReadAsync(interrupt);
-				var i = Array.FindIndex(currentPageColours, c => c is not null);
-				if (i < 0) {
-					// It's possible for a page to not contain any wires. In this case, just move to the next page.
-					await MoveToNextPageAsync(interrupt);
-				} else {
+		while (true) {
+			var result = await interrupt.SubmitAsync(Button.A);
+			switch (result) {
+				case ModuleLightState.Solved:
+				case ModuleLightState.Strike:
+					return;
+				default:
+					await Delay(2);
+					await ReadAsync(interrupt);
+					var i = Array.FindIndex(_currentPageColours, c => c is not null);
+					if (i < 0) {
+						// It's possible for a page to not contain any wires. In this case, just move to the next page.
+						continue;
+					}
+
 					// Highlight the first wire and read it.
-					highlight = i;
-					await interrupt.SendInputsAsync(Enumerable.Repeat(Button.Up, currentPageColours.Count(c => c is not null)));
+					_highlight = i;
+					await interrupt.SendInputsAsync(Enumerable.Repeat(Button.Up, _currentPageColours.Count(c => c is not null)));
 					await ContinuePageAsync(interrupt);
-				}
-				break;
+					break;
+			}
+
+			break;
 		}
 	}
 
 	private async Task<ReadData> ReadAsync(Interrupt interrupt) {
 		var data = interrupt.Read(Reader);
 		LogHighlightedButton(data.HighlightedButton, string.Join(", ", data.WireColours));
-		currentPageColours = data.WireColours;
+		_currentPageColours = data.WireColours;
 		switch (data.HighlightedButton) {
-			case -1: highlight = -1; break;
-			case 1: highlight = 3; break;
+			case -1: _highlight = -1; break;
+			case 1: _highlight = 3; break;
 			default:
 				while (data.HighlightedWire is null) {
-					// Currently we are only able to read the highlighted wire, and only when the selection highlight is within a strict range of intensities.
+					// Currently, we are only able to read the highlighted wire, and only when the selection highlight is within a strict range of intensities.
 					// Keep looking at the module until that condition is met.
 					LogReadingHighlightedWire();
 					await Delay(0.05);
 					data = interrupt.Read(Reader);
 				}
 				LogHighlightedWire(data.HighlightedWire);
-				highlight = data.HighlightedWire.From;
+				_highlight = data.HighlightedWire.From;
 				break;
 		}
 		return data;
@@ -93,7 +101,7 @@ internal partial class WireSequence : ModuleScript<KtaneDefuserConnector.Compone
 			await interrupt.SubmitAsync(Button.A, Button.Down);
 		else
 			await interrupt.SendInputsAsync(Button.Down);
-		do { highlight++; } while (highlight < 3 && currentPageColours[highlight] is null);
+		do { _highlight++; } while (_highlight < 3 && _currentPageColours[_highlight] is null);
 		await ContinuePageAsync(interrupt);
 	}
 

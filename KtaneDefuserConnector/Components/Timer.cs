@@ -29,38 +29,6 @@ public class Timer : ComponentReader<Timer.ReadData> {
 			}
 		}
 
-		static bool IsOn(Rgba32 pixel, ref Rgba32 timerColour) {
-			if (pixel is { R: < 128, G: < 128, B: < 128 }) return false;
-			timerColour.R = pixel.R >= 128 ? byte.MaxValue : (byte) 0;
-			timerColour.G = pixel.G >= 128 ? byte.MaxValue : (byte) 0;
-			timerColour.B = pixel.B >= 128 ? byte.MaxValue : (byte) 0;
-			return true;
-		}
-
-		static char ReadDigit(Image<Rgba32> image, int centreX, ref Rgba32 timerColour) {
-			var segments =
-				(IsOn(image[centreX + 0, 16], ref timerColour) ? (1 << 0) : 0) |
-				(IsOn(image[centreX + 16, 40], ref timerColour) ? (1 << 1) : 0) |
-				(IsOn(image[centreX + 16, 92], ref timerColour) ? (1 << 2) : 0) |
-				(IsOn(image[centreX + 0, 114], ref timerColour) ? (1 << 3) : 0) |
-				(IsOn(image[centreX - 18, 92], ref timerColour) ? (1 << 4) : 0) |
-				(IsOn(image[centreX - 18, 40], ref timerColour) ? (1 << 5) : 0) |
-				(IsOn(image[centreX + 0, 64], ref timerColour) ? (1 << 6) : 0);
-			return segments switch {
-				0b0111111 => '0',
-				0b0000110 => '1',
-				0b1011011 => '2',
-				0b1001111 => '3',
-				0b1100110 => '4',
-				0b1101101 => '5',
-				0b1111101 => '6',
-				0b0000111 => '7',
-				0b1111111 => '8',
-				0b1101111 => '9',
-				_ => throw new ArgumentException($"Couldn't read pattern: {segments:x}")
-			};
-		}
-
 		var timerColour = default(Rgba32);
 		var isMinutes = IsOn(timerBitmap[130, 38], ref timerColour);
 
@@ -79,8 +47,41 @@ public class Timer : ComponentReader<Timer.ReadData> {
 			: GameMode.Normal;
 
 		return new(gameMode, isMinutes ? n1 * 60 + n2 : n1, isMinutes ? 0 : n2, strikes);
+		
+		static bool IsOn(Rgba32 pixel, ref Rgba32 timerColour) {
+			if (pixel is { R: < 128, G: < 128, B: < 128 }) return false;
+			timerColour.R = pixel.R >= 128 ? byte.MaxValue : (byte) 0;
+			timerColour.G = pixel.G >= 128 ? byte.MaxValue : (byte) 0;
+			timerColour.B = pixel.B >= 128 ? byte.MaxValue : (byte) 0;
+			return true;
+		}
+
+		static char ReadDigit(Image<Rgba32> image, int centreX, ref Rgba32 timerColour) {
+			var segments =
+				(IsOn(image[centreX + 0, 16], ref timerColour) ? 1 << 0 : 0) |
+				(IsOn(image[centreX + 16, 40], ref timerColour) ? 1 << 1 : 0) |
+				(IsOn(image[centreX + 16, 92], ref timerColour) ? 1 << 2 : 0) |
+				(IsOn(image[centreX + 0, 114], ref timerColour) ? 1 << 3 : 0) |
+				(IsOn(image[centreX - 18, 92], ref timerColour) ? 1 << 4 : 0) |
+				(IsOn(image[centreX - 18, 40], ref timerColour) ? 1 << 5 : 0) |
+				(IsOn(image[centreX + 0, 64], ref timerColour) ? 1 << 6 : 0);
+			return segments switch {
+				0b0111111 => '0',
+				0b0000110 => '1',
+				0b1011011 => '2',
+				0b1001111 => '3',
+				0b1100110 => '4',
+				0b1101101 => '5',
+				0b1111101 => '6',
+				0b0000111 => '7',
+				0b1111111 => '8',
+				0b1101111 => '9',
+				_ => throw new ArgumentException($"Couldn't read pattern: {segments:x}")
+			};
+		}
 	}
 
+	// ReSharper disable once InconsistentNaming
 	public record ReadData(GameMode GameMode, int Time, int CS, int Strikes) {
 		public override string ToString() => $"{GameMode} {Time} {CS} {Strikes}";
 	}

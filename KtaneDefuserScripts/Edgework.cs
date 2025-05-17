@@ -33,7 +33,7 @@ internal static partial class Edgework {
 		}
 	}
 
-	internal static void RegisterWidgets(AimlAsyncContext context, bool isSide, Image<Rgba32> screenshot) {
+	internal static void RegisterWidgets(bool isSide, Image<Rgba32> screenshot) {
 		var lightsState = DefuserConnector.Instance.GetLightsState(screenshot);
 		if (lightsState != LightsState.On) throw new ArgumentException($"Can't identify widgets on lights state {lightsState}.");
 		Quadrilateral[] quadrilaterals;
@@ -69,7 +69,7 @@ internal static partial class Edgework {
 			var relevantIndicators = GameState.Current.Indicators.Where(i => i is { IsLit: true, Label: "CAR" or "FRK" });
 			var indicators = GameState.Current.Indicators.Count > 0
 				? relevantIndicators.Any()
-				? $"Indicators: {string.Join(", ", from i in relevantIndicators select $"lit {NATO.Speak(i.Label)}")}."
+				? $"Indicators: {string.Join(", ", from i in relevantIndicators select $"lit {Nato.Speak(i.Label)}")}."
 				: "No relevant indicators."
 				: "No indicators.";
 			var ports = GameState.Current.PortPlates.Any(p => p.HasFlag(PortTypes.Parallel)) ? "Parallel port." : "No relevant port.";
@@ -81,7 +81,7 @@ internal static partial class Edgework {
 				_ => $"{GameState.Current.BatteryCount} batteries in {GameState.Current.BatteryHolderCount} {(GameState.Current.BatteryHolderCount == 1 ? "holder" : "holders")}."
 			};
 			var indicators = GameState.Current.Indicators.Count > 0
-				? $"Indicators: {string.Join(", ", from i in GameState.Current.Indicators select $"{(i.IsLit ? "lit" : "unlit")} {NATO.Speak(i.Label)}")}."
+				? $"Indicators: {string.Join(", ", from i in GameState.Current.Indicators select $"{(i.IsLit ? "lit" : "unlit")} {Nato.Speak(i.Label)}")}."
 				: "No indicators.";
 			string ports;
 			if (GameState.Current.PortPlates.Count > 0) {
@@ -91,7 +91,7 @@ internal static partial class Edgework {
 				ports = $"Ports: {list}{emptyPlatesDesc}.";
 			} else
 				ports = "No ports.";
-			var serial = NATO.Speak(GameState.Current.SerialNumber);
+			var serial = Nato.Speak(GameState.Current.SerialNumber);
 			context.Reply($"{batteries} {indicators} {ports} Serial number: {serial}.");
 		}
 		if (GameState.Current.FocusState == FocusState.Bomb)

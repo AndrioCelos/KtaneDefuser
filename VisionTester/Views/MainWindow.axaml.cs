@@ -10,7 +10,7 @@ public partial class MainWindow : Window {
 	}
 
 	private void Button_OnClick(object? sender, RoutedEventArgs e) {
-		var vm = new TransformationViewModel { mainViewModel = (MainWindowViewModel) DataContext! };
+		var vm = new TransformationViewModel { MainViewModel = (MainWindowViewModel) DataContext! };
 		var window = new TransformationWindow { DataContext = vm };
 		window.Show(this);
 	}

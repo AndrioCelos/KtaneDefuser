@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia;
@@ -9,7 +10,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using CommunityToolkit.Mvvm.Messaging.Messages;
-using ImageProcessingTester;
 using KtaneDefuserConnector;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -40,16 +40,16 @@ public partial class ColourRangeViewModel : ViewModelBase {
 	[ObservableProperty] internal partial string LoadImageLabel { get; set; } = "Load file...";
 	internal ICommand LoadImageCommand { get; set; }
 
-	private bool autoRedraw = true;
+	private bool _autoRedraw = true;
 
 	public ColourRangeViewModel() {
 		PropertyChanged += AnalysisViewModel_PropertyChanged;
 		LoadImageCommand = LoadImageFileCommand;
 	}
 	
-	private void AnalysisViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
+	private void AnalysisViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
 		switch (e.PropertyName) {
-			case nameof(Min1) or nameof(Max1) or nameof(Min2) or nameof(Max2) or nameof(Min3) or nameof(Max3) or nameof(MaxDistance) when autoRedraw:
+			case nameof(Min1) or nameof(Max1) or nameof(Min2) or nameof(Max2) or nameof(Min3) or nameof(Max3) or nameof(MaxDistance) when _autoRedraw:
 				Redraw();
 				break;
 			case nameof(SelectedRangeType):
@@ -70,7 +70,7 @@ public partial class ColourRangeViewModel : ViewModelBase {
 	}
 
 	[RelayCommand]
-	public async Task LoadImageFile() {
+	private async Task LoadImageFile() {
 		(LoadImageCommand, LoadImageLabel) = (LoadImageFileCommand, "Load file...");
 		var message = new LoadImageFileMessage();
 		var file = await WeakReferenceMessenger.Default.Send(message);
@@ -81,7 +81,7 @@ public partial class ColourRangeViewModel : ViewModelBase {
 	}
 
 	[RelayCommand]
-	public async Task PasteImage() {
+	private async Task PasteImage() {
 		(LoadImageCommand, LoadImageLabel) = (PasteImageCommand, "Paste");
 		var message = new PasteImageMessage();
 		var image = await WeakReferenceMessenger.Default.Send(message);
@@ -89,16 +89,16 @@ public partial class ColourRangeViewModel : ViewModelBase {
 		InputImage = image;
 	}
 
-	public void Redraw() {
+	private void Redraw() {
 		if (InputImage is null) return;
 		
 		using var outputImage = InputImage.Clone();
 		switch (SelectedRangeType) {
 			case RangeType.HSV:
 				outputImage.ProcessPixelRows(p => {
-					for (int y = 0; y < p.Height; y++) {
+					for (var y = 0; y < p.Height; y++) {
 						var row = p.GetRowSpan(y);
-						for (int x = 0; x < p.Width; x++) {
+						for (var x = 0; x < p.Width; x++) {
 							ref var pixel = ref row[x];
 							var hsv = HsvColor.FromColor(pixel);
 							if (!((Min1 > Max1 ? hsv.H >= Min1 || hsv.H <= Max1 : hsv.H >= Min1 && hsv.H <= Max1)
@@ -112,11 +112,11 @@ public partial class ColourRangeViewModel : ViewModelBase {
 				break;
 			case RangeType.RGBD:
 				outputImage.ProcessPixelRows(p => {
-					for (int y = 0; y < p.Height; y++) {
+					for (var y = 0; y < p.Height; y++) {
 						var row = p.GetRowSpan(y);
-						for (int x = 0; x < p.Width; x++) {
+						for (var x = 0; x < p.Width; x++) {
 							ref var pixel = ref row[x];
-							if (Math.Abs(pixel.R - (int) Min1) + Math.Abs(pixel.G - (int) Min2) + Math.Abs(pixel.B - (int) Min3) > (int) MaxDistance) {
+							if (Math.Abs(pixel.R - Min1) + Math.Abs(pixel.G - Min2) + Math.Abs(pixel.B - Min3) > MaxDistance) {
 								pixel = pixel with { A = (byte) (pixel.A / 4) };
 							}
 						}
@@ -125,9 +125,9 @@ public partial class ColourRangeViewModel : ViewModelBase {
 				break;
 			case RangeType.RGB:
 				outputImage.ProcessPixelRows(p => {
-					for (int y = 0; y < p.Height; y++) {
+					for (var y = 0; y < p.Height; y++) {
 						var row = p.GetRowSpan(y);
-						for (int x = 0; x < p.Width; x++) {
+						for (var x = 0; x < p.Width; x++) {
 							ref var pixel = ref row[x];
 							if (!(pixel.R >= (float) Min1 && pixel.R <= (float) Max1
 								&& pixel.G >= (float) Min2 && pixel.G <= (float) Max2
@@ -156,7 +156,7 @@ public partial class ColourRangeViewModel : ViewModelBase {
 		if (!rightButton) {
 			AverageLabel = SelectedRangeType == RangeType.HSV ? HsvColor.FromColor(pixel).ToString() : pixel.ToString();
 		} else {
-			autoRedraw = false;
+			_autoRedraw = false;
 			switch (SelectedRangeType) {
 				case RangeType.RGB:
 					Min1 = Math.Min(keyModifiers.HasFlag(KeyModifiers.Alt) ? 255 : Min1, pixel.R);
@@ -185,34 +185,33 @@ public partial class ColourRangeViewModel : ViewModelBase {
 					Max3 = Math.Max(keyModifiers.HasFlag(KeyModifiers.Alt) ? 0 : Max3, (int) Math.Ceiling(hsv.V * 100));
 					break;
 				case RangeType.RGBD:
-					MaxDistance = Math.Max(keyModifiers.HasFlag(KeyModifiers.Alt) ? 768 : MaxDistance, Math.Abs(pixel.R - (int) Min1) + Math.Abs(pixel.G - (int) Min2) + Math.Abs(pixel.B - (int) Min3));
+					MaxDistance = Math.Max(keyModifiers.HasFlag(KeyModifiers.Alt) ? 768 : MaxDistance, Math.Abs(pixel.R - Min1) + Math.Abs(pixel.G - Min2) + Math.Abs(pixel.B - Min3));
 					break;
 			}
-			autoRedraw = true;
+			_autoRedraw = true;
 			Redraw();
 		}
 	}
 
-	public void RecalculateAverage() {
+	private void RecalculateAverage() {
 		if (InputImage is null) return;
 		long r = 0, g = 0, b = 0, a = 0;
 		InputImage.ProcessPixelRows(p => {
-			for (int y = 0; y < p.Height; y++) {
+			for (var y = 0; y < p.Height; y++) {
 				var row = p.GetRowSpan(y);
-				for (int x = 0; x < p.Width; x++) {
+				for (var x = 0; x < p.Width; x++) {
 					var color = row[x];
-					if (color.A > 0 && (color.R > 0 || color.G > 0 || color.B > 0)) {
-						if (color.A == 255) {
-							r += color.R;
-							g += color.G;
-							b += color.B;
-							a += 255;
-						} else {
-							r += color.R * 255 / color.A;
-							g += color.G * 255 / color.A;
-							b += color.B * 255 / color.A;
-							a += color.A;
-						}
+					if (color.A <= 0 || color is { R: 0, G: 0, B: 0 }) continue;
+					if (color.A == 255) {
+						r += color.R;
+						g += color.G;
+						b += color.B;
+						a += 255;
+					} else {
+						r += color.R * 255 / color.A;
+						g += color.G * 255 / color.A;
+						b += color.B * 255 / color.A;
+						a += color.A;
 					}
 				}
 			}

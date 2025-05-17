@@ -1,8 +1,6 @@
-﻿using Tensorflow.Contexts;
-
-namespace KtaneDefuserScripts.Modules;
+﻿namespace KtaneDefuserScripts.Modules;
 [AimlInterface("LetterKeys")]
-internal partial class LetterKeys : ModuleScript<KtaneDefuserConnector.Components.LetterKeys> {
+internal class LetterKeys : ModuleScript<KtaneDefuserConnector.Components.LetterKeys> {
 	public override string IndefiniteDescription => "Letter Keys";
 
 	private bool _readyToRead;
@@ -15,10 +13,9 @@ internal partial class LetterKeys : ModuleScript<KtaneDefuserConnector.Component
 	}
 
 	protected internal override void ModuleSelected(Interrupt interrupt) {
-		if (_readyToRead) {
-			_readyToRead = false;
-			Read(interrupt);
-		}
+		if (!_readyToRead) return;
+		_readyToRead = false;
+		Read(interrupt);
 	}
 
 	[AimlCategory("read")]
@@ -36,7 +33,7 @@ internal partial class LetterKeys : ModuleScript<KtaneDefuserConnector.Component
 
 	[AimlCategory("<set>NATO</set>"), AimlCategory("press <set>NATO</set>")]
 	internal static Task Read(AimlAsyncContext context, string letter)
-		=> GameState.Current.CurrentScript<LetterKeys>().PressButtonAsync(context, NATO.DecodeChar(letter));
+		=> GameState.Current.CurrentScript<LetterKeys>().PressButtonAsync(context, Nato.DecodeChar(letter));
 
 
 	private async Task PressButtonAsync(AimlAsyncContext context, char letter) {

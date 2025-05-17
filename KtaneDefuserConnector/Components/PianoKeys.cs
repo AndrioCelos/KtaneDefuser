@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using KtaneDefuserConnector.Properties;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
@@ -11,15 +12,15 @@ public class PianoKeys : ComponentReader<PianoKeys.ReadData> {
 	public override string Name => "Piano Keys";
 
 	private static readonly Image<Rgba32>[] ReferenceImages = [
-		LoadSampleImage(Properties.Resources.PianoKeysNatural),
-		LoadSampleImage(Properties.Resources.PianoKeysFlat),
-		LoadSampleImage(Properties.Resources.PianoKeysSharp),
-		LoadSampleImage(Properties.Resources.PianoKeysMordent),
-		LoadSampleImage(Properties.Resources.PianoKeysTurn),
-		LoadSampleImage(Properties.Resources.PianoKeysCommonTime),
-		LoadSampleImage(Properties.Resources.PianoKeysCutCommonTime),
-		LoadSampleImage(Properties.Resources.PianoKeysFermata),
-		LoadSampleImage(Properties.Resources.PianoKeysCClef)
+		LoadSampleImage(Resources.PianoKeysNatural),
+		LoadSampleImage(Resources.PianoKeysFlat),
+		LoadSampleImage(Resources.PianoKeysSharp),
+		LoadSampleImage(Resources.PianoKeysMordent),
+		LoadSampleImage(Resources.PianoKeysTurn),
+		LoadSampleImage(Resources.PianoKeysCommonTime),
+		LoadSampleImage(Resources.PianoKeysCutCommonTime),
+		LoadSampleImage(Resources.PianoKeysFermata),
+		LoadSampleImage(Resources.PianoKeysCClef)
 	];
 
 	private static Image<Rgba32> LoadSampleImage(byte[] bytes) => Image.Load<Rgba32>(bytes);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using JetBrains.Annotations;
 using SixLabors.Fonts;
@@ -23,29 +24,25 @@ internal class TextRecogniser {
 		}
 	}
 
-	private readonly (Image<L8> image, float aspectRatio, string s)[] samples;
-	private readonly byte backgroundValue;
-	private readonly byte foregroundValue;
+	private readonly (Image<L8> image, float aspectRatio, string s)[] _samples;
+	private readonly byte _backgroundValue;
+	private readonly byte _foregroundValue;
 
-	/// <param name="font">The font used in the images to recognise.</param>
-	/// <param name="resolution">The resolution that will be used for sample images.</param>
-	/// <param name="strings">The strings to choose between.</param>
-	/// <exception cref="ArgumentException">The specified font is too large for all sample strings to fit in the specified size.</exception>
-	public TextRecogniser(Font font, Size resolution, params string[] strings)
-		: this(font, 0, 255, resolution, strings) { }
 	/// <param name="font">The font used in the images to recognise.</param>
 	/// <param name="backgroundValue">The background brightness in the images to recognise.</param>
 	/// <param name="foregroundValue">The text brightness in the images to recognise.</param>
 	/// <param name="resolution">The resolution that will be used for sample images.</param>
 	/// <param name="strings">The strings to choose between.</param>
 	/// <exception cref="ArgumentException">The specified font is too large for all sample strings to fit in the specified size.</exception>
+	[SuppressMessage("ReSharper", "PossibleLossOfFraction")]
 	public TextRecogniser(Font font, byte backgroundValue, byte foregroundValue, Size resolution, params string[] strings) {
-		this.backgroundValue = backgroundValue;
-		this.foregroundValue = foregroundValue;
-		samples = new (Image<L8>, float, string)[strings.Length];
+		_backgroundValue = backgroundValue;
+		_foregroundValue = foregroundValue;
+		_samples = new (Image<L8>, float, string)[strings.Length];
 		var textOptions = new RichTextOptions(font) { Dpi = 96, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Origin = new(resolution.Width / 2, resolution.Height / 2) };
 		for (var i = 0; i < strings.Length; i++) {
 			var image = new Image<L8>(resolution.Width, resolution.Height, new(0));
+			// ReSharper disable once AccessToModifiedClosure
 			image.Mutate(c => c.DrawText(textOptions, strings[i], Color.White));
 			var textBoundingBox = ImageUtils.FindEdges(image, image.Bounds, c => c.PackedValue >= 128);
 			if (textBoundingBox.Top <= 0 || textBoundingBox.Bottom >= image.Height)
@@ -53,13 +50,13 @@ internal class TextRecogniser {
 			if (textBoundingBox.Left <= 0 || textBoundingBox.Right >= image.Width)
 				throw new ArgumentException($"Sample text width went out of the specified bounds. {TextMeasurer.MeasureSize(strings[i], textOptions)}");
 			image.Mutate(c => c.Crop(textBoundingBox).Resize(resolution, KnownResamplers.NearestNeighbor, false));
-			samples[i] = (image, (float) textBoundingBox.Width / textBoundingBox.Height, strings[i]);
+			_samples[i] = (image, (float) textBoundingBox.Width / textBoundingBox.Height, strings[i]);
 		}
 	}
 
 	/// <summary>Identifies the text in the specified bounding box of the specified image.</summary>
 	[Pure]
-	public string Recognise(Image<Rgba32> image, Rectangle rectangle) => Recognise(image, rectangle, backgroundValue, foregroundValue);
+	public string Recognise(Image<Rgba32> image, Rectangle rectangle) => Recognise(image, rectangle, _backgroundValue, _foregroundValue);
 	/// <summary>Identifies the text in the specified bounding box of the specified image.</summary>
 	[Pure]
 	public string Recognise(Image<Rgba32> image, Rectangle rectangle, byte backgroundValue, byte foregroundValue) {
@@ -74,7 +71,7 @@ internal class TextRecogniser {
 		var filenameBase = DateTime.Now.ToString("O").Replace(':', '-');
 #endif
 
-		foreach (var (refImage, refRatio, s) in samples) {
+		foreach (var (refImage, refRatio, s) in _samples) {
 			if (checkRatio / refRatio is < 0.5f or > 2) continue;  // Skip strings that are way too narrow or too wide to match this rectangle.
 
 			refImage.ProcessPixelRows(image, (ar, ac) => {

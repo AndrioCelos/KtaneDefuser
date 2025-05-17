@@ -51,24 +51,32 @@ public abstract class ComponentReader {
 	protected static int? ReadNeedyTimer(Image<Rgba32> image, LightsState lightsState, Image<Rgba32>? debugImage) {
 		using var displayImage = GetNeedyDisplayImage(image, lightsState, debugImage);
 
-		bool CheckRectangle(Image<Rgba32> image, Rectangle rectangle) {
+		var d0 = ReadDigit(88);
+		var d1 = ReadDigit(42);
+		return d0 is null && d1 is null
+			? null
+			: d0 is not null
+			? d1 is not null ? d0 + d1 * 10 : d0
+			: throw new ArgumentException("Can't read needy timer");
+
+		bool CheckRectangle(Rectangle rectangle) {
 			for (var dy = 0; dy < rectangle.Height; dy++) {
 				for (var dx = 0; dx < rectangle.Width; dx++) {
-					var p = image[rectangle.Left + dx, rectangle.Top + dy];
+					var p = displayImage[rectangle.Left + dx, rectangle.Top + dy];
 					if (p.R >= 128) return true;
 				}
 			}
 			return false;
 		}
-		int? ReadDigit(Image<Rgba32> image, int x) {
+		int? ReadDigit(int x) {
 			var segments =
-				(CheckRectangle(image, new(x + 0, 0, 1, 16)) ? (1 << 0) : 0) |
-				(CheckRectangle(image, new(x + 0, 18, 16, 1)) ? (1 << 1) : 0) |
-				(CheckRectangle(image, new(x + 0, 46, 16, 1)) ? (1 << 2) : 0) |
-				(CheckRectangle(image, new(x + 0, 48, 1, 16)) ? (1 << 3) : 0) |
-				(CheckRectangle(image, new(x - 16, 46, 16, 1)) ? (1 << 4) : 0) |
-				(CheckRectangle(image, new(x - 16, 18, 16, 1)) ? (1 << 5) : 0) |
-				(CheckRectangle(image, new(x + 0, 25, 1, 16)) ? (1 << 6) : 0);
+				(CheckRectangle(new(x + 0, 0, 1, 16)) ? (1 << 0) : 0) |
+				(CheckRectangle(new(x + 0, 18, 16, 1)) ? (1 << 1) : 0) |
+				(CheckRectangle(new(x + 0, 46, 16, 1)) ? (1 << 2) : 0) |
+				(CheckRectangle(new(x + 0, 48, 1, 16)) ? (1 << 3) : 0) |
+				(CheckRectangle(new(x - 16, 46, 16, 1)) ? (1 << 4) : 0) |
+				(CheckRectangle(new(x - 16, 18, 16, 1)) ? (1 << 5) : 0) |
+				(CheckRectangle(new(x + 0, 25, 1, 16)) ? (1 << 6) : 0);
 			return segments switch {
 				0b0111111 => 0,
 				0b0000110 => 1,
@@ -84,14 +92,6 @@ public abstract class ComponentReader {
 				_ => throw new ArgumentException($"Couldn't read pattern: {segments:x}")
 			};
 		}
-
-		var d0 = ReadDigit(displayImage, 88);
-		var d1 = ReadDigit(displayImage, 42);
-		return d0 is null && d1 is null
-			? null
-			: d0 is not null
-			? d1 is not null ? d0 + d1 * 10 : d0
-			: throw new ArgumentException("Can't read needy timer");
 	}
 }
 

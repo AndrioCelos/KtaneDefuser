@@ -9,8 +9,9 @@ using CommunityToolkit.Mvvm.Messaging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using VisionTester.ViewModels;
+using Image = SixLabors.ImageSharp.Image;
 
-namespace VisionTester;
+namespace VisionTester.Views;
 
 public partial class AnalysisWindow : Window
 {
@@ -40,10 +41,10 @@ public partial class AnalysisWindow : Window
 			return null;
 		}
 		using var ms = new MemoryStream((byte[]) data);
-		return SixLabors.ImageSharp.Image.Load<Rgba32>(ms);
+		return Image.Load<Rgba32>(ms);
 	}
 
-	private void CopyImage(SixLabors.ImageSharp.Image image) {
+	private void CopyImage(Image image) {
 		var clipboard = GetTopLevel(this)!.Clipboard!;
 		var dataObject = new DataObject();
 		using var ms = new MemoryStream();

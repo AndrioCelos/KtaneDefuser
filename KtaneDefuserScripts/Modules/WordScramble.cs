@@ -17,7 +17,7 @@ internal class WordScramble : ModuleScript<KtaneDefuserConnector.Components.Word
 	[AimlCategory("<set>NATO</set> <set>NATO</set> <set>NATO</set> <set>NATO</set> <set>NATO</set> <set>NATO</set>")]
 	internal static async Task SubmitLetters(AimlAsyncContext context, string nato1, string nato2, string nato3, string nato4, string nato5, string nato6) {
 		using var interrupt = await CurrentModuleInterruptAsync(context);
-		await GameState.Current.CurrentScript<WordScramble>()._processor.SubmitLetters(interrupt, NATO.DecodeChar(nato1), NATO.DecodeChar(nato2), NATO.DecodeChar(nato3), NATO.DecodeChar(nato4), NATO.DecodeChar(nato5), NATO.DecodeChar(nato6));
+		await GameState.Current.CurrentScript<WordScramble>()._processor.SubmitLetters(interrupt, Nato.DecodeChar(nato1), Nato.DecodeChar(nato2), Nato.DecodeChar(nato3), Nato.DecodeChar(nato4), Nato.DecodeChar(nato5), Nato.DecodeChar(nato6));
 	}
 
 	internal class Processor(Func<Interrupt, KtaneDefuserConnector.Components.WordScramble.ReadData> readFunc) {
@@ -47,7 +47,7 @@ internal class WordScramble : ModuleScript<KtaneDefuserConnector.Components.Word
 
 			if (word is null) {
 				// No words found; ask the expert.
-				interrupt.Context.Reply(NATO.Speak(data.Letters));
+				interrupt.Context.Reply(Nato.Speak(data.Letters));
 				return;
 			}
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -11,7 +12,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using CommunityToolkit.Mvvm.Messaging.Messages;
-using ImageProcessingTester;
 using KtaneDefuserConnector;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -35,7 +35,7 @@ public partial class AnalysisViewModel : ViewModelBase {
 	private static readonly ComponentReader[] ComponentReaders;
 	private static readonly WidgetReader[] WidgetReaders;
 
-	private readonly DefuserConnector connector = new();
+	private readonly DefuserConnector _connector = new();
 
 	static AnalysisViewModel() {
 		var componentReaders = new List<ComponentReader>();
@@ -66,7 +66,7 @@ public partial class AnalysisViewModel : ViewModelBase {
 		LoadImageCommand = LoadImageFileCommand;
 	}
 	
-	private void AnalysisViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
+	private void AnalysisViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e) {
 		switch (e.PropertyName) {
 			case nameof(InputImage):
 			case nameof(LightsState):
@@ -77,18 +77,18 @@ public partial class AnalysisViewModel : ViewModelBase {
 	}
 
 	[RelayCommand]
-	public async Task LoadImageFile() {
+	private async Task LoadImageFile() {
 		(LoadImageCommand, LoadImageLabel) = (LoadImageFileCommand, "Load file...");
 		var message = new LoadImageFileMessage();
 		var file = await WeakReferenceMessenger.Default.Send(message);
 		if (file is null) return;
 
-		using var stream = await file.OpenReadAsync();
+		await using var stream = await file.OpenReadAsync();
 		InputImage = await Image.LoadAsync<Rgba32>(stream);
 	}
 
 	[RelayCommand]
-	public async Task PasteImage() {
+	private async Task PasteImage() {
 		(LoadImageCommand, LoadImageLabel) = (PasteImageCommand, "Paste");
 		var message = new PasteImageMessage();
 		var image = await WeakReferenceMessenger.Default.Send(message);
@@ -96,7 +96,7 @@ public partial class AnalysisViewModel : ViewModelBase {
 		InputImage = image;
 	}
 
-	public void Analyse() {
+	private void Analyse() {
 		string? s = null;
 		var stopwatch = Stopwatch.StartNew();
 		try {
@@ -109,13 +109,13 @@ public partial class AnalysisViewModel : ViewModelBase {
 			OutputAvaloniaImage = InputImage.ToAvaloniaImage();
 			switch (SelectedAnalyserOption.Type) {
 				case AnalysisType.IdentifyComponent: {
-					var reader = connector.GetComponentReader(InputImage, InputImage.Bounds);
+					var reader = _connector.GetComponentReader(InputImage, InputImage.Bounds);
 					s = $"Classified as: {reader?.Name ?? "null"}";
 					break;
 				}
 				case AnalysisType.IdentifyWidget: {
 					var pixelCounts = WidgetReader.GetPixelCounts(InputImage, 0);
-					var reader = connector.GetWidgetReader(InputImage, InputImage.Bounds);
+					var reader = _connector.GetWidgetReader(InputImage, InputImage.Bounds);
 					s = $"Classified as: {reader?.Name ?? "null"}\n(R: {pixelCounts.Red}, Y: {pixelCounts.Yellow}, E: {pixelCounts.Grey}, W: {pixelCounts.White})";
 					break;
 				}
@@ -140,10 +140,7 @@ public partial class AnalysisViewModel : ViewModelBase {
 					OutputImage = debugImage;
 					OutputAvaloniaImage = debugImage.ToAvaloniaImage();
 
-					foreach (var rect in rectangles) {
-						var reader = connector.GetWidgetReader(InputImage, rect);
-						s += $"{reader?.Name ?? "null"}; ";
-					}
+					s = rectangles.Select(rect => _connector.GetWidgetReader(InputImage, rect)).Aggregate(s, (current, reader) => current + $"{reader?.Name ?? "null"}; ");
 					break;
 				}
 				case AnalysisType.GetCenturionSideWidgetBoxes: {
@@ -177,10 +174,7 @@ public partial class AnalysisViewModel : ViewModelBase {
 					OutputImage = debugImage;
 					OutputAvaloniaImage = debugImage.ToAvaloniaImage();
 
-					foreach (var rect in rectangles) {
-						var reader = connector.GetWidgetReader(InputImage, new(rect.Right, rect.Top, rect.Right, rect.Bottom, rect.Left, rect.Top, rect.Left, rect.Bottom));
-						s += $"{reader?.Name ?? "null"}; ";
-					}
+					s = rectangles.Select(rect => _connector.GetWidgetReader(InputImage, new(rect.Right, rect.Top, rect.Right, rect.Bottom, rect.Left, rect.Top, rect.Left, rect.Bottom))).Aggregate(s, (current, reader) => current + $"{reader?.Name ?? "null"}; ");
 					break;
 				}
 				default: {

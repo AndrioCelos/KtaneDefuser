@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 
 namespace KtaneDefuserScripts;
 /// <summary>Provides the script and variables associated with a specific module.</summary>
@@ -10,9 +11,9 @@ public abstract partial class ModuleScript {
 	private static readonly MethodInfo CreateMethodBase = typeof(ModuleScript).GetMethod(nameof(CreateInternal), BindingFlags.NonPublic | BindingFlags.Static)!;
 	private static readonly Dictionary<Type, MethodInfo> CreateMethodCache = [];
 
-	private protected string? topic;
 	/// <summary>Returns the AIML topic associated with this script.</summary>
-	public string Topic => topic ?? throw new InvalidOperationException("Script not yet initialised");
+	[field: MaybeNull]
+	public string Topic { get => field ?? throw new InvalidOperationException("Script not yet initialised"); private init; }
 
 	/// <summary>When overridden, returns a string used to describe an instance of the module to the user.</summary>
 	public abstract string IndefiniteDescription { get; }
@@ -42,7 +43,7 @@ public abstract partial class ModuleScript {
 	}
 
 	private static TScript CreateInternal<TScript, TReader>(string topic) where TScript : ModuleScript<TReader>, new() where TReader : ComponentReader
-		=> new() { topic = topic };
+		=> new() { Topic = topic };
 
 	/// <summary>Called when the script is initialised at the start of the game.</summary>
 	protected internal virtual void Initialise(Interrupt interrupt) { }

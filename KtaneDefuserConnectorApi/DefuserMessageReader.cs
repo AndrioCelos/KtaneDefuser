@@ -7,18 +7,18 @@ namespace KtaneDefuserConnectorApi;
 /// <summary>Reads defuser interface messages from a stream.</summary>
 public class DefuserMessageReader : IDisposable {
 	public Stream BaseStream { get; }
-	private readonly byte[] buffer;
+	private readonly byte[] _buffer;
 
 	public event EventHandler<DefuserMessageEventArgs>? MessageReceived;
 	public event EventHandler<DisconnectedEventArgs>? Disconnected;
 
 	public DefuserMessageReader(Stream baseStream, int bufferSize) {
 		BaseStream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
-		buffer = new byte[bufferSize];
+		_buffer = new byte[bufferSize];
 #if NET6_0_OR_GREATER
 		System.Threading.Tasks.Task.Run(() => ReadLoopAsync(baseStream));
 #else
-		baseStream.BeginRead(buffer, 0, 5, BaseStream_Read, null);
+		baseStream.BeginRead(_buffer, 0, 5, BaseStream_Read, null);
 #endif
 	}
 
@@ -33,13 +33,13 @@ public class DefuserMessageReader : IDisposable {
 	private async System.Threading.Tasks.Task ReadLoopAsync(Stream stream) {
 		try {
 			while (true) {
-				await stream.ReadExactlyAsync(buffer, 0, 5);
-				var messageType = (MessageType) buffer[0];
-				var length = BitConverter.ToInt32(buffer, 1);
+				await stream.ReadExactlyAsync(_buffer, 0, 5);
+				var messageType = (MessageType) _buffer[0];
+				var length = BitConverter.ToInt32(_buffer, 1);
 				if (length == 0)
 					ProcessMessage(messageType, 0);
 				else {
-					await stream.ReadExactlyAsync(buffer, 0, length);
+					await stream.ReadExactlyAsync(_buffer, 0, length);
 					ProcessMessage(messageType, length);
 				}
 			}
@@ -53,14 +53,14 @@ public class DefuserMessageReader : IDisposable {
 		try {
 			var n = BaseStream.EndRead(ar);
 			if (n > 0) {
-				var messageType = (MessageType) buffer[0];
-				var length = BitConverter.ToInt32(buffer, 1);
+				var messageType = (MessageType) _buffer[0];
+				var length = BitConverter.ToInt32(_buffer, 1);
 				if (length == 0) {
 					ProcessMessage(messageType, 0);
-					BaseStream.BeginRead(buffer, 0, 5, BaseStream_Read, null);
-				} else if (length < buffer.Length) {
+					BaseStream.BeginRead(_buffer, 0, 5, BaseStream_Read, null);
+				} else if (length < _buffer.Length) {
 					// Longer messages from the client are invalid.
-					BaseStream.BeginRead(buffer, 0, length, BaseStream_Read2, messageType);
+					BaseStream.BeginRead(_buffer, 0, length, BaseStream_Read2, messageType);
 				}
 			} else
 				Disconnected?.Invoke(this, new(null));
@@ -75,7 +75,7 @@ public class DefuserMessageReader : IDisposable {
 			var n = BaseStream.EndRead(ar);
 			if (n > 0) {
 				ProcessMessage((MessageType) ar.AsyncState, n);
-				BaseStream.BeginRead(buffer, 0, 5, BaseStream_Read, null);
+				BaseStream.BeginRead(_buffer, 0, 5, BaseStream_Read, null);
 			} else
 				Disconnected?.Invoke(this, new(null));
 		} catch (IOException ex) {
@@ -87,31 +87,31 @@ public class DefuserMessageReader : IDisposable {
 
 #pragma warning disable CS0618 // TODO: Obsolete message types may be removed later.
 	private void ProcessMessage(MessageType messageType, int length) {
-		lock (buffer) {
+		lock (_buffer) {
 			IDefuserMessage message = messageType switch {
-				MessageType.LegacyCommand => new LegacyCommandMessage(Encoding.UTF8.GetString(buffer, 0, length)),
-				MessageType.LegacyEvent => new LegacyEventMessage(Encoding.UTF8.GetString(buffer, 0, length)),
-				MessageType.ScreenshotResponse => new ScreenshotResponseMessage(length, buffer),
-				MessageType.CheatReadResponse => new CheatReadResponseMessage(length > 0 ? Encoding.UTF8.GetString(buffer, 0, length) : null),
-				MessageType.CheatReadError => new CheatReadErrorMessage(Encoding.UTF8.GetString(buffer, 0, length)),
-				MessageType.LegacyInputCallback => new LegacyInputCallbackMessage(Encoding.UTF8.GetString(buffer, 0, length)),
-				MessageType.InputCommand => ReadInputCommand(buffer, length),
-				MessageType.InputCallback => ReadInputCallback(buffer),
+				MessageType.LegacyCommand => new LegacyCommandMessage(Encoding.UTF8.GetString(_buffer, 0, length)),
+				MessageType.LegacyEvent => new LegacyEventMessage(Encoding.UTF8.GetString(_buffer, 0, length)),
+				MessageType.ScreenshotResponse => new ScreenshotResponseMessage(length, _buffer),
+				MessageType.CheatReadResponse => new CheatReadResponseMessage(length > 0 ? Encoding.UTF8.GetString(_buffer, 0, length) : null),
+				MessageType.CheatReadError => new CheatReadErrorMessage(Encoding.UTF8.GetString(_buffer, 0, length)),
+				MessageType.LegacyInputCallback => new LegacyInputCallbackMessage(Encoding.UTF8.GetString(_buffer, 0, length)),
+				MessageType.InputCommand => ReadInputCommand(_buffer, length),
+				MessageType.InputCallback => ReadInputCallback(_buffer),
 				MessageType.CancelCommand => new CancelCommandMessage(),
 				MessageType.ScreenshotCommand => new ScreenshotCommandMessage(),
-				MessageType.CheatGetModuleTypeCommand => new CheatGetModuleTypeCommandMessage(new(buffer[0], buffer[1], buffer[2], buffer[3])),
-				MessageType.CheatGetModuleTypeResponse => new CheatGetModuleTypeResponseMessage(length > 0 ? Encoding.UTF8.GetString(buffer, 0, length) : null),
-				MessageType.CheatGetModuleTypeError => new CheatGetModuleTypeErrorMessage(Encoding.UTF8.GetString(buffer, 0, length)),
-				MessageType.CheatReadCommand => ReadCheatReadCommand(buffer, length),
+				MessageType.CheatGetModuleTypeCommand => new CheatGetModuleTypeCommandMessage(new(_buffer[0], _buffer[1], _buffer[2], _buffer[3])),
+				MessageType.CheatGetModuleTypeResponse => new CheatGetModuleTypeResponseMessage(length > 0 ? Encoding.UTF8.GetString(_buffer, 0, length) : null),
+				MessageType.CheatGetModuleTypeError => new CheatGetModuleTypeErrorMessage(Encoding.UTF8.GetString(_buffer, 0, length)),
+				MessageType.CheatReadCommand => ReadCheatReadCommand(_buffer, length),
 				MessageType.GameStart => new GameStartMessage(),
 				MessageType.GameEnd => new GameEndMessage(),
-				MessageType.NewBomb => ReadNewBomb(buffer),
-				MessageType.Strike => new StrikeMessage(new(buffer[0], buffer[1], buffer[2], buffer[3])),
-				MessageType.AlarmClockChange => new AlarmClockChangeMessage(buffer[0] != 0),
-				MessageType.LightsStateChange => new LightsStateChangeMessage(buffer[0] != 0),
-				MessageType.NeedyStateChange => new NeedyStateChangeMessage(new(buffer[0], buffer[1], buffer[2], buffer[3]), (NeedyState) buffer[4]),
+				MessageType.NewBomb => ReadNewBomb(_buffer),
+				MessageType.Strike => new StrikeMessage(new(_buffer[0], _buffer[1], _buffer[2], _buffer[3])),
+				MessageType.AlarmClockChange => new AlarmClockChangeMessage(_buffer[0] != 0),
+				MessageType.LightsStateChange => new LightsStateChangeMessage(_buffer[0] != 0),
+				MessageType.NeedyStateChange => new NeedyStateChangeMessage(new(_buffer[0], _buffer[1], _buffer[2], _buffer[3]), (NeedyState) _buffer[4]),
 				MessageType.BombExplode => new BombExplodeMessage(),
-				MessageType.BombDefuse => new BombDefuseMessage(buffer[0]),
+				MessageType.BombDefuse => new BombDefuseMessage(_buffer[0]),
 				_ => throw new InvalidOperationException("Unknown message type")
 			};
 			MessageReceived?.Invoke(this, new(message));

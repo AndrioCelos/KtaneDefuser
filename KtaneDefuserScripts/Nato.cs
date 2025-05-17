@@ -3,7 +3,7 @@ using JetBrains.Annotations;
 
 namespace KtaneDefuserScripts;
 [AimlInterface]
-public static class NATO {
+public static class Nato {
 	private static readonly Dictionary<char, string> EncodeMap = new(new CaseInsensitiveCharComparer());
 	private static readonly Dictionary<string, char> DecodeMap = new(StringComparer.CurrentCultureIgnoreCase);
 
@@ -12,7 +12,7 @@ public static class NATO {
 		DecodeMap[codeWord] = c;
 	}
 
-	static NATO() {
+	static Nato() {
 		Map('A', "Alfa");
 		Map('A', "Alpha");
 		Map('B', "Bravo");

@@ -3,7 +3,7 @@
 internal class Switches : ModuleScript<KtaneDefuserConnector.Components.Switches> {
 	public override string IndefiniteDescription => "Switches";
 
-	private int highlightX;
+	private int _highlightX;
 
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
@@ -13,9 +13,10 @@ internal class Switches : ModuleScript<KtaneDefuserConnector.Components.Switches
 	private async Task ReadAsync(AimlAsyncContext context) {
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		var data = interrupt.Read(Reader);
-		if (data.Selection is { } selection) highlightX = selection;
+		if (data.Selection is { } selection) _highlightX = selection;
 		context.Reply($"Current state: {Convert(data.CurrentState)}. Target state: {Convert(data.TargetState)}.");
-		
+		return;
+
 		static string Convert(bool[] state) => string.Join(' ', from b in state select b ? "up" : "down");
 	}
 
@@ -44,8 +45,8 @@ internal class Switches : ModuleScript<KtaneDefuserConnector.Components.Switches
 
 	private async Task PressButtonAsync(Interrupt interrupt, int x, bool submit) {
 		var buttons = new List<Button>();
-		for (; highlightX < x; highlightX++) buttons.Add(Button.Right);
-		for (; highlightX > x; highlightX--) buttons.Add(Button.Left);
+		for (; _highlightX < x; _highlightX++) buttons.Add(Button.Right);
+		for (; _highlightX > x; _highlightX--) buttons.Add(Button.Left);
 		buttons.Add(Button.A);
 		if (submit)
 			await interrupt.SubmitAsync(buttons);

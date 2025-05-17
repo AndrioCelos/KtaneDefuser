@@ -1,10 +1,8 @@
-﻿using KtaneDefuserConnector.DataTypes;
-
-namespace KtaneDefuserScripts.Modules;
+﻿namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Maze")]
 internal class Maze : ModuleScript<KtaneDefuserConnector.Components.Maze> {
 	public override string IndefiniteDescription => "a Maze";
-	private Direction highlight;
+	private Direction _highlight;
 
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
@@ -12,9 +10,9 @@ internal class Maze : ModuleScript<KtaneDefuserConnector.Components.Maze> {
 	internal static async Task Read(AimlAsyncContext context) {
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		var data = interrupt.Read(Reader);
-		interrupt.Context.Reply(data.Circle2 is GridCell circle2
-			? $"Markings at {NATO.Speak(data.Circle1.ToString())} and {NATO.Speak(circle2.ToString())}. Starting at {NATO.Speak(data.Start.ToString())}. The goal is {NATO.Speak(data.Goal.ToString())}."
-			: $"Marking at {NATO.Speak(data.Circle1.ToString())}. Starting at {NATO.Speak(data.Start.ToString())}. The goal is {NATO.Speak(data.Goal.ToString())}.");
+		interrupt.Context.Reply(data.Circle2 is { } circle2
+			? $"Markings at {Nato.Speak(data.Circle1.ToString())} and {Nato.Speak(circle2.ToString())}. Starting at {Nato.Speak(data.Start.ToString())}. The goal is {Nato.Speak(data.Goal.ToString())}."
+			: $"Marking at {Nato.Speak(data.Circle1.ToString())}. Starting at {Nato.Speak(data.Start.ToString())}. The goal is {Nato.Speak(data.Goal.ToString())}.");
 		interrupt.Context.AddReplies("left", "down", "up", "right");
 	}
 
@@ -32,7 +30,7 @@ internal class Maze : ModuleScript<KtaneDefuserConnector.Components.Maze> {
 	private async Task ProcessInputAsync(AimlAsyncContext context, string s) {
 		var buttons = new List<Button>();
 		var tokens = s.Split((char[]?) null, StringSplitOptions.RemoveEmptyEntries);
-		var currentHighlight = highlight;
+		var currentHighlight = _highlight;
 		for (var i = 0; i < tokens.Length; i++) {
 			var token = tokens[i].ToLowerInvariant();
 			if (token is "time" or "times" or "step" or "steps" or "space" or "spaces") continue;
@@ -43,7 +41,7 @@ internal class Maze : ModuleScript<KtaneDefuserConnector.Components.Maze> {
 				"left" or "west" => Direction.Left,
 				_ => throw new ArgumentException("Invalid direction")
 			};
-			if (tokens.ElementAtOrDefault(i + 1) is string s2 && int.TryParse(s2, out var count)) {
+			if (tokens.ElementAtOrDefault(i + 1) is { } s2 && int.TryParse(s2, out var count)) {
 				if (count is not (> 0 and < 6)) throw new ArgumentException("Invalid number of steps");
 				i++;
 			} else
@@ -56,13 +54,13 @@ internal class Maze : ModuleScript<KtaneDefuserConnector.Components.Maze> {
 			for (; count > 0; count--)
 				buttons.Add(Button.A);
 		}
-		highlight = currentHighlight;
+		_highlight = currentHighlight;
 		using var interrupt = await ModuleInterruptAsync(context);
 		var result = await interrupt.SubmitAsync(buttons);
 		if (result == ModuleLightState.Solved) return;
 
 		var data = interrupt.Read(Reader);
-		interrupt.Context.Reply($"<priority/> Now at {NATO.Speak(data.Start.ToString())}.");
+		interrupt.Context.Reply($"<priority/> Now at {Nato.Speak(data.Start.ToString())}.");
 		interrupt.Context.AddReplies("left", "down", "up", "right");
 	}
 }

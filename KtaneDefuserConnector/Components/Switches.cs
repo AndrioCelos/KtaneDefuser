@@ -11,7 +11,7 @@ public class Switches : ComponentReader<Switches.ReadData> {
 		var currentState = new bool[5];
 		var targetState = new bool[5];
 		for (var i = 0; i < 5; i++) {
-			var x = (i switch { 0 => 41, 1 => 84, 2 => 128, 3 => 172, _ => 218 }) * image.Width / 256;
+			var x = i switch { 0 => 41, 1 => 84, 2 => 128, 3 => 172, _ => 218 } * image.Width / 256;
 			if (ImageUtils.ColourCorrect(image[x, 112 * image.Height / 256], lightsState).G < 64)
 				currentState[i] = true;
 			else if (ImageUtils.ColourCorrect(image[x, 192 * image.Height / 256], lightsState).G >= 64)

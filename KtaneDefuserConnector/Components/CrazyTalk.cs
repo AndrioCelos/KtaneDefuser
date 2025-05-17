@@ -39,7 +39,7 @@ public class CrazyTalk : ComponentReader<CrazyTalk.ReadData> {
 		using var img = Pix.LoadFromMemory(ms.ToArray());
 		using var page = Tesseract.TesseractEngine.Process(img);
 		var text = page.GetText();
-		if (!string.IsNullOrWhiteSpace(text) && !text.Any(c => c is '–' or '—' or '<' or '>' or '(' or ')' or (>= 'a' and <= 'z'))) {
+		if (!string.IsNullOrWhiteSpace(text) && !text.Any(c => c is '–' or '—' or '<' or '>' or '(' or ')' or >= 'a' and <= 'z')) {
 			text = text.Trim().Replace('\n', ' ').Replace('|', 'I');
 		} else {
 			image.ProcessPixelRows(a => {
