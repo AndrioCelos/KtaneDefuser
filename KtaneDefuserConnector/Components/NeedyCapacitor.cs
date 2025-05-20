@@ -7,5 +7,5 @@ public class NeedyCapacitor : ComponentReader<NeedyCapacitor.ReadData> {
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) => new(ReadNeedyTimer(image, lightsState, debugImage));
 
-	public record ReadData(int? Time);
+	public record ReadData(int? Time) : ComponentReadData(default(Point));
 }

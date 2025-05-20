@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -23,24 +23,13 @@ public class Switches : ComponentReader<Switches.ReadData> {
 				throw new ArgumentException($"Can't read lights {i + 1}.", nameof(image));
 		}
 
-		
-		// Find the selection.
-		var highlightX = 0;
-		image.ProcessPixelRows(p => {
-			foreach (var y in image.Height.MapRange(112, 176, 8)) {
-				var row = p.GetRowSpan(y);
-				foreach (var x in image.Width.MapRange(32, 192)) {
-					if (HsvColor.FromColor(row[x]) is not { H: < 30, S: >= 0.75f, V: >= 0.5f }) continue;
-					highlightX = x;
-					return;
-				}
-			}
-		});
+		var highlight = FindSelectionHighlight(image, lightsState, 32, 112, 240, 208);
+		Point? selection = highlight.Y == 0 ? null : new(highlight.X switch { < 56 => 0, < 98 => 1, < 142 => 2, < 186 => 3, _ => 4 }, 0);
 
-		return new(currentState, targetState, highlightX == 0 ? null : (highlightX * 256 / image.Width) switch { < 56 => 0, < 98 => 1, < 142 => 2, < 186 => 3, _ => 4 });
+		return new(selection, currentState, targetState);
 	}
 
-	public record ReadData(bool[] CurrentState, bool[] TargetState, int? Selection) {
+	public record ReadData(Point? Selection, bool[] CurrentState, bool[] TargetState) : ComponentReadData(Selection) {
 		public override string ToString() => $"ReadData {{ {nameof(CurrentState)} = {string.Join(null, from b in CurrentState select b ? '^' : 'v')}, {nameof(TargetState)} = {string.Join(null, from b in TargetState select b ? '^' : 'v')}, {nameof(Selection)} = {Selection} }}";
 	}
 }

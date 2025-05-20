@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -316,17 +316,6 @@ public static class ImageUtils {
 		return (float) score / total;
 	}
 
-	/// <summary>Reads the light state of the module in the specified quadrilateral area.</summary>
-	public static ModuleLightState GetLightState(Image<Rgba32> image, Quadrilateral points) {
-		var x = (int) Math.Round(points.TopRight.X + (points.BottomLeft.X - points.TopRight.X) * 0.1015625);
-		var y = (int) Math.Round(points.TopRight.Y + (points.BottomLeft.Y - points.TopRight.Y) * 0.1015625);
-		return HsvColor.FromColor(image[x, y]) switch {
-			{ S: >= 0.85f, H: >= 105 and <= 150, V: >= 0.5f } => ModuleLightState.Solved,
-			{ S: >= 0.65f, H: >= 330 or <= 30, V: >= 0.75f } => ModuleLightState.Strike,
-			_ => ModuleLightState.Off
-		};
-	}
-
 	private static readonly Rectangle[] LightsStateSearchRects = [new(96, 48, 16, 16), new(960, 48, 16, 16), new(1748, 236, 16, 16)];
 	private static readonly int[] LightsStateSearchTolerances = [0x20000, 0x20000, 0x8000, 0x30000];
 
@@ -527,4 +516,14 @@ public static class ImageUtils {
 		for (var v = start2; v < end2; v += step)
 			yield return v;
 	}
+
+	public static bool IsSelectionHighlight(this Rgba32 p, LightsState lightsState) => IsSelectionHighlight(HsvColor.FromColor(p), lightsState);
+	public static bool IsSelectionHighlight(this HsvColor hsv, LightsState lightsState) => lightsState == LightsState.Emergency
+		? hsv is { H: >= 5 and < 15, S: >= 0.80f, V: >= 0.80f }
+		: hsv is { H: >= 5 and < 35, S: >= 0.60f, V: >= 0.60f }; 
+
+	public static bool IsSelectionHighlightStrict(this Rgba32 p, LightsState lightsState) => IsSelectionHighlightStrict(HsvColor.FromColor(p), lightsState);
+	public static bool IsSelectionHighlightStrict(this HsvColor hsv, LightsState lightsState) => lightsState is LightsState.Buzz or LightsState.Off
+		? IsSelectionHighlight(hsv, lightsState)
+		: hsv is { H: >= 6 and < 10, S: >= 0.95f, V: >= 0.95f };
 }

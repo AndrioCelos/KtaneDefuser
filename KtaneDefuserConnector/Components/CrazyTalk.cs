@@ -116,5 +116,5 @@ public class CrazyTalk : ComponentReader<CrazyTalk.ReadData> {
 		static bool IsText(Rgba32 p) => p is { R: < 64, G: >= 112, B: 0 };
 	}
 
-	public record struct ReadData(string Display, bool SwitchIsDown);
+	public record ReadData(string Display, bool SwitchIsDown) : ComponentReadData(default(Point));
 }

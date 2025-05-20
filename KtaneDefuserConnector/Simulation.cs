@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Timers;
@@ -302,7 +302,7 @@ internal partial class Simulation {
 	public ComponentReader? GetComponentReader(Slot slot) => _moduleFaces[slot.Face].Slots[slot.Y, slot.X]?.Reader;
 
 	/// <summary>Reads component data of the specified type from the component at the specified point.</summary>
-	public T ReadComponent<T>(Quadrilateral quadrilateral) where T : notnull {
+	public T ReadComponent<T>(Quadrilateral quadrilateral) where T : ComponentReadData {
 		var component = GetComponent(quadrilateral) ?? throw new ArgumentException("Attempted to read an empty component slot.");
 		return component is TimerComponent timerComponent
 			? timerComponent.Details is T t ? t : throw new ArgumentException("Wrong type for specified component.")
@@ -321,7 +321,7 @@ internal partial class Simulation {
 	}
 
 	/// <summary>Returns the light state of the module at the specified point.</summary>
-	public ModuleLightState GetLightState(Quadrilateral quadrilateral) => GetComponent(quadrilateral) is Module module and not NeedyModule ? module.LightState : ModuleLightState.Off;
+	public ModuleStatus GetLightState(Quadrilateral quadrilateral) => GetComponent(quadrilateral) is Module module and not NeedyModule ? module.LightState : ModuleStatus.Off;
 
 	private BombComponent? GetComponent(Quadrilateral quadrilateral) {
 		switch (_focusState) {
@@ -333,9 +333,9 @@ internal partial class Simulation {
 			}
 			case FocusStates.Module: {
 				var face = SelectedFace;
-				var slotDX = quadrilateral.TopLeft.X switch { <= 220 => -2, <= 535 => -1, <= 840 => 0, <= 1164 => 1, _ => 2 };
-				var slotDY = quadrilateral.TopLeft.Y switch { <= 102 => -1, <= 393 => 0, _ => 1 };
-				return face.Slots[face.Y + slotDY, face.X + slotDX];
+				var slotDx = quadrilateral.TopLeft.X switch { <= 220 => -2, <= 535 => -1, <= 840 => 0, <= 1164 => 1, _ => 2 };
+				var slotDy = quadrilateral.TopLeft.Y switch { <= 102 => -1, <= 393 => 0, _ => 1 };
+				return face.Slots[face.Y + slotDy, face.X + slotDx];
 			}
 			default:
 				throw new InvalidOperationException($"Can't identify modules from state {_focusState}.");
@@ -478,15 +478,15 @@ internal partial class Simulation {
 	private abstract partial class Module : BombComponent {
 		protected readonly Simulation Simulation;
 		protected readonly ILogger Logger;
-		private readonly Timer resetLightTimer = new(2000) { AutoReset = false };
+		private readonly Timer _resetLightTimer = new(2000) { AutoReset = false };
 
 		private static int _nextId;
 
+		// ReSharper disable once InconsistentNaming
 		internal int ID { get; }
-		public ModuleLightState LightState { get; private set; }
+		public ModuleStatus LightState { get; private set; }
 
-		protected int X;
-		protected int Y;
+		protected Point Selection;
 		protected bool[,] SelectableGrid { get; }
 
 		public event EventHandler? Strike;
@@ -496,21 +496,20 @@ internal partial class Simulation {
 			Logger = simulation._loggerFactory.CreateLogger(GetType());
 			_nextId++;
 			ID = _nextId;
-			resetLightTimer.Elapsed += ResetLightTimer_Elapsed;
+			_resetLightTimer.Elapsed += ResetLightTimer_Elapsed;
 			SelectableGrid = new bool[selectableHeight, selectableWidth];
 			for (var y = 0; y < selectableHeight; y++)
 				for (var x = 0; x < selectableWidth; x++)
 					SelectableGrid[y, x] = true;
 		}
 
-		private void ResetLightTimer_Elapsed(object? sender, ElapsedEventArgs e) => LightState = ModuleLightState.Off;
+		private void ResetLightTimer_Elapsed(object? sender, ElapsedEventArgs e) => LightState = ModuleStatus.Off;
 
 		public void InitialiseHighlight() {
 			for (var y = 0; y < SelectableGrid.GetLength(0); y++) {
 				for (var x = 0; x < SelectableGrid.GetLength(1); x++) {
 					if (!SelectableGrid[y, x]) continue;
-					X = x;
-					Y = y;
+					Selection = new(x, y);
 					return;
 				}
 			}
@@ -520,21 +519,19 @@ internal partial class Simulation {
 			for (var side = 0; side < 3; side++) {
 				for (var forward = 1; forward < 3; forward++) {
 					var (x1, y1, x2, y2) = direction switch {
-						Direction.Up => (X - side, Y - forward, X + side, Y - forward),
-						Direction.Right => (X + forward, Y - side, X + forward, Y + side),
-						Direction.Down => (X - side, Y + forward, X + side, Y + forward),
-						_ => (X - forward, Y - side, X - forward, Y + side)
+						Direction.Up => (Selection.X - side, Selection.Y - forward, Selection.X + side, Selection.Y - forward),
+						Direction.Right => (Selection.X + forward, Selection.Y - side, Selection.X + forward, Selection.Y + side),
+						Direction.Down => (Selection.X - side, Selection.Y + forward, Selection.X + side, Selection.Y + forward),
+						_ => (Selection.X - forward, Selection.Y - side, Selection.X - forward, Selection.Y + side)
 					};
 					if (x1 >= 0 && x1 < SelectableGrid.GetLength(1) && y1 >= 0 && y1 < SelectableGrid.GetLength(0)
 						&& SelectableGrid[y1, x1]) {
-						X = x1;
-						Y = y1;
+						Selection = new(x1, y1);
 						return;
 					}
 					if (x2 >= 0 && x2 < SelectableGrid.GetLength(1) && y2 >= 0 && y2 < SelectableGrid.GetLength(0)
 						&& SelectableGrid[y2, x2]) {
-						X = x2;
-						Y = y2;
+						Selection = new(x2, y2);
 						return;
 					}
 				}
@@ -543,22 +540,22 @@ internal partial class Simulation {
 		}
 
 		public void Solve() {
-			if (LightState == ModuleLightState.Solved) return;
+			if (LightState == ModuleStatus.Solved) return;
 			LogModuleSolved(Reader.Name);
-			LightState = ModuleLightState.Solved;
-			resetLightTimer.Stop();
+			LightState = ModuleStatus.Solved;
+			_resetLightTimer.Stop();
 		}
 
 		public void StrikeFlash() {
 			LogModuleStrike(Reader.Name);
-			if (LightState == ModuleLightState.Solved) return;
-			LightState = ModuleLightState.Strike;
-			resetLightTimer.Stop();
-			resetLightTimer.Start();
+			if (LightState == ModuleStatus.Solved) return;
+			LightState = ModuleStatus.Strike;
+			_resetLightTimer.Stop();
+			_resetLightTimer.Start();
 			Strike?.Invoke(this, EventArgs.Empty);
 		}
 
-		public virtual void Interact() => LogModuleInteraction(X, Y, Reader.Name);
+		public virtual void Interact() => LogModuleInteraction(Selection.X, Selection.Y, Reader.Name);
 		public virtual void StopInteract() { }
 
 		#region Log templates
@@ -584,11 +581,11 @@ internal partial class Simulation {
 		#endregion
 	}
 
-	private abstract class Module<TDetails>(Simulation simulation, ComponentReader<TDetails> reader, TDetails details, int selectableWidth, int selectableHeight) : Module(simulation, reader, selectableWidth, selectableHeight) where TDetails : notnull {
+	private abstract class Module<TDetails>(Simulation simulation, ComponentReader<TDetails> reader, TDetails details, int selectableWidth, int selectableHeight) : Module(simulation, reader, selectableWidth, selectableHeight) where TDetails : ComponentReadData {
 		internal virtual TDetails Details { get; } = details;
 		internal override string DetailsString => Details.ToString() ?? "";
 
-		protected Module(Simulation simulation, ComponentReader<TDetails> reader, int selectableWidth, int selectableHeight) : this(simulation, reader, default!, selectableWidth, selectableHeight) { }
+		protected Module(Simulation simulation, ComponentReader<TDetails> reader, int selectableWidth, int selectableHeight) : this(simulation, reader, null!, selectableWidth, selectableHeight) { }
 	}
 
 	private abstract partial class NeedyModule : Module {
@@ -672,11 +669,11 @@ internal partial class Simulation {
 		#endregion
 	}
 
-	private abstract class NeedyModule<TDetails>(Simulation simulation, ComponentReader<TDetails> reader, TDetails details, int selectableWidth, int selectableHeight) : NeedyModule(simulation, reader, selectableWidth, selectableHeight) where TDetails : notnull {
+	private abstract class NeedyModule<TDetails>(Simulation simulation, ComponentReader<TDetails> reader, TDetails details, int selectableWidth, int selectableHeight) : NeedyModule(simulation, reader, selectableWidth, selectableHeight) where TDetails : ComponentReadData {
 		internal virtual TDetails Details { get; } = details;
 		internal override string DetailsString => Details.ToString() ?? "";
 
-		protected NeedyModule(Simulation simulation, ComponentReader<TDetails> reader, int selectableWidth, int selectableHeight) : this(simulation, reader, default!, selectableWidth, selectableHeight) { }
+		protected NeedyModule(Simulation simulation, ComponentReader<TDetails> reader, int selectableWidth, int selectableHeight) : this(simulation, reader, null!, selectableWidth, selectableHeight) { }
 	}
 
 	private class TimerComponent : BombComponent {

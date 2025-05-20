@@ -120,7 +120,8 @@ public partial class AnalysisViewModel : ViewModelBase {
 					break;
 				}
 				case AnalysisType.GetModuleLightState: {
-					var result = ImageUtils.GetLightState(InputImage, InputImage.Bounds);
+					var reader = _connector.GetComponentReader(InputImage, InputImage.Bounds);
+					var result = reader?.GetStatus(InputImage, InputImage.Bounds, ImageUtils.GetLightsState(InputImage));
 					s = result.ToString();
 					break;
 				}
@@ -184,7 +185,8 @@ public partial class AnalysisViewModel : ViewModelBase {
 					try {
 						var reader = (object?) SelectedAnalyserOption.ComponentReader ?? SelectedAnalyserOption.WidgetReader;
 						if (reader is not null) {
-							var result = reader.GetType().GetMethod(nameof(ComponentReader<>.Process), BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(reader, args);
+							var method = reader.GetType().GetMethod(nameof(ComponentReader<>.Process), BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, [typeof(Image<Rgba32>), typeof(LightsState), typeof(Image<Rgba32>).MakeByRefType()])!;
+							var result = method.Invoke(reader, args);
 							s = result?.ToString();
 						}
 					} finally {

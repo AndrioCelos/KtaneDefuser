@@ -127,7 +127,7 @@ internal class Semaphore : ModuleScript<KtaneDefuserConnector.Components.Semapho
 			return Task.CompletedTask;
 		}
 
-		var i = script._displays.IndexOf(new(leftFlag, rightFlag));
+		var i = script._displays.IndexOf(new(new(2, 0), leftFlag, rightFlag));
 		if (i < 0) {
 			context.Reply("That signal was not present.");
 			return Task.CompletedTask;

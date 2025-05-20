@@ -1,4 +1,4 @@
-﻿namespace KtaneDefuserScripts.Modules;
+namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Memory")]
 internal class Memory : ModuleScript<KtaneDefuserConnector.Components.Memory> {
 	public override string IndefiniteDescription => "Memory";
@@ -69,8 +69,8 @@ internal class Memory : ModuleScript<KtaneDefuserConnector.Components.Memory> {
 		using var interrupt = await ModuleInterruptAsync(context);
 		_highlight = highlight;
 		var result = await interrupt.SubmitAsync(buttons);
-		if (result != ModuleLightState.Solved) {
-			if (result == ModuleLightState.Off)
+		if (result != ModuleStatus.Solved) {
+			if (result == ModuleStatus.Off)
 				interrupt.Context.Reply(fromLabel ? $"The position was {index + 1}." : $"The label was {_keyLabels[index]}.");
 			await WaitRead(interrupt);
 		}

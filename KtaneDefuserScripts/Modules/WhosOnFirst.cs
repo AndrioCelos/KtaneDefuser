@@ -1,4 +1,4 @@
-﻿namespace KtaneDefuserScripts.Modules;
+namespace KtaneDefuserScripts.Modules;
 [AimlInterface("WhosOnFirst")]
 internal class WhosOnFirst : ModuleScript<KtaneDefuserConnector.Components.WhosOnFirst> {
 	public override string IndefiniteDescription => "Who's on First";
@@ -85,7 +85,7 @@ internal class WhosOnFirst : ModuleScript<KtaneDefuserConnector.Components.WhosO
 		_highlight = highlight;
 		using var interrupt = await ModuleInterruptAsync(context);
 		var result = await interrupt.SubmitAsync(buttons);
-		if (result != ModuleLightState.Solved) await WaitRead(interrupt);
+		if (result != ModuleStatus.Solved) await WaitRead(interrupt);
 	}
 
 	private static string PronouncePhrase(Phrase phrase) => phrase switch {

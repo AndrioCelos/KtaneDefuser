@@ -1,4 +1,4 @@
-﻿using JetBrains.Annotations;
+using JetBrains.Annotations;
 
 namespace KtaneDefuserScripts;
 /// <summary>Represents a context for performing a task that cannot be interrupted by other bot actions.</summary>
@@ -8,8 +8,6 @@ namespace KtaneDefuserScripts;
 /// </remarks>
 [MustDisposeResource]
 public class Interrupt : IDisposable {
-	[Obsolete("String inputs are being replaced with IInputAction")]
-	private static readonly AimlTaskFactory SendInputsFactory = new("<oob><sendinputs>{0} callback:{ID}</sendinputs></oob>");
 	[AimlResponse("OOB DefuserCallback *")]
 	private static readonly AimlTaskFactory InputCallbackFactory = new(null);
 
@@ -73,7 +71,7 @@ public class Interrupt : IDisposable {
 	}
 
 	/// <summary>Reads data from the currently focused module using the specified <see cref="ComponentReader"/>.</summary>
-	public T Read<T>(ComponentReader<T> reader) where T : notnull {
+	public T Read<T>(ComponentReader<T> reader) where T : ComponentReadData {
 		ObjectDisposedException.ThrowIf(IsDisposed, this);
 		using var ss = DefuserConnector.Instance.TakeScreenshot();
 		return DefuserConnector.Instance.ReadComponent(ss, DefuserConnector.Instance.GetLightsState(ss), reader, Utils.CurrentModuleArea);
@@ -105,9 +103,9 @@ public class Interrupt : IDisposable {
 	}
 
 	/// <summary>Performs the specified input actions, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
-	public Task<ModuleLightState> SubmitAsync(params IEnumerable<Button> buttons) => SubmitAsync(from b in buttons select new ButtonAction(b));
+	public Task<ModuleStatus> SubmitAsync(params IEnumerable<Button> buttons) => SubmitAsync(from b in buttons select new ButtonAction(b));
 	/// <summary>Performs the specified input actions, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
-	public async Task<ModuleLightState> SubmitAsync(params IEnumerable<IInputAction> actions) {
+	public async Task<ModuleStatus> SubmitAsync(params IEnumerable<IInputAction> actions) {
 		ObjectDisposedException.ThrowIf(IsDisposed, this);
 		if (_submitCancellationTokenSource is not null) throw new InvalidOperationException("Already submitting.");
 		if (GameState.Current.CurrentModuleNum is null) throw new InvalidOperationException("No current module.");
@@ -121,8 +119,8 @@ public class Interrupt : IDisposable {
 			await SendInputsAsync(actions, _submitCancellationTokenSource.Token);
 			await Delay(0.5);  // Wait for the interaction punch to end.
 			using var ss = DefuserConnector.Instance.TakeScreenshot();
-			var result = DefuserConnector.Instance.GetModuleLightState(ss, Utils.CurrentModuleArea);
-			if (result != ModuleLightState.Solved) return result;
+			var result = DefuserConnector.Instance.GetModuleStatus(ss, Utils.CurrentModuleArea, ImageUtils.GetLightsState(ss), module.Reader);
+			if (result != ModuleStatus.Solved) return result;
 			var isDefused = GameState.Current.TryMarkModuleSolved(context, GameState.Current.CurrentModuleNum.Value);
 			if (isDefused)
 				context.Reply("The bomb is defused.");
@@ -136,7 +134,7 @@ public class Interrupt : IDisposable {
 			}
 			return result;
 		} catch (TaskCanceledException) {
-			return ModuleLightState.Strike;
+			return ModuleStatus.Strike;
 		} finally {
 			_submitCancellationTokenSource?.Dispose();
 			_submitCancellationTokenSource = null;

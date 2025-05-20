@@ -13,7 +13,7 @@ internal class Switches : ModuleScript<KtaneDefuserConnector.Components.Switches
 	private async Task ReadAsync(AimlAsyncContext context) {
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		var data = interrupt.Read(Reader);
-		if (data.Selection is { } selection) _highlightX = selection;
+		if (data.Selection is { } selection) _highlightX = selection.X;
 		context.Reply($"Current state: {Convert(data.CurrentState)}. Target state: {Convert(data.TargetState)}.");
 		return;
 

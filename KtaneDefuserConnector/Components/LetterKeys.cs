@@ -14,7 +14,7 @@ public class LetterKeys : ComponentReader<LetterKeys.ReadData> {
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		// Find the display bounding box.
 		var baseRect = image.Map(80, 12, 64, 52);
-		var rect = ImageUtils.FindEdges(image, baseRect, p => p is { R: >= 160, G: < 16, B: < 16 });
+		var rect = ImageUtils.FindEdges(image, baseRect, p => ImageUtils.ColourCorrect(p, lightsState) is { R: >= 160, G: < 16, B: < 16 });
 
 		// Find the character bounding boxes.
 		var display = 0;
@@ -41,29 +41,22 @@ public class LetterKeys : ComponentReader<LetterKeys.ReadData> {
 		var labels = new char[4];
 		for (var i = 0; i < 4; i++) {
 			var keyBaseRect = image.Map(i % 2 == 0 ? 36 : 122, i < 2 ? 81 : 162, 61, 58);
-			var keyRect = ImageUtils.FindEdges(image, keyBaseRect, p => p.R < 128);
+			var keyRect = ImageUtils.FindEdges(image, keyBaseRect, lightsState switch {
+				LightsState.Buzz => p => p.R < 20,
+				LightsState.Off => p => p.R < 4,
+				_ => p => p.R < 128
+			});
 			debugImage?.Mutate(c => c.Draw(Color.Magenta, 1, keyRect));
-			labels[i] = LetterRecogniser.Recognise(image, keyRect)[0];
+			labels[i] = LetterRecogniser.Recognise(image, keyRect, lightsState switch { LightsState.Buzz => 50, LightsState.Off => 8, _ => 216 }, 0)[0];
 		}
 
-		// Find the selection.
-		Point point = default;
-		image.ProcessPixelRows(p => {
-			foreach (var y in image.Height.MapRange(64, 236, 8)) {
-				var row = p.GetRowSpan(y);
-				foreach (var x in image.Width.MapRange(20, 200, 2)) {
-					if (HsvColor.FromColor(row[x]) is { H: < 30, S: >= 0.65f, V: >= 0.5f }) {
-						point = new(x, y);
-						return;
-					}
-				}
-			}
-		});
+		var highlight = FindSelectionHighlight(image, lightsState, 16, 56, 200, 236);
+		Point? selection = highlight.X == 0 ? null : new(highlight.X < 96 ? 0 : 1, highlight.Y < 136 ? 0 : 1);
 
-		return new(display, labels, point.Y == 0 ? null : new((point.X * 256 / image.Width) < 96 ? 0 : 1, (point.Y * 256 / image.Height) < 140 ? 0 : 1));
+		return new(selection, display, labels);
 	}
 
-	public record ReadData(int Display, char[] ButtonLabels, Point? Selection) {
+	public record ReadData(Point? Selection, int Display, char[] ButtonLabels) : ComponentReadData(Selection) {
 		public override string ToString() => $"ReadData {{ {nameof(Display)} = {Display}, {nameof(ButtonLabels)} = {string.Join(null, ButtonLabels)}, {nameof(Selection)} = {Selection} }}";
 
 	}

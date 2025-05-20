@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using SixLabors.ImageSharp;
@@ -131,10 +131,19 @@ public class Password : ComponentReader<Password.ReadData> {
 			}
 		});
 
-		return new(chars);
+		Point? selection
+			= FindSelectionHighlight(image, lightsState, 32, 48, 216, 72) is { Y: not 0 } p1
+			? new Point(p1.X switch { < 66 => 0, < 104 => 1, < 140 => 2, < 176 => 3, _ => 4 }, 0)
+			: FindSelectionHighlight(image, lightsState, 32, 176, 216, 196) is { Y: not 0 } p2
+			? new Point(p2.X switch { < 66 => 0, < 104 => 1, < 140 => 2, < 176 => 3, _ => 4 }, 1)
+			: FindSelectionHighlight(image, lightsState, 90, 200, 168, 224).Y != 0
+			? new Point(2, 2)
+			: null;
+
+		return new(selection, chars);
 	}
 
-	public record ReadData(char[] Display) {
+	public record ReadData(Point? Selection, char[] Display) : ComponentReadData(Selection) {
 		public override string ToString() => new(Display);
 	}
 }

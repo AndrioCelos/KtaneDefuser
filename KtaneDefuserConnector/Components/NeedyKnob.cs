@@ -54,7 +54,7 @@ public class NeedyKnob : ComponentReader<NeedyKnob.ReadData> {
 		return new(time, lights);
 	}
 
-	public record ReadData(int? Time, bool[] Lights) {
+	public record ReadData(int? Time, bool[] Lights) : ComponentReadData(default(Point)) {
 		public override string ToString() => $"ReadData {{ Time = {Time}, Lights = ({string.Join(", ", Lights)}) }}";
 	}
 }

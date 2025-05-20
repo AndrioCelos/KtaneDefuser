@@ -35,8 +35,16 @@ public class SimonSays : ComponentReader<SimonSays.ReadData> {
 				}
 			}
 		});
-		return new(red >= 2500 ? SimonColour.Red : yellow >= 2500 ? SimonColour.Yellow : green >= 2500 ? SimonColour.Green : blue >= 2500 ? SimonColour.Blue : null);
+		
+		Point? selection
+			= FindSelectionHighlight(image, lightsState, 96, 12, 160, 36).Y != 0 ? new Point(1, 0)
+			: FindSelectionHighlight(image, lightsState, 16, 90, 40, 154).Y != 0 ? new Point(0, 1)
+			: FindSelectionHighlight(image, lightsState, 212, 90, 236, 154).Y != 0 ? new Point(2, 1)
+			: FindSelectionHighlight(image, lightsState, 96, 216, 160, 240).Y != 0 ? new Point(1, 2)
+			: null;
+
+		return new(selection, red >= 2500 ? SimonColour.Red : yellow >= 2500 ? SimonColour.Yellow : green >= 2500 ? SimonColour.Green : blue >= 2500 ? SimonColour.Blue : null);
 	}
 
-	public record ReadData(SimonColour? Colour);
+	public record ReadData(Point? Selection, SimonColour? Colour) : ComponentReadData(Selection);
 }

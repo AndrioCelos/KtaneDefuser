@@ -1,4 +1,4 @@
-﻿using KtaneDefuserConnector.DataTypes;
+using KtaneDefuserConnector.DataTypes;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("SimonSays")]
@@ -57,9 +57,9 @@ internal partial class SimonSays : ModuleScript<KtaneDefuserConnector.Components
 			}
 			_highlight = highlight;
 			var result = await interrupt.SubmitAsync(buttons);
-			if (result != ModuleLightState.Strike) {
+			if (result != ModuleStatus.Strike) {
 				_stagesCleared++;
-				if (result == ModuleLightState.Solved) return;
+				if (result == ModuleStatus.Solved) return;
 
 				await Delay(1);
 				var colour = await ReadLastColourAsync(interrupt);

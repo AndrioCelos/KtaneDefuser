@@ -37,22 +37,11 @@ public class EmojiMath : ComponentReader<EmojiMath.ReadData> {
 			builder.Append(TextRecogniser.Recognise(image, charRect));
 		}
 
-		// Find the selection.
-		Point point = default;
-		image.ProcessPixelRows(p => {
-			foreach (var y in image.Height.MapRange(80, 192, 8)) {
-				var row = p.GetRowSpan(y);
-				foreach (var x in image.Width.MapRange(32, 192, 2)) {
-					if (HsvColor.FromColor(row[x]) is { H: < 30, S: >= 0.65f, V: >= 0.5f }) {
-						point = new(x, y);
-						return;
-					}
-				}
-			}
-		});
+		var highlight = FindSelectionHighlight(image, lightsState, 32, 80, 192, 192);
+		Point? selection = highlight.Y == 0 ? null : new(highlight.X switch { < 66 => 0, < 108 => 1, < 150 => 2, _ => 3 }, highlight.Y switch { < 128 => 0, < 168 => 1, _ => 2 });
 
-		return new(builder.ToString(), point.Y == 0 ? null : new((point.X * 256 / image.Width) switch { < 66 => 0, < 108 => 1, < 150 => 2, _ => 3 }, (point.Y * 256 / image.Height) switch { < 128 => 0, < 168 => 1, _ => 2 }));
+		return new(selection, builder.ToString());
 	}
 
-	public record ReadData(string Display, Point? Selection);
+	public record ReadData(Point? Selection, string Display) : ComponentReadData(Selection);
 }

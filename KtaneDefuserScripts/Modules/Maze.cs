@@ -1,4 +1,4 @@
-﻿namespace KtaneDefuserScripts.Modules;
+namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Maze")]
 internal class Maze : ModuleScript<KtaneDefuserConnector.Components.Maze> {
 	public override string IndefiniteDescription => "a Maze";
@@ -57,7 +57,7 @@ internal class Maze : ModuleScript<KtaneDefuserConnector.Components.Maze> {
 		_highlight = currentHighlight;
 		using var interrupt = await ModuleInterruptAsync(context);
 		var result = await interrupt.SubmitAsync(buttons);
-		if (result == ModuleLightState.Solved) return;
+		if (result == ModuleStatus.Solved) return;
 
 		var data = interrupt.Read(Reader);
 		interrupt.Context.Reply($"<priority/> Now at {Nato.Speak(data.Start.ToString())}.");

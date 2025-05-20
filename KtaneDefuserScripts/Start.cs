@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using AngelAiml;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -126,8 +126,8 @@ internal static partial class Start {
 
 			var module = RegisterComponent(interrupt, slot, component);
 			if (module is not null) {
-				var lightState = DefuserConnector.Instance.GetModuleLightState(screenshot, points);
-				if (lightState == ModuleLightState.Solved) {
+				var lightState = DefuserConnector.Instance.GetModuleStatus(screenshot, points, ImageUtils.GetLightsState(screenshot), module.Reader);
+				if (lightState == ModuleStatus.Solved) {
 					LogSolvedModule(_logger, module.Script.ModuleIndex + 1);
 					module.IsSolved = true;
 				}

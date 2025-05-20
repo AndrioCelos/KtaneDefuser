@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<!-- 
+		Microsoft ResX Schema 
+		
+		Version 2.0
+		
+		The primary goals of this format is to allow a simple XML format 
+		that is mostly human readable. The generation and parsing of the 
+		various data types are done through the TypeConverter classes 
+		associated with the data types.
+		
+		Example:
+		
+		... ado.net/XML headers & schema ...
+		<resheader name="resmimetype">text/microsoft-resx</resheader>
+		<resheader name="version">2.0</resheader>
+		<resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+		<resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+		<data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+		<data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+		<data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+				<value>[base64 mime encoded serialized .NET Framework object]</value>
+		</data>
+		<data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+				<value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+				<comment>This is a comment</comment>
+		</data>
+								
+		There are any number of "resheader" rows that contain simple 
+		name/value pairs.
+		
+		Each data row contains a name, and value. The row also contains a 
+		type or mimetype. Type corresponds to a .NET class that support 
+		text/value conversion through the TypeConverter architecture. 
+		Classes that don't support this are serialized and stored with the 
+		mimetype set.
+		
+		The mimetype is used for serialized objects, and tells the 
+		ResXResourceReader how to depersist the object. This is currently not 
+		extensible. For a given mimetype the value must be set accordingly:
+		
+		Note - application/x-microsoft.net.object.binary.base64 is the format 
+		that the ResXResourceWriter will generate, however the reader can 
+		read any of the formats listed below.
+		
+		mimetype: application/x-microsoft.net.object.binary.base64
+		value	 : The object must be serialized with 
+						: System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+						: and then encoded with base64 encoding.
+		
+		mimetype: application/x-microsoft.net.object.soap.base64
+		value	 : The object must be serialized with 
+						: System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+						: and then encoded with base64 encoding.
+
+		mimetype: application/x-microsoft.net.object.bytearray.base64
+		value	 : The object must be serialized into a byte array 
+						: using a System.ComponentModel.TypeConverter
+						: and then encoded with base64 encoding.
+		-->
+	<xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+		<xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+		<xsd:element name="root" msdata:IsDataSet="true">
+			<xsd:complexType>
+				<xsd:choice maxOccurs="unbounded">
+					<xsd:element name="metadata">
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="value" type="xsd:string" minOccurs="0" />
+							</xsd:sequence>
+							<xsd:attribute name="name" use="required" type="xsd:string" />
+							<xsd:attribute name="type" type="xsd:string" />
+							<xsd:attribute name="mimetype" type="xsd:string" />
+							<xsd:attribute ref="xml:space" />
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="assembly">
+						<xsd:complexType>
+							<xsd:attribute name="alias" type="xsd:string" />
+							<xsd:attribute name="name" type="xsd:string" />
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="data">
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+								<xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+							</xsd:sequence>
+							<xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+							<xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+							<xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+							<xsd:attribute ref="xml:space" />
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="resheader">
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+							</xsd:sequence>
+							<xsd:attribute name="name" type="xsd:string" use="required" />
+						</xsd:complexType>
+					</xsd:element>
+				</xsd:choice>
+			</xsd:complexType>
+		</xsd:element>
+	</xsd:schema>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>2.0</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+	<assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+	<data name="Anagrams1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Anagrams/1.png;System.Byte[], mscorlib</value></data>
+	<data name="Anagrams2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Anagrams/2.png;System.Byte[], mscorlib</value></data>
+	<data name="Anagrams3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Anagrams/3.png;System.Byte[], mscorlib</value></data>
+	<data name="Anagrams4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Anagrams/4.png;System.Byte[], mscorlib</value></data>
+	<data name="Button1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Button/1.png;System.Byte[], mscorlib</value></data>
+	<data name="Button2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Button/2.png;System.Byte[], mscorlib</value></data>
+	<data name="Button3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Button/3.png;System.Byte[], mscorlib</value></data>
+	<data name="Button4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Button/4.png;System.Byte[], mscorlib</value></data>
+	<data name="Button5" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Button/5.png;System.Byte[], mscorlib</value></data>
+	<data name="Button6" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Button/6.png;System.Byte[], mscorlib</value></data>
+	<data name="ColourFlash1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Colour Flash/1.png;System.Byte[], mscorlib</value></data>
+	<data name="ColourFlash2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Colour Flash/2.png;System.Byte[], mscorlib</value></data>
+	<data name="ColourFlash3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Colour Flash/3.png;System.Byte[], mscorlib</value></data>
+	<data name="ComplicatedWires1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Complicated Wires/1.png;System.Byte[], mscorlib</value></data>
+	<data name="ComplicatedWires2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Complicated Wires/2.png;System.Byte[], mscorlib</value></data>
+	<data name="ComplicatedWires3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Complicated Wires/3.png;System.Byte[], mscorlib</value></data>
+	<data name="ComplicatedWires4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Complicated Wires/4.png;System.Byte[], mscorlib</value></data>
+	<data name="ComplicatedWires5" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Complicated Wires/5.png;System.Byte[], mscorlib</value></data>
+	<data name="CrazyTalk1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Crazy Talk/1.png;System.Byte[], mscorlib</value></data>
+	<data name="CrazyTalk2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Crazy Talk/2.png;System.Byte[], mscorlib</value></data>
+	<data name="CrazyTalk3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Crazy Talk/3.png;System.Byte[], mscorlib</value></data>
+	<data name="CrazyTalk4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Crazy Talk/4.png;System.Byte[], mscorlib</value></data>
+	<data name="EmojiMath1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Emoji Math/1.png;System.Byte[], mscorlib</value></data>
+	<data name="EmojiMath2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Emoji Math/2.png;System.Byte[], mscorlib</value></data>
+	<data name="EmojiMath3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Emoji Math/3.png;System.Byte[], mscorlib</value></data>
+	<data name="EmojiMath4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Emoji Math/4.png;System.Byte[], mscorlib</value></data>
+	<data name="Keypad1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Keypad/1.png;System.Byte[], mscorlib</value></data>
+	<data name="Keypad2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Keypad/2.png;System.Byte[], mscorlib</value></data>
+	<data name="Keypad3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Keypad/3.png;System.Byte[], mscorlib</value></data>
+	<data name="Keypad4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Keypad/4.png;System.Byte[], mscorlib</value></data>
+	<data name="LetterKeys1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Letter Keys/1.png;System.Byte[], mscorlib</value></data>
+	<data name="LetterKeys2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Letter Keys/2.png;System.Byte[], mscorlib</value></data>
+	<data name="LetterKeys3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Letter Keys/3.png;System.Byte[], mscorlib</value></data>
+	<data name="LetterKeys4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Letter Keys/4.png;System.Byte[], mscorlib</value></data>
+	<data name="LightsOut1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Lights Out/1.png;System.Byte[], mscorlib</value></data>
+	<data name="LightsOut2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Lights Out/2.png;System.Byte[], mscorlib</value></data>
+	<data name="LightsOut3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Lights Out/3.png;System.Byte[], mscorlib</value></data>
+	<data name="LightsOut4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Lights Out/4.png;System.Byte[], mscorlib</value></data>
+	<data name="LightsOut5" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Lights Out/5.png;System.Byte[], mscorlib</value></data>
+	<data name="Maze1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Maze/1.png;System.Byte[], mscorlib</value></data>
+	<data name="Maze2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Maze/2.png;System.Byte[], mscorlib</value></data>
+	<data name="Maze3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Maze/3.png;System.Byte[], mscorlib</value></data>
+	<data name="Maze4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Maze/4.png;System.Byte[], mscorlib</value></data>
+	<data name="Memory1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Memory/1.png;System.Byte[], mscorlib</value></data>
+	<data name="Memory2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Memory/2.png;System.Byte[], mscorlib</value></data>
+	<data name="Memory3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Memory/3.png;System.Byte[], mscorlib</value></data>
+	<data name="Memory4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Memory/4.png;System.Byte[], mscorlib</value></data>
+	<data name="MorseCode1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Morse Code/1.png;System.Byte[], mscorlib</value></data>
+	<data name="MorseCode2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Morse Code/2.png;System.Byte[], mscorlib</value></data>
+	<data name="MorseCode3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Morse Code/3.png;System.Byte[], mscorlib</value></data>
+	<data name="MorseCode4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Morse Code/4.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyCapacitor1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Capacitor/1.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyCapacitor2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Capacitor/2.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyCapacitor3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Capacitor/3.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyCapacitor4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Capacitor/4.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyKnob1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Knob/1.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyKnob2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Knob/2.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyKnob3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Knob/3.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyKnob4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Knob/4.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyKnob5" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Knob/5.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyMath1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Math/1.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyMath2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Math/2.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyMath3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Math/3.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyMath4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Math/4.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyMath5" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Math/5.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyVentGas1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Vent Gas/1.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyVentGas2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Vent Gas/2.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyVentGas3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Vent Gas/3.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyVentGas4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Vent Gas/4.png;System.Byte[], mscorlib</value></data>
+	<data name="NeedyVentGas5" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Needy Vent Gas/5.png;System.Byte[], mscorlib</value></data>
+	<data name="Password1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Password/1.png;System.Byte[], mscorlib</value></data>
+	<data name="Password2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Password/2.png;System.Byte[], mscorlib</value></data>
+	<data name="Password3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Password/3.png;System.Byte[], mscorlib</value></data>
+	<data name="Password4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Password/4.png;System.Byte[], mscorlib</value></data>
+	<data name="PianoKeys1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Piano Keys/1.png;System.Byte[], mscorlib</value></data>
+	<data name="PianoKeys2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Piano Keys/2.png;System.Byte[], mscorlib</value></data>
+	<data name="PianoKeys3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Piano Keys/3.png;System.Byte[], mscorlib</value></data>
+	<data name="PianoKeys4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Piano Keys/4.png;System.Byte[], mscorlib</value></data>
+	<data name="Semaphore1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Semaphore/1.png;System.Byte[], mscorlib</value></data>
+	<data name="Semaphore2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Semaphore/2.png;System.Byte[], mscorlib</value></data>
+	<data name="Semaphore3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Semaphore/3.png;System.Byte[], mscorlib</value></data>
+	<data name="Semaphore4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Semaphore/4.png;System.Byte[], mscorlib</value></data>
+	<data name="SimonSays1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Simon Says/1.png;System.Byte[], mscorlib</value></data>
+	<data name="SimonSays2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Simon Says/2.png;System.Byte[], mscorlib</value></data>
+	<data name="SimonSays3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Simon Says/3.png;System.Byte[], mscorlib</value></data>
+	<data name="SimonSays4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Simon Says/4.png;System.Byte[], mscorlib</value></data>
+	<data name="SimonSays5" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Simon Says/5.png;System.Byte[], mscorlib</value></data>
+	<data name="Switches1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Switches/1.png;System.Byte[], mscorlib</value></data>
+	<data name="Switches2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Switches/2.png;System.Byte[], mscorlib</value></data>
+	<data name="Switches3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Switches/3.png;System.Byte[], mscorlib</value></data>
+	<data name="Switches4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Switches/4.png;System.Byte[], mscorlib</value></data>
+	<data name="Timer1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Timer/1.png;System.Byte[], mscorlib</value></data>
+	<data name="Timer2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Timer/2.png;System.Byte[], mscorlib</value></data>
+	<data name="Timer3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Timer/3.png;System.Byte[], mscorlib</value></data>
+	<data name="Timer4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Timer/4.png;System.Byte[], mscorlib</value></data>
+	<data name="TurnTheKeys1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Turn the Keys/1.png;System.Byte[], mscorlib</value></data>
+	<data name="TurnTheKeys2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Turn the Keys/2.png;System.Byte[], mscorlib</value></data>
+	<data name="TurnTheKeys3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Turn the Keys/3.png;System.Byte[], mscorlib</value></data>
+	<data name="TurnTheKeys4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Turn the Keys/4.png;System.Byte[], mscorlib</value></data>
+	<data name="WhosOnFirst1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Who's on First/1.png;System.Byte[], mscorlib</value></data>
+	<data name="WhosOnFirst2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Who's on First/2.png;System.Byte[], mscorlib</value></data>
+	<data name="WhosOnFirst3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Who's on First/3.png;System.Byte[], mscorlib</value></data>
+	<data name="WhosOnFirst4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Who's on First/4.png;System.Byte[], mscorlib</value></data>
+	<data name="WireSequence1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Wire Sequence/1.png;System.Byte[], mscorlib</value></data>
+	<data name="WireSequence2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Wire Sequence/2.png;System.Byte[], mscorlib</value></data>
+	<data name="WireSequence3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Wire Sequence/3.png;System.Byte[], mscorlib</value></data>
+	<data name="WireSequence4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Wire Sequence/4.png;System.Byte[], mscorlib</value></data>
+	<data name="WireSequence5" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Wire Sequence/5.png;System.Byte[], mscorlib</value></data>
+	<data name="WireSequence6" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Wire Sequence/6.png;System.Byte[], mscorlib</value></data>
+	<data name="WireSequence7" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Wire Sequence/7.png;System.Byte[], mscorlib</value></data>
+	<data name="WireSequence8" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Wire Sequence/8.png;System.Byte[], mscorlib</value></data>
+	<data name="Wires1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Wires/1.png;System.Byte[], mscorlib</value></data>
+	<data name="Wires2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Wires/2.png;System.Byte[], mscorlib</value></data>
+	<data name="Wires3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Wires/3.png;System.Byte[], mscorlib</value></data>
+	<data name="Wires4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Wires/4.png;System.Byte[], mscorlib</value></data>
+	<data name="WordScramble1" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Word Scramble/1.png;System.Byte[], mscorlib</value></data>
+	<data name="WordScramble2" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Word Scramble/2.png;System.Byte[], mscorlib</value></data>
+	<data name="WordScramble3" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Word Scramble/3.png;System.Byte[], mscorlib</value></data>
+	<data name="WordScramble4" type="System.Resources.ResXFileRef, System.Windows.Forms"><value>Resources/Word Scramble/4.png;System.Byte[], mscorlib</value></data>
+</root>

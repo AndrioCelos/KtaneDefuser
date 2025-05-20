@@ -15,8 +15,11 @@ public class ColourFlash : ComponentReader<ColourFlash.ReadData> {
 		debugImage?.Mutate(c => c.Draw(Color.Lime, 1, displayRect));
 		displayRect.Inflate(-6, -6);
 
+		var highlight = FindSelectionHighlight(image, lightsState, 24, 120, 232, 224);
+		Point? selection = highlight.Y != 0 ? new Point(highlight.X < 128 ? 0 : 1, 0) : null;
+
 		if (!ImageUtils.TryFindEdges(image, displayRect, p => p.R >= 20 || p.G >= 20 || p.B >= 20, out var textRect))
-			return new(null, Colour.None);
+			return new(selection, null, Colour.None);
 
 		debugImage?.Mutate(c => c.Draw(Color.Cyan, 1, textRect));
 		displayRect.Inflate(-6, -6);
@@ -41,10 +44,10 @@ public class ColourFlash : ComponentReader<ColourFlash.ReadData> {
 				: b >= threshold ? Colour.Magenta : Colour.Red
 			: g >= threshold ? Colour.Green : Colour.Blue;
 		var word = DisplayRecogniser.Recognise(image, textRect, 0, colour == Colour.White ? (byte) 255 : (byte) 128);
-		return new(word, colour);
+		return new(selection, word, colour);
 	}
 
-	public record ReadData(string? Word, Colour Colour);
+	public record ReadData(Point? Selection, string? Word, Colour Colour) : ComponentReadData(Selection);
 
 	public enum Colour {
 		None,

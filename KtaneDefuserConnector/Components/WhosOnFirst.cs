@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
@@ -10,7 +10,7 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 
 	private static readonly TextRecogniser DisplayRecogniser = new(new(TextRecogniser.Fonts.CabinMedium, 24), 88, 255, new(256, 64),
 		"YES", "FIRST", "DISPLAY", "OKAY", "SAYS", "NOTHING", "BLANK", "NO", "LED", "LEAD", "READ", "RED", "REED", "LEED",
-		"HOLD ON", "YOU", "YOU ARE", "YOUR", "YOU'RE", "UR", "THERE", "THEY'RE", "THEIR", "THEY ARE", "SEE", "C", "CEE");
+		"HOLD ON", "YOU", "YOU ARE", "YOUR", "YOU'RE", "UR", "THERE", "THEY’RE", "THEIR", "THEY ARE", "SEE", "C", "CEE");
 	private static readonly TextRecogniser KeyRecogniser = new(new(TextRecogniser.Fonts.OstrichSansHeavy, 24), 160, 44, new(128, 64),
 		"READY", "FIRST", "NO", "BLANK", "NOTHING", "YES", "WHAT", "UHHH", "LEFT", "RIGHT", "MIDDLE", "OKAY", "WAIT", "PRESS",
 		"YOU", "YOU ARE", "YOUR", "YOU’RE", "UR", "U", "UH HUH", "UH UH", "WHAT?", "DONE", "NEXT", "HOLD", "SURE", "LIKE");
@@ -46,12 +46,15 @@ public class WhosOnFirst : ComponentReader<WhosOnFirst.ReadData> {
 			keyLabels[i] = KeyRecogniser.Recognise(image, textRect);
 		}
 
-		return new(ReadStageIndicator(image), displayText, keyLabels);
+		var highlight = FindSelectionHighlight(image, lightsState, 24, 84, 188, 232);
+		Point? selection = highlight.Y == 0 ? null : new(highlight.X < 80 ? 0 : 1, highlight.Y switch { < 116 => 0, < 160 => 1, _ => 2 });
+
+		return new(selection, ReadStageIndicator(image), displayText, keyLabels);
 
 		bool IsKeyBackground(Rgba32 c) => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is { H: >= 30 and <= 45, S: >= 0.2f and <= 0.4f };
 	}
 
-	public record ReadData(int StagesCleared, string Display, string[] Keys) {
-		public override string ToString() => $"ReadData {{ StagesCleared = {StagesCleared}, Display = {Display}, Keys = {{ {string.Join(", ", Keys)} }} }}";
+	public record ReadData(Point? Selection, int StagesCleared, string Display, string[] Keys) : ComponentReadData(Selection) {
+		public override string ToString() => $"ReadData {{ Selection = {Selection}, StagesCleared = {StagesCleared}, Display = {Display}, Keys = {{ {string.Join(", ", Keys)} }} }}";
 	}
 }

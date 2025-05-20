@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace KtaneDefuserScripts.Modules;
@@ -42,7 +42,7 @@ internal partial class CrazyTalk : ModuleScript<KtaneDefuserConnector.Components
 		var switchIsDown = script._switchIsDown;
 		await TimerUtil.WaitForSecondsDigitAsync(int.Parse(switchIsDown ? upTime : downTime));
 		var result = await interrupt.SubmitAsync(Button.A);
-		if (result != ModuleLightState.Off) return;
+		if (result != ModuleStatus.Off) return;
 		await TimerUtil.WaitForSecondsDigitAsync(int.Parse(switchIsDown ? downTime : upTime));
 		await interrupt.SubmitAsync(Button.A);
 	}

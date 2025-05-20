@@ -25,7 +25,7 @@ public class Button : ComponentReader<Button.ReadData> {
 		hsv = HsvColor.FromColor(image[218 * image.Width / 256, 164 * image.Height / 256]);
 		Colour? indicatorColour = hsv switch {
 			{ S: < 0.05f, V: >= 0.75f } => Colour.White,
-			{ S: >= 0.75f, V: >= 0.75f, H: >= 350 or <= 10 } => Colour.Red,
+			{ S: >= 0.75f, V: >= 0.65f, H: >= 350 or <= 10 } => Colour.Red,
 			{ S: >= 0.75f, V: >= 0.65f, H: >= 210 and <= 225 } => Colour.Blue,
 			{ S: >= 0.75f, V: >= 0.65f, H: >= 45 and <= 60 } => Colour.Yellow,
 			{ V: <= 0.05f } => null,
@@ -50,7 +50,7 @@ public class Button : ComponentReader<Button.ReadData> {
 		return new(colour, text, indicatorColour);
 	}
 
-	public record ReadData(Colour Colour, string? Label, Colour? IndicatorColour);
+	public record ReadData(Colour Colour, string? Label, Colour? IndicatorColour) : ComponentReadData(default(Point));
 
 	public enum Colour {
 		Red,

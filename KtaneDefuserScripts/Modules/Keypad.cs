@@ -1,4 +1,4 @@
-﻿using AngelAiml.Media;
+using AngelAiml.Media;
 using static KtaneDefuserConnector.Components.Keypad;
 using Button = KtaneDefuserConnectorApi.Button;
 
@@ -89,8 +89,8 @@ internal class Keypad : ModuleScript<KtaneDefuserConnector.Components.Keypad> {
 		foreach (var (inputs, index) in presses) {
 			script._highlight = index;
 			var result = await interrupt.SubmitAsync(inputs);
-			if (result != ModuleLightState.Strike) script._pressed[index] = true;
-			if (result != ModuleLightState.Off) return;
+			if (result != ModuleStatus.Strike) script._pressed[index] = true;
+			if (result != ModuleStatus.Off) return;
 		}
 		if (script._symbols is null) return;
 		for (var i = 0; i < 4; i++) {

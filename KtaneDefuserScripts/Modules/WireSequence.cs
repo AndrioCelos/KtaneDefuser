@@ -1,4 +1,4 @@
-﻿using static KtaneDefuserConnector.Components.WireSequence;
+using static KtaneDefuserConnector.Components.WireSequence;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("WireSequence")]
@@ -30,7 +30,7 @@ internal partial class WireSequence : ModuleScript<KtaneDefuserConnector.Compone
 
 	private async Task ContinuePageAsync(Interrupt interrupt) {
 		var data = await ReadAsync(interrupt);
-		if (data.HighlightedButton > 0) {
+		if (data.Selection is { Y: >= 4 }) {
 			// If we've reached the next button, or there are no wires on the first page, go ahead and switch to the next page.
 			await MoveToNextPageAsync(interrupt);
 		} else
@@ -50,8 +50,8 @@ internal partial class WireSequence : ModuleScript<KtaneDefuserConnector.Compone
 		while (true) {
 			var result = await interrupt.SubmitAsync(Button.A);
 			switch (result) {
-				case ModuleLightState.Solved:
-				case ModuleLightState.Strike:
+				case ModuleStatus.Solved:
+				case ModuleStatus.Strike:
 					return;
 				default:
 					await Delay(2);
@@ -75,11 +75,11 @@ internal partial class WireSequence : ModuleScript<KtaneDefuserConnector.Compone
 
 	private async Task<ReadData> ReadAsync(Interrupt interrupt) {
 		var data = interrupt.Read(Reader);
-		LogHighlightedButton(data.HighlightedButton, string.Join(", ", data.WireColours));
+		LogHighlightedButton(data.Selection?.Y ?? -1, string.Join(", ", data.WireColours));
 		_currentPageColours = data.WireColours;
-		switch (data.HighlightedButton) {
-			case -1: _highlight = -1; break;
-			case 1: _highlight = 3; break;
+		switch (data.Selection?.Y) {
+			case 0: _highlight = -1; break;
+			case 4: _highlight = 3; break;
 			default:
 				while (data.HighlightedWire is null) {
 					// Currently, we are only able to read the highlighted wire, and only when the selection highlight is within a strict range of intensities.

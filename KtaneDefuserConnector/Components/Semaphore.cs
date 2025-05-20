@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using SixLabors.ImageSharp;
@@ -11,7 +11,7 @@ public class Semaphore : ComponentReader<Semaphore.ReadData> {
 	public override string Name => "Semaphore";
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		if (!TryGetDisplayPoints(image, LightsState.On, out var points)) throw new ArgumentException("Couldn't find the display.", nameof(image));
+		if (!TryGetDisplayPoints(image, lightsState, out var points)) throw new ArgumentException("Couldn't find the display.", nameof(image));
 		debugImage?.DebugDrawPoints(points);
 
 		var displayBitmap = ImageUtils.PerspectiveUndistort(image, points, InterpolationMode.NearestNeighbour, new(180, 142));
@@ -113,7 +113,10 @@ public class Semaphore : ComponentReader<Semaphore.ReadData> {
 			}
 		}
 
-		return new(leftFlag, rightFlag);
+		var highlight = FindSelectionHighlight(image, lightsState, 28, 12, 172, 48);
+		Point? selection = highlight.Y != 0 ? new Point(highlight.X switch { < 64 => 0, < 120 => 1, _ => 2 }, 0) : null;
+
+		return new(selection, leftFlag, rightFlag);
 	}
 
 	/// <summary>Determines the centre of mass and minimal axis-aligned bounding box of the triangle containing the specified point.</summary>
@@ -190,5 +193,5 @@ public class Semaphore : ComponentReader<Semaphore.ReadData> {
 		DownRight
 	}
 
-	public record ReadData(Direction LeftFlag, Direction RightFlag);
+	public record ReadData(Point? Selection, Direction LeftFlag, Direction RightFlag) : ComponentReadData(Selection);
 }

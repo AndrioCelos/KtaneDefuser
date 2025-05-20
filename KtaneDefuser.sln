@@ -22,6 +22,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AngelAiml", "AngelAiml.DotN
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisionTester", "VisionTester\VisionTester.csproj", "{95858D1D-231A-4CDD-A80F-3A124251B477}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KtaneDefuserConnectorTests", "KtaneDefuserConnectorTests\KtaneDefuserConnectorTests.csproj", "{D4C12D76-16E5-4296-9867-AA79C2139ED6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,6 +54,10 @@ Global
 		{95858D1D-231A-4CDD-A80F-3A124251B477}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{95858D1D-231A-4CDD-A80F-3A124251B477}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{95858D1D-231A-4CDD-A80F-3A124251B477}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4C12D76-16E5-4296-9867-AA79C2139ED6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4C12D76-16E5-4296-9867-AA79C2139ED6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4C12D76-16E5-4296-9867-AA79C2139ED6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4C12D76-16E5-4296-9867-AA79C2139ED6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

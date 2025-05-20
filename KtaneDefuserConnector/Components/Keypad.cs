@@ -55,8 +55,6 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 
 	[SuppressMessage("ReSharper", "AccessToModifiedClosure")]
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
-		bool IsKeyBackground(Rgba32 c) => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is { H: > 0 and <= 150, S: <= 0.6f, V: >= 0.35f };
-
 		if (debugImage is not null) {
 			debugImage.Mutate(c => c.Brightness(0.5f));
 			for (var y = 0; y < image.Width; y++) {
@@ -155,7 +153,12 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 			}
 		}
 
-		return new(symbols);
+		var highlight = FindSelectionHighlight(image, lightsState, 16, 56, 200, 236);
+		Point? selection = highlight.X == 0 ? null : new(highlight.X < 96 ? 0 : 1, highlight.Y < 136 ? 0 : 1);
+
+		return new(selection, symbols);
+
+		bool IsKeyBackground(Rgba32 c) => HsvColor.FromColor(ImageUtils.ColourCorrect(c, lightsState)) is { H: > 0 and <= 150, S: <= 0.6f, V: >= 0.35f };
 	}
 
 	[SuppressMessage("ReSharper", "InconsistentNaming")]
@@ -193,7 +196,7 @@ public class Keypad : ComponentReader<Keypad.ReadData> {
 		WeirdNose
 	}
 
-	public record ReadData(Symbol[] Symbols) {
-		public override string ToString() => string.Join(' ', Symbols);
+	public record ReadData(Point? Selection, Symbol[] Symbols) : ComponentReadData(Selection) {
+		public override string ToString() => $"ReadData {{ Selection = {Selection}, Symbols = {string.Join(' ', Symbols)} }}";
 	}
 }

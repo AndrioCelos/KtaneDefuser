@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using KtaneDefuserConnector.Properties;
@@ -29,7 +29,7 @@ public class PianoKeys : ComponentReader<PianoKeys.ReadData> {
 		var labelPoints = ImageUtils.FindCorners(image, image.Map(0, 0, 200, 100), lightsState switch {
 			LightsState.Buzz => c => HsvColor.FromColor(c) is { H: >= 45 and <= 60, S: >= 0.2f and <= 0.4f, V: >= 0.1f },
 			LightsState.Off => c => c is { R: 7, G: 7, B: 7 },
-			LightsState.Emergency => c => HsvColor.FromColor(c) is { H: >= 15 and <= 40, S: >= 0.2f and <= 0.4f, V: >= 0.75f },
+			LightsState.Emergency => c => HsvColor.FromColor(c) is { H: >= 15 and <= 40, S: >= 0.45f and <= 0.55f, V: >= 0.75f },
 			_ => c => HsvColor.FromColor(c) is { H: >= 45 and <= 60, S: >= 0.2f and <= 0.4f, V: >= 0.75f }
 		}, 12);
 
@@ -38,7 +38,7 @@ public class PianoKeys : ComponentReader<PianoKeys.ReadData> {
 		{
 			LightsState.Buzz => c => HsvColor.FromColor(c) is { V: < 0.1f },
 			LightsState.Off => c => c.R < 6,
-			LightsState.Emergency => c => HsvColor.FromColor(c) is { V: > 0.8f },
+			LightsState.Emergency => c => HsvColor.FromColor(c) is { V: < 0.8f },
 			_ => c => HsvColor.FromColor(c) is { V: < 0.8f }
 		};
 		var textBounds = ImageUtils.FindEdges(image, new(labelPoints.TopLeft, new(labelPoints.TopRight.X - labelPoints.TopLeft.X, labelPoints.BottomLeft.Y - labelPoints.TopLeft.Y)), textPredicate);
@@ -93,6 +93,7 @@ public class PianoKeys : ComponentReader<PianoKeys.ReadData> {
 			});
 
 			var charImage = image.Clone(c => c.Crop(new(startX, top, endX - startX, bottom - top)).Resize(32, 32, KnownResamplers.NearestNeighbor));
+			ImageUtils.ColourCorrect(charImage, lightsState);
 			debugImage?.Mutate(c => c.DrawImage(charImage, new Point(32 * symbols.Count, 0), 1));
 
 			Symbol bestSymbol = 0; float bestSimilarity = 0;
@@ -105,7 +106,14 @@ public class PianoKeys : ComponentReader<PianoKeys.ReadData> {
 			symbols.Add(bestSymbol);
 		}
 
-		return new([.. symbols]);
+		Point? selection
+			= FindSelectionHighlight(image, lightsState, 24, 176, 234, 216) is { Y: not 0 } p1
+			? new Point(p1.X switch { < 48 => 0, < 76 => 2, < 104 => 4, < 132 => 5, 160 => 7, < 190 => 9, _ => 11 }, 0)  // White keys
+			: FindSelectionHighlight(image, lightsState, 24, 88, 234, 120) is { Y: not 0 } p2
+			? new Point(p2.X switch { < 70 => 1, < 116 => 3, < 156 => 6, < 184 => 8, _ => 10 }, 0)  // Black keys
+			: null;
+
+		return new(selection, [.. symbols]);
 	}
 
 	public enum Symbol {
@@ -120,7 +128,7 @@ public class PianoKeys : ComponentReader<PianoKeys.ReadData> {
 		CClef
 	}
 
-	public record ReadData(Symbol[] Symbols) {
+	public record ReadData(Point? Selection, Symbol[] Symbols) : ComponentReadData(Selection) {
 		public override string ToString() => string.Join(' ', Symbols);
 	}
 }

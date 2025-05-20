@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -291,8 +291,8 @@ public class DefuserConnector : IDisposable {
 	public LightsState GetLightsState(Image<Rgba32> screenshot) => _simulation is not null ? LightsState.On : ImageUtils.GetLightsState(screenshot);
 
 	/// <summary>Returns the light state of the module in the specified polygon.</summary>
-	public ModuleLightState GetModuleLightState(Image<Rgba32> screenshotBitmap, Quadrilateral quadrilateral)
-		=> _simulation?.GetLightState(quadrilateral) ?? ImageUtils.GetLightState(screenshotBitmap, quadrilateral);
+	public ModuleStatus GetModuleStatus(Image<Rgba32> screenshotBitmap, Quadrilateral quadrilateral, LightsState lightsState, ComponentReader reader)
+		=> _simulation?.GetLightState(quadrilateral) ?? reader.GetStatus(screenshotBitmap, quadrilateral, lightsState);
 
 	/// <summary>Returns the <see cref="ComponentReader"/> singleton instance of the specified type.</summary>
 	public static T GetComponentReader<T>() where T : ComponentReader => (T) ComponentReaders[typeof(T)];
@@ -346,7 +346,7 @@ public class DefuserConnector : IDisposable {
 	}
 
 	/// <summary>Reads component data from the module in the specified polygon using the specified <see cref="ComponentReader"/>.</summary>
-	public T ReadComponent<T>(Image<Rgba32> screenshot, LightsState lightsState, ComponentReader<T> reader, Quadrilateral quadrilateral) where T : notnull {
+	public T ReadComponent<T>(Image<Rgba32> screenshot, LightsState lightsState, ComponentReader<T> reader, Quadrilateral quadrilateral) where T : ComponentReadData {
 		if (_simulation is not null)
 			return _simulation.ReadComponent<T>(quadrilateral);
 		var image = ImageUtils.PerspectiveUndistort(screenshot, quadrilateral, InterpolationMode.NearestNeighbour, new(Resolution, Resolution));

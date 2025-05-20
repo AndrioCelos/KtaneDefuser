@@ -1,4 +1,4 @@
-﻿using static KtaneDefuserConnector.Components.ComplicatedWires;
+using static KtaneDefuserConnector.Components.ComplicatedWires;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("ComplicatedWires")]
@@ -85,11 +85,11 @@ internal partial class ComplicatedWires : ModuleScript<KtaneDefuserConnector.Com
 					// Check whether this was a strike or solve. If in response to the user saying to cut a wire, check after the first wire. Otherwise, only check after all wires for speed.
 					var result = await interrupt.SubmitAsync(buttons);
 					buttons.Clear();
-					if (result == ModuleLightState.Strike) {
+					if (result == ModuleStatus.Strike) {
 						ShouldCut[(int) _wires[wireIndex].flags] = false;
 						break;
 					}
-					if (result == ModuleLightState.Solved)
+					if (result == ModuleStatus.Solved)
 						return;
 				}
 			} else if (firstUnknown != null) {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using KtaneDefuserConnector.DataTypes;
 using SixLabors.ImageSharp;
@@ -8,8 +8,6 @@ using SixLabors.ImageSharp.Processing;
 namespace KtaneDefuserConnector.Components;
 public class Timer : ComponentReader<Timer.ReadData> {
 	public override string Name => "Timer";
-
-	private static bool IsTimerBackground(Rgba32 c) => c is { G: < 12, B: < 12 };
 
 	[SuppressMessage("ReSharper", "AccessToDisposedClosure")]
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
@@ -47,12 +45,18 @@ public class Timer : ComponentReader<Timer.ReadData> {
 			: GameMode.Normal;
 
 		return new(gameMode, isMinutes ? n1 * 60 + n2 : n1, isMinutes ? 0 : n2, strikes);
+
+		bool IsTimerBackground(Rgba32 c) => lightsState switch {
+			LightsState.Buzz => c is { G: < 2, B: < 2 },
+			LightsState.Off => c is { G: 0, B: 0 },
+			_ => c is { G: < 12, B: < 12 }
+		};
 		
 		static bool IsOn(Rgba32 pixel, ref Rgba32 timerColour) {
 			if (pixel is { R: < 128, G: < 128, B: < 128 }) return false;
-			timerColour.R = pixel.R >= 128 ? byte.MaxValue : (byte) 0;
-			timerColour.G = pixel.G >= 128 ? byte.MaxValue : (byte) 0;
-			timerColour.B = pixel.B >= 128 ? byte.MaxValue : (byte) 0;
+			timerColour.R = pixel.R >= 96 ? byte.MaxValue : (byte) 0;
+			timerColour.G = pixel.G >= 96 ? byte.MaxValue : (byte) 0;
+			timerColour.B = pixel.B >= 96 ? byte.MaxValue : (byte) 0;
 			return true;
 		}
 
@@ -82,7 +86,7 @@ public class Timer : ComponentReader<Timer.ReadData> {
 	}
 
 	// ReSharper disable once InconsistentNaming
-	public record ReadData(GameMode GameMode, int Time, int CS, int Strikes) {
+	public record ReadData(GameMode GameMode, int Time, int CS, int Strikes) : ComponentReadData(default(Point)) {
 		public override string ToString() => $"{GameMode} {Time} {CS} {Strikes}";
 	}
 }

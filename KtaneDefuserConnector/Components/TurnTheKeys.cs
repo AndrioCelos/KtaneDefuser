@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using Tesseract;
 
 namespace KtaneDefuserConnector.Components;
 public class TurnTheKeys : ComponentReader<TurnTheKeys.ReadData> {
@@ -28,7 +29,10 @@ public class TurnTheKeys : ComponentReader<TurnTheKeys.ReadData> {
 			}
 		});
 
-		return new(priority, false, false, point.X switch { 0 => null, < 128 => 0, _ => 1 });
+		var highlight = FindSelectionHighlight(image, lightsState, 24, 100, 240, 144);
+		Point? selection = highlight.Y != 0 ? new Point(highlight.X < 128 ? 0 : 1, 0) : null;
+
+		return new(selection, priority, CheckKeyTurned(image, lightsState, 58), CheckKeyTurned(image, lightsState, 202));
 
 		static bool CheckH(Image<Rgba32> image, int x1, int x2, int y) {
 			for (var x = x1; x < x2; x++) {
@@ -67,7 +71,28 @@ public class TurnTheKeys : ComponentReader<TurnTheKeys.ReadData> {
 				_ => throw new ArgumentException($"Couldn't read pattern: {segments:x}")
 			};
 		}
+
+		static bool CheckKeyTurned(Image<Rgba32> image, LightsState lightsState, int x) {
+			bool result = false;
+			x = x * image.Width / 256;
+			image.ProcessPixelRows(a => {
+				var total = 0;
+				var size = a.Width / 8;
+				foreach (var y2 in a.Height.MapRange(144, 240)) {
+					var row = a.GetRowSpan(y2);
+					for (var x2 = x - size; x2 < x + size; x2++) {
+						var isKey = lightsState == LightsState.Emergency
+							? HsvColor.FromColor(row[x2]).H is >= 10 and <= 45
+							: HsvColor.FromColor(row[x2]).H is >= 30 and <= 60;
+						if (isKey) total += x2 - x;
+					}
+				}
+
+				result = total < -1000;
+			});
+			return result;
+		}
 	}
 
-	public record ReadData(int Priority, bool IsKey1Turned, bool IsKey2Turned, int? Cursor);
+	public record ReadData(Point? Selection, int Priority, bool IsKey1Turned, bool IsKey2Turned) : ComponentReadData(Selection);
 }

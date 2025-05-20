@@ -63,7 +63,15 @@ public class Maze : ComponentReader<Maze.ReadData> {
 				}
 			}
 		});
-		return new(
+		
+		Point? selection
+			= FindSelectionHighlight(image, lightsState, 96, 16, 140, 40).Y != 0 ? new Point(1, 0)
+			: FindSelectionHighlight(image, lightsState, 4, 104, 20, 148).Y != 0 ? new Point(0, 1)
+			: FindSelectionHighlight(image, lightsState, 208, 104, 224, 148).Y != 0 ? new Point(2, 1)
+			: FindSelectionHighlight(image, lightsState, 96, 224, 140, 248).Y != 0 ? new Point(1, 2)
+			: null;
+
+		return new(selection,
 			start ?? throw new ArgumentException("Could not find the start location."),
 			goal ?? throw new ArgumentException("Could not find the goal location."),
 			circle1 ?? throw new ArgumentException("Could not find the first circle location."),
@@ -71,5 +79,5 @@ public class Maze : ComponentReader<Maze.ReadData> {
 		);
 	}
 
-	public record ReadData(GridCell Start, GridCell Goal, GridCell Circle1, GridCell? Circle2);
+	public record ReadData(Point? Selection, GridCell Start, GridCell Goal, GridCell Circle1, GridCell? Circle2) : ComponentReadData(Selection);
 }

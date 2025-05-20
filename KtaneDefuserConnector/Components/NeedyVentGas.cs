@@ -1,4 +1,4 @@
-﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -11,8 +11,10 @@ public class NeedyVentGas : ComponentReader<NeedyVentGas.ReadData> {
 		"VENT GAS?", "DETONATE?");
 
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
+		var highlight = FindSelectionHighlight(image, lightsState, 88, 172, 172, 216);
+		Point? selection = highlight.Y != 0 ? new Point(highlight.X < 112 ? 0 : 1, 0) : null;
+
 		var time = ReadNeedyTimer(image, lightsState, debugImage);
-		if (time == null) return new(null, null);
 
 		int top = 0, bottom = 0;
 		image.ProcessPixelRows(a => {
@@ -24,9 +26,9 @@ public class NeedyVentGas : ComponentReader<NeedyVentGas.ReadData> {
 				}
 			}
 		});
-		top--;  // For the height of the '?'.
 
-		if (top >= image.Height / 2) return new(null, null);
+		if (top >= image.Height / 2) return new(selection, null, null);
+		top--;  // For the height of the '?'.
 
 		image.ProcessPixelRows(a => {
 			for (bottom = top + 8; bottom < 144 * image.Height / 256; bottom++) {
@@ -44,8 +46,9 @@ public class NeedyVentGas : ComponentReader<NeedyVentGas.ReadData> {
 
 		var textRect = ImageUtils.FindEdges(image, new(image.Height / 4, top, image.Height / 2, bottom - top), c => HsvColor.FromColor(c) is { H: >= 90 and <= 135, V: >= 0.5f });
 		debugImage?.Mutate(c => c.Draw(Color.Cyan, 1, textRect));
-		return new(time, DisplayRecogniser.Recognise(image, textRect));
+
+		return new(selection, time, DisplayRecogniser.Recognise(image, textRect));
 	}
 
-	public record ReadData(int? Time, string? Message);
+	public record ReadData(Point? Selection, int? Time, string? Message) : ComponentReadData(Selection);
 }
