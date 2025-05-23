@@ -1,10 +1,9 @@
 ﻿using JetBrains.Annotations;
-using Button = KtaneDefuserConnector.Components.Button;
 
 namespace KtaneDefuserScripts.Modules;
 
 [AimlInterface("Button")]
-internal class ButtonModule : ModuleScript<Button> {
+internal class ButtonModule() : ModuleScript<KtaneDefuserConnector.Components.Button>(1, 1) {
 	public override string IndefiniteDescription => "a Button";
 	private static Interrupt? _holdInterrupt;
 
@@ -22,13 +21,13 @@ internal class ButtonModule : ModuleScript<Button> {
 	[AimlCategory("tap")]
 	internal static async Task Tap(AimlAsyncContext context) {
 		using var interrupt = await CurrentModuleInterruptAsync(context);
-		await interrupt.SubmitAsync(KtaneDefuserConnectorApi.Button.A);
+		await interrupt.SubmitAsync();
 	}
 
 	[AimlCategory("hold")]
 	internal static async Task Hold(AimlAsyncContext context) {
 		_holdInterrupt = await CurrentModuleInterruptAsync(context);
-		_holdInterrupt.SendInputs(new ButtonAction(KtaneDefuserConnectorApi.Button.A, ButtonActionType.Hold));
+		_holdInterrupt.SendInputs(new ButtonAction(Button.A, ButtonActionType.Hold));
 		await Delay(1);
 		var data = _holdInterrupt.Read(Reader);
 		_holdInterrupt.Context.Reply($"The light is {data.IndicatorColour}.<reply>release on …</reply>");
@@ -42,7 +41,7 @@ internal class ButtonModule : ModuleScript<Button> {
 		}
 		_holdInterrupt.Context = context;
 		await TimerUtil.WaitForDigitInTimerAsync(digit);
-		await _holdInterrupt.SubmitAsync(new ButtonAction(KtaneDefuserConnectorApi.Button.A, ButtonActionType.Release));
+		await _holdInterrupt.SubmitAsync(new ButtonAction(Button.A, ButtonActionType.Release));
 		_holdInterrupt.ExitAsync();
 		_holdInterrupt = null;
 	}

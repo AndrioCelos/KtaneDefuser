@@ -2,14 +2,11 @@
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("LightsOut")]
-internal class LightsOut : ModuleScript<KtaneDefuserConnector.Components.LightsOut> {
+internal class LightsOut() : ModuleScript<KtaneDefuserConnector.Components.LightsOut>(3, 3) {
 	private static readonly Dictionary<int, BitVector32> CachedSolutions = [];
 
 	public override string IndefiniteDescription => "Lights Out";
 	public override PriorityCategory PriorityCategory => PriorityCategory.Needy;
-
-	private int _highlightX;
-	private int _highlightY;
 
 	static LightsOut() {
 		for (var i = 0; i < 512; i++) {
@@ -28,6 +25,7 @@ internal class LightsOut : ModuleScript<KtaneDefuserConnector.Components.LightsO
 			if (CachedSolutions.TryGetValue(state.Data, out var oldSolution) && GetPressCount(oldSolution) <= GetPressCount(presses)) continue;
 			CachedSolutions[state.Data] = presses;
 		}
+		return;
 
 		static int GetPressCount(BitVector32 v) => Enumerable.Range(0, 9).Count(i => v[1 << i]);
 	}
@@ -45,20 +43,11 @@ internal class LightsOut : ModuleScript<KtaneDefuserConnector.Components.LightsO
 			var solution = CachedSolutions[key];
 			for (var i = 0; i < 9; i++) {
 				if (!solution[1 << i]) continue;
-				await PressButtonAsync(interrupt, i % 3, i / 3);
+				Select(interrupt, i % 3, i / 3);
+				await interrupt.SendInputsAsync(Button.A);
 			}
 		} catch (Exception ex) {
 			LogException(ex);
 		}
-	}
-
-	private async Task PressButtonAsync(Interrupt interrupt, int x, int y) {
-		var buttons = new List<Button>();
-		for (; _highlightX < x; _highlightX++) buttons.Add(Button.Right);
-		for (; _highlightX > x; _highlightX--) buttons.Add(Button.Left);
-		for (; _highlightY < y; _highlightY++) buttons.Add(Button.Down);
-		for (; _highlightY > y; _highlightY--) buttons.Add(Button.Up);
-		buttons.Add(Button.A);
-		await interrupt.SendInputsAsync(buttons);
 	}
 }

@@ -1,9 +1,11 @@
 ﻿namespace KtaneDefuserScripts.Modules;
 [AimlInterface("WordScramble")]
-internal class WordScramble : ModuleScript<KtaneDefuserConnector.Components.WordScramble> {
+internal class WordScramble: ModuleScript<KtaneDefuserConnector.Components.WordScramble> {
 	public override string IndefiniteDescription => "Word Scramble";
 
-	private readonly Processor _processor = new(i => i.Read(Reader));
+	private readonly Processor _processor;
+
+	public WordScramble() : base(4, 2) => _processor = new(this, i => i.Read(Reader));
 
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
@@ -20,9 +22,7 @@ internal class WordScramble : ModuleScript<KtaneDefuserConnector.Components.Word
 		await GameState.Current.CurrentScript<WordScramble>()._processor.SubmitLetters(interrupt, Nato.DecodeChar(nato1), Nato.DecodeChar(nato2), Nato.DecodeChar(nato3), Nato.DecodeChar(nato4), Nato.DecodeChar(nato5), Nato.DecodeChar(nato6));
 	}
 
-	internal class Processor(Func<Interrupt, KtaneDefuserConnector.Components.WordScramble.ReadData> readFunc) {
-		private int _highlightX;
-		private int _highlightY;
+	internal class Processor(ModuleScript module, Func<Interrupt, KtaneDefuserConnector.Components.WordScramble.ReadData> readFunc) {
 		private char[]? _letters;
 
 		private static readonly HashSet<string> Words = new(StringComparer.InvariantCultureIgnoreCase) {
@@ -39,7 +39,7 @@ internal class WordScramble : ModuleScript<KtaneDefuserConnector.Components.Word
 
 		internal async Task ReadAsync(Interrupt interrupt) {
 			var data = readFunc(interrupt);
-			if (data.Selection is { } selection) (_highlightX, _highlightY) = selection;
+			if (data.Selection is { } selection) module.Selection = selection;
 			_letters = data.Letters;
 
 			// Find a word.
@@ -62,7 +62,7 @@ internal class WordScramble : ModuleScript<KtaneDefuserConnector.Components.Word
 
 			if (_letters is null) {
 				var data = readFunc(interrupt);
-				if (data.Selection is { } selection) (_highlightX, _highlightY) = selection;
+				if (data.Selection is { } selection) module.Selection = selection;
 				_letters = data.Letters;
 			}
 
@@ -82,16 +82,11 @@ internal class WordScramble : ModuleScript<KtaneDefuserConnector.Components.Word
 			await PressButtonAsync(interrupt, 3, 1, true);
 		}
 		private async Task PressButtonAsync(Interrupt interrupt, int x, int y, bool submit) {
-			var buttons = new List<Button>();
-			for (; _highlightX < x; _highlightX++) buttons.Add(Button.Right);
-			for (; _highlightX > x; _highlightX--) buttons.Add(Button.Left);
-			for (; _highlightY < y; _highlightY++) buttons.Add(Button.Down);
-			for (; _highlightY > y; _highlightY--) buttons.Add(Button.Up);
-			buttons.Add(Button.A);
+			module.Select(interrupt, x, y);
 			if (submit)
-				await interrupt.SubmitAsync(buttons);
+				await interrupt.SubmitAsync();
 			else
-				await interrupt.SendInputsAsync(buttons);
+				await interrupt.SendInputsAsync(Button.A);
 		}
 
 	}

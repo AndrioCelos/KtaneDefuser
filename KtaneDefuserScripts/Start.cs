@@ -44,7 +44,7 @@ internal static partial class Start {
 		GameState.Current.TimerStopwatch.Restart();
 		using var interrupt = await Interrupt.EnterAsync(context);
 		using (var ss = DefuserConnector.Instance.TakeScreenshot())
-			GameState.Current.BombType = ImageUtils.IsCenturion(ss) ? BombType.Centurion : BombType.Standard;
+			GameState.Current.Initialise(ImageUtils.IsCenturion(ss) ? BombType.Centurion : BombType.Standard);
 		interrupt.SendInputs(new ButtonAction(Button.A, ButtonActionType.Release), new AxisAction(Axis.RightStickX, 0), new AxisAction(Axis.RightStickY, 0));
 		interrupt.SendInputs(Button.A);
 		await Delay(1);  // Wait for modules to initialise.
@@ -121,12 +121,12 @@ internal static partial class Start {
 			if (!anyModules && component is not (null or Timer)) {
 				// Set the initially selected slot on each side to be the first one with a module in it.
 				anyModules = true;
-				GameState.Current.Faces[GameState.Current.SelectedFaceNum].SelectedSlot = slot;
+				GameState.Current.SelectedFace.Selection = new(slot.X, slot.Y);
 			}
 
 			var module = RegisterComponent(interrupt, slot, component);
 			if (module is not null) {
-				var lightState = DefuserConnector.Instance.GetModuleStatus(screenshot, points, ImageUtils.GetLightsState(screenshot), module.Reader);
+				var lightState = DefuserConnector.Instance.GetModuleStatus(screenshot, points, module.Reader);
 				if (lightState == ModuleStatus.Solved) {
 					LogSolvedModule(_logger, module.Script.ModuleIndex + 1);
 					module.IsSolved = true;
@@ -156,22 +156,19 @@ internal static partial class Start {
 				var script = ModuleScript.Create(component);
 				script.ModuleIndex = GameState.Current.Modules.Count;
 				var module = new ModuleState(slot, component, script);
-				GameState.Current.Faces[slot.Face][slot] = module;
+				var faces = GameState.Current.Faces!;
+				faces[slot.Face][slot] = module;
+				faces[slot.Face].HasModules = true;
 				GameState.Current.Modules.Add(module);
-				GameState.Current.Faces[slot.Face].HasModules = true;
 				LogRegisteringModule(_logger, script.ModuleIndex + 1, component.Name, slot);
 				if (script.PriorityCategory != PriorityCategory.None)
 					interrupt.Context.Reply($"<priority/> Module {script.ModuleIndex + 1} is {script.IndefiniteDescription}.");
 				script.Initialise(interrupt);
-				NeedyState state;
-				lock (GameState.Current.UnknownNeedyStates) {
-					GameState.Current.UnknownNeedyStates.TryGetValue(slot, out state);
-					GameState.Current.UnknownNeedyStates.Remove(slot);
-				}
 
-				if (state == 0) return module;
-				script.NeedyState = state;
-				script.NeedyStateChanged(interrupt.Context, state);
+				GameState.Current.UnknownNeedyStates.TryRemove(slot, out var needyState);
+				if (needyState == NeedyState.InitialSetup) return module;
+				script.NeedyState = needyState;
+				script.NeedyStateChanged(interrupt.Context, needyState);
 				return module;
 		}
 	}

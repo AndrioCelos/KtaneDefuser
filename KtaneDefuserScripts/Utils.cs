@@ -1,4 +1,4 @@
-﻿using System.Web;
+using System.Web;
 using AngelAiml.Media;
 using Button = KtaneDefuserConnectorApi.Button;
 using Timer = KtaneDefuserConnector.Components.Timer;
@@ -47,10 +47,9 @@ public static class Utils {
 	];
 
 	/// <summary>Returns the quadrilateral representing the location of the specified slot on the screen. The slot should be on the side of the bomb we're already looking at.</summary>
-	public static Quadrilateral GetPoints(Slot slot, bool isZoomedOut = false) {
-		if (!TryGetPoints(slot, isZoomedOut, out var quadrilateral)) throw new ArgumentException("Tried to look at a module slot that is not visible.");
-		return quadrilateral;
-	}
+	public static Quadrilateral GetPoints(Slot slot, bool isZoomedOut = false) => TryGetPoints(slot, isZoomedOut, out var quadrilateral)
+		? quadrilateral
+		: throw new ArgumentException("Tried to look at a module slot that is not visible.");
 
 	public static bool TryGetPoints(Slot slot, out Quadrilateral quadrilateral) => TryGetPoints(slot, false, out quadrilateral);
 	public static bool TryGetPoints(Slot slot, bool isZoomedOut, out Quadrilateral quadrilateral) {
@@ -64,7 +63,7 @@ public static class Utils {
 			return true;
 		}
 
-		var selectedSlot = GameState.Current.SelectedFace.SelectedSlot;
+		var selectedSlot = GameState.Current.SelectedFace.Selection;
 		var dx = slot.X - selectedSlot.X;
 		var dy = slot.Y - selectedSlot.Y;
 		quadrilateral = ModuleAreas[(dy + 1) * 5 + dx + 2];
@@ -136,39 +135,20 @@ public static class Utils {
 	internal static async Task SelectSlotAsync(Interrupt interrupt, Slot slot, bool waitForFocus) {
 		var buttons = new List<Button>();
 		await SelectFaceAsync(interrupt, slot.Face, SelectFaceAlignMode.None);
+
 		// If another module is selected, deselect it first.
 		if (GameState.Current.SelectedModuleNum is not null)
 			buttons.Add(Button.B);
-		// Move to the correct row.
-		var currentSlot = GameState.Current.SelectedFace.SelectedSlot;
-		if (slot.Y != currentSlot.Y) {
-			buttons.Add(slot.Y < currentSlot.Y ? Button.Up : Button.Down);
 
-			// Find which slot this input will select.
-			currentSlot.Y = slot.Y;
-			if (GameState.Current.SelectedFace[currentSlot]?.Reader is null or Timer) {
-				for (var d = 0; d < 2; d++) {
-					var x2 = currentSlot.X + (d == 0 ? -1 : 1);
-					if (x2 is < 0 or >= 3 || GameState.Current.SelectedFace[x2, currentSlot.Y]?.Reader is null or Timer) continue;
-					currentSlot.X = x2;
-					break;
-				}
-			}
-		}
-		// Move to the correct module within that row.
-		while (slot.X < currentSlot.X) {
-			buttons.Add(Button.Left);
-			do { currentSlot.X--; } while (GameState.Current.SelectedFace[currentSlot]?.Reader is null or Timer);
-		}
-		while (slot.X > currentSlot.X) {
-			buttons.Add(Button.Right);
-			do { currentSlot.X++; } while (GameState.Current.SelectedFace[currentSlot]?.Reader is null or Timer);
-		}
+		// Move the selection.
+		var face = GameState.Current.SelectedFace;
+		buttons.AddRange(face.GetSelectInputs(slot.X, slot.Y));
+
+		// Select the module.
 		buttons.Add(Button.A);
 		await interrupt.SendInputsAsync(buttons);
 		if (waitForFocus) await Delay(0.75);
 
-		GameState.Current.SelectedFace.SelectedSlot = slot;
 		GameState.Current.FocusState = FocusState.Module;
 	}
 

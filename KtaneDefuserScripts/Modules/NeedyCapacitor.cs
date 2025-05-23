@@ -3,7 +3,7 @@
 namespace KtaneDefuserScripts.Modules;
 
 [AimlInterface("NeedyCapacitor")]
-internal class NeedyCapacitor : ModuleScript<KtaneDefuserConnector.Components.NeedyCapacitor> {
+internal class NeedyCapacitor() : ModuleScript<KtaneDefuserConnector.Components.NeedyCapacitor>(1, 1) {
 	public override string IndefiniteDescription => "a Needy Capacitor";
 	public override PriorityCategory PriorityCategory => PriorityCategory.Needy;
 

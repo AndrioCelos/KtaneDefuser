@@ -291,8 +291,8 @@ public class DefuserConnector : IDisposable {
 	public LightsState GetLightsState(Image<Rgba32> screenshot) => _simulation is not null ? LightsState.On : ImageUtils.GetLightsState(screenshot);
 
 	/// <summary>Returns the light state of the module in the specified polygon.</summary>
-	public ModuleStatus GetModuleStatus(Image<Rgba32> screenshotBitmap, Quadrilateral quadrilateral, LightsState lightsState, ComponentReader reader)
-		=> _simulation?.GetLightState(quadrilateral) ?? reader.GetStatus(screenshotBitmap, quadrilateral, lightsState);
+	public ModuleStatus GetModuleStatus(Image<Rgba32> screenshotBitmap, Quadrilateral quadrilateral, ComponentReader reader)
+		=> _simulation?.GetLightState(quadrilateral) ?? reader.GetStatus(screenshotBitmap, quadrilateral, ImageUtils.GetLightsState(screenshotBitmap));
 
 	/// <summary>Returns the <see cref="ComponentReader"/> singleton instance of the specified type.</summary>
 	public static T GetComponentReader<T>() where T : ComponentReader => (T) ComponentReaders[typeof(T)];

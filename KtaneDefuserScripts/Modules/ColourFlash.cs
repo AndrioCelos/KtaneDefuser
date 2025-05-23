@@ -1,13 +1,12 @@
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("ColourFlash")]
-internal partial class ColourFlash : ModuleScript<KtaneDefuserConnector.Components.ColourFlash> {
+internal partial class ColourFlash() : ModuleScript<KtaneDefuserConnector.Components.ColourFlash>(2, 1) {
 	public override string IndefiniteDescription => "Colour Flash";
 
 	private static CancellationTokenSource? _cancellationTokenSource;
 	private static Interrupt? _currentInterrupt;
 
 	private List<KtaneDefuserConnector.Components.ColourFlash.ReadData>? _sequence;
-	private int _highlight;
 
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
@@ -60,15 +59,9 @@ internal partial class ColourFlash : ModuleScript<KtaneDefuserConnector.Componen
 		using var interrupt = _currentInterrupt ?? await ModuleInterruptAsync(context);
 		interrupt.Context = context;
 
-		if (pressYes && _highlight == 1) {
-			interrupt.SendInputs(Button.Left);
-			_highlight = 0;
-		} else if (!pressYes && _highlight == 0) {
-			interrupt.SendInputs(Button.Right);
-			_highlight = 1;
-		}
+		Select(interrupt, pressYes ? 0 : 1, 0);
 
-		if (index != null) {
+		if (index is not null) {
 			// Figure out where we are in the sequence currently.
 			int currentIndex; KtaneDefuserConnector.Components.ColourFlash.ReadData state;
 			while (true) {
@@ -77,16 +70,16 @@ internal partial class ColourFlash : ModuleScript<KtaneDefuserConnector.Componen
 					currentIndex = -1;
 					break;
 				}
-				if (_sequence != null) {
-					currentIndex = _sequence.IndexOf(state);
-					if (currentIndex < 0) {
-						// Shouldn't happen, but treat this as if we no longer know the sequence.
-						_sequence = null;
-					} else {
-						if (_sequence.IndexOf(state, currentIndex + 1) < 0) {
-							// This is a unique element in the sequence, so we know where we are now.
-							break;
-						}
+
+				if (_sequence == null) continue;
+				currentIndex = _sequence.IndexOf(state);
+				if (currentIndex < 0) {
+					// Shouldn't happen, but treat this as if we no longer know the sequence.
+					_sequence = null;
+				} else {
+					if (_sequence.IndexOf(state, currentIndex + 1) < 0) {
+						// This is a unique element in the sequence, so we know where we are now.
+						break;
 					}
 				}
 			}
@@ -102,7 +95,7 @@ internal partial class ColourFlash : ModuleScript<KtaneDefuserConnector.Componen
 			}
 		}
 
-		await interrupt.SubmitAsync(Button.A);
+		await interrupt.SubmitAsync();
 	}
 
 	[AimlCategory("press <set>boolean</set> on <set>number</set>")]

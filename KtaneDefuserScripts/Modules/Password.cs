@@ -1,13 +1,13 @@
 ﻿namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Password")]
-internal partial class Password : ModuleScript<KtaneDefuserConnector.Components.Password> {
+internal partial class Password() : ModuleScript<KtaneDefuserConnector.Components.Password>(5, 3) {
 	public override string IndefiniteDescription => "a Password";
 
 	private bool _readyToRead;
-	private int _highlightX;
-	private int _highlightY;
 	private readonly char[]?[] _columns = new char[]?[5];
 	private readonly int[] _columnPositions = new int[5];
+
+	protected override bool IsSelectablePresent(int x, int y) => y < 2 || x == 2;
 
 	protected internal override void Started(AimlAsyncContext context) {
 		_readyToRead = true;
@@ -16,23 +16,23 @@ internal partial class Password : ModuleScript<KtaneDefuserConnector.Components.
 	
 	protected internal override async void ModuleSelected(Interrupt interrupt) {
 		try {
+			using var interrupt2 = await Interrupt.EnterAsync(interrupt.Context);  // Cannot take ownership of the existing interrupt.
 			if (!_readyToRead) return;
 			_readyToRead = false;
-			await MoveToDownButtonRowAsync(interrupt);
 			for (var i = 0; i < 5; i++)
 				_columns[i] = new char[6];
 			for (var i = 0; i < 6; i++) {
 				if (i > 0) {
-					var rightToLeft = _highlightX == 4;
+					var rightToLeft = Selection.X > 2;
 					for (var j = 0; j < 5; j++) {
 						var x = rightToLeft ? 4 - j : j;
-						await CycleColumnAsync(interrupt, x);
+						await CycleColumnAsync(interrupt2, x);
 						_columnPositions[x]++;
 						if (_columnPositions[x] >= 6) _columnPositions[x] = 0;
 					}
 				}
 
-				var data = interrupt.Read(Reader);
+				var data = interrupt2.Read(Reader);
 				LogDisplay(new(data.Display));
 				for (var x = 0; x < 5; x++)
 					_columns[x]![i] = data.Display[x];
@@ -42,14 +42,14 @@ internal partial class Password : ModuleScript<KtaneDefuserConnector.Components.
 			var words = WordleSet.Where(word => Enumerable.Range(0, 5).All(x => _columns[x]!.Any(c => char.ToLowerInvariant(c) == char.ToLowerInvariant(word[x])))).ToList();
 			switch (words.Count) {
 				case 0:
-					interrupt.Context.Reply("Couldn't find any words.");
+					interrupt2.Context.Reply("Couldn't find any words.");
 					break;
 				case 1:
-					interrupt.Context.Reply($"The password seems to be '{words[0]}'.");
-					await SubmitAsync(interrupt, words[0]);
+					interrupt2.Context.Reply($"The password seems to be '{words[0]}'.");
+					await SubmitAsync(interrupt2, words[0]);
 					break;
 				default:
-					interrupt.Context.Reply($"The following words are possible: '{string.Join("', '", words)}'.");
+					interrupt2.Context.Reply($"The following words are possible: '{string.Join("', '", words)}'.");
 					break;
 			}
 		} catch (Exception ex) {
@@ -60,7 +60,6 @@ internal partial class Password : ModuleScript<KtaneDefuserConnector.Components.
 	private async Task ReadColumn(AimlAsyncContext context, int column) {
 		using var interrupt = await ModuleInterruptAsync(context);
 		var letters = new char[6];
-		await MoveToDownButtonRowAsync(interrupt);
 		for (var i = 0; i < 6; i++) {
 			if (i > 0) await CycleColumnAsync(interrupt, column);
 			var data = interrupt.Read(Reader);
@@ -73,34 +72,12 @@ internal partial class Password : ModuleScript<KtaneDefuserConnector.Components.
 		interrupt.Context.Reply("<reply>submit …</reply><reply>column 1</reply><reply><text>2</text><postback>column 2</postback></reply><reply><text>3</text><postback>column 3</postback></reply><reply><text>4</text><postback>column 4</postback></reply><reply><text>5</text><postback>column 5</postback></reply>");
 	}
 
-	private async Task MoveToDownButtonRowAsync(Interrupt interrupt) {
-		switch (_highlightY) {
-			case 0:
-				await interrupt.SendInputsAsync(Button.Down);
-				break;
-			case 2:
-				await interrupt.SendInputsAsync(Button.Up);
-				break;
-		}
-		_highlightY = 1;
-	}
-
 	private async Task CycleColumnAsync(Interrupt interrupt, int column) {
-		var buttons = new List<Button>();
-		while (column < _highlightX) {
-			buttons.Add(Button.Left);
-			_highlightX--;
-		}
-		while (column > _highlightX) {
-			buttons.Add(Button.Right);
-			_highlightX++;
-		}
-		buttons.Add(Button.A);
-		await interrupt.SendInputsAsync(buttons);
+		Select(interrupt, column, 1);
+		await interrupt.SendInputsAsync(Button.A);
 	}
 
 	private async Task SubmitAsync(Interrupt interrupt, string word) {
-		await MoveToDownButtonRowAsync(interrupt);
 		for (var i = 0; i < 6; i++) {
 			var data = interrupt.Read(Reader);
 			LogDisplay(new(data.Display));
@@ -114,9 +91,8 @@ internal partial class Password : ModuleScript<KtaneDefuserConnector.Components.
 			}
 
 			if (anyMismatch) continue;
-			_highlightX = 2;
-			_highlightY = 2;
-			await interrupt.SubmitAsync(Button.Down, Button.A);
+			Select(interrupt, 2, 2);
+			await interrupt.SubmitAsync();
 			return;
 		}
 		interrupt.Context.Reply("Could not submit that word.");

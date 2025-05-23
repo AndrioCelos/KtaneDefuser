@@ -2,7 +2,7 @@ using static KtaneDefuserConnector.Components.ComplicatedWires;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("ComplicatedWires")]
-internal partial class ComplicatedWires : ModuleScript<KtaneDefuserConnector.Components.ComplicatedWires> {
+internal partial class ComplicatedWires() : ModuleScript<KtaneDefuserConnector.Components.ComplicatedWires>(6, 1) {
 	private static readonly bool?[] ShouldCut = new bool?[16];
 
 	public override string IndefiniteDescription => "Complicated Wires";
@@ -10,7 +10,6 @@ internal partial class ComplicatedWires : ModuleScript<KtaneDefuserConnector.Com
 	private bool _readyToRead;
 	private (WireFlags flags, bool isCut)[]? _wires;
 	private WireFlags? _currentFlags;
-	private int _highlight;
 
 	protected internal override void Started(AimlAsyncContext context) => _readyToRead = true;
 
@@ -18,7 +17,8 @@ internal partial class ComplicatedWires : ModuleScript<KtaneDefuserConnector.Com
 		try {
 			if (!_readyToRead) return;
 			_readyToRead = false;
-			await Read(interrupt);
+			using var interrupt2 = await CurrentModuleInterruptAsync(interrupt.Context);
+			await Read(interrupt2);
 		} catch (Exception ex) {
 			LogException(ex);
 		}
@@ -33,9 +33,9 @@ internal partial class ComplicatedWires : ModuleScript<KtaneDefuserConnector.Com
 	private async Task Read(Interrupt interrupt) {
 		var data = interrupt.Read(Reader);
 		LogWires($"[{string.Join("] [", data.Wires)}]");
-		var script = GameState.Current.CurrentScript<ComplicatedWires>();
-		script._wires ??= (from w in data.Wires select (w, false)).ToArray();
-		await script.FindWiresToCut(interrupt, false);
+		_wires ??= (from w in data.Wires select (w, false)).ToArray();
+		SelectableSize = new(_wires.Length, 1);
+		await FindWiresToCut(interrupt, false);
 	}
 
 	private async Task FindWiresToCut(Interrupt interrupt, bool fromUserInput) {
@@ -67,24 +67,14 @@ internal partial class ComplicatedWires : ModuleScript<KtaneDefuserConnector.Com
 				toCut.AddRange(Enumerable.Range(0, _wires.Length).Where(i => _wires[i].flags == firstUnknown.Value));
 			}
 			if (toCut.Count > 0) {
-				var buttons = new List<Button>();
 				for (var i = 0; i < toCut.Count; i++) {
 					var wireIndex = toCut[i];
 					LogCuttingWire(wireIndex + 1);
-					while (_highlight < wireIndex) {
-						buttons.Add(Button.Right);
-						_highlight++;
-					}
-					while (_highlight > wireIndex) {
-						buttons.Add(Button.Left);
-						_highlight--;
-					}
-					buttons.Add(Button.A);
+					Select(interrupt, wireIndex, 0);
 					_wires[wireIndex].isCut = true;
 					if ((!fromUserInput || i != 0) && i + 1 < toCut.Count) continue;
 					// Check whether this was a strike or solve. If in response to the user saying to cut a wire, check after the first wire. Otherwise, only check after all wires for speed.
-					var result = await interrupt.SubmitAsync(buttons);
-					buttons.Clear();
+					var result = await interrupt.SubmitAsync();
 					if (result == ModuleStatus.Strike) {
 						ShouldCut[(int) _wires[wireIndex].flags] = false;
 						break;

@@ -2,8 +2,7 @@
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Semaphore")]
-internal class Semaphore : ModuleScript<KtaneDefuserConnector.Components.Semaphore> {
-
+internal class Semaphore() : ModuleScript<KtaneDefuserConnector.Components.Semaphore>(3, 1) {
 	public override string IndefiniteDescription => "Semaphore";
 
 	private static Dictionary<KtaneDefuserConnector.Components.Semaphore.Direction, string> DirectionDescriptions { get; } = new() {
@@ -17,7 +16,6 @@ internal class Semaphore : ModuleScript<KtaneDefuserConnector.Components.Semapho
 		{ KtaneDefuserConnector.Components.Semaphore.Direction.DownRight, "down right" },
 	};
 
-	private int _highlight;
 	private List<ReadData>? _displays;
 	private int _display;
 
@@ -29,16 +27,12 @@ internal class Semaphore : ModuleScript<KtaneDefuserConnector.Components.Semapho
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		
 		if (script._display > 0) {
-			var list = new List<Button>();
-			while (script._highlight > 0) {
-				list.Add(Button.Left);
-				script._highlight--;
-			}
+			script.Select(interrupt, 0, 0);
 			while (script._display > 0) {
-				list.Add(Button.A);
+				interrupt.SendInputs(Button.A);
 				script._display--;
 			}
-			await interrupt.SendInputsAsync(list);
+			await interrupt.SendInputsAsync(Enumerable.Empty<IInputAction>());
 			await Delay(0.5);
 		}
 
@@ -52,16 +46,8 @@ internal class Semaphore : ModuleScript<KtaneDefuserConnector.Components.Semapho
 			script._displays.Add(read);
 			context.Reply($"<priority/> {DirectionDescriptions[read.LeftFlag]} and {DirectionDescriptions[read.RightFlag]}");
 
-			if (script._highlight < 2) {
-				var list = new List<Button>();
-				while (script._highlight < 2) {
-					list.Add(Button.Right);
-					script._highlight++;
-				}
-				list.Add(Button.A);
-				await interrupt.SendInputsAsync(list);
-			} else
-				await interrupt.SendInputsAsync(Button.A);
+			script.Select(interrupt, 2, 0);
+			await interrupt.SendInputsAsync(Button.A);
 			await Delay(0.5);
 		}
 	}
@@ -75,37 +61,20 @@ internal class Semaphore : ModuleScript<KtaneDefuserConnector.Components.Semapho
 
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 
-		var list = new List<Button>();
 		while (script._display < index) {
-			while (script._highlight < 2) {
-				list.Add(Button.Right);
-				script._highlight++;
-			}
-			list.Add(Button.A);
+			script.Select(interrupt, 2, 0);
+			interrupt.SendInputs(Button.A);
 			script._display++;
 		}
 
 		while (script._display > index) {
-			while (script._highlight > 0) {
-				list.Add(Button.Left);
-				script._highlight--;
-			}
-			list.Add(Button.A);
+			script.Select(interrupt, 0, 0);
+			interrupt.SendInputs(Button.A);
 			script._display--;
 		}
 
-		switch (script._highlight) {
-			case 0:
-				list.Add(Button.Right);
-				break;
-			case 2:
-				list.Add(Button.Left);
-				break;
-		}
-		script._highlight = 1;
-
-		list.Add(Button.A);
-		await interrupt.SubmitAsync(list);
+		script.Select(interrupt, 1, 0);
+		await interrupt.SubmitAsync();
 	}
 
 	[AimlCategory("<set>number</set>"), AimlCategory("submit <set>number</set>")]

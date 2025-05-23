@@ -1,10 +1,9 @@
 ﻿namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Wires")]
-internal class Wires : ModuleScript<KtaneDefuserConnector.Components.Wires> {
+internal class Wires() : ModuleScript<KtaneDefuserConnector.Components.Wires>(1, 6) {
 	public override string IndefiniteDescription => "Wires";
-	
+
 	private int _wireCount;
-	private int _highlight;
 
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
@@ -13,6 +12,7 @@ internal class Wires : ModuleScript<KtaneDefuserConnector.Components.Wires> {
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		var data = interrupt.Read(Reader);
 		GameState.Current.CurrentScript<Wires>()._wireCount = data.Colours.Length;
+		GameState.Current.CurrentScript<Wires>().SelectableSize = new(1, data.Colours.Length);
 		interrupt.Context.Reply($"{data.Colours.Length} wires: {string.Join(", ", data.Colours)}.");
 
 		interrupt.Context.AddReply("cut the first wire");
@@ -22,20 +22,10 @@ internal class Wires : ModuleScript<KtaneDefuserConnector.Components.Wires> {
 
 	[AimlCategory("cut wire *")]
 	internal static async Task CutWire(AimlAsyncContext context, int wireNum) {
-		wireNum--;
-		var buttons = new List<Button>();
 		var script = GameState.Current.CurrentScript<Wires>();
-		while (script._highlight < wireNum) {
-			buttons.Add(Button.Down);
-			script._highlight++;
-		}
-		while (script._highlight > wireNum) {
-			buttons.Add(Button.Up);
-			script._highlight--;
-		}
-		buttons.Add(Button.A);
-		using var interrupt = await CurrentModuleInterruptAsync(context);
-		await interrupt.SubmitAsync(buttons);
+		using var interrupt = await script.ModuleInterruptAsync(context);
+		script.Select(interrupt, 0, wireNum - 1);
+		await interrupt.SubmitAsync();
 	}
 
 	[AimlCategory("cut the <set>ordinal</set> wire")]

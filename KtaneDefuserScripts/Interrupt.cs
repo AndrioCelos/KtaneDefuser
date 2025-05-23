@@ -102,6 +102,10 @@ public class Interrupt : IDisposable {
 		return task;
 	}
 
+	private static readonly IInputAction[] DefaultSubmitAction = [new ButtonAction(Button.A)];
+	
+	/// <summary>Presses the A button, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
+	public Task<ModuleStatus> SubmitAsync() => SubmitAsync(DefaultSubmitAction);
 	/// <summary>Performs the specified input actions, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
 	public Task<ModuleStatus> SubmitAsync(params IEnumerable<Button> buttons) => SubmitAsync(from b in buttons select new ButtonAction(b));
 	/// <summary>Performs the specified input actions, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
@@ -119,7 +123,7 @@ public class Interrupt : IDisposable {
 			await SendInputsAsync(actions, _submitCancellationTokenSource.Token);
 			await Delay(0.5);  // Wait for the interaction punch to end.
 			using var ss = DefuserConnector.Instance.TakeScreenshot();
-			var result = DefuserConnector.Instance.GetModuleStatus(ss, Utils.CurrentModuleArea, ImageUtils.GetLightsState(ss), module.Reader);
+			var result = DefuserConnector.Instance.GetModuleStatus(ss, Utils.CurrentModuleArea, module.Reader);
 			if (result != ModuleStatus.Solved) return result;
 			var isDefused = GameState.Current.TryMarkModuleSolved(context, GameState.Current.CurrentModuleNum.Value);
 			if (isDefused)

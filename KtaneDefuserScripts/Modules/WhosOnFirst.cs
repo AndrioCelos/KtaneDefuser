@@ -1,11 +1,10 @@
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("WhosOnFirst")]
-internal class WhosOnFirst : ModuleScript<KtaneDefuserConnector.Components.WhosOnFirst> {
+internal class WhosOnFirst() : ModuleScript<KtaneDefuserConnector.Components.WhosOnFirst>(2, 3) {
 	public override string IndefiniteDescription => "Who's on First";
 
 	private bool _readyToRead;
 	private Phrase[] _keyLabels = new Phrase[6];
-	private int _highlight;
 
 	protected internal override void Started(AimlAsyncContext context) => _readyToRead = true;
 
@@ -64,27 +63,9 @@ internal class WhosOnFirst : ModuleScript<KtaneDefuserConnector.Components.WhosO
 	}
 
 	private async Task PressButtonAsync(AimlAsyncContext context, int index) {
-		var buttons = new List<Button>();
-		var highlight = _highlight;
-		if (highlight % 2 == 0 && index % 2 == 1) {
-			highlight++;
-			buttons.Add(Button.Right);
-		} else if (highlight % 2 == 1 && index % 2 == 0) {
-			highlight--;
-			buttons.Add(Button.Left);
-		}
-		while (highlight < index) {
-			highlight += 2;
-			buttons.Add(Button.Down);
-		}
-		while (highlight > index) {
-			highlight -= 2;
-			buttons.Add(Button.Up);
-		}
-		buttons.Add(Button.A);
-		_highlight = highlight;
 		using var interrupt = await ModuleInterruptAsync(context);
-		var result = await interrupt.SubmitAsync(buttons);
+		Select(interrupt, index % 2, index / 2);
+		var result = await interrupt.SubmitAsync();
 		if (result != ModuleStatus.Solved) await WaitRead(interrupt);
 	}
 

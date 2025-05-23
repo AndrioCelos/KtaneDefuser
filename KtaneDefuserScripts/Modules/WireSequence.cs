@@ -2,7 +2,7 @@ using static KtaneDefuserConnector.Components.WireSequence;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("WireSequence")]
-internal partial class WireSequence : ModuleScript<KtaneDefuserConnector.Components.WireSequence> {
+internal partial class WireSequence() : ModuleScript<KtaneDefuserConnector.Components.WireSequence>(1, 5) {
 	public override string IndefiniteDescription => "a Wire Sequence";
 
 	private bool _readyToRead;
@@ -10,19 +10,22 @@ internal partial class WireSequence : ModuleScript<KtaneDefuserConnector.Compone
 	private WireColour?[] _currentPageColours = new WireColour?[3];
 	private int _highlight = -1;  // For this script, -1 => previous button, 0~2 => wire slots, 3 => next button, < -1 => unknown
 
+	protected override bool IsSelectablePresent(int x, int y) => y is 0 or 4 || _currentPageColours[y - 1] is not null;
+
 	protected internal override void Started(AimlAsyncContext context) => _readyToRead = true;
 
 	protected internal override async void ModuleSelected(Interrupt interrupt) {
 		try {
 			if (!_readyToRead) return;
 			_readyToRead = false;
+			using var interrupt2 = await CurrentModuleInterruptAsync(interrupt.Context);
 			// The highlight starts on the previous button, so move down first.
 			if (_highlight == -1) {
-				await interrupt.SendInputsAsync(Button.Down);
+				await interrupt2.SendInputsAsync(Button.Down);
 				_highlight = -2;
 			}
 
-			await ContinuePageAsync(interrupt);
+			await ContinuePageAsync(interrupt2);
 		} catch (Exception ex) {
 			LogException(ex);
 		}
@@ -48,7 +51,7 @@ internal partial class WireSequence : ModuleScript<KtaneDefuserConnector.Compone
 
 	private async Task MoveToNextPageAsync(Interrupt interrupt) {
 		while (true) {
-			var result = await interrupt.SubmitAsync(Button.A);
+			var result = await interrupt.SubmitAsync();
 			switch (result) {
 				case ModuleStatus.Solved:
 				case ModuleStatus.Strike:

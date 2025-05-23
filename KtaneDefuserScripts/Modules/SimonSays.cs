@@ -2,40 +2,38 @@ using KtaneDefuserConnector.DataTypes;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("SimonSays")]
-internal partial class SimonSays : ModuleScript<KtaneDefuserConnector.Components.SimonSays> {
+internal partial class SimonSays() : ModuleScript<KtaneDefuserConnector.Components.SimonSays>(3, 3, 1) {
 	public override string IndefiniteDescription => "a Simon";
 
 	private static readonly SimonColour?[] ButtonMap = new SimonColour?[4];
 
 	private bool _readyToRead;
-	private SimonColour _highlight = SimonColour.Blue;
 	private int _stagesCleared;
 	private readonly List<SimonColour> _pattern = new(5);
 	private SimonColour? _currentColour;
 
+	protected override bool IsSelectablePresent(int x, int y) => (x + y) % 2 != 0;
 	protected internal override void Initialise(Interrupt interrupt) => GameState.Current.Strike += (_, _) => Array.Clear(ButtonMap);  // A strike invalidates the whole mapping.
-
 	protected internal override void Started(AimlAsyncContext context) => _readyToRead = true;
 
 	protected internal override async void ModuleSelected(Interrupt interrupt) {
 		try {
 			if (!_readyToRead) return;
 			_readyToRead = false;
+			using var interrupt2 = await CurrentModuleInterruptAsync(interrupt.Context);
 			if (_pattern.Count == 0) {
-				var colour = await ReadLastColourAsync(interrupt);
+				var colour = await ReadLastColourAsync(interrupt2);
 				_pattern.Add(colour);
 			}
 
-			await LoopAsync(interrupt);
+			await LoopAsync(interrupt2);
 		} catch (Exception ex) {
 			LogException(ex);
 		}
 	}
 
 	private async Task LoopAsync(Interrupt interrupt) {
-		var buttons = new List<Button>();
 		while (true) {
-			var highlight = _highlight;
 			foreach (var patternColour in _pattern) {
 				var correctColour = ButtonMap[(int) patternColour];
 				if (correctColour is null) {
@@ -44,28 +42,19 @@ internal partial class SimonSays : ModuleScript<KtaneDefuserConnector.Components
 					interrupt.Context.AddReplies("red", "yellow", "green", "blue");
 					return;
 				}
-				if (highlight != correctColour) {
-					highlight = correctColour.Value;
-					buttons.Add(correctColour switch {
-						SimonColour.Red => Button.Left,
-						SimonColour.Yellow => Button.Right,
-						SimonColour.Green => Button.Down,
-						_ => Button.Up
-					});
-				}
-				buttons.Add(Button.A);
-			}
-			_highlight = highlight;
-			var result = await interrupt.SubmitAsync(buttons);
-			if (result != ModuleStatus.Strike) {
-				_stagesCleared++;
-				if (result == ModuleStatus.Solved) return;
 
-				await Delay(1);
-				var colour = await ReadLastColourAsync(interrupt);
-				_pattern.Add(colour);
+				var (x, y) = correctColour switch { SimonColour.Blue => (1, 0), SimonColour.Red => (0, 1), SimonColour.Yellow => (2, 1), _ => (1, 2) };
+				Select(interrupt, x, y);
+				interrupt.SendInputs(Button.A);
 			}
-			buttons.Clear();
+			var result = await interrupt.SubmitAsync(Enumerable.Empty<IInputAction>());
+			if (result == ModuleStatus.Strike) continue;
+			_stagesCleared++;
+			if (result == ModuleStatus.Solved) return;
+
+			await Delay(1);
+			var colour = await ReadLastColourAsync(interrupt);
+			_pattern.Add(colour);
 		}
 	}
 

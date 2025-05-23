@@ -1,4 +1,4 @@
-﻿namespace KtaneDefuserScripts;
+namespace KtaneDefuserScripts;
 public static class CenturionUtil {
 	/*
 	 * The Centurion's grid mapping for gamepad controls is strange, to say the least.
@@ -39,12 +39,12 @@ public static class CenturionUtil {
 
 	/// <summary>Gets a quadrilateral representing the location of the specified slot on the screen. The slot should be on the side of the bomb we're already looking at.</summary>
 	/// <returns><see langword='true'/> if the specified slot is visible; <see langword='false'/> otherwise.</returns>
-	public static bool TryGetPoints(Slot slot, bool isZoomedOut, out Quadrilateral quadrilateral) => TryGetPoints(slot, isZoomedOut, GameState.Current.SelectedFace.SelectedSlot, out quadrilateral);
+	public static bool TryGetPoints(Slot slot, bool isZoomedOut, out Quadrilateral quadrilateral) => TryGetPoints(slot, isZoomedOut, GameState.Current.SelectedSlot, out quadrilateral);
 	public static bool TryGetPoints(Slot slot, bool isZoomedOut, Slot referenceSlot, out Quadrilateral quadrilateral) {
 		if (GameState.Current.FocusState != FocusState.Module) {
 			var (vx, vy) = GetVisualXY(slot);
-			if (isZoomedOut) {
-				quadrilateral = vy switch {
+			quadrilateral = isZoomedOut
+				? vy switch {
 					4 => vx switch {
 						-3 => new(new(768, 894), new(862, 894), new(765, 994), new(860, 994)),
 						-1 => new(new(875, 894), new(968, 894), new(872, 994), new(968, 994)),
@@ -53,9 +53,8 @@ public static class CenturionUtil {
 						_ => new()
 					},
 					_ => new()
-				};
-			} else {
-				quadrilateral = vy switch {
+				}
+				:  vy switch {
 					-4 => vx switch {
 						-3 => new(new(717, 4), new(834, 4), new(717, 111), new(832, 111)),
 						-1 => new(new(852, 4), new(969, 4), new(852, 111), new(969, 111)),
@@ -136,7 +135,6 @@ public static class CenturionUtil {
 					},
 					_ => new()
 				};
-			}
 		} else {
 			if (slot.Bomb != referenceSlot.Bomb || slot.Face != referenceSlot.Face)
 				throw new ArgumentException("Specified slot must be on the currently-selected bomb face.", nameof(slot));
@@ -187,7 +185,7 @@ public static class CenturionUtil {
 
 	public static (int zoom, Quadrilateral quadrilateral) GetTimerPoints() {
 		if (GameState.Current.FocusState == FocusState.Bomb) return (-2, new(new(939, 542), new(1010, 542), new(939, 583), new(1011, 583)));
-		var (vx, vy) = GetVisualXY(GameState.Current.SelectedFace.SelectedSlot);
+		var (vx, vy) = GetVisualXY(GameState.Current.SelectedSlot);
 		return vy switch {
 			-4 => vx switch {
 				 -3 => (-2, new(new(1121,  993), new(1210,  993), new(1122, 1050), new(1212, 1050))),

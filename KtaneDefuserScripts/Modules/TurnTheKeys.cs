@@ -1,11 +1,10 @@
 ﻿namespace KtaneDefuserScripts.Modules;
 [AimlInterface("TurnTheKeys")]
-internal class TurnTheKeys : ModuleScript<KtaneDefuserConnector.Components.TurnTheKeys> {
+internal class TurnTheKeys() : ModuleScript<KtaneDefuserConnector.Components.TurnTheKeys>(2, 1) {
 	public override string IndefiniteDescription => "Turn the Keys";
 	public override PriorityCategory PriorityCategory => PriorityCategory.MustSolveBeforeSome;
 
 	private int _priority;
-	private int _selectionIndex;
 
 	protected internal override void Initialise(Interrupt interrupt) {
 		using var ss = DefuserConnector.Instance.TakeScreenshot();
@@ -18,28 +17,20 @@ internal class TurnTheKeys : ModuleScript<KtaneDefuserConnector.Components.TurnT
 		using var interrupt = await Interrupt.EnterAsync(context);
 		interrupt.Context.Reply("Turning the keys.");
 
-		var modules = GameState.Current.Modules.Where(e => e.Script is TurnTheKeys);
-
-		foreach (var e in modules.OrderByDescending(e => ((TurnTheKeys) e.Script)._priority)) {
+		foreach (var e in from m in GameState.Current.Modules where m.Script is TurnTheKeys orderby ((TurnTheKeys) m.Script)._priority descending select m) {
 			// Turn the right key.
 			var script = (TurnTheKeys) e.Script;
 			await Utils.SelectModuleAsync(interrupt, script.ModuleIndex, false);
-			if (script._selectionIndex < 1) {
-				script._selectionIndex = 1;
-				interrupt.SendInputs(Button.Right);
-			}
+			script.Select(interrupt, 1, 0);
 			interrupt.SendInputs(Button.A);
 		}
 
-		foreach (var e in modules.OrderBy(e => ((TurnTheKeys) e.Script)._priority)) {
+		foreach (var e in from m in GameState.Current.Modules where m.Script is TurnTheKeys orderby ((TurnTheKeys) m.Script)._priority select m) {
 			// Turn the left key.
 			var script = (TurnTheKeys) e.Script;
 			await Utils.SelectModuleAsync(interrupt, script.ModuleIndex, false);
-			if (script._selectionIndex > 0) {
-				script._selectionIndex = 0;
-				interrupt.SendInputs(Button.Left);
-			}
-			await interrupt.SubmitAsync(Button.A);
+			script.Select(interrupt, 0, 0);
+			await interrupt.SubmitAsync();
 		}
 	}
 }

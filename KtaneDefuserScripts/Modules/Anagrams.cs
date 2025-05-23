@@ -3,8 +3,10 @@
 internal class Anagrams : ModuleScript<KtaneDefuserConnector.Components.Anagrams> {
 	public override string IndefiniteDescription => "Anagrams";
 	
-	private readonly WordScramble.Processor _processor = new(i => i.Read(Reader));
-	
+	private readonly WordScramble.Processor _processor;
+
+	public Anagrams() : base(4, 2) => _processor = new(this, i => i.Read(Reader));
+
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
 	[AimlCategory("read")]

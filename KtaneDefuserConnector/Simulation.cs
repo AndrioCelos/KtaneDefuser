@@ -56,7 +56,7 @@ internal partial class Simulation {
 		});
 		_moduleFaces[1] = new(new BombComponent?[,] {
 			{
-				new Modules.Maze(this, new(0, 0), new(6, 6), new(0, 1), new(5, 2)),
+				new Modules.Maze(this, new(0, 0), new(5, 5), new(0, 1), new(5, 2)),
 				new Modules.Memory(this),
 				new Modules.MorseCode(this)
 			},

@@ -4,7 +4,7 @@ using Button = KtaneDefuserConnectorApi.Button;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Keypad")]
-internal class Keypad : ModuleScript<KtaneDefuserConnector.Components.Keypad> {
+internal class Keypad() : ModuleScript<KtaneDefuserConnector.Components.Keypad>(2, 2) {
 	private static Dictionary<Symbol, string> SymbolDescriptions { get; } = new() {
 		{ Symbol.Copyright   , "copyright symbol" },
 		{ Symbol.FilledStar  , "filled star" },
@@ -42,7 +42,7 @@ internal class Keypad : ModuleScript<KtaneDefuserConnector.Components.Keypad> {
 
 	private readonly bool[] _pressed = new bool[4];
 	private Symbol[]? _symbols;
-	private int _highlight;
+
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
 	[AimlCategory("read")]
@@ -62,9 +62,8 @@ internal class Keypad : ModuleScript<KtaneDefuserConnector.Components.Keypad> {
 			context.Reply("We need to read the module first.");
 			return;
 		}
-		var presses = new List<(IEnumerable<Button> inputs, int index)>();
-		var cursorIndex = script._highlight;
 		var descriptions = keys.Split(" then ", StringSplitOptions.TrimEntries);
+		var indices = new List<int>();
 		foreach (var desc in descriptions) {
 			var symbol = Enum.Parse<Symbol>(context.RequestProcess.Srai($"GetKeypadGlyphName {desc}"), true);
 			var index = Array.IndexOf(symbols, symbol);
@@ -72,23 +71,13 @@ internal class Keypad : ModuleScript<KtaneDefuserConnector.Components.Keypad> {
 				context.Reply($"{SymbolDescriptions[symbol]} is not on the keypad.");
 				return;
 			}
-			var buttons = new List<Button>();
-			if (index / 2 < cursorIndex / 2)
-				buttons.Add(Button.Up);
-			else if (index / 2 > cursorIndex / 2)
-				buttons.Add(Button.Down);
-			if (index % 2 < cursorIndex % 2)
-				buttons.Add(Button.Left);
-			else if (index % 2 > cursorIndex % 2)
-				buttons.Add(Button.Right);
-			buttons.Add(Button.A);
-			presses.Add((buttons, index));
-			cursorIndex = index;
+			indices.Add(index);
 		}
+	
 		using var interrupt = await Interrupt.EnterAsync(context);
-		foreach (var (inputs, index) in presses) {
-			script._highlight = index;
-			var result = await interrupt.SubmitAsync(inputs);
+		foreach (var index in indices) {
+			script.Select(interrupt, index % 2, index / 2);
+			var result = await interrupt.SubmitAsync();
 			if (result != ModuleStatus.Strike) script._pressed[index] = true;
 			if (result != ModuleStatus.Off) return;
 		}

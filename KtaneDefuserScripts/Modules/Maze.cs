@@ -1,9 +1,11 @@
+using SixLabors.ImageSharp;
+
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Maze")]
-internal class Maze : ModuleScript<KtaneDefuserConnector.Components.Maze> {
+internal class Maze() : ModuleScript<KtaneDefuserConnector.Components.Maze>(3, 3, 1) {
 	public override string IndefiniteDescription => "a Maze";
-	private Direction _highlight;
 
+	protected override bool IsSelectablePresent(int x, int y) => (x + y) % 2 != 0;
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
 	[AimlCategory("read")]
@@ -28,9 +30,8 @@ internal class Maze : ModuleScript<KtaneDefuserConnector.Components.Maze> {
 		=> GameState.Current.CurrentScript<Maze>().ProcessInputAsync(context, s);
 
 	private async Task ProcessInputAsync(AimlAsyncContext context, string s) {
-		var buttons = new List<Button>();
+		var points = new List<(Point point, int count)>();
 		var tokens = s.Split((char[]?) null, StringSplitOptions.RemoveEmptyEntries);
-		var currentHighlight = _highlight;
 		for (var i = 0; i < tokens.Length; i++) {
 			var token = tokens[i].ToLowerInvariant();
 			if (token is "time" or "times" or "step" or "steps" or "space" or "spaces") continue;
@@ -47,16 +48,15 @@ internal class Maze : ModuleScript<KtaneDefuserConnector.Components.Maze> {
 			} else
 				count = 1;
 
-			if (direction != currentHighlight) {
-				buttons.Add(direction switch { Direction.Up => Button.Up, Direction.Right => Button.Right, Direction.Down => Button.Down, _ => Button.Left });
-				currentHighlight = direction;
-			}
-			for (; count > 0; count--)
-				buttons.Add(Button.A);
+			points.Add((direction switch { Direction.Up => new(1, 0), Direction.Right => new(2, 1), Direction.Down => new(1, 2), _ => new(0, 1) }, count));
 		}
-		_highlight = currentHighlight;
+
 		using var interrupt = await ModuleInterruptAsync(context);
-		var result = await interrupt.SubmitAsync(buttons);
+		foreach (var (point, count) in points) {
+			Select(interrupt, point.X, point.Y);
+			interrupt.SendInputs(Enumerable.Repeat(Button.A, count));
+		}
+		var result = await interrupt.SubmitAsync(Enumerable.Empty<IInputAction>());
 		if (result == ModuleStatus.Solved) return;
 
 		var data = interrupt.Read(Reader);

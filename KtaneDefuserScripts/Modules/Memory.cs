@@ -1,11 +1,10 @@
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Memory")]
-internal class Memory : ModuleScript<KtaneDefuserConnector.Components.Memory> {
+internal class Memory() : ModuleScript<KtaneDefuserConnector.Components.Memory>(4, 1) {
 	public override string IndefiniteDescription => "Memory";
 
 	private bool _readyToRead;
 	private int[] _keyLabels = new int[4];
-	private int _highlight;
 
 	protected internal override void Started(AimlAsyncContext context) => _readyToRead = true;
 
@@ -55,20 +54,9 @@ internal class Memory : ModuleScript<KtaneDefuserConnector.Components.Memory> {
 	}
 
 	private async Task PressButtonAsync(AimlAsyncContext context, int index, bool fromLabel) {
-		var buttons = new List<Button>();
-		var highlight = _highlight;
-		while (highlight > index) {
-			highlight--;
-			buttons.Add(Button.Left);
-		}
-		while (highlight < index) {
-			highlight++;
-			buttons.Add(Button.Right);
-		}
-		buttons.Add(Button.A);
 		using var interrupt = await ModuleInterruptAsync(context);
-		_highlight = highlight;
-		var result = await interrupt.SubmitAsync(buttons);
+		Select(interrupt, index, 0);
+		var result = await interrupt.SubmitAsync();
 		if (result != ModuleStatus.Solved) {
 			if (result == ModuleStatus.Off)
 				interrupt.Context.Reply(fromLabel ? $"The position was {index + 1}." : $"The label was {_keyLabels[index]}.");

@@ -1,7 +1,7 @@
 ﻿namespace KtaneDefuserScripts.Modules;
 
 [AimlInterface("NeedyKnob")]
-internal partial class NeedyKnob : ModuleScript<KtaneDefuserConnector.Components.NeedyKnob> {
+internal partial class NeedyKnob() : ModuleScript<KtaneDefuserConnector.Components.NeedyKnob>(1, 1) {
 	private static readonly Dictionary<Counts, Direction> CorrectDirections = [];
 
 	public override string IndefiniteDescription => "a Needy Knob";

@@ -3,7 +3,7 @@
 namespace KtaneDefuserScripts.Modules;
 
 [AimlInterface("MorseCode")]
-internal partial class MorseCode : ModuleScript<KtaneDefuserConnector.Components.MorseCode> {
+internal partial class MorseCode() : ModuleScript<KtaneDefuserConnector.Components.MorseCode>(3, 2) {
 	private const int DashThreshold = 4;
 	private const int WordSpaceThreshold = 10;
 	private static Interrupt? _interrupt;
@@ -68,10 +68,10 @@ internal partial class MorseCode : ModuleScript<KtaneDefuserConnector.Components
 
 
 	public override string IndefiniteDescription => "Morse Code";
-	
-	private int _highlight;  // For this script, 0 => down button, 1 => right button, 2 => submit button
+
 	private int _selectedFrequency;
 
+	protected override bool IsSelectablePresent(int x, int y) => (x + y) % 2 == 0;
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
 	[AimlCategory("read")]
@@ -187,34 +187,24 @@ internal partial class MorseCode : ModuleScript<KtaneDefuserConnector.Components
 		interrupt.Context = context;
 		var buttons = new List<Button>();
 		if (frequency < _selectedFrequency) {
-			switch (_highlight) {
-				case 1: buttons.Add(Button.Left); break;
-				case 2: buttons.Add(Button.Up); break;
-			}
-			_highlight = 0;
+			Select(interrupt, 0, 0);
 			do {
 				buttons.Add(Button.A);
 				_selectedFrequency--;
 			} while (frequency < _selectedFrequency);
 		}
 		if (frequency > _selectedFrequency) {
-			if (_highlight != 1) {
-				buttons.Add(Button.Right);
-				_highlight = 1;
-			}
+			Select(interrupt, 2, 0);
 			do {
 				buttons.Add(Button.A);
 				_selectedFrequency++;
 			} while (frequency > _selectedFrequency);
 		}
-		if (_highlight != 2) {
-			buttons.Add(Button.Down);
-			_highlight = 2;
-		}
-		buttons.Add(Button.A);
 		await interrupt.SubmitAsync(buttons);
+		Select(interrupt, 1, 1);
+		await interrupt.SubmitAsync();
 	}
-	
+
 	#region Log templates
 	
 	[LoggerMessage(LogLevel.Information, "Waiting for letter space")]

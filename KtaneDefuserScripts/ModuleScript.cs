@@ -1,15 +1,19 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace KtaneDefuserScripts;
 /// <summary>Provides the script and variables associated with a specific module.</summary>
-public abstract partial class ModuleScript {
+public abstract partial class ModuleScript : SelectableHandler {
 	protected readonly ILogger Logger;
 
-	private static readonly Dictionary<Type, (Type scriptType, string topic)> Scripts = new(from t in typeof(ModuleScript).Assembly.GetTypes() where t.BaseType is { IsGenericType: true } t2 && t2.GetGenericTypeDefinition() == typeof(ModuleScript<>)
-																							select new KeyValuePair<Type, (Type, string)>(t.BaseType!.GenericTypeArguments[0], (t, t.GetCustomAttribute<AimlInterfaceAttribute>()?.Topic ?? throw new InvalidOperationException($"Missing topic on {t.Name}"))));
+	private static readonly Dictionary<Type, (Type scriptType, string topic)> Scripts
+		= typeof(ModuleScript).Assembly.GetTypes()
+			.Where(t => t.BaseType is { IsGenericType: true } t2 && t2.GetGenericTypeDefinition() == typeof(ModuleScript<>))
+			.ToDictionary(t => t.BaseType!.GenericTypeArguments[0], t => (t, t.GetCustomAttribute<AimlInterfaceAttribute>()?.Topic ?? throw new InvalidOperationException($"Missing topic on {t.Name}")));
 	private static readonly MethodInfo CreateMethodBase = typeof(ModuleScript).GetMethod(nameof(CreateInternal), BindingFlags.NonPublic | BindingFlags.Static)!;
 	private static readonly Dictionary<Type, MethodInfo> CreateMethodCache = [];
+
+	public static IReadOnlyCollection<Type> ScriptTypes => Scripts.Keys;
 
 	/// <summary>Returns the AIML topic associated with this script.</summary>
 	[field: MaybeNull]
@@ -25,9 +29,11 @@ public abstract partial class ModuleScript {
 	/// <summary>If this instance is handling a needy module, returns the module's needy state.</summary>
 	public NeedyState NeedyState { get; internal set; }
 
-	public static IReadOnlyCollection<Type> ScriptTypes => Scripts.Keys;
-
-	protected ModuleScript() => Logger = GameState.Current.LoggerFactory.CreateLogger(GetType().Name);
+	protected ModuleScript(int selectableWidth, int selectableHeight, int defaultSelectionX = 0, int defaultSelectionY = 0) : base(selectableWidth, selectableHeight, defaultSelectionX, defaultSelectionY) {
+		Logger = GameState.Current.LoggerFactory.CreateLogger(GetType().Name);
+		SelectableSize = new(selectableWidth, selectableHeight);
+		Selection = new(defaultSelectionX, defaultSelectionY);
+	}
 
 	internal static ModuleScript Create(ComponentReader reader) {
 		var readerType = reader.GetType();
@@ -87,12 +93,13 @@ public abstract partial class ModuleScript {
 }
 
 /// <summary>Represents a <see cref="ModuleScript"/> that uses a specified <see cref="ComponentReader"/> type to read its module.</summary>
-public abstract class ModuleScript<TReader> : ModuleScript where TReader : ComponentReader {
+public abstract class ModuleScript<TReader>(int selectableWidth, int selectableHeight, int defaultSelectionX = 0, int defaultSelectionY = 0) : ModuleScript(selectableWidth, selectableHeight, defaultSelectionX, defaultSelectionY)
+	where TReader : ComponentReader {
 	/// <summary>Returns the <see cref="ComponentReader"/> instance matching this module type.</summary>
 	protected static TReader Reader => DefuserConnector.GetComponentReader<TReader>();
 }
 
-internal class UnknownModuleScript : ModuleScript {
+internal class UnknownModuleScript() : ModuleScript(1, 1) {
 	public override string IndefiniteDescription => "an unknown module";
 }
 

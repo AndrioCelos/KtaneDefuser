@@ -3,7 +3,7 @@ using static KtaneDefuserConnector.Components.PianoKeys;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("PianoKeys")]
-internal partial class PianoKeys : ModuleScript<KtaneDefuserConnector.Components.PianoKeys> {
+internal partial class PianoKeys() : ModuleScript<KtaneDefuserConnector.Components.PianoKeys>(11, 1) {
 	private enum Note {
 		C,
 		Cs,
@@ -36,8 +36,6 @@ internal partial class PianoKeys : ModuleScript<KtaneDefuserConnector.Components
 
 	public override string IndefiniteDescription => "Piano Keys";
 
-	private Note _highlight;
-
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
 	[AimlCategory("read")]
@@ -56,8 +54,8 @@ internal partial class PianoKeys : ModuleScript<KtaneDefuserConnector.Components
 		}
 
 		var script = GameState.Current.CurrentScript<PianoKeys>();
-		var buttons = new List<Button>();
-		var newHighlight = script._highlight;
+		var indices = new List<Note>();
+
 		foreach (var m in matches.Cast<Match>()) {
 			if (m.Groups[1].Success) break;
 			var note = m.Groups[2].Value[0] switch {
@@ -89,19 +87,14 @@ internal partial class PianoKeys : ModuleScript<KtaneDefuserConnector.Components
 				return;
 			}
 
-			for (; newHighlight > note; newHighlight--) {
-				buttons.Add(Button.Left);
-			}
-			for (; newHighlight < note; newHighlight++) {
-				buttons.Add(Button.Right);
-			}
-			for (; count > 0; count--) {
-				buttons.Add(Button.A);
-			}
+			indices.Add(note);
 		}
 
 		using var interrupt = await CurrentModuleInterruptAsync(context);
-		script._highlight = newHighlight;
-		await interrupt.SubmitAsync(buttons);
+		foreach (var n in indices) {
+			script.Select(interrupt, (int) n, 0);
+			interrupt.SendInputs(Button.A);
+		}
+		await interrupt.SubmitAsync(Enumerable.Empty<IInputAction>());
 	}
 }

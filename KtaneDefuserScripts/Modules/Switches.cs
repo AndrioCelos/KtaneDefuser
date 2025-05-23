@@ -1,9 +1,7 @@
 ﻿namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Switches")]
-internal class Switches : ModuleScript<KtaneDefuserConnector.Components.Switches> {
+internal class Switches() : ModuleScript<KtaneDefuserConnector.Components.Switches>(5, 1) {
 	public override string IndefiniteDescription => "Switches";
-
-	private int _highlightX;
 
 	protected internal override void Started(AimlAsyncContext context) => context.AddReply("ready");
 
@@ -13,7 +11,7 @@ internal class Switches : ModuleScript<KtaneDefuserConnector.Components.Switches
 	private async Task ReadAsync(AimlAsyncContext context) {
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		var data = interrupt.Read(Reader);
-		if (data.Selection is { } selection) _highlightX = selection.X;
+		if (data.Selection is { } selection) Selection = selection;
 		context.Reply($"Current state: {Convert(data.CurrentState)}. Target state: {Convert(data.TargetState)}.");
 		return;
 
@@ -44,13 +42,10 @@ internal class Switches : ModuleScript<KtaneDefuserConnector.Components.Switches
 	}
 
 	private async Task PressButtonAsync(Interrupt interrupt, int x, bool submit) {
-		var buttons = new List<Button>();
-		for (; _highlightX < x; _highlightX++) buttons.Add(Button.Right);
-		for (; _highlightX > x; _highlightX--) buttons.Add(Button.Left);
-		buttons.Add(Button.A);
+		Select(interrupt, x, 0);
 		if (submit)
-			await interrupt.SubmitAsync(buttons);
+			await interrupt.SubmitAsync();
 		else
-			await interrupt.SendInputsAsync(buttons);
+			await interrupt.SendInputsAsync(Button.A);
 	}
 }

@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("CrazyTalk")]
-internal partial class CrazyTalk : ModuleScript<KtaneDefuserConnector.Components.CrazyTalk> {
+internal partial class CrazyTalk() : ModuleScript<KtaneDefuserConnector.Components.CrazyTalk>(1, 1) {
 	public override string IndefiniteDescription => "Crazy Talk";
 
 	private bool _switchIsDown;
@@ -41,10 +41,10 @@ internal partial class CrazyTalk : ModuleScript<KtaneDefuserConnector.Components
 		using var interrupt = await script.ModuleInterruptAsync(context);
 		var switchIsDown = script._switchIsDown;
 		await TimerUtil.WaitForSecondsDigitAsync(int.Parse(switchIsDown ? upTime : downTime));
-		var result = await interrupt.SubmitAsync(Button.A);
+		var result = await interrupt.SubmitAsync();
 		if (result != ModuleStatus.Off) return;
 		await TimerUtil.WaitForSecondsDigitAsync(int.Parse(switchIsDown ? downTime : upTime));
-		await interrupt.SubmitAsync(Button.A);
+		await interrupt.SubmitAsync();
 	}
 
 	[GeneratedRegex("[-,.?]")]

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using KtaneDefuserConnector.DataTypes;
 
@@ -13,10 +14,10 @@ public class GameState(ILoggerFactory loggerFactory) {
 	internal ILoggerFactory LoggerFactory = loggerFactory;
 
 	/// <summary>Indicates the type of the bomb casing.</summary>
-	public BombType BombType { get; set; }
+	public BombType BombType { get; private set; }
 	/// <summary>Indicates whether we are waiting for the lights to turn on at the start of the game.</summary>
 	public bool WaitingForLights { get; set; }
-	/// <summary>The current number of strikes. In Time mode, this is always zero.</summary>
+	/// <summary>The current number of strikes. In time mode, this is always zero.</summary>
 	public int Strikes { get; set; }
 	/// <summary>The location of the timer, or <see langword="null"/> if it is unknown.</summary>
 	public Slot? TimerSlot { get; set; }
@@ -27,7 +28,9 @@ public class GameState(ILoggerFactory loggerFactory) {
 	/// <summary>The index of the currently selected bomb face.</summary>
 	public int SelectedFaceNum { get; set; }
 	/// <summary>Returns a <see cref="BombFace"/> instance representing the currently selected bomb face.</summary>
-	public BombFace SelectedFace => Faces[SelectedFaceNum];
+	public BombFace SelectedFace => Faces?[SelectedFaceNum] ?? throw new InvalidOperationException("Bomb not inspected yet.");
+	/// <summary>Returns a <see cref="Slot"/> instance representing the currently selected component slot.</summary>
+	public Slot SelectedSlot => Faces?[SelectedFaceNum] is { } face ? new(face.BombIndex, face.FaceIndex, face.Selection.X, face.Selection.Y) : throw new InvalidOperationException("Bomb not inspected yet.");
 	/// <summary>Whether we are looking at a side of the bomb at the start of the game.</summary>
 	public bool LookingAtSide { get; set; }
 	/// <summary>The currently selected module number, or <see langword="null"/> if no module is selected.</summary>
@@ -46,7 +49,7 @@ public class GameState(ILoggerFactory loggerFactory) {
 	public T CurrentScript<T>() where T : ModuleScript => CurrentModule?.Script as T ?? throw new InvalidOperationException("Specified script is not in progress.");
 
 	internal FocusState FocusState { get; set; }
-	internal BombFace[] Faces { get; } = [new(), new()];
+	internal BombFace[]? Faces { get; private set; }
 	internal List<ModuleState> Modules { get; } = [];
 	internal List<WidgetReader> Widgets { get; } = [];
 
@@ -83,11 +86,20 @@ public class GameState(ILoggerFactory loggerFactory) {
 		? TimerBaseTime + TimerStopwatch.Elapsed
 		: TimerBaseTime - TimerStopwatch.Elapsed;
 
-	public readonly Dictionary<Slot, NeedyState> UnknownNeedyStates = [];
+	public readonly ConcurrentDictionary<Slot, NeedyState> UnknownNeedyStates = [];
 
 	public event EventHandler<StrikeEventArgs>? Strike;
 	public event EventHandler<StrikeEventArgs>? ModuleSolved;
 	public event EventHandler? Defuse;
+
+	[MemberNotNull(nameof(Faces))]
+	public void Initialise(BombType bombType) {
+		Faces = bombType switch {
+			BombType.Standard => [.. from i in Enumerable.Range(0, 2) select new BombFace(0, i, 3, 2)],
+			BombType.Centurion => [.. from i in Enumerable.Range(0, 2) select new BombFace(0, i, 7, 8)],
+			_ => throw new ArgumentOutOfRangeException(nameof(bombType)),
+		};
+	}
 
 	internal bool TryMarkModuleSolved(AimlAsyncContext context, int index) {
 		var module = Modules[index];
@@ -135,18 +147,24 @@ public class ModuleState(Slot slot, ComponentReader reader, ModuleScript script)
 	public bool IsSolved { get; set; }
 }
 
-public class BombFace {
+public class BombFace(int bombIndex, int faceIndex, int selectableWidth, int selectableHeight) : SelectableHandler(selectableWidth, selectableHeight) {
+	public int BombIndex { get; } = bombIndex;
+	public int FaceIndex { get; } = faceIndex;
 	public bool HasModules { get; set; }
-	public Slot SelectedSlot;
 
-	private readonly ModuleState?[,] slots = new ModuleState?[3, 2];
+	private readonly ModuleState?[,] _slots = new ModuleState?[selectableWidth, selectableHeight];
 
 	public ModuleState? this[Slot slot] {
-		get => slots[slot.X, slot.Y];
-		set => slots[slot.X, slot.Y] = value;
+		get => slot.Bomb == BombIndex && slot.Face == FaceIndex ? _slots[slot.X, slot.Y] : throw new IndexOutOfRangeException("Specified slot does not refer to this face.");
+		set {
+			if (slot.Bomb != BombIndex || slot.Face != FaceIndex) throw new IndexOutOfRangeException("Specified slot does not refer to this face.");
+			_slots[slot.X, slot.Y] = value;
+		}
 	}
 	public ModuleState? this[int x, int y] {
-		get => slots[x, y];
-		set => slots[x, y] = value;
+		get => _slots[x, y];
+		set => _slots[x, y] = value;
 	}
+
+	protected override bool IsSelectablePresent(int x, int y) => _slots[x, y]?.Reader is not (null or KtaneDefuserConnector.Components.Timer);
 }
