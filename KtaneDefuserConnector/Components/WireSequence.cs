@@ -16,9 +16,9 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		debugImage?.ColourCorrect(lightsState);
 		var textRects = new[] {
-			image.Map(24, 60, 32, 48),
-			image.Map(24, 100, 32, 48),
-			image.Map(24, 140, 32, 48)
+			image.Map(24, 70, 32, 30),
+			image.Map(24, 110, 32, 30),
+			image.Map(24, 150, 32, 30)
 		};
 
 		for (var i = 0; i < 3; i++) {

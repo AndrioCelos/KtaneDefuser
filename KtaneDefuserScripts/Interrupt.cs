@@ -74,7 +74,7 @@ public class Interrupt : IDisposable {
 	public T Read<T>(ComponentReader<T> reader) where T : ComponentReadData {
 		ObjectDisposedException.ThrowIf(IsDisposed, this);
 		using var ss = DefuserConnector.Instance.TakeScreenshot();
-		return DefuserConnector.Instance.ReadComponent(ss, DefuserConnector.Instance.GetLightsState(ss), reader, Utils.CurrentModuleArea);
+		return DefuserConnector.Instance.ReadComponent(ss, DefuserConnector.Instance.GetLightsState(ss), reader, GameState.Current.BombType == BombType.Centurion ? CenturionUtil.CurrentModuleArea : Utils.CurrentModuleArea);
 	}
 
 	/// <summary>Presses the specified buttons in sequence.</summary>

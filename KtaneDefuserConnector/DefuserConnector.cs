@@ -349,7 +349,9 @@ public class DefuserConnector : IDisposable {
 	public T ReadComponent<T>(Image<Rgba32> screenshot, LightsState lightsState, ComponentReader<T> reader, Quadrilateral quadrilateral) where T : ComponentReadData {
 		if (_simulation is not null)
 			return _simulation.ReadComponent<T>(quadrilateral);
-		var image = ImageUtils.PerspectiveUndistort(screenshot, quadrilateral, InterpolationMode.NearestNeighbour, new(Resolution, Resolution));
+		var size = new Size(Math.Max(quadrilateral.TopRight.X, quadrilateral.BottomRight.X) - Math.Min(quadrilateral.TopLeft.X, quadrilateral.BottomLeft.X),
+			Math.Max(quadrilateral.BottomLeft.Y, quadrilateral.BottomRight.Y) - Math.Min(quadrilateral.TopLeft.Y, quadrilateral.TopRight.Y));
+		var image = ImageUtils.PerspectiveUndistort(screenshot, quadrilateral, InterpolationMode.NearestNeighbour, size);
 #if DEBUG
 		Task.Run(() => SaveDebugImage(image, reader.Name));
 #endif

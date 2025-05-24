@@ -1,11 +1,10 @@
 using System.Web;
 using AngelAiml.Media;
 using Button = KtaneDefuserConnectorApi.Button;
-using Timer = KtaneDefuserConnector.Components.Timer;
 
 namespace KtaneDefuserScripts;
 public static class Utils {
-	public static Quadrilateral CurrentModuleArea { get; } = new( 836,  390, 1120,  390,  832,  678, 1124,  678);
+	public static Quadrilateral CurrentModuleArea { get; } = new(836, 390, 1124,  390, 836, 678, 1124, 678);
 	private static readonly Quadrilateral[] ModuleAreas = [
 		new( 220,  100,  496,  100,  193,  359,  479,  359),
 		new( 535,  100,  806,  101,  522,  359,  801,  360),

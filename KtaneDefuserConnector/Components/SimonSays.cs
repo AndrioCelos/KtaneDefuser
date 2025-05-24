@@ -10,23 +10,29 @@ public class SimonSays : ComponentReader<SimonSays.ReadData> {
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		int red = 0, yellow = 0, green = 0, blue = 0;
 		image.ProcessPixelRows(a => {
-			for (var y = 20; y < 224; y++) {
+			var mid = 126 * a.Width / 256;
+			foreach (var y in a.Height.MapRange(20, 224)) {
+				var dy = y - mid;
 				var r = a.GetRowSpan(y);
-				var left = 26 + Math.Abs(y - 122);
-				var right = 230 - Math.Abs(y - 122);
+				var left = 26 * a.Width / 256 + Math.Abs(y - mid);
+				var right = 230 * a.Width / 256 - Math.Abs(y - mid);
 				for (var x = left; x < right; x++) {
 					var hsv = HsvColor.FromColor(r[x]);
 					if (hsv is not { V: >= 0.75f, S: >= 0.55f }) continue;
-					var rx = y + x;
-					var ry = y - x;
-					if (ry < -6) {
-						if (rx < 248) {
+
+					var dx = x - mid;
+					
+					var rx = dx + dy;
+					var ry = dx - dy;
+
+					if (ry >= 0) {
+						if (rx < 0) {
 							if (hsv.H is >= 180 and <= 240) blue++;
 						} else {
 							if (hsv.H is >= 30 and <= 90) yellow++;
 						}
 					} else {
-						if (rx < 248) {
+						if (rx < 0) {
 							if (hsv.H is >= 330 or <= 30) red++;
 						} else {
 							if (hsv.H is >= 90 and <= 180) green++;

@@ -10,6 +10,8 @@ public static class CenturionUtil {
 	 * On face 1, the same mapping is used except it's mirrored horizontally, and the central slot is not skipped and is instead part of the fourth row.
 	 */
 
+	public static Quadrilateral CurrentModuleArea { get; } = new(new(915, 489), new(1041, 489), new(915, 615), new(1041, 615));
+
 	/// <summary>Returns the visual position on the face of the specified slot.</summary>
 	/// <returns><c>x</c> is the horizontal position in half-slots right of the centre; <c>y</c> is the vertical position in full slots below the centre.</returns>
 	private static (int x, int y) GetVisualXY(Slot slot) {
