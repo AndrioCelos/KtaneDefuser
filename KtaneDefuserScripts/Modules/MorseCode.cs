@@ -185,24 +185,16 @@ internal partial class MorseCode() : ModuleScript<KtaneDefuserConnector.Componen
 		_cancellationTokenSource = null;
 		using var interrupt = _interrupt ?? await ModuleInterruptAsync(context);
 		interrupt.Context = context;
-		var buttons = new List<Button>();
-		if (frequency < _selectedFrequency) {
-			Select(interrupt, 0, 0);
-			do {
-				buttons.Add(Button.A);
-				_selectedFrequency--;
-			} while (frequency < _selectedFrequency);
+		while (frequency < _selectedFrequency) {
+			Interact(interrupt, 0, 0);
+			_selectedFrequency--;
 		}
-		if (frequency > _selectedFrequency) {
-			Select(interrupt, 2, 0);
-			do {
-				buttons.Add(Button.A);
-				_selectedFrequency++;
-			} while (frequency > _selectedFrequency);
+		while (frequency > _selectedFrequency) {
+			Interact(interrupt, 2, 0);
+			_selectedFrequency++;
 		}
-		await interrupt.SubmitAsync(buttons);
-		Select(interrupt, 1, 1);
-		await interrupt.SubmitAsync();
+		await InteractWaitAsync(interrupt, 1, 1);
+		await interrupt.CheckStatusAsync();
 	}
 
 	#region Log templates

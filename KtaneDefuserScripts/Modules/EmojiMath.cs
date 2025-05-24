@@ -56,10 +56,11 @@ internal class EmojiMath() : ModuleScript<KtaneDefuserConnector.Components.Emoji
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		foreach (var c in Math.Abs(answer).ToString()) {
 			var (x, y) = c == 0 ? (3, 0) : ((c - '1') % 3, (c - '1') / 3);
-			await PressButtonAsync(interrupt, x, y, false);
+			Interact(interrupt, x, y);
 		}
-		if (answer < 0) await PressButtonAsync(interrupt, 3, 1, false);
-		await PressButtonAsync(interrupt, 3, 2, true);
+
+		if (answer < 0) Interact(interrupt, 3, 1);
+		Interact(interrupt, 3, 2);
 	}
 
 	private async Task PressButtonAsync(Interrupt interrupt, int x, int y, bool submit) {

@@ -92,9 +92,10 @@ internal partial class PianoKeys() : ModuleScript<KtaneDefuserConnector.Componen
 
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 		foreach (var n in indices) {
-			script.Select(interrupt, (int) n, 0);
-			interrupt.SendInputs(Button.A);
+			await script.InteractWaitAsync(interrupt, (int) n, 0);
+			if (interrupt.HasStrikeOccurred) return;
 		}
-		await interrupt.SubmitAsync(Enumerable.Empty<IInputAction>());
+
+		await interrupt.CheckStatusAsync();
 	}
 }

@@ -11,14 +11,9 @@ internal class NeedyVentGas() : ModuleScript<KtaneDefuserConnector.Components.Ne
 			using var interrupt = await ModuleInterruptAsync(context);
 			var data = interrupt.Read(Reader);
 			if (data.Message != null)
-				PressButton(interrupt, data.Message[0] == 'D' ? 1 : 0);
+				Interact(interrupt, data.Message[0] == 'D' ? 1 : 0, 0);
 		} catch (Exception ex) {
 			LogException(ex);
 		}
-	}
-
-	private void PressButton(Interrupt interrupt, int x) {
-		Select(interrupt, x, 0);
-		interrupt.SendInputs(Button.A);
 	}
 }

@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using JetBrains.Annotations;
 
 namespace KtaneDefuserScripts;
@@ -18,14 +19,22 @@ public class Interrupt : IDisposable {
 
 	/// <summary>
 	/// Returns or sets the current <see cref="AimlAsyncContext"/> of this interrupt. When initialised, this will be the context in which the interrupt was entered.
-	/// It may be set in scripts like The Button which handle user input during an interrupt, to continue it in a new <see cref="AimlAsyncContext"/>.
+	/// It may be set in scripts like The Button which await user input during an interrupt, to continue it in a new <see cref="AimlAsyncContext"/>.
 	/// </summary>
 	public AimlAsyncContext Context { get; set; }
+	/// <summary>Returns a value indicating whether a strike has occurred on the current module during this interrupt.</summary>
+	public bool HasStrikeOccurred => _strikeCancellationTokenSource.IsCancellationRequested;
 
-	private CancellationTokenSource? _submitCancellationTokenSource;
-	private Slot _submitCurrentSlot;
+	private readonly CancellationTokenSource _strikeCancellationTokenSource = new();
 
-	private Interrupt(AimlAsyncContext context) => Context = context ?? throw new ArgumentNullException(nameof(context));
+	private Interrupt(AimlAsyncContext context) {
+		Context = context ?? throw new ArgumentNullException(nameof(context));
+		GameState.Current.Strike += GameState_Strike;
+	}
+
+	private void GameState_Strike(object? sender, StrikeEventArgs e) {
+		if (e.Slot == GameState.Current.CurrentModule?.Slot) _strikeCancellationTokenSource.Cancel();
+	}
 
 	/// <summary>Attempts to enter a new interrupt on the interrupt queue and creates a <see cref="Task"/> that completes when the interrupt is entered.</summary>
 	/// <remarks>This will return an already-completed task if the interrupt queue was empty. <paramref name="context"/> is no longer valid after calling this method; the created <see cref="Interrupt"/> instance's <see cref="Context"/> must be used instead.</remarks>
@@ -102,62 +111,63 @@ public class Interrupt : IDisposable {
 		return task;
 	}
 
+	/// <summary>Creates an <see cref="AimlTask"/> that completes after any queued inputs are processed.</summary>
+	public AimlTask WaitInputsAsync() {
+		ObjectDisposedException.ThrowIf(IsDisposed, this);
+		var guid = Guid.NewGuid();
+		var task = InputCallbackFactory.CallAsync(Context, guid, CancellationToken.None);
+		DefuserConnector.Instance.SendInputs(new CallbackAction(guid));
+		return task;
+	}
+
 	private static readonly IInputAction[] DefaultSubmitAction = [new ButtonAction(Button.A)];
-	
+
 	/// <summary>Presses the A button, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
 	public Task<ModuleStatus> SubmitAsync() => SubmitAsync(DefaultSubmitAction);
 	/// <summary>Performs the specified input actions, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
 	public Task<ModuleStatus> SubmitAsync(params IEnumerable<Button> buttons) => SubmitAsync(from b in buttons select new ButtonAction(b));
 	/// <summary>Performs the specified input actions, announces a resulting solve, and returns the resulting module light state afterward. If a strike occurs, it interrupts the sequence.</summary>
 	public async Task<ModuleStatus> SubmitAsync(params IEnumerable<IInputAction> actions) {
+		await SendInputsAsync(actions);
+		return await CheckStatusAsync();
+	}
+
+	public async Task<ModuleStatus> CheckStatusAsync() {
 		ObjectDisposedException.ThrowIf(IsDisposed, this);
-		if (_submitCancellationTokenSource is not null) throw new InvalidOperationException("Already submitting.");
-		if (GameState.Current.CurrentModuleNum is null) throw new InvalidOperationException("No current module.");
-		var module = GameState.Current.Modules[GameState.Current.CurrentModuleNum.Value];
-		var context = AimlAsyncContext.Current ?? throw new InvalidOperationException("No current request");
+		if (GameState.Current.CurrentModule is null) throw new InvalidOperationException("No current module.");
 
-		_submitCancellationTokenSource = new();
-		_submitCurrentSlot = module.Slot;
-		GameState.Current.Strike += GameState_Strike;
-		try {
-			await SendInputsAsync(actions, _submitCancellationTokenSource.Token);
-			await Delay(0.5);  // Wait for the interaction punch to end.
-			using var ss = DefuserConnector.Instance.TakeScreenshot();
-			var result = DefuserConnector.Instance.GetModuleStatus(ss, Utils.CurrentModuleArea, module.Reader);
-			if (result != ModuleStatus.Solved) return result;
-			var isDefused = GameState.Current.TryMarkModuleSolved(context, GameState.Current.CurrentModuleNum.Value);
-			if (isDefused)
-				context.Reply("The bomb is defused.");
-			else if (GameState.Current.CurrentModuleNum == GameState.Current.SelectedModuleNum) {
-				context.Reply("<priority/>Module complete<reply>next module</reply>.");
-				if (!GameState.Current.NextModuleNums.TryDequeue(out var nextModule))
-					nextModule = GameState.Current.Modules.FindIndex(GameState.Current.SelectedModuleNum is { } i ? i + 1 : 0, m => !m.Script.PriorityCategory.HasFlag(PriorityCategory.Needy) && !m.IsSolved);
-				if (nextModule < 0) return result;
-				context.Reply($"Next is {GameState.Current.Modules[nextModule].Script.IndefiniteDescription}.");
-				await ModuleSelection.ChangeModuleAsync(context, nextModule, true);
-			}
-			return result;
-		} catch (TaskCanceledException) {
-			return ModuleStatus.Strike;
-		} finally {
-			_submitCancellationTokenSource?.Dispose();
-			_submitCancellationTokenSource = null;
+		var module = GameState.Current.CurrentModule;
+		var guid = Guid.NewGuid();
+		var task = InputCallbackFactory.CallAsync(Context, guid);
+		DefuserConnector.Instance.SendInputs(new CallbackAction(guid));
+		await task;
+		await Delay(0.5);  // Wait for the interaction punch to end.
+
+		// Check whether the module disarmed or a strike occurred.
+		using var ss = DefuserConnector.Instance.TakeScreenshot();
+		var result = DefuserConnector.Instance.GetModuleStatus(ss, GameState.Current.BombType == BombType.Centurion ? CenturionUtil.CurrentModuleArea : Utils.CurrentModuleArea, module.Reader);
+		if (result != ModuleStatus.Solved) return result;
+		
+		// If disarmed, update the game state and move to the next module.
+		var isDefused = GameState.Current.TryMarkModuleSolved(Context, module.Script.ModuleIndex);
+		if (isDefused)
+			Context.Reply("The bomb is defused.");
+		else if (GameState.Current.CurrentModuleNum == GameState.Current.SelectedModuleNum) {
+			Context.Reply("<priority/>Module complete<reply>next module</reply>.");
+			if (!GameState.Current.NextModuleNums.TryDequeue(out var nextModule))
+				nextModule = GameState.Current.Modules.FindIndex(GameState.Current.SelectedModuleNum is { } i ? i + 1 : 0, m => !m.Script.PriorityCategory.HasFlag(PriorityCategory.Needy) && !m.IsSolved);
+			if (nextModule < 0) return result;
+			Context.Reply($"Next is {GameState.Current.Modules[nextModule].Script.IndefiniteDescription}.");
+			await ModuleSelection.ChangeModuleAsync(Context, nextModule, true);
 		}
+		return result;
 	}
-
-	private void GameState_Strike(object? sender, StrikeEventArgs e) {
-		if (e.Slot != _submitCurrentSlot) return;
-		Context = e.Context;
-		_submitCancellationTokenSource?.Cancel();
-	}
-
-	/// <summary>Exits this interrupt, allowing the bot to enter another interrupt. After calling this method, this instance is no longer usable.</summary>
-	public void ExitAsync() => Dispose();
 
 	/// <summary>Exits this interrupt, allowing the bot to enter another interrupt. After calling this method, this instance is no longer usable.</summary>
 	public void Dispose() {
 		if (IsDisposed) return;
 		IsDisposed = true;
+		GameState.Current.Strike -= GameState_Strike;
 		_ = ExitAsync(AimlAsyncContext.Current ?? throw new InvalidOperationException("No current request"));
 		GC.SuppressFinalize(this);
 	}

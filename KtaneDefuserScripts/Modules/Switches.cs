@@ -35,17 +35,11 @@ internal class Switches() : ModuleScript<KtaneDefuserConnector.Components.Switch
 
 	private async Task Submit(AimlAsyncContext context, int[] nums) {
 		using var interrupt = await CurrentModuleInterruptAsync(context);
-		for (var i = 0; i < nums.Length; i++) {
-			var n = nums[i];
-			await PressButtonAsync(interrupt, n, i >= nums.Length - 1);
+		foreach (var n in nums) {
+			await InteractWaitAsync(interrupt, n, 0);
+			if (interrupt.HasStrikeOccurred) return;
 		}
-	}
 
-	private async Task PressButtonAsync(Interrupt interrupt, int x, bool submit) {
-		Select(interrupt, x, 0);
-		if (submit)
-			await interrupt.SubmitAsync();
-		else
-			await interrupt.SendInputsAsync(Button.A);
+		await interrupt.CheckStatusAsync();
 	}
 }

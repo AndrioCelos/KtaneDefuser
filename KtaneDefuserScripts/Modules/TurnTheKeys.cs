@@ -21,16 +21,19 @@ internal class TurnTheKeys() : ModuleScript<KtaneDefuserConnector.Components.Tur
 			// Turn the right key.
 			var script = (TurnTheKeys) e.Script;
 			await Utils.SelectModuleAsync(interrupt, script.ModuleIndex, false);
-			script.Select(interrupt, 1, 0);
-			interrupt.SendInputs(Button.A);
+			await script.InteractWaitAsync(interrupt, 1, 0);
+			if (interrupt.HasStrikeOccurred) return;
 		}
 
 		foreach (var e in from m in GameState.Current.Modules where m.Script is TurnTheKeys orderby ((TurnTheKeys) m.Script)._priority select m) {
 			// Turn the left key.
 			var script = (TurnTheKeys) e.Script;
 			await Utils.SelectModuleAsync(interrupt, script.ModuleIndex, false);
-			script.Select(interrupt, 0, 0);
-			await interrupt.SubmitAsync();
+			await script.InteractWaitAsync(interrupt, 0, 0);
+			await interrupt.CheckStatusAsync();
+			if (interrupt.HasStrikeOccurred) return;
 		}
+
+		interrupt.Context.Reply("Turn the Keys is complete.");
 	}
 }

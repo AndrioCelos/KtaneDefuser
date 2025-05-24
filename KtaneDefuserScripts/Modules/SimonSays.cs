@@ -1,4 +1,5 @@
 using KtaneDefuserConnector.DataTypes;
+using SixLabors.ImageSharp;
 
 namespace KtaneDefuserScripts.Modules;
 [AimlInterface("SimonSays")]
@@ -34,6 +35,8 @@ internal partial class SimonSays() : ModuleScript<KtaneDefuserConnector.Componen
 
 	private async Task LoopAsync(Interrupt interrupt) {
 		while (true) {
+			var buttons = new List<Point>();
+			
 			foreach (var patternColour in _pattern) {
 				var correctColour = ButtonMap[(int) patternColour];
 				if (correctColour is null) {
@@ -44,10 +47,15 @@ internal partial class SimonSays() : ModuleScript<KtaneDefuserConnector.Componen
 				}
 
 				var (x, y) = correctColour switch { SimonColour.Blue => (1, 0), SimonColour.Red => (0, 1), SimonColour.Yellow => (2, 1), _ => (1, 2) };
-				Select(interrupt, x, y);
-				interrupt.SendInputs(Button.A);
+				buttons.Add(new(x, y));
 			}
-			var result = await interrupt.SubmitAsync(Enumerable.Empty<IInputAction>());
+
+			foreach (var button in buttons) {
+				await InteractWaitAsync(interrupt, button.X, button.Y);
+				if (interrupt.HasStrikeOccurred) break;
+			}
+
+			var result = await interrupt.CheckStatusAsync();
 			if (result == ModuleStatus.Strike) continue;
 			_stagesCleared++;
 			if (result == ModuleStatus.Solved) return;

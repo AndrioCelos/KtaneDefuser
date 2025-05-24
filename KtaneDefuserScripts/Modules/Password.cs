@@ -73,8 +73,7 @@ internal partial class Password() : ModuleScript<KtaneDefuserConnector.Component
 	}
 
 	private async Task CycleColumnAsync(Interrupt interrupt, int column) {
-		Select(interrupt, column, 1);
-		await interrupt.SendInputsAsync(Button.A);
+		await InteractWaitAsync(interrupt, column, 1);
 	}
 
 	private async Task SubmitAsync(Interrupt interrupt, string word) {
@@ -91,8 +90,8 @@ internal partial class Password() : ModuleScript<KtaneDefuserConnector.Component
 			}
 
 			if (anyMismatch) continue;
-			Select(interrupt, 2, 2);
-			await interrupt.SubmitAsync();
+			await InteractWaitAsync(interrupt, 2, 2);
+			await interrupt.CheckStatusAsync();
 			return;
 		}
 		interrupt.Context.Reply("Could not submit that word.");

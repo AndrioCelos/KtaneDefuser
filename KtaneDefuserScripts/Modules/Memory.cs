@@ -55,12 +55,16 @@ internal class Memory() : ModuleScript<KtaneDefuserConnector.Components.Memory>(
 
 	private async Task PressButtonAsync(AimlAsyncContext context, int index, bool fromLabel) {
 		using var interrupt = await ModuleInterruptAsync(context);
-		Select(interrupt, index, 0);
-		var result = await interrupt.SubmitAsync();
-		if (result != ModuleStatus.Solved) {
-			if (result == ModuleStatus.Off)
+		await InteractWaitAsync(interrupt, index, 0);
+		var result = await interrupt.CheckStatusAsync();
+		switch (result) {
+			case ModuleStatus.Solved:
+				return;
+			case ModuleStatus.Off:
 				interrupt.Context.Reply(fromLabel ? $"The position was {index + 1}." : $"The label was {_keyLabels[index]}.");
-			await WaitRead(interrupt);
+				break;
 		}
+
+		await WaitRead(interrupt);
 	}
 }

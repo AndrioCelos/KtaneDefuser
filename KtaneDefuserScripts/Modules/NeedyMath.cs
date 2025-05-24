@@ -19,18 +19,13 @@ internal class NeedyMath() : ModuleScript<KtaneDefuserConnector.Components.Needy
 			var answer = a + b;
 			foreach (var c in Math.Abs(answer).ToString()) {
 				var (x, y) = c == 0 ? (3, 0) : ((c - '1') % 3, (c - '1') / 3);
-				PressButton(interrupt, x, y);
+				Interact(interrupt, x, y);
 			}
 
-			if (answer < 0) PressButton(interrupt, 3, 1);
-			PressButton(interrupt, 3, 2);
+			if (answer < 0) Interact(interrupt, 3, 1);
+			Interact(interrupt, 3, 2);
 		} catch (Exception ex) {
 			LogException(ex);
 		}
-	}
-
-	private void PressButton(Interrupt interrupt, int x, int y) {
-		Select(interrupt, x, y);
-		interrupt.SendInputs(Button.A);
 	}
 }

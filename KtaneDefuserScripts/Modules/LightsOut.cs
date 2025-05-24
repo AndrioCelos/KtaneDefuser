@@ -43,8 +43,7 @@ internal class LightsOut() : ModuleScript<KtaneDefuserConnector.Components.Light
 			var solution = CachedSolutions[key];
 			for (var i = 0; i < 9; i++) {
 				if (!solution[1 << i]) continue;
-				Select(interrupt, i % 3, i / 3);
-				await interrupt.SendInputsAsync(Button.A);
+				Interact(interrupt, i % 3, i / 3);
 			}
 		} catch (Exception ex) {
 			LogException(ex);

@@ -58,15 +58,11 @@ internal class WhosOnFirst() : ModuleScript<KtaneDefuserConnector.Components.Who
 			context.Reply("No.");
 		else {
 			context.Reply("Yes.");
-			await script.PressButtonAsync(context, index);
+			using var interrupt = await CurrentModuleInterruptAsync(context);
+			await script.InteractWaitAsync(interrupt, index % 2, index / 2);
+			var result = await interrupt.CheckStatusAsync();
+			if (result != ModuleStatus.Solved) await script.WaitRead(interrupt);
 		}
-	}
-
-	private async Task PressButtonAsync(AimlAsyncContext context, int index) {
-		using var interrupt = await ModuleInterruptAsync(context);
-		Select(interrupt, index % 2, index / 2);
-		var result = await interrupt.SubmitAsync();
-		if (result != ModuleStatus.Solved) await WaitRead(interrupt);
 	}
 
 	private static string PronouncePhrase(Phrase phrase) => phrase switch {

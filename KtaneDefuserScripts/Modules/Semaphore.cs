@@ -32,7 +32,7 @@ internal class Semaphore() : ModuleScript<KtaneDefuserConnector.Components.Semap
 				interrupt.SendInputs(Button.A);
 				script._display--;
 			}
-			await interrupt.SendInputsAsync(Enumerable.Empty<IInputAction>());
+			await interrupt.WaitInputsAsync();
 			await Delay(0.5);
 		}
 
@@ -46,8 +46,7 @@ internal class Semaphore() : ModuleScript<KtaneDefuserConnector.Components.Semap
 			script._displays.Add(read);
 			context.Reply($"<priority/> {DirectionDescriptions[read.LeftFlag]} and {DirectionDescriptions[read.RightFlag]}");
 
-			script.Select(interrupt, 2, 0);
-			await interrupt.SendInputsAsync(Button.A);
+			await script.InteractWaitAsync(interrupt, 2, 0);
 			await Delay(0.5);
 		}
 	}
@@ -62,19 +61,17 @@ internal class Semaphore() : ModuleScript<KtaneDefuserConnector.Components.Semap
 		using var interrupt = await CurrentModuleInterruptAsync(context);
 
 		while (script._display < index) {
-			script.Select(interrupt, 2, 0);
-			interrupt.SendInputs(Button.A);
+			script.Interact(interrupt, 2, 0);
 			script._display++;
 		}
 
 		while (script._display > index) {
-			script.Select(interrupt, 0, 0);
-			interrupt.SendInputs(Button.A);
+			script.Interact(interrupt, 0, 0);
 			script._display--;
 		}
 
-		script.Select(interrupt, 1, 0);
-		await interrupt.SubmitAsync();
+		await script.InteractWaitAsync(interrupt, 1, 0);
+		await interrupt.CheckStatusAsync();
 	}
 
 	[AimlCategory("<set>number</set>"), AimlCategory("submit <set>number</set>")]

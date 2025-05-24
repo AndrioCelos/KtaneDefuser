@@ -53,12 +53,15 @@ internal class Maze() : ModuleScript<KtaneDefuserConnector.Components.Maze>(3, 3
 
 		using var interrupt = await ModuleInterruptAsync(context);
 		foreach (var (point, count) in points) {
-			Select(interrupt, point.X, point.Y);
-			interrupt.SendInputs(Enumerable.Repeat(Button.A, count));
+			for (var n = count; n > 0; n--) {
+				await InteractWaitAsync(interrupt, point.X, point.Y);
+				if (interrupt.HasStrikeOccurred) goto readNext;
+			}
 		}
-		var result = await interrupt.SubmitAsync(Enumerable.Empty<IInputAction>());
+		var result = await interrupt.CheckStatusAsync();
 		if (result == ModuleStatus.Solved) return;
 
+readNext:
 		var data = interrupt.Read(Reader);
 		interrupt.Context.Reply($"<priority/> Now at {Nato.Speak(data.Start.ToString())}.");
 		interrupt.Context.AddReplies("left", "down", "up", "right");

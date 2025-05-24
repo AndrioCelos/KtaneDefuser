@@ -36,8 +36,9 @@ internal partial class WireSequence() : ModuleScript<KtaneDefuserConnector.Compo
 		if (data.Selection is { Y: >= 4 }) {
 			// If we've reached the next button, or there are no wires on the first page, go ahead and switch to the next page.
 			await MoveToNextPageAsync(interrupt);
-		} else
+		} else {
 			ReadCurrentWire(interrupt, data);
+		}
 	}
 
 	private void ReadCurrentWire(Interrupt interrupt, ReadData data) {
@@ -57,7 +58,7 @@ internal partial class WireSequence() : ModuleScript<KtaneDefuserConnector.Compo
 				case ModuleStatus.Strike:
 					return;
 				default:
-					await Delay(2);
+					await Delay(1);
 					await ReadAsync(interrupt);
 					var i = Array.FindIndex(_currentPageColours, c => c is not null);
 					if (i < 0) {
@@ -100,10 +101,11 @@ internal partial class WireSequence() : ModuleScript<KtaneDefuserConnector.Compo
 
 	private async Task ActionAsync(AimlAsyncContext context, bool cut) {
 		using var interrupt = await ModuleInterruptAsync(context);
-		if (cut)
-			await interrupt.SubmitAsync(Button.A, Button.Down);
-		else
+		if (cut) {
+			await interrupt.SendInputsAsync(Button.A, Button.Down);
+		} else {
 			await interrupt.SendInputsAsync(Button.Down);
+		}
 		do { _highlight++; } while (_highlight < 3 && _currentPageColours[_highlight] is null);
 		await ContinuePageAsync(interrupt);
 	}

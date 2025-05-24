@@ -42,7 +42,7 @@ internal class ButtonModule() : ModuleScript<KtaneDefuserConnector.Components.Bu
 		_holdInterrupt.Context = context;
 		await TimerUtil.WaitForDigitInTimerAsync(digit);
 		await _holdInterrupt.SubmitAsync(new ButtonAction(Button.A, ButtonActionType.Release));
-		_holdInterrupt.ExitAsync();
+		_holdInterrupt.Dispose();
 		_holdInterrupt = null;
 	}
 

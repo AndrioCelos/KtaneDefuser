@@ -76,11 +76,12 @@ internal class Keypad() : ModuleScript<KtaneDefuserConnector.Components.Keypad>(
 	
 		using var interrupt = await Interrupt.EnterAsync(context);
 		foreach (var index in indices) {
-			script.Select(interrupt, index % 2, index / 2);
-			var result = await interrupt.SubmitAsync();
-			if (result != ModuleStatus.Strike) script._pressed[index] = true;
-			if (result != ModuleStatus.Off) return;
+			await script.InteractWaitAsync(interrupt, index % 2, index / 2);
+			if (interrupt.HasStrikeOccurred) return;
+			script._pressed[index] = true;
 		}
+
+		if (await interrupt.CheckStatusAsync() == ModuleStatus.Solved) return;
 		if (script._symbols is null) return;
 		for (var i = 0; i < 4; i++) {
 			if (!script._pressed[i]) interrupt.Context.AddReply(SymbolDescriptions[script._symbols[i]], $"press {SymbolDescriptions[script._symbols[i]]}");

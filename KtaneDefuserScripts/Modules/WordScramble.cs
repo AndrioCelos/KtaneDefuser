@@ -77,17 +77,11 @@ internal class WordScramble: ModuleScript<KtaneDefuserConnector.Components.WordS
 			}
 
 			foreach (var i in indices) {
-				await PressButtonAsync(interrupt, i % 3, i / 3, false);
+				module.Interact(interrupt, i % 3, i / 3);
 			}
-			await PressButtonAsync(interrupt, 3, 1, true);
+			
+			await module.InteractWaitAsync(interrupt, 3, 1);
+			await interrupt.CheckStatusAsync();
 		}
-		private async Task PressButtonAsync(Interrupt interrupt, int x, int y, bool submit) {
-			module.Select(interrupt, x, y);
-			if (submit)
-				await interrupt.SubmitAsync();
-			else
-				await interrupt.SendInputsAsync(Button.A);
-		}
-
 	}
 }

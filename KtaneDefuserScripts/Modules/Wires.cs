@@ -24,8 +24,8 @@ internal class Wires() : ModuleScript<KtaneDefuserConnector.Components.Wires>(1,
 	internal static async Task CutWire(AimlAsyncContext context, int wireNum) {
 		var script = GameState.Current.CurrentScript<Wires>();
 		using var interrupt = await script.ModuleInterruptAsync(context);
-		script.Select(interrupt, 0, wireNum - 1);
-		await interrupt.SubmitAsync();
+		await script.InteractWaitAsync(interrupt, 0, wireNum - 1);
+		await interrupt.CheckStatusAsync();
 	}
 
 	[AimlCategory("cut the <set>ordinal</set> wire")]

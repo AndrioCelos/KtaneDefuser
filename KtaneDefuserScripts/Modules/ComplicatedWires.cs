@@ -35,10 +35,10 @@ internal partial class ComplicatedWires() : ModuleScript<KtaneDefuserConnector.C
 		LogWires($"[{string.Join("] [", data.Wires)}]");
 		_wires ??= (from w in data.Wires select (w, false)).ToArray();
 		SelectableSize = new(_wires.Length, 1);
-		await FindWiresToCut(interrupt, false);
+		await FindWiresToCut(interrupt);
 	}
 
-	private async Task FindWiresToCut(Interrupt interrupt, bool fromUserInput) {
+	private async Task FindWiresToCut(Interrupt interrupt) {
 		while (true) {
 			// Find any wires we already know should be cut.
 			// TODO: Clear this data when starting a new bomb.
@@ -67,21 +67,19 @@ internal partial class ComplicatedWires() : ModuleScript<KtaneDefuserConnector.C
 				toCut.AddRange(Enumerable.Range(0, _wires.Length).Where(i => _wires[i].flags == firstUnknown.Value));
 			}
 			if (toCut.Count > 0) {
-				for (var i = 0; i < toCut.Count; i++) {
-					var wireIndex = toCut[i];
+				foreach (var wireIndex in toCut) {
 					LogCuttingWire(wireIndex + 1);
-					Select(interrupt, wireIndex, 0);
+					await InteractWaitAsync(interrupt, wireIndex, 0);
 					_wires[wireIndex].isCut = true;
-					if ((!fromUserInput || i != 0) && i + 1 < toCut.Count) continue;
-					// Check whether this was a strike or solve. If in response to the user saying to cut a wire, check after the first wire. Otherwise, only check after all wires for speed.
-					var result = await interrupt.SubmitAsync();
-					if (result == ModuleStatus.Strike) {
-						ShouldCut[(int) _wires[wireIndex].flags] = false;
-						break;
-					}
-					if (result == ModuleStatus.Solved)
-						return;
+					if (!interrupt.HasStrikeOccurred) continue;
+					ShouldCut[(int) _wires[wireIndex].flags] = false;
+					await FindWiresToCut(interrupt);
+					return;
 				}
+
+				// Check whether the module is disarmed. If not, check again for more wires to cut or ask about.
+				var result = await interrupt.CheckStatusAsync();
+				if (result != ModuleStatus.Off) return;
 			} else if (firstUnknown != null) {
 				_currentFlags = firstUnknown.Value;
 				interrupt.Context.Reply(firstUnknown == 0 ? "plain white" : $"{(firstUnknown.Value.HasFlag(WireFlags.Red) ? "red " : "")}{(firstUnknown.Value.HasFlag(WireFlags.Blue) ? "blue " : "")}{(firstUnknown.Value.HasFlag(WireFlags.Star) ? "star " : "")}{(firstUnknown.Value.HasFlag(WireFlags.Light) ? "light " : "")}.");
@@ -103,7 +101,7 @@ internal partial class ComplicatedWires() : ModuleScript<KtaneDefuserConnector.C
 		if (script._currentFlags == null) return;
 		ShouldCut[(int) script._currentFlags] = true;
 		using var interrupt = await CurrentModuleInterruptAsync(context);
-		await script.FindWiresToCut(interrupt, true);
+		await script.FindWiresToCut(interrupt);
 	}
 
 	[AimlCategory("don't cut ^")]
@@ -115,7 +113,7 @@ internal partial class ComplicatedWires() : ModuleScript<KtaneDefuserConnector.C
 		if (script._currentFlags == null) return;
 		ShouldCut[(int) script._currentFlags] = false;
 		using var interrupt = await CurrentModuleInterruptAsync(context);
-		await script.FindWiresToCut(interrupt, false);
+		await script.FindWiresToCut(interrupt);
 	}
 	
 	#region Log templates

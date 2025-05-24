@@ -38,7 +38,7 @@ internal class LetterKeys() : ModuleScript<KtaneDefuserConnector.Components.Lett
 		if (_labels is null) throw new InvalidOperationException("Must read the module first.");
 		var index = Array.IndexOf(_labels, letter);
 		using var interrupt = await CurrentModuleInterruptAsync(context);
-		Select(interrupt, index % 2, index / 2);;
-		await interrupt.SubmitAsync();
+		await InteractWaitAsync(interrupt, index % 2, index / 2);
+		await interrupt.CheckStatusAsync();
 	}
 }
