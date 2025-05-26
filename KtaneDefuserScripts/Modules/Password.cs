@@ -1,4 +1,4 @@
-﻿namespace KtaneDefuserScripts.Modules;
+namespace KtaneDefuserScripts.Modules;
 [AimlInterface("Password")]
 internal partial class Password() : ModuleScript<KtaneDefuserConnector.Components.Password>(5, 3) {
 	public override string IndefiniteDescription => "a Password";
@@ -9,11 +9,8 @@ internal partial class Password() : ModuleScript<KtaneDefuserConnector.Component
 
 	protected override bool IsSelectablePresent(int x, int y) => y < 2 || x == 2;
 
-	protected internal override void Started(AimlAsyncContext context) {
-		_readyToRead = true;
-		context.Reply("<reply>column 1</reply><reply><text>2</text><postback>column 2</postback></reply><reply><text>3</text><postback>column 3</postback></reply><reply><text>4</text><postback>column 4</postback></reply><reply><text>5</text><postback>column 5</postback></reply>");
-	}
-	
+	protected internal override void Started(AimlAsyncContext context) => _readyToRead = true;
+
 	protected internal override async void ModuleSelected(Interrupt interrupt) {
 		try {
 			using var interrupt2 = await Interrupt.EnterAsync(interrupt.Context);  // Cannot take ownership of the existing interrupt.
@@ -72,12 +69,50 @@ internal partial class Password() : ModuleScript<KtaneDefuserConnector.Component
 		interrupt.Context.Reply("<reply>submit …</reply><reply>column 1</reply><reply><text>2</text><postback>column 2</postback></reply><reply><text>3</text><postback>column 3</postback></reply><reply><text>4</text><postback>column 4</postback></reply><reply><text>5</text><postback>column 5</postback></reply>");
 	}
 
-	private async Task CycleColumnAsync(Interrupt interrupt, int column) {
-		await InteractWaitAsync(interrupt, column, 1);
-	}
+	private async Task CycleColumnAsync(Interrupt interrupt, int column) => await InteractWaitAsync(interrupt, column, 1);
 
 	private async Task SubmitAsync(Interrupt interrupt, string word) {
+		for (var x = 0; x < 5; x++) {
+			if (_columns[x] is not null && !_columns[x].Contains(char.ToUpper(word[x]))) {
+				interrupt.Context.Reply($"No '{char.ToUpper(word[x])}' in column {x + 1}.");
+				return;
+			}
+		}
+
+		// Quickly cycle any columns we can without further reading. Normally this will be all of them.
+		var anyUnknownColumns = false;
+		for (var x = 0; x < 5; x++) {
+			if (_columns[x] is null) {
+				anyUnknownColumns = true;
+				continue;
+			}
+
+			var i = _columns[x]?.IndexOf(char.ToUpper(word[x])) ?? -1;
+			if (i < 0) {
+				anyUnknownColumns = true;
+				continue;
+			}
+			if (i == _columnPositions[x]) continue;
+
+			var downMoves = (i - _columnPositions[x] + 6) % 6;
+			if (downMoves > 3 || downMoves == 3 && Selection.Y >= 1) {
+				Select(interrupt, x, 1);
+				for (; downMoves > 0; downMoves--) interrupt.SendInputs(Button.A);
+			} else {
+				Select(interrupt, x, 0);
+				for (; downMoves < 6; downMoves++) interrupt.SendInputs(Button.A);
+			}
+			_columnPositions[x] = i;
+		}
+
+		if (!anyUnknownColumns) {
+			await InteractWaitAsync(interrupt, 2, 2);
+			await interrupt.CheckStatusAsync();
+			return;
+		}
+
 		for (var i = 0; i < 6; i++) {
+			await interrupt.WaitInputsAsync();
 			var data = interrupt.Read(Reader);
 			LogDisplay(new(data.Display));
 			var anyMismatch = false;
@@ -94,6 +129,7 @@ internal partial class Password() : ModuleScript<KtaneDefuserConnector.Component
 			await interrupt.CheckStatusAsync();
 			return;
 		}
+
 		interrupt.Context.Reply("Could not submit that word.");
 	}
 

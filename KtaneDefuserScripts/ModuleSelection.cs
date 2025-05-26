@@ -63,9 +63,12 @@ internal static partial class ModuleSelection {
 
 	[AimlCategory("first module"), EditorBrowsable(EditorBrowsableState.Never)]
 	public static async Task SelectModuleFirst(AimlAsyncContext context) {
+		// Queue most solvable modules to prepare to cycle through them.
 		GameState.Current.NextModuleNums.Clear();
-		var index = GameState.Current.Modules.FindIndex(m => !m.Script.PriorityCategory.HasFlag(PriorityCategory.Needy) && !m.IsSolved);
-		if (index < 0) {
+		foreach (var i in from e in GameState.Current.Modules.Index() where !e.Item.IsSolved && !e.Item.Script.PriorityCategory.HasFlag(PriorityCategory.Needy) select e.Index)
+			GameState.Current.NextModuleNums.Enqueue(i);
+
+		if (!GameState.Current.NextModuleNums.TryDequeue(out var index)) {
 			context.Reply("Could not find any modules.");
 			return;
 		}

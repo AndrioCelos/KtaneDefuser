@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using JetBrains.Annotations;
 
 namespace KtaneDefuserScripts;
@@ -136,12 +135,15 @@ public class Interrupt : IDisposable {
 		ObjectDisposedException.ThrowIf(IsDisposed, this);
 		if (GameState.Current.CurrentModule is null) throw new InvalidOperationException("No current module.");
 
+		// Wait for any queued inputs to be executed.
 		var module = GameState.Current.CurrentModule;
 		var guid = Guid.NewGuid();
 		var task = InputCallbackFactory.CallAsync(Context, guid);
 		DefuserConnector.Instance.SendInputs(new CallbackAction(guid));
 		await task;
-		await Delay(0.5);  // Wait for the interaction punch to end.
+
+		// Wait for the interaction punch to end.
+		await Delay(0.5);
 
 		// Check whether the module disarmed or a strike occurred.
 		using var ss = DefuserConnector.Instance.TakeScreenshot();
@@ -153,10 +155,9 @@ public class Interrupt : IDisposable {
 		if (isDefused)
 			Context.Reply("The bomb is defused.");
 		else if (GameState.Current.CurrentModuleNum == GameState.Current.SelectedModuleNum) {
-			Context.Reply("<priority/>Module complete<reply>next module</reply>.");
+			Context.Reply("<priority/>Module complete.");
 			if (!GameState.Current.NextModuleNums.TryDequeue(out var nextModule))
-				nextModule = GameState.Current.Modules.FindIndex(GameState.Current.SelectedModuleNum is { } i ? i + 1 : 0, m => !m.Script.PriorityCategory.HasFlag(PriorityCategory.Needy) && !m.IsSolved);
-			if (nextModule < 0) return result;
+				return result;
 			Context.Reply($"Next is {GameState.Current.Modules[nextModule].Script.IndefiniteDescription}.");
 			await ModuleSelection.ChangeModuleAsync(Context, nextModule, true);
 		}
