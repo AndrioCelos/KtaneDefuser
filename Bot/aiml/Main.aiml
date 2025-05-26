@@ -23,4 +23,8 @@
 	<category><pattern>ready</pattern>
 		<template><srai>read</srai></template>
 	</category>
+
+	<category><pattern>veemo</pattern>
+		<template>Woomy!</template>
+	</category>
 </aiml>

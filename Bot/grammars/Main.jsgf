@@ -7,6 +7,8 @@ public <command> =
 	| say again
 	| edge work
 	| ready
+	
+	| turn the keys
 
 	// Needy module shortcuts
 	| knob [<number2>] is (up | right | down | left)

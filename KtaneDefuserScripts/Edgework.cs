@@ -57,7 +57,7 @@ internal static partial class Edgework {
 		}
 	}
 
-	[AimlCategory("edgework"), EditorBrowsable(EditorBrowsableState.Never)]
+	[AimlCategory("edgework"), AimlCategory("edge work"), EditorBrowsable(EditorBrowsableState.Never)]
 	internal static void EdgeworkRequest(AimlAsyncContext context) {
 		if (GameState.Current.Modules.All(m => m.Type <= ModuleType.WireSequence)) {
 			// Report simplified edgework information for vanilla-only games.

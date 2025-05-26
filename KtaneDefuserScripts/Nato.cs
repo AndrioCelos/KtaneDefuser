@@ -84,11 +84,11 @@ public static class Nato {
 			if (c is >= '0' and <= '9')
 				builder.Append($"<say-as interpret-as='number'>{c}</say-as>");
 			else if (EncodeMap.TryGetValue(c, out var codeWord))
-				builder.Append(codeWord);
+				builder.Append($"<sub alias='{codeWord}'>{c}</sub>");
 			else
 				builder.Append(c);
 		}
-		builder.Append($"<alt>{chars as string ?? string.Join(null, chars)}</alt></speak>");
+		builder.Append("</speak>");
 	}
 
 	private class CaseInsensitiveCharComparer : IEqualityComparer<char> {
