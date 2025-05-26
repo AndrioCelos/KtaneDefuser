@@ -26,10 +26,62 @@ public class NeedyKnob : ComponentReader<NeedyKnob.ReadData> {
 	protected internal override ReadData Process(Image<Rgba32> image, LightsState lightsState, ref Image<Rgba32>? debugImage) {
 		var time = ReadNeedyTimer(image, lightsState, debugImage);
 		var lights = new bool[12];
+		
+		// Find the centre of the knob.
+		var centre = new Point();
+		image.ProcessPixelRows(a => {
+			int maxY = 0, maxYVal = 0, topMid = 0, bottomMid = 0;
+			foreach (var y in a.Height.MapRange(96, 192)) {
+				var row = a.GetRowSpan(y);
+				int leftLimit = 80 * a.Width / 256, rightLimit = 176 * a.Width / 256;
+				int left = 0, right = 0;
+				for (var x = leftLimit; x < rightLimit; x++) {
+					if (HsvColor.FromColor(row[x]) is not { H: <= 60, S: >= 0.75f }) continue;
+					left = x;
+					break;
+				}
+
+				if (left == 0) {
+					if (topMid != 0) {
+						break;
+					}
+					continue;
+				}
+
+				for (var x = rightLimit - 1; x >= leftLimit; x--) {
+					if (HsvColor.FromColor(row[x]) is not { H: <= 60, S: >= 0.75f }) continue;
+					right = x;
+					break;
+				}
+				
+				bottomMid = (left + right) / 2;
+				if (topMid == 0) topMid = bottomMid;
+
+				var dist = right - left;
+				if (dist <= maxYVal) continue;
+				maxY = y;
+				maxYVal = dist;
+			}
+			centre = new((topMid + bottomMid) / 2, maxY);
+		});
+
+		if (debugImage is not null) debugImage[centre.X, centre.Y] = Color.Green;
+
+		var debugImage2 = debugImage;
+		image.ProcessPixelRows(a => {
+			for (var i = 0; i < 12; i++) {
+				var rectangle = image.Map(Rectangles[i]);
+				rectangle.Offset(centre.X - 124 * a.Width / 256, centre.Y - 144 * a.Height / 256);
+				lights[i] = IsRectangleLit(a, rectangle);
+				// ReSharper disable once AccessToModifiedClosure
+				debugImage2?.Mutate(p => p.Draw(lights[i] ? Color.Lime : Color.Grey, 1, rectangle));
+			}
+		});
+
+		return new(time, lights);
 
 		static bool IsRectangleLit(PixelAccessor<Rgba32> a, Rectangle rectangle) {
 			var count = 0;
-			rectangle = a.Map(rectangle);
 			for (var dy = 0; dy < rectangle.Height; dy++) {
 				var r = a.GetRowSpan(rectangle.Y + dy);
 				for (var dx = 0; dx < rectangle.Width; dx++) {
@@ -41,17 +93,6 @@ public class NeedyKnob : ComponentReader<NeedyKnob.ReadData> {
 			}
 			return false;
 		}
-
-		image.ProcessPixelRows(a => {
-			for (var i = 0; i < 12; i++)
-				lights[i] = IsRectangleLit(a, Rectangles[i]);
-		});
-		debugImage?.Mutate(p => {
-			for (var i = 0; i < 12; i++)
-				p.Draw(lights[i] ? Color.Lime : Color.Grey, 1, Rectangles[i]);
-		});
-
-		return new(time, lights);
 	}
 
 	public record ReadData(int? Time, bool[] Lights) : ComponentReadData(default(Point)) {

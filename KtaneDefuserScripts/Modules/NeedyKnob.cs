@@ -12,7 +12,6 @@ internal partial class NeedyKnob() : ModuleScript<KtaneDefuserConnector.Componen
 	private bool _isHandled;
 
 	protected internal override async void NeedyStateChanged(AimlAsyncContext context, NeedyState newState) {
-		Interrupt? interrupt = null;
 		KtaneDefuserConnector.Components.NeedyKnob.ReadData data;
 		try {
 			if (newState != NeedyState.Running) {
@@ -20,12 +19,13 @@ internal partial class NeedyKnob() : ModuleScript<KtaneDefuserConnector.Componen
 				return;
 			}
 			
+			using var interrupt = await Interrupt.EnterAsync(context);
 			if (Utils.TryGetPoints(GameState.Current.Modules[ModuleIndex].Slot, out var quadrilateral)) {
 				// Can read the module without looking away from the current one.
 				using var ss = DefuserConnector.Instance.TakeScreenshot();
 				data = DefuserConnector.Instance.ReadComponent(ss, DefuserConnector.Instance.GetLightsState(ss), Reader, quadrilateral);
 			} else {
-				interrupt = await ModuleInterruptAsync(context);
+				await Utils.SelectModuleAsync(interrupt, ModuleIndex, true);
 				using var ss = DefuserConnector.Instance.TakeScreenshot();
 				data = interrupt.Read(Reader);
 			}
@@ -44,7 +44,6 @@ internal partial class NeedyKnob() : ModuleScript<KtaneDefuserConnector.Componen
 
 			if (CorrectDirections.TryGetValue(counts, out var correctPosition)) {
 				if (_direction == correctPosition) return;
-				interrupt ??= await ModuleInterruptAsync(context);
 				await TurnAsync(interrupt, correctPosition);
 			} else {
 				_isHandled = false;
@@ -57,8 +56,6 @@ internal partial class NeedyKnob() : ModuleScript<KtaneDefuserConnector.Componen
 			}
 		} catch (Exception ex) {
 			LogException(ex);
-		} finally {
-			interrupt?.Dispose();
 		}
 	}
 
@@ -67,7 +64,7 @@ internal partial class NeedyKnob() : ModuleScript<KtaneDefuserConnector.Componen
 			context.Reply("It is not active.");
 			return;
 		}
-		context.Reply("Roger.");
+		context.Reply($"Setting the knob to {direction}.");
 		CorrectDirections[_counts.Value] = direction;
 		_isHandled = true;
 		if (_direction != direction) {

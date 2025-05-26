@@ -72,6 +72,7 @@ internal static partial class Start {
 		interrupt.SendInputs(new AxisAction(Axis.RightStickY, 0));
 		GameState.Current.LookingAtSide = false;
 		context.Reply("Ready. <reply>edgework</reply><reply>first module</reply><reply>vanilla modules</reply><reply>specific module…</reply>");
+		await Delay(1);
 	}
 
 	private static async Task RegisterComponentsAsync(Interrupt interrupt) {

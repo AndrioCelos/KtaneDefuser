@@ -67,18 +67,14 @@ public abstract partial class ModuleScript : SelectableHandler {
 	protected internal virtual void NeedyStateChanged(AimlAsyncContext context, NeedyState newState) { }
 
 	/// <summary>Enters a new interrupt, ensuring that the current module is focused before completing.</summary>
-	protected static Task<Interrupt> CurrentModuleInterruptAsync(AimlAsyncContext context) => (GameState.Current.CurrentModule ?? throw new InvalidOperationException("No current module")).Script.ModuleInterruptAsync(context, true);
-	/// <summary>Enters a new interrupt, ensuring that the current module is focused before completing.</summary>
 	/// <param name="context">The <see cref="AimlAsyncContext"/> to use to enter an interrupt.</param>
 	/// <param name="waitForFocus">Whether to also wait until the module focusing animation has finished before completing.</param>
-	protected static Task<Interrupt> CurrentModuleInterruptAsync(AimlAsyncContext context, bool waitForFocus) => (GameState.Current.CurrentModule ?? throw new InvalidOperationException("No current module")).Script.ModuleInterruptAsync(context, true);
+	protected static Task<Interrupt> CurrentModuleInterruptAsync(AimlAsyncContext context, bool waitForFocus = true) => (GameState.Current.CurrentModule ?? throw new InvalidOperationException("No current module")).Script.ModuleInterruptAsync(context, true);
 
-	/// <summary>Enters a new interrupt, ensuring that this module is focused before completing.</summary>
-	protected Task<Interrupt> ModuleInterruptAsync(AimlAsyncContext context) => ModuleInterruptAsync(context, true);
 	/// <summary>Enters a new interrupt, ensuring that this module is selected before completing.</summary>
 	/// <param name="context">The <see cref="AimlAsyncContext"/> to use to enter an interrupt.</param>
 	/// <param name="waitForFocus">Whether to also wait until the module focusing animation has finished before completing.</param>
-	protected async Task<Interrupt> ModuleInterruptAsync(AimlAsyncContext context, bool waitForFocus) {
+	protected async Task<Interrupt> ModuleInterruptAsync(AimlAsyncContext context, bool waitForFocus = true) {
 		var interrupt = await Interrupt.EnterAsync(context);
 		await Utils.SelectModuleAsync(interrupt, ModuleIndex, waitForFocus);
 		return interrupt;
