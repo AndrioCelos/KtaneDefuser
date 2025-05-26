@@ -316,55 +316,84 @@ public static class ImageUtils {
 		return (float) score / total;
 	}
 
-	private static readonly Rectangle[] LightsStateSearchRects = [new(96, 48, 16, 16), new(960, 48, 16, 16), new(1748, 236, 16, 16)];
-	private static readonly int[] LightsStateSearchTolerances = [0x20000, 0x20000, 0x8000, 0x30000];
-
-	private static readonly Rgb48[,] LightsStateSearchColours = new Rgb48[,] {
+	private static readonly Rectangle[] LightsStateSearchRects = [new(96, 48, 16, 16), new(1856, 192, 16, 16), new(48, 1024, 16, 16), new(1856, 944, 16, 16)];
+	private static readonly int[] LightsStateSearchTolerances = [10, 4, 4, 20];
+	private static readonly Rgb24[,] LightsStateSearchColours = new Rgb24[,] {
 		{
-			new(0x1c08, 0x19e9, 0x17a3),
-			new(0x24eb, 0x2364, 0x206f),
-			new(0x244f, 0x2106, 0x1e3e),
+			new( 28,  25,  23),
+			new( 33,  30,  27),
+			new(214, 151, 119),
+			new( 80,  59,  47)
 		}, {
-			new(0x0900, 0x093e, 0x0911),
-			new(0x1c98, 0x1733, 0x0ee0),
-			new(0x1aeb, 0x1491, 0x0c8d),
+			new(  9,   9,   9),
+			new( 24,  18,  11),
+			new( 99,  57,  27),
+			new( 51,  30,  15)
 		}, {
-			new(0x0510, 0x0643, 0x0810),
-			new(0x06b2, 0x07f0, 0x09db),
-			new(0x0500, 0x05a2, 0x0700),
+			new(  6,   8,  10),
+			new(  5,   5,   6),
+			new(  7,   6,   7),
+			new(  7,   6,   6)
 		}, {
-			new(0x7e80, 0x1855, 0x1573),
-			new(0x7b1d, 0x220f, 0x1f74),
-			new(0x6122, 0x20bf, 0x1df0),
+			new(126,  24,  21),
+			new( 81,  30,  27),
+			new(249, 152, 119),
+			new(168,  59,  48)
 		}
 	};
 
 	public static LightsState GetLightsState(Image<Rgba32> image) {
-		var result = LightsState.On;
+		LightsState? result = null;
 		image.ProcessPixelRows(a => {
-			for (var i = 1; i < 4; i++) {
-				for (var rectIndex = 0; rectIndex < 3; rectIndex++) {
-					var rect = LightsStateSearchRects[rectIndex];
-					if (image.Width != ReferenceScreenWidth || image.Height != ReferenceScreenHeight)
-						rect = new(rect.X * image.Width / ReferenceScreenWidth, rect.Y * image.Height / ReferenceScreenHeight, rect.Width * image.Width / ReferenceScreenWidth, rect.Height * image.Height / ReferenceScreenHeight);
-
-					var dist = 0;
-					var refColour = LightsStateSearchColours[i, rectIndex];
-					for (var y = rect.Top; y < rect.Bottom; y++) {
-						var r = a.GetRowSpan(y);
-						for (var x = rect.Left; x < rect.Right; x++) {
-							var p = r[x];
-							dist += Math.Abs((p.R << 8) - refColour.R) + Math.Abs((p.G << 8) - refColour.G) + Math.Abs((p.B << 8) - refColour.B);
-						}
+			// Vanilla bomb: look for colours around the edges of the screen, excluding the desktop camera control indicators.
+			for (var rectIndex = 0; rectIndex < 4; rectIndex++) {
+				int on = 0, buzz = 0, off = 0, emergency = 0, black = 0;
+				var rect = LightsStateSearchRects[rectIndex];
+				var row = a.GetRowSpan(rect.Y * a.Height / ReferenceScreenHeight);
+				foreach (var x in a.Width.MapRange(rect.Left, rect.Right, originalSize: ReferenceScreenWidth)) {
+					var p = row[x];
+					if (p is { R: 0, G: 0, B: 0 }) {
+						black++;
+						continue;
 					}
 
-					if (dist >= LightsStateSearchTolerances[i]) continue;
-					result = (LightsState) i;
-					return;
+					int i;
+					for (i = 0; i < 4; i++) {
+						var c = LightsStateSearchColours[i, rectIndex];
+						var d = Math.Abs(p.R - c.R) + Math.Abs(p.G - c.G) + Math.Abs(p.B - c.B);
+						if (d <= LightsStateSearchTolerances[i]) break;
+					}
+
+					switch (i) {
+						case 0: on++; break;
+						case 1: buzz++; break;
+						case 2: off++; break;
+						case 3: emergency++; break;
+					}
 				}
+
+				result = on >= 12 ? LightsState.On : buzz >= 12 ? LightsState.Buzz : off >= 12 ? LightsState.Off : emergency >= 12 ? LightsState.Emergency : black >= 12 ? LightsState.Black : null;
+				if (result is not null) return;
+			}
+			
+			// Centurion: identify by the casing dividers with the zoom level at +2.
+			{
+				int on = 0, buzz = 0, off = 0, emergency = 0;
+				var row2 = a.GetRowSpan(685 * a.Height / ReferenceScreenHeight);
+				foreach (var x in a.Width.MapRange(844, 1149, originalSize: ReferenceScreenWidth)) {
+					var hsv = HsvColor.FromColor(row2[x]);
+					switch (hsv) {
+						case { H: <= 60, S: < 0.15f, V: >= 0.50f and < 0.90f }: on++; break;
+						case { H: <= 60, S: < 0.15f, V: >= 0.08f and < 0.20f }: buzz++; break;
+						case { H: <= 240, S: < 0.30f, V: >= 0.01f and < 0.05f }: off++; break;
+						case { H: <= 15, S: >= 0.40f and < 0.50f, V: >= 0.65f }: emergency++; break;
+					}
+				}
+
+				result = on >= 12 ? LightsState.On : buzz >= 12 ? LightsState.Buzz : off >= 12 ? LightsState.Off : emergency >= 12 ? LightsState.Emergency : null;
 			}
 		});
-		return result;
+		return result ?? LightsState.On;
 	}
 
 	private static bool IsBombCasing(Rgba32 pixel) => HsvColor.FromColor(pixel) is { S: < 0.12f, V: >= 0.33f };

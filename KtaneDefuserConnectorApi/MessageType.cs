@@ -14,6 +14,7 @@ public enum MessageType {
 	CheatGetModuleTypeResponse,
 	CheatGetModuleTypeError,
 	CheatReadCommand,
+	CheatSetLightsCommand,
 
 	// Event types
 	GameStart = 0x80,

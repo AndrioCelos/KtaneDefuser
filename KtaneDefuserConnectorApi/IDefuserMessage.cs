@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using JetBrains.Annotations;
 
 namespace KtaneDefuserConnectorApi;
 /// <summary>A base interface for defuser interface messages.</summary>
@@ -285,4 +286,15 @@ public struct BombDefuseMessage(int bomb) : IDefuserMessage {
 
 	readonly MessageType IDefuserMessage.MessageType => MessageType.BombDefuse;
 	readonly int IDefuserMessage.ToBuffer(byte[] buffer) { buffer[5] = (byte) Bomb; return 1; }
+}
+
+/// <summary>A command that reads internal data from a module.</summary>
+public readonly struct CheatSetLightsCommandMessage(byte lightsState) : IDefuserMessage {
+	[PublicAPI] public byte LightsState { get; } = lightsState;
+
+	MessageType IDefuserMessage.MessageType => MessageType.CheatSetLightsCommand;
+	int IDefuserMessage.ToBuffer(byte[] buffer) {
+		buffer[5] = LightsState;
+		return 1;
+	}
 }

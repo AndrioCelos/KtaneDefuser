@@ -103,6 +103,7 @@ public class DefuserMessageReader : IDisposable {
 				MessageType.CheatGetModuleTypeResponse => new CheatGetModuleTypeResponseMessage(length > 0 ? Encoding.UTF8.GetString(_buffer, 0, length) : null),
 				MessageType.CheatGetModuleTypeError => new CheatGetModuleTypeErrorMessage(Encoding.UTF8.GetString(_buffer, 0, length)),
 				MessageType.CheatReadCommand => ReadCheatReadCommand(_buffer, length),
+				MessageType.CheatSetLightsCommand => new CheatSetLightsCommandMessage(_buffer[0]),
 				MessageType.GameStart => new GameStartMessage(),
 				MessageType.GameEnd => new GameEndMessage(),
 				MessageType.NewBomb => ReadNewBomb(_buffer),

@@ -330,6 +330,11 @@ public class DefuserConnector : IDisposable {
 		return await _readTaskSource.Task;
 	}
 
+	public void CheatSetLights(LightsState lightsState) {
+		if (_simulation is not null) return;
+		SendMessage(new CheatSetLightsCommandMessage((byte) lightsState));
+	}
+
 	/// <summary>Identifies the widget in the specified polygon and returns the corresponding <see cref="WidgetReader"/> instance, or <see langword="null"/> if no widget is found there.</summary>
 	public WidgetReader? GetWidgetReader(Image<Rgba32> screenshotBitmap, Quadrilateral quadrilateral) {
 		if (_simulation is not null)

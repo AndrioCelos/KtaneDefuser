@@ -56,4 +56,19 @@ internal class Test {
 
 	[AimlCategory("test read * * * *")]
 	public static void TestRead(AimlAsyncContext context, int face, int x, int y, string members) => context.Reply(DefuserConnector.Instance.CheatRead(new(0, face, x, y), members.Split((char[]?) null, StringSplitOptions.RemoveEmptyEntries)) ?? "nil");
+
+	[AimlCategory("test lights *")]
+	public static void TestGetModuleType(AimlAsyncContext context, string stateString) {
+		LightsState? state = stateString.ToLower() switch {
+			"0" or "on" => LightsState.On,
+			"1" or "buzz" => LightsState.Buzz,
+			"2" or "off" => LightsState.Off,
+			"3" or "emergency" => LightsState.Emergency,
+			_ => null
+		};
+		if (state is null)
+			context.Reply("Invalid state.");
+		else
+			DefuserConnector.Instance.CheatSetLights(state.Value);
+	}
 }
