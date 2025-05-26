@@ -48,7 +48,7 @@ public class WireSequence : ComponentReader<WireSequence.ReadData> {
 				colours[i] = GetWireColour(image, textRects[i], x, true, lightsState) ?? WireColour.Red;
 
 				if (!isStrictMatch) continue;
-				for (x = 160 * image.Width / 256; x >= image.Width / 2; x--) {
+				for (x = 160 * image.Width / 256; x >= image.Width / 4; x--) {
 					for (var y = textRects[0].Top; y < textRects[2].Bottom; y++) {
 						var hsv = HsvColor.FromColor(image[x, y]);
 						if (!hsv.IsSelectionHighlightStrict(lightsState)) continue;
