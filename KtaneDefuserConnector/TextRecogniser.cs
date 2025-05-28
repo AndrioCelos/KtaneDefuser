@@ -16,6 +16,7 @@ internal class TextRecogniser {
 
 		internal static readonly FontFamily Arial = SystemFonts.Get("Arial");
 		internal static readonly FontFamily CabinMedium = LoadFontFamily(Properties.Resources.CabinMedium);
+		internal static readonly FontFamily NeedyQuizLcd = LoadFontFamily(Properties.Resources.NeedyQuizLcd);
 		internal static readonly FontFamily OstrichSansHeavy = LoadFontFamily(Properties.Resources.OstrichSansHeavy);
 
 		private static FontFamily LoadFontFamily(byte[] fontFile) {

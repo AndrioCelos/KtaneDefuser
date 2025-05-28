@@ -907,6 +907,113 @@ internal partial class Simulation {
 			}
 		}
 
+		public partial class NeedyQuiz(Simulation simulation) : NeedyModule<Components.NeedyQuiz.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.NeedyQuiz>(), 2, 1) {
+			private static readonly (string question, Predicate<NeedyQuiz> check)[] Questions = [
+				("Does this question contain three words?", _ => false),
+				("Does this question contain six words?", _ => true),
+				("Does this question contain three lines?", _ => true),
+				("Does this question contain six lines?", _ => false),
+				("What was your previous answer?", m => m._lastAnswer),
+				("What was not your previous answer?", m => !m._lastAnswer)
+			];
+
+			internal override Components.NeedyQuiz.ReadData Details => new(Selection, IsActive ? (int) RemainingTime.TotalSeconds : null, _display);
+			protected override TimeSpan StartingTime => TimeSpan.FromSeconds(20);
+
+			private bool _lastAnswer;
+			private string _display = "";
+			private Predicate<NeedyQuiz>? _predicate;
+
+			protected override void OnActivate() {
+				var i = Simulation.Random.Next(Questions.Length);
+				(_display, _predicate) = Questions[i];
+				LogQuestion(_display);
+			}
+
+			public override void Interact() {
+				LogButton(Selection.X == 0 ? "Yes" : "No");
+				if (_predicate is null) return;
+				_lastAnswer = Selection.X == 0;
+				if ((Selection.X == 0) != _predicate(this))
+					StrikeFlash();
+				Deactivate();
+				_display = "";
+				_predicate = null;
+			}
+
+			protected override void OnTimerExpired() {
+				base.OnTimerExpired();
+				_predicate = null;
+			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "Question: {Question}")]
+			private partial void LogQuestion(string question);
+
+			#endregion
+		}
+
+		public partial class NeedyRotaryPhone : NeedyModule<Components.NeedyRotaryPhone.ReadData> {
+			internal override Components.NeedyRotaryPhone.ReadData Details => new(Selection, IsActive ? (int) RemainingTime.TotalSeconds : null, _number);
+
+			private int _number;
+			private int _total;
+			private int _answer;
+			private int _buttonsPressed;
+			private readonly Stopwatch _animationStopwatch = new();
+			private TimeSpan _animationDuration;
+
+			public NeedyRotaryPhone(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.NeedyRotaryPhone>(), 10, 1)
+				=> ResetTotal();
+
+			protected override void OnActivate() {
+				_number = Simulation.Random.Next(1000);
+				_total = (_total + _number) % 1000;
+				_answer = 0;
+				_buttonsPressed = 0;
+				LogDisplay(_number);
+			}
+
+			public override void Interact() {
+				if (!IsActive)
+					return;
+				if (_animationStopwatch.Elapsed < _animationDuration)
+					throw new InvalidOperationException("Tried to press a button during the animation.");
+
+				_animationDuration = TimeSpan.FromMilliseconds(Selection.X * 300);
+				_animationStopwatch.Restart();
+
+				var n = (Selection.X + 1) % 10;
+				LogButton(n);
+				_answer = _answer * 10 + n;
+				_buttonsPressed++;
+				if (_buttonsPressed < 3) return;
+				if (_answer != _total) {
+					StrikeFlash();
+					ResetTotal();
+				}
+				Deactivate();
+			}
+
+			protected override void OnTimerExpired() {
+				base.OnTimerExpired();
+				ResetTotal();
+			}
+
+			private void ResetTotal() {
+				_total = _number = Simulation.Random.Next(1000);
+				LogDisplay(_number);
+			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "Displayed number: {Number:000}")]
+			private partial void LogDisplay(int number);
+
+			#endregion
+		}
+
 		public partial class PianoKeys(Simulation simulation) : Module<Components.PianoKeys.ReadData>(simulation, DefuserConnector.GetComponentReader<Components.PianoKeys>(), 12, 1) {
 			private static readonly string[] Labels = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
@@ -1017,6 +1124,35 @@ internal partial class Simulation {
 
 			[LoggerMessage(LogLevel.Information, "Switch state: {state}")]
 			private partial void LogState(string state);
+
+			#endregion
+		}
+
+		public partial class TurnTheKey : Module<Components.TurnTheKey.ReadData> {
+			internal override Components.TurnTheKey.ReadData Details => new(_time);
+
+			private readonly TimeSpan _time;
+			public TurnTheKey(Simulation simulation) : base(simulation, DefuserConnector.GetComponentReader<Components.TurnTheKey>(), 1, 1) {
+				_time = TimeSpan.FromSeconds(simulation.Random.Next(60, 180));
+				LogInitialised(_time);
+			}
+
+			public override void Interact() {
+				var elapsed = TimerComponent.Instance.Elapsed;
+				LogKeyTurned(elapsed);
+				if ((int) Math.Floor(elapsed.TotalSeconds) == (int) _time.TotalSeconds)
+					Solve();
+				else
+					StrikeFlash();
+			}
+
+			#region Log templates
+
+			[LoggerMessage(LogLevel.Information, "Target time: {Time}.")]
+			private partial void LogInitialised(TimeSpan time);
+
+			[LoggerMessage(LogLevel.Information, "Key turned at {Time}.")]
+			private partial void LogKeyTurned(TimeSpan time);
 
 			#endregion
 		}

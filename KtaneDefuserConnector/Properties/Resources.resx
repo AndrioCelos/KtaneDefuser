@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -222,6 +222,39 @@
   </data>
   <data name="KeypadWeirdNose" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Keypad\KeypadWeirdNose.bmp;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NeedyQuizLcd" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Fonts\NeedyQuizLcd.ttf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NeedyRotaryPhone0" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Needy Rotary Phone\0.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NeedyRotaryPhone1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Needy Rotary Phone\1.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NeedyRotaryPhone2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Needy Rotary Phone\2.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NeedyRotaryPhone3" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Needy Rotary Phone\3.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NeedyRotaryPhone4" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Needy Rotary Phone\4.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NeedyRotaryPhone5" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Needy Rotary Phone\5.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NeedyRotaryPhone6" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Needy Rotary Phone\6.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NeedyRotaryPhone7" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Needy Rotary Phone\7.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NeedyRotaryPhone8" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Needy Rotary Phone\8.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NeedyRotaryPhone9" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Needy Rotary Phone\9.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="OstrichSansHeavy" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Fonts\OstrichSans-Heavy.otf;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
